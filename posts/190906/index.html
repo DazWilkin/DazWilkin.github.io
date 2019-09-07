@@ -43,7 +43,7 @@ The goal of pypi-transparency is very similar to the underlying motivation for t
 
 <meta itemprop="datePublished" content="2019-09-06T13:54:49-07:00" />
 <meta itemprop="dateModified" content="2019-09-06T13:54:49-07:00" />
-<meta itemprop="wordCount" content="124">
+<meta itemprop="wordCount" content="293">
 
 
 
@@ -119,6 +119,34 @@ The goal of pypi-transparency is very similar to the underlying motivation for t
 <p>I&rsquo;ve begun work on another Trillian prototype for Python package transparency, informally pypi-transparency.</p>
 
 <p>The goal of pypi-transparency is very similar to the underlying motivation for the Golang team&rsquo;s Checksum Database (also built with Trillian). Even though, <a href="https://pypi.org">PyPi</a> provides hashes of the content of packages it hosts, the developer must trust that PyPi&rsquo;s data is consistent. One ambition with pypi-transparency is to provide a companion, tamperproof log of PyPi package files in order to provide a double-check of these hashes.</p>
+
+<p>Currently pypi-transparency depends upon a local cache of Python packages to determine correct filenames.</p>
+
+<p>For example, the following <code>requirements.txt</code>:</p>
+
+<pre><code>grpcio==1.23.0
+opencensus==0.7.2
+protobuf==3.9.1
+</code></pre>
+
+<p>Corresponds, for my Python3 on Linux x64 to the following files:</p>
+
+<pre><code>grpcio-1.23.0-cp37-cp37m-manylinux1_x86_64.whl
+opencensus-0.7.2-py2.py3-none-any.whl
+protobuf-3.9.1-cp37-cp37m-manylinux1_x86_64.whl
+</code></pre>
+
+<p>There are many more flavors: not only wheels but sources, and variants for different OSs etc.</p>
+
+<p>And these correspond to the following PyPi URLs:</p>
+
+<p><a href="https://files.pythonhosted.org/packages/d6/c3/65db90ec27181edf491c26aa998ae631e50cd1f04ee8d8d513a95e3937f3/grpcio-1.23.0-cp27-cp27mu-manylinux1_x86_64.whl"><code>https://files.pythonhosted.org/packages/d6/c3/65db90ec27181edf491c26aa998ae631e50cd1f04ee8d8d513a95e3937f3/grpcio-1.23.0-cp27-cp27mu-manylinux1_x86_64.whl</code></a><br/>
+<a href="https://files.pythonhosted.org/packages/b6/13/c37904d9f77c320dfd39b6d5c6bd95947c59e19baa3c6c4f4df6418d1433/opencensus-0.7.2-py2.py3-none-any.whl"><code>https://files.pythonhosted.org/packages/b6/13/c37904d9f77c320dfd39b6d5c6bd95947c59e19baa3c6c4f4df6418d1433/opencensus-0.7.2-py2.py3-none-any.whl</code></a><br/>
+<a href="https://files.pythonhosted.org/packages/c7/60/19c2c3b563c8a5ebbc5f17982fd794f415cfc4633a8248ab3e23a47662bc/protobuf-3.9.1-cp27-cp27mu-manylinux1_x86_64.whl"><code>https://files.pythonhosted.org/packages/c7/60/19c2c3b563c8a5ebbc5f17982fd794f415cfc4633a8248ab3e23a47662bc/protobuf-3.9.1-cp27-cp27mu-manylinux1_x86_64.whl</code></a><br/></p>
+
+<p>So, it&rsquo;s non-trivial (and thus avoided) for pypi-transparency to convert package name*versions into filenames and URLs. Instead pypi-transparency leverages <code>pip download</code> to do this heavy-lifting and then uses cached files for its processing.</p>
+
+<p>From the filenames (whl, zip etc.), it&rsquo;s possible to determine the PyPi URL. The URL is <code>https://files.pythonhosted.org/packages/</code> followed by a BLAKE2b hash of the package&rsquo;s contents, followed by the filename. The BLAKE2b has is 64-hex digits and PyPi shards this into 2x2-digits subdirectories followed by the remaining 60 (60+2+2==64) digits followed by the filename. The Blake2b hash of the grpcio v1.23.0 package (<code>grpcio-1.23.0-cp27-cp27mu-manylinux1_x86_64.whl</code>) for my machine  is <code>d6c365db90ec27181edf491c26aa998ae631e50cd1f04ee8d8d513a95e3937f3</code> and so this becomes <code>d6/c3/65...</code></p>
 <ul class="pa0">
   
    <li class="list">
