@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>(p)retired  | Cloud Functions Simple(st) HTTP Load-balancer</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="generator" content="Hugo 0.59.0-DEV" />
+    
+    
+      <META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+    
+
+    
+    
+      <link href="/dist/css/app.d98f2eb6bcd1eaedb7edf166bd16af26.css" rel="stylesheet">
+    
+
+    
+
+    
+      
+    
+
+    
+
+    <meta property="og:title" content="Cloud Functions Simple(st) HTTP Load-balancer" />
+<meta property="og:description" content="I&rsquo;m investigating the use of LetsEncrypt for gRPC services. I found this straightforward post by Scott Devoid and am going to try this approach.
+Before I can do that, I need to be able to publish services (make the Internet-accessible) and would like to try to continue to use GCP for free.
+Some time ago, I wrote about using the excellent Microk8s on GCP. Using an f1-micro, I&rsquo;m hoping (!" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/190917/" />
+<meta property="article:published_time" content="2019-09-17T12:41:02-07:00" />
+<meta property="article:modified_time" content="2019-09-17T12:41:02-07:00" />
+<meta itemprop="name" content="Cloud Functions Simple(st) HTTP Load-balancer">
+<meta itemprop="description" content="I&rsquo;m investigating the use of LetsEncrypt for gRPC services. I found this straightforward post by Scott Devoid and am going to try this approach.
+Before I can do that, I need to be able to publish services (make the Internet-accessible) and would like to try to continue to use GCP for free.
+Some time ago, I wrote about using the excellent Microk8s on GCP. Using an f1-micro, I&rsquo;m hoping (!">
+
+
+<meta itemprop="datePublished" content="2019-09-17T12:41:02-07:00" />
+<meta itemprop="dateModified" content="2019-09-17T12:41:02-07:00" />
+<meta itemprop="wordCount" content="722">
+
+
+
+<meta itemprop="keywords" content="Go,gRPC," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Cloud Functions Simple(st) HTTP Load-balancer"/>
+<meta name="twitter:description" content="I&rsquo;m investigating the use of LetsEncrypt for gRPC services. I found this straightforward post by Scott Devoid and am going to try this approach.
+Before I can do that, I need to be able to publish services (make the Internet-accessible) and would like to try to continue to use GCP for free.
+Some time ago, I wrote about using the excellent Microk8s on GCP. Using an f1-micro, I&rsquo;m hoping (!"/>
+
+  </head>
+
+  <body class="ma0 avenir bg-near-white">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-black">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="https://pretired.dazwilkin.com/" class="f3 fw2 hover-white no-underline white-90 dib">
+      (p)retired
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+
+
+
+
+
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+
+    <header class="mt4 w-100">
+      <p class="f6 b helvetica tracked">
+          
+        POSTS
+      </p>
+      <h1 class="f1 athelas mb1">Cloud Functions Simple(st) HTTP Load-balancer</h1>
+      
+      <time class="f6 mv4 dib tracked" datetime="2019-09-17T12:41:02-07:00">September 17, 2019</time>
+      
+      
+    </header>
+
+    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l">
+
+<p>I&rsquo;m investigating the use of <a href="https://letsencrypt.org/">LetsEncrypt</a> for gRPC services. I found this straightforward <a href="https://www.d3void.net/post/acme/">post</a> by Scott Devoid and am going to try this approach.</p>
+
+<p>Before I can do that, I need to be able to publish services (make the Internet-accessible) and would like to try to continue to use GCP for <a href="https://cloud.google.com/free/">free</a>.</p>
+
+<p>Some time ago, I <a href="https://medium.com/google-cloud/microk8s-on-google-cloud-platform-d8b7a71a3ef">wrote</a> about using the excellent <a href="https://microk8s.io/">Microk8s</a> on GCP. Using an <code>f1-micro</code>, I&rsquo;m hoping (!) to stay within the Compute Engine free tier. I&rsquo;ll also try to be diligent and delete the instance when it&rsquo;s not needed. This gives me a runtime platform and I can expose services to the Instance&rsquo;s (Node)Ports but, I&rsquo;d prefer to not be billed for a Load-balancer.</p>
+
+<p>It struck me that, I could potentially use Google Cloud Functions (2m calls for free/month) as an economical HTTP Load-balancer. I found Ben Church&rsquo;s <a href="https://hackernoon.com/writing-a-reverse-proxy-in-just-one-line-with-go-c1edfa78c84b">Writing a Reverse Proxy in just one line with Go</a> and tweaked that for my simpler needs:</p>
+
+<pre><code class="language-Golang">package proxy
+
+import (
+	&quot;log&quot;
+	&quot;net/http&quot;
+	&quot;net/http/httputil&quot;
+	&quot;net/url&quot;
+	&quot;os&quot;
+)
+
+// Handler is a function that proxies incoming requests
+var Handler func(w http.ResponseWriter, r *http.Request)
+
+func reverseproxy(url *url.URL, w http.ResponseWriter, r *http.Request) {
+	r.URL.Host = url.Host
+	r.URL.Scheme = url.Scheme
+	r.Header.Set(&quot;X-Forwarded-Host&quot;, r.Header.Get(&quot;Host&quot;))
+	r.Host = url.Host
+
+	httputil.NewSingleHostReverseProxy(url).ServeHTTP(w, r)
+}
+
+func init() {
+	var origin = Endpoint{
+		Host: os.Getenv(&quot;PROXY_HOST&quot;),
+		Port: os.Getenv(&quot;PROXY_PORT&quot;),
+	}
+	url, err := origin.URL()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Once the url is determined, it's static for this proxy handler
+	Handler = func(w http.ResponseWriter, r *http.Request) {
+		reverseproxy(url, w, r)
+	}
+}
+</code></pre>
+
+<p>If you&rsquo;d like to test this locally, you can wrap the function in <code>main</code>:</p>
+
+<pre><code class="language-Golang">package main
+
+import (
+    &quot;proxy&quot;
+)
+
+func main() {
+	http.HandleFunc(&quot;/&quot;, proxy.Handler)
+	if err := http.ListenAndServe(&quot;:80&quot;, nil); err != nil {
+		panic(err)
+	}
+}
+</code></pre>
+
+<p>and then simply: <code>PROXY_HOST=[[YOUR-HOST]] PROXY_PORT=[[YOUR-PORT]] go run main.go</code></p>
+
+<p>If you&rsquo;re using Microk8s as described in my post, there are additional steps for private and public testing.</p>
+
+<p>For private testing, we can use <code>gcloud</code> SSH port-forwarding to forward requests from a local port to the Microk8s instance. In order to do this, we must first determine the NodePort of our service:</p>
+
+<pre><code class="language-bash">NODEPORT=$(\
+  gcloud compute ssh ${INSTANCE} \
+  --zone=${ZONE} \
+  --project=${PROJECT} \
+  --command=&quot;/snap/bin/microk8s.kubectl get service/nginx --output=jsonpath='{.spec.ports[0].nodePort}'&quot;)
+
+gcloud compute ssh ${INSTANCE} \
+--zone=${ZONE} \
+--project=${PROJECT} \
+--ssh-flag=&quot;-L ${NODEPORT}:localhost:${NODEPORT}&quot;
+</code></pre>
+
+<p><strong>NB</strong> In the above, I&rsquo;m assuming your Kubernetes service is called <code>nginx</code> and that the service has only one port definition.</p>
+
+<p>One the port-forwarding is running, switch to another terminal and then:</p>
+
+<pre><code class="language-bash">PROXY_HOST=localhost PROXY_PORT=${NODEPORT} go run main.go
+</code></pre>
+
+<p>You should then able to <code>curl localhost:80</code> to access the Nginx (or other) service running remotely on Microk8s.</p>
+
+<p>The next step is to then expose the Microk8s service to the Internet. Only proceed with the following steps if you&rsquo;re confident in what you&rsquo;re doing and aware that this may incur GCP costs.</p>
+
+<pre><code class="language-bash">FIREWALL=lb
+gcloud compute firewall-rules create ${FIREWALL} \
+--project=${PROJECT}  \
+--network=default \
+--action=ALLOW \
+--rules=tcp:${NODEPORT} \
+--target-tags=microk8s
+</code></pre>
+
+<p><strong>NB</strong> The tag <code>microk8s</code> was assigned to the instance when it was created. This permits us to focus the firewall rule.</p>
+
+<p>Lastly, we need the instance&rsquo;s external IP address, either:</p>
+
+<pre><code class="language-bash">NODEHOST=$(\
+  gcloud compute instances describe ${INSTANCE} \
+  --zone=$ZONE \
+  --project=$PROJECT \
+  --format=&quot;value(networkInterfaces[0].accessConfigs[0].natIP)&quot;)
+NODEHOST=$(\
+  gcloud compute instances describe ${INSTANCE} \
+  --zone=$ZONE \
+  --project=$PROJECT \
+  --format=&quot;json&quot; \
+  | jq --raw-output .networkInterfaces[0].accessConfigs[0].natIP)
+</code></pre>
+
+<p>And, now we can test the proxy locally using the remote service:</p>
+
+<pre><code class="language-bash">PROXY_HOST=${NODEHOST} PROXY_PORT=${NODEPORT} go run main.go
+</code></pre>
+
+<p>And, when we&rsquo;re confident with that, we can &ndash; if necessary &ndash; enable Cloud Functions:</p>
+
+<pre><code class="language-bash">gcloud services enable cloudfunctions.googleapis.com --project=${PROJECT}
+</code></pre>
+
+<p>And then deploy the proxy:</p>
+
+<pre><code class="language-bash">FUNCTION=proxy
+gcloud functions deploy ${FUNCTION} \
+--entry-point=Handler \
+--runtime=go111 \
+--set-env-vars=PROXY_HOST=${NODEHOST},PROXY_PORT=${NODEPORT} \
+--trigger-http \
+--project=${PROJECT}
+</code></pre>
+
+<p>And, to confirm it&rsquo;s working correctly, curl the Functions&rsquo; endpoint:</p>
+
+<pre><code class="language-bash">curl $(\
+  gcloud functions describe ${FUNCTION} \
+  --project=$PROJECT \
+  --format=&quot;value(httpsTrigger.url)&quot;)
+</code></pre>
+
+<h2 id="tidy">Tidy</h2>
+
+<pre><code class="language-bash">gcloud functions delete ${FUNCTION} --project=${PROJECT} --quiet
+gcloud compute firewall-rules delete ${FIREWALL} --project=${PROJECT} --quiet
+gcloud compute instances delete ${INSTANCE} --zone=${ZONE} --project=${PROJECT} --quiet
+</code></pre>
+
+<p>Or, more emphatically:</p>
+
+<pre><code class="language-bash">gcloud projects delete ${PROJECT} --quiet
+</code></pre>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>There&rsquo;s likely no better option that Google&rsquo;s own HTTP/S Load-Balancer or even just the TCP Load-Balancer. But, if you&rsquo;re trying to save money, it doesn&rsquo;t get much cheaper than 2m calls/month w/ a Cloud Functions Load-Balancer.</p>
+
+<p>One oversight is that, because Cloud Functions automatically servers over TLS (HTTPS), it&rsquo;s not possible to use this mechanism to expose a service cheaply, in order to get LetsEncrypt to generate a certificate for it. Back to that drawing board.</p>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/go" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Go</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/grpc" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">gRPC</a>
+   </li>
+  
+</ul>
+<div class="mt6">
+      
+      
+      </div>
+    </section>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/190907/">pypi-transparency</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-black bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy; 2019 (p)retired
+  </a>
+    <div>
+
+
+
+
+
+
+
+
+
+
+</div>
+  </div>
+</footer>
+
+    
+
+  <script src="/dist/js/app.3fc0f988d21662902933.js"></script>
+
+
+  </body>
+</html>
