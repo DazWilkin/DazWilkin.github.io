@@ -6,7 +6,7 @@
     
     <title>(p)retired  | Kubernetes Engine and Free Tier</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
-    <meta name="generator" content="Hugo 0.59.0-DEV" />
+    <meta name="generator" content="Hugo 0.61.0-DEV" />
     
     
       <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -37,16 +37,13 @@ Kubernetes (i.e. Compute Engine) nodes potentially incur charges including for t
 <meta itemprop="description" content="Google Cloud Platform Free Tier appears (please verify this for yourself) to provide the ability to run a(n admittedly miniscule) Kubernetes cluster for free. So, why do this? It provides a definitive Kubernetes (Engine) experience on Google Cloud Platform that you may use for learning and testing.
 Kubernetes Engine the master node(s) and the control plane are free.
 Kubernetes (i.e. Compute Engine) nodes potentially incur charges including for the VM runtime and any attached storage, snapshots etc.">
-
-
 <meta itemprop="datePublished" content="2019-09-24T09:40:14-07:00" />
 <meta itemprop="dateModified" content="2019-09-24T09:40:14-07:00" />
-<meta itemprop="wordCount" content="501">
+<meta itemprop="wordCount" content="498">
 
 
 
-<meta itemprop="keywords" content="Google Cloud Platform,Kubernetes,Kubernetes Engine,GKE," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="Google Cloud Platform,Kubernetes,Kubernetes Engine,GKE," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Kubernetes Engine and Free Tier"/>
 <meta name="twitter:description" content="Google Cloud Platform Free Tier appears (please verify this for yourself) to provide the ability to run a(n admittedly miniscule) Kubernetes cluster for free. So, why do this? It provides a definitive Kubernetes (Engine) experience on Google Cloud Platform that you may use for learning and testing.
 Kubernetes Engine the master node(s) and the control plane are free.
@@ -122,65 +119,46 @@ if (!doNotTrack) {
       
     </header>
 
-    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>Google Cloud Platform <a href="https://cloud.google.com/free/">Free Tier</a> appears (<span style="color:red">please verify this for yourself</span>) to provide the ability to run a(n admittedly miniscule) Kubernetes cluster for free. So, why do this? It provides a definitive Kubernetes (Engine) experience on Google Cloud Platform that you may use for learning and testing.</p>
-
+    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>Google Cloud Platform <a href="https://cloud.google.com/free/">Free Tier</a> appears (<!-- raw HTML omitted -->please verify this for yourself<!-- raw HTML omitted -->) to provide the ability to run a(n admittedly miniscule) Kubernetes cluster for free. So, why do this? It provides a definitive Kubernetes (Engine) experience on Google Cloud Platform that you may use for learning and testing.</p>
 <p>Kubernetes Engine the master node(s) and the control plane are <a href="https://cloud.google.com/kubernetes-engine/pricing">free</a>.</p>
-
 <p>Kubernetes (i.e. Compute Engine) nodes potentially incur charges including for the VM runtime and any attached storage, snapshots etc. However, charges for these resources can be partially covered by the Free Tier.</p>
-
 <p>As of writing, Compute Engine under the Free Tier provides:</p>
-
 <ul>
 <li>1 f1-micro instance per month (US regions only — excluding Northern Virginia [us-east4])</li>
 <li>30 GB-months HDD</li>
 <li>5 GB-months snapshot in select regions</li>
 <li>1 GB network egress from North America to all region destinations per month (excluding China and Australia)</li>
 </ul>
-
 <p>Curiously, testing confirms that, to be free, this must be a &ldquo;<strong>non</strong>&ndash;preemptible&rdquo; instance. The cheaper &ldquo;preemptible&rdquo; instances incur charges. Go figure!</p>
-
 <p>The documentation says: &ldquo;Your Always Free f1-micro instance limit is by time, not by instance. Each month, eligible use of all of your f1-micro instances are free until you have used a number of hours equal to the total hours in the current month. Usage calculations are combined across the supported regions.&rdquo;</p>
-
 <p>So, you may use 1 non-preemptible f1-micro instance 24x7 or (!) you may use e.g. 3 f1-micro instances <strong>each</strong> for 8 hours/day (24/3x7). Or any (!?) multiple thereof e.g. 24 instances for 1 hour/day (24/24x7)</p>
-
 <p>Similarly, the 30 GB-months HDD means you may use 3 instances <strong>each</strong> with a (paltry) 10GB HDD for (24x7)/3.</p>
-
-<p><span style="color:red">Once again, please do not take my word for this. Try it for yourself and verify.</span></p>
-
+<p><!-- raw HTML omitted -->Once again, please do not take my word for this. Try it for yourself and verify.<!-- raw HTML omitted --></p>
 <p>You will incur charges for TCP Load-balancing (<code>--type=LoadBalancer</code>) and HTTP/S Load-balancing including those provisioned by Ingress objects.</p>
-
 <p>So, you can provision a 3-node Kubernetes cluster in us-west1 (3 zones) using a command of the form:</p>
-
-<pre><code class="language-bash">gcloud beta container clusters create ${CLUSTER} \
---project=${PROJECT} \
---region=us-west1 \
---no-enable-basic-auth \
---no-issue-client-certificate \
---release-channel=rapid \
---machine-type=f1-micro \
---image-type=COS_CONTAINERD \
---disk-type=pd-standard \
---disk-size=10 \
---metadata=disable-legacy-endpoints=true \
---num-nodes=1 \
---enable-stackdriver-kubernetes \
---enable-ip-alias \
---enable-autoupgrade \
---enable-autorepair \
---shielded-secure-boot
-</code></pre>
-
-<p>You may append <code>--async</code> to run this command asynchronously.</p>
-
-<p>Because we&rsquo;re trying to stay within the Free Tier, it&rsquo;s <strong>very</strong> important that you delete this cluster before you exhaust the month&rsquo;s free quota. Unfortunately, there&rsquo;s currently (!?) no systematic way to have GCP defer the deletion of a resource to a future point in time but, with some diligence in ensuring you use the correct command and hoping that you don&rsquo;t lose power, Internet access etc., you can create a compensating <code>gcloud beta container clusters delete</code> and schedule this using Linux&rsquo;s <code>at</code>:</p>
-
-<pre><code class="language-bash">echo &quot;gcloud beta container clusters delete ${CLUSTER} --project=${PROJECT} --region=us-west1 --quiet&quot; \
-| at -f /dev/stdin now + 2 hour
-</code></pre>
-
-<p><strong>NB</strong> Because <code>at</code> runs commands under its own environment, you need to be careful with referencing environment variables.</p>
-
-<p><strong>NB</strong> It doesn&rsquo;t make a huge difference but, you can combine (<code>&amp;&amp;</code>) the create and delete commands.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud beta container clusters create <span style="color:#e6db74">${</span>CLUSTER<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span>us-west1 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--no-enable-basic-auth <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--no-issue-client-certificate <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--release-channel<span style="color:#f92672">=</span>rapid <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--machine-type<span style="color:#f92672">=</span>f1-micro <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--image-type<span style="color:#f92672">=</span>COS_CONTAINERD <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--disk-type<span style="color:#f92672">=</span>pd-standard <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--disk-size<span style="color:#f92672">=</span><span style="color:#ae81ff">10</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--metadata<span style="color:#f92672">=</span>disable-legacy-endpoints<span style="color:#f92672">=</span>true <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--num-nodes<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--enable-stackdriver-kubernetes <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--enable-ip-alias <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--enable-autoupgrade <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--enable-autorepair <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--shielded-secure-boot
+</code></pre></div><p>You may append <code>--async</code> to run this command asynchronously.</p>
+<p>Because we're trying to stay within the Free Tier, it's <strong>very</strong> important that you delete this cluster before you exhaust the month's free quota. Unfortunately, there's currently (!?) no systematic way to have GCP defer the deletion of a resource to a future point in time but, with some diligence in ensuring you use the correct command and hoping that you don't lose power, Internet access etc., you can create a compensating <code>gcloud beta container clusters delete</code> and schedule this using Linux's <code>at</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">gcloud beta container clusters delete </span><span style="color:#e6db74">${</span>CLUSTER<span style="color:#e6db74">}</span><span style="color:#e6db74"> --project=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74"> --region=us-west1 --quiet</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| at -f /dev/stdin now + <span style="color:#ae81ff">2</span> hour
+</code></pre></div><p><strong>NB</strong> Because <code>at</code> runs commands under its own environment, you need to be careful with referencing environment variables.</p>
+<p><strong>NB</strong> It doesn't make a huge difference but, you can combine (<code>&amp;&amp;</code>) the create and delete commands.</p>
 <ul class="pa0">
   
    <li class="list">
