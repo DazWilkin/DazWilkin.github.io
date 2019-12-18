@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>(p)retired  | Linode Prometheus Exporter</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="generator" content="Hugo 0.61.0-DEV" />
+    
+    
+      <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+    
+
+    
+    
+      <link href="/dist/css/app.d98f2eb6bcd1eaedb7edf166bd16af26.css" rel="stylesheet">
+    
+
+    
+
+    
+      
+    
+
+    
+
+    <meta property="og:title" content="Linode Prometheus Exporter" />
+<meta property="og:description" content="I enjoy using Prometheus and have toyed around with it for some time particularly in combination with Kubernetes. I signed up with Linode [referral] compelled by the addition of a managed Kubernetes service called Linode Kubernetes Engine (LKE). I have an anxiety that I&#39;ll inadvertently leave resources running (unused) on a cloud platform. Instead of refreshing the relevant billing page, it struck me that Prometheus may (not yet proven) help." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/191218/" />
+
+<meta itemprop="name" content="Linode Prometheus Exporter">
+<meta itemprop="description" content="I enjoy using Prometheus and have toyed around with it for some time particularly in combination with Kubernetes. I signed up with Linode [referral] compelled by the addition of a managed Kubernetes service called Linode Kubernetes Engine (LKE). I have an anxiety that I&#39;ll inadvertently leave resources running (unused) on a cloud platform. Instead of refreshing the relevant billing page, it struck me that Prometheus may (not yet proven) help.">
+
+<meta itemprop="wordCount" content="1054">
+
+
+
+<meta itemprop="keywords" content="Golang,Prometheus,Linode," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Linode Prometheus Exporter"/>
+<meta name="twitter:description" content="I enjoy using Prometheus and have toyed around with it for some time particularly in combination with Kubernetes. I signed up with Linode [referral] compelled by the addition of a managed Kubernetes service called Linode Kubernetes Engine (LKE). I have an anxiety that I&#39;ll inadvertently leave resources running (unused) on a cloud platform. Instead of refreshing the relevant billing page, it struck me that Prometheus may (not yet proven) help."/>
+
+      
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-black">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="https://pretired.dazwilkin.com/" class="f3 fw2 hover-white no-underline white-90 dib">
+      (p)retired
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+
+
+
+
+
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+
+    <header class="mt4 w-100">
+      <p class="f6 b helvetica tracked">
+          
+        POSTS
+      </p>
+      <h1 class="f1 athelas mb1">Linode Prometheus Exporter</h1>
+      
+      <time class="f6 mv4 dib tracked" datetime="0001-01-01T00:00:00Z">January 1, 0001</time>
+      
+      
+    </header>
+
+    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I enjoy using <a href="https://prometheus.io">Prometheus</a> and have toyed around with it for some time particularly in combination with Kubernetes. I signed up with <a href="https://www.linode.com/?r=9ab7d75b764e143a1b3b467390c852b2c56cd704">Linode</a> [referral] compelled by the addition of a managed Kubernetes service called <a href="https://www.linode.com/products/kubernetes/">Linode Kubernetes Engine (LKE)</a>. I have an anxiety that I'll inadvertently leave resources running (unused) on a cloud platform. Instead of refreshing the relevant billing page, it struck me that Prometheus may (not yet proven) help.</p>
+<p>The hypothesis is that a combination of a cloud-specific Prometheus <a href="https://prometheus.io/docs/instrumenting/exporters/">exporter</a> reporting aggregate uses of e.g. Linodes (instances), NodeBalancers, Kubernetes clusters etc., could form the basis of an alert mechanism using Prometheus&rsquo; <a href="https://prometheus.io/docs/alerting/overview/">alerting</a>.</p>
+<p>First step is to &lsquo;standarize&rsquo; Linode resource metrics using a Prometheus exporter. My solution &ndash; heavily influenced by <a href="https://github.com/metalmatze/digitalocean_exporter">Matthias Loibl</a>&lsquo;s <a href="https://github.com/metalmatze/digitalocean_exporter">digitalocean_exporter</a> which I will use to report Digital Ocean resource metrics &ndash; is a <a href="https://github.com/DazWilkin/linode-exporter">Prometheus Exporter for Linode</a>.</p>
+<p>It's a work in progress. It reports basic metrics (Linode, NodeBalancer counts). The exporter uses Linode's Go <a href="https://github.com/linode/linodego">SDK</a>. The SDK has a <a href="https://github.com/linode/linodego/pull/105">PR</a> for LKE that I will incorporate. I've submitted a <a href="https://github.com/linode/linodego/pull/111">PR</a> for NodeBalancer statistics. Hopefully (!) the exporter's <a href="https://github.com/DazWilkin/linode-exporter/blob/master/README.md">README</a> is sufficient to get started, combine the exporter with Prometheus and &ndash; all being well (soon) &ndash; with AlertManager too. The rest of this post will summarize the development of the exporter.</p>
+<p>The exporter uses Prometheus&rsquo; Golang <a href="https://github.com/prometheus/client_golang">SDK</a>. I found the documentation for this SDK to be basic. The Linode Exporter is heavily influenced by the <a href="https://github.com/metalmatze/digitalocean_exporter">Digital Ocean Exporter ()</a> and I used the Digital Ocean Exporter to understand the Prometheus SDK too and as a template for the Linode Exporter.</p>
+<p><code>main.go</code> configures the exporter, registers Prometheus collectors, and establishes a basic HTTP server to serve metrics. For each of Linode's primary resource types (e.g. Account, Instances, NodeBalancers), there should be a collector. Collectors are formulaic. Each implements Prometheus Collector interface with <code>collect</code> and <code>describe</code> methods. Each collector defines a struct that primarily statically defines a set of Prometheus metric descriptors. These are instantiated by the collector's constructor (e.g. <code>NewInstanceCollector</code>). Values for each metric are calculated and then set in the relevant <code>collect</code> method before being enqueued. Each descriptor is enqueued in <code>describe</code>. The Prometheus client then realizes these metrics by dequeuing them and rendering the results as text in the Prometheus exposition format when a Prometheus server scrapes the endpoint.</p>
+<p>One structural change that I continue to consider is in making these collector lists of metric descriptors less repetitive. The Instance collector has 11 metrics. It's struct thus lists these 11 metrics, the constructor must create each of them, <code>collect</code> must set each of them and <code>describe</code> must enqueue each of them. It seems (!?) that this may be better done using <code>map[string]prometheus.Desc</code>. The type definition would then need just the map. The constructor, <code>collect</code> and <code>describe</code> could then simply range over the map. The remaining challenge is provide a generic way for <code>collect</code> to determine each metric's value. Needs more work!</p>
+<p>The Linode <a href="https://developers.linode.com/api/v4/">API</a> documentation is decent. For the majority of API call, it's trivial to map the responses into Prometheus metrics. I had 2 challenges:</p>
+<ul>
+<li>dealing with the API's statistics;</li>
+<li>implementing missing functionality</li>
+</ul>
+<h2 id="api-statistics">API statistics</h2>
+<p>Several API methods provide statistics, e.g. <a href="https://developers.linode.com/api/v4/linode-instances-linode-id-stats">Linode Statistics</a></p>
+<p>Given a Linode Instance ID and a Linode API token, it's trivial to explore these:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -H <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Authorization: Bearer </span><span style="color:#e6db74">${</span>LINODE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> https://api.linode.com/v4/linode/instances/<span style="color:#e6db74">${</span>LINODE_INSTANCE_ID<span style="color:#e6db74">}</span>/stats
+</code></pre></div><p>The documentation is scarce but statistics are <code>[][]float64</code> (a slice of slices of float64). The first dimension corresponds to each &lsquo;tick&rsquo; of this time-series and is often 64 units long. The second dimension is (always!?) 2 units. The first of these (e.g. <code>stat[X][0]</code>) is, I believe, the epoch is milliseconds. The second (e.g. <code>stats[X][1]</code>) is the value. I added a simple <a href="https://github.com/DazWilkin/linode-exporter/blob/master/collector/timeseries.go"><code>TimeSeries</code></a> type that iterates over each of these series and calculates the minimum, maximum and (2 types of) average value. The simple average is the total of the values divided by the number of values. The more accurate (!?) average is the total of the areas represented by the values (the length of time multipled by the value) divided by the overall time. The latter calculation assumes that the epochs are ordered.</p>
+<h2 id="api-missing-functionality">API missing functionality</h2>
+<p>Several API methods are not implemented by the SDK. I mentioned the new LKE service previously. <a href="https://developers.linode.com/api/v4/nodebalancers-node-balancer-id-stats">NodeBalancer Statistics</a> were also not implemented. I've submitted a <a href="https://github.com/linode/linodego/pull/111">PR</a> for this method. I used <a href="https://developers.linode.com/api/v4/linode-instances-linode-id-stats">Linode Statistics</a> as my template. Thanks to the Linode team for providing more definitive guidance. There's <a href="https://github.com/linode/linodego/blob/master/template.go">template.go</a> that better explains how to do this. The code was trivial. I was able to leverage the existing NodeBalance tests. The bulk of the code is configuring the method's name, path etc.</p>
+<p>I struggled with the tests but was helped by the Linode team. I realized subsequently this is also somewhat <a href="https://github.com/linode/linodego/blob/master/template.go">documented</a>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export LINODE_TOKEN<span style="color:#f92672">=</span><span style="color:#f92672">[</span><span style="color:#f92672">[</span>YOUR-LINODE-TOKEN<span style="color:#f92672">]</span><span style="color:#f92672">]</span>
+make test
+</code></pre></div><p>results:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">go vet ./...
+golangci-lint run
+go build ./...
+2019/12/18 09:51:51 <span style="color:#f92672">[</span>INFO<span style="color:#f92672">]</span> LINODE_FIXTURE_MODE play will be used <span style="color:#66d9ef">for</span> tests
+...
+</code></pre></div><p>It's possible to run the tests under Visual Studio Code too but you must add a <code>LINODE_TOKEN</code> to the settings:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON"><span style="color:#e6db74">&#34;go.toolsEnvVars&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> {
+    <span style="color:#f92672">&#34;LINODE_TOKEN&#34;</span>: <span style="color:#e6db74">&#34;[[YOUR-LINODE-TOKEN]]&#34;</span>
+}
+</code></pre></div><p>For my addition, I created a new type <code>NodeBalancerStats</code> with a single method <code>GetNodeBalancerStats</code> corresponding to the <a href="https://developers.linode.com/api/v4/nodebalancers-node-balancer-id-stats">API</a>.</p>
+<p>To be able to test this specific type, I am able to run:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">make ARGS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;-run ^.*NodeBalancerStats&#34;</span> fixtures
+</code></pre></div><p>and success is:</p>
+<pre><code>* Running fixtures
+2019/12/18 09:54:20 [INFO] LINODE_FIXTURE_MODE record will be used for tests
+PASS
+ok  	github.com/linode/linodego	11.390s
+* Sanitizing fixtures
+</code></pre><p>I'm not entirely clear on what's going on here but, what I do understand is that this test records the API calls that are made in <code>fixtures/TestGetNodeBalancerStats.yaml</code>.</p>
+<p><strong>NB</strong> The filename corresponds to the method name.</p>
+<p>This file contains (summarized):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">---
+<span style="color:#66d9ef">version</span>: <span style="color:#ae81ff">1</span>
+<span style="color:#66d9ef">interactions</span>:
+- <span style="color:#66d9ef">request</span>:
+    <span style="color:#66d9ef">body</span>: <span style="color:#e6db74">&#39;{&#34;label&#34;:&#34;[REDACTED]-linodego-testing&#34;,&#34;region&#34;:&#34;us-west&#34;,&#34;client_conn_throttle&#34;:20,&#34;tags&#34;:null}&#39;</span>
+    <span style="color:#66d9ef">headers</span>:
+      <span style="color:#66d9ef">Accept</span>:
+      - application/json
+      <span style="color:#66d9ef">Content-Type</span>:
+      - application/json
+      <span style="color:#66d9ef">User-Agent</span>:
+      - linodego <span style="color:#ae81ff">0.12</span><span style="color:#ae81ff">.0</span> https://github.com/linode/linodego
+    <span style="color:#66d9ef">url</span>: https://api.linode.com/v4beta/nodebalancers
+    <span style="color:#66d9ef">method</span>: POST
+  <span style="color:#66d9ef">response</span>:
+    <span style="color:#66d9ef">body</span>: <span style="color:#e6db74">&#39;{&#34;id&#34;: 123, &#34;label&#34;: &#34;[REDACTED]-linodego-testing&#34;, &#34;region&#34;: &#34;us-west&#34;,
+</span><span style="color:#e6db74">      &#34;hostname&#34;: &#34;[REDACTED].nodebalancer.linode.com&#34;, &#34;ipv4&#34;: &#34;[REDACTED]&#34;,
+</span><span style="color:#e6db74">      &#34;ipv6&#34;: &#34;[REDACTED]&#34;, &#34;created&#34;: &#34;2018-01-02T03:04:05&#34;, &#34;updated&#34;:
+</span><span style="color:#e6db74">      &#34;2018-01-02T03:04:05&#34;, &#34;client_conn_throttle&#34;: 20, &#34;tags&#34;: [], &#34;transfer&#34;: {&#34;in&#34;:
+</span><span style="color:#e6db74">      null, &#34;out&#34;: null, &#34;total&#34;: null}}&#39;</span>
+    <span style="color:#66d9ef">headers</span>:
+    <span style="color:#66d9ef">status</span>: <span style="color:#ae81ff">200</span> OK
+    <span style="color:#66d9ef">code</span>: <span style="color:#ae81ff">200</span>
+- <span style="color:#66d9ef">request</span>:
+    <span style="color:#66d9ef">headers</span>:
+    <span style="color:#66d9ef">url</span>: https://api.linode.com/v4beta/nodebalancers/<span style="color:#ae81ff">123</span>/stats
+    <span style="color:#66d9ef">method</span>: GET
+  <span style="color:#66d9ef">response</span>:
+    <span style="color:#66d9ef">body</span>: <span style="color:#e6db74">&#39;{&#34;errors&#34;: [{&#34;reason&#34;: &#34;Stats are unavailable at this time.&#34;}]}&#39;</span>
+    <span style="color:#66d9ef">headers</span>:
+    <span style="color:#66d9ef">status</span>: <span style="color:#ae81ff">400</span> BAD REQUEST
+    <span style="color:#66d9ef">code</span>: <span style="color:#ae81ff">400</span>
+- <span style="color:#66d9ef">request</span>:
+    <span style="color:#66d9ef">headers</span>:
+      <span style="color:#66d9ef">User-Agent</span>:
+      - linodego <span style="color:#ae81ff">0.12</span><span style="color:#ae81ff">.0</span> https://github.com/linode/linodego
+    <span style="color:#66d9ef">url</span>: https://api.linode.com/v4beta/nodebalancers/<span style="color:#ae81ff">123</span>
+    <span style="color:#66d9ef">method</span>: DELETE
+  <span style="color:#66d9ef">response</span>:
+    <span style="color:#66d9ef">headers</span>:
+    <span style="color:#66d9ef">status</span>: <span style="color:#ae81ff">200</span> OK
+    <span style="color:#66d9ef">code</span>: <span style="color:#ae81ff">200</span>
+</code></pre></div><p><strong>NB</strong> In this case, the API returned a 400 indicating there were no statistics available for the NodeBalancer, this is OK</p>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/golang" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Golang</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/prometheus" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Prometheus</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/linode" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Linode</a>
+   </li>
+  
+</ul>
+<div class="mt6">
+      
+      
+      </div>
+    </section>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-black bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy; 2019 (p)retired
+  </a>
+    <div>
+
+
+
+
+
+
+
+
+
+
+</div>
+  </div>
+</footer>
+
+    
+
+  <script src="/dist/js/app.3fc0f988d21662902933.js"></script>
+
+
+  </body>
+</html>
