@@ -39,7 +39,7 @@ IIUC, Cilium contributed this mechanism (Envoy Go Extensions) by which it&#39;s 
 I learned that Cilium is a CNI implementation that may be used with Kubernetes. GKE defaults (but is not limited to) to Google&#39;s own CNI implementation (link).">
 <meta itemprop="datePublished" content="2019-12-30T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2019-12-30T00:00:00-07:00" />
-<meta itemprop="wordCount" content="1144">
+<meta itemprop="wordCount" content="1237">
 
 
 
@@ -150,7 +150,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 6 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 1144 words</span>
+        <span class="f6 mv4 dib tracked"> - 1237 words</span>
       
     </header>
 
@@ -423,7 +423,21 @@ INFO[0000] Listening...
 </code></pre></div><p><strong>NB</strong> The <code>/report</code> returns <code>Containers.nodes</code> confirming that this plugin is by &ldquo;Containers&rdquo; (not &ldquo;Hosts&rdquo;)</p>
 <p><code>Container.nodes.26b5...</code> contains <code>latestControls</code> and <code>latest</code></p>
 <p>We can see how e.g. <code>traffic-control-table-latency</code> appears in <code>Container.nodes.26b5...</code> with values and it appears to be constituted by <code>table_template.traffic-control-table</code> and e.g. <code>metadata_templates.traffic-control-latency</code>. I need to read more about how this works.</p>
-<p>That's all for now!</p>
+<p>After cloning <code>traffic-control</code> from GitHub, it appears to be hard-coded against <code>eth0</code>. On my Ubuntu machine, the default ethernet connection is called <code>enp5s0</code> and so the plugin appears to not work. I tried replacing <code>eth0</code> with <code>enp5s0</code> in the plugin and rebuilding but without success.</p>
+<p>While working on the clone, I replaced the Glide configuration with Go Modules. More is required than is shown below but, I had to:</p>
+<ul>
+<li>Use the old version of <code>github.com/containernetworking/cni</code> (v0.3.0)</li>
+<li>Rename imports from <code>Sirupsen</code> to <code>sirupsen</code></li>
+</ul>
+<pre><code>module github.com/weaveworks-plugins/scope-traffic-control
+
+go 1.13
+
+require (
+	github.com/containernetworking/cni v0.3.0
+	github.com/sirupsen/logrus v1.4.2
+)
+</code></pre><p>That's all for now!</p>
 <ul class="pa0">
   
    <li class="list">
