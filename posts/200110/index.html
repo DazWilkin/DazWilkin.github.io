@@ -26,25 +26,25 @@
     
     
     <meta property="og:title" content="Google Fit" />
-<meta property="og:description" content="I&#39;ve spent a few days exploring [Google Fit SDK] as I try to wean myself from my obsession with metrics (of all forms). I quick Googling got me to Robert&#39;s Exporter Google Fit Daily Steps, Weight and Distance to a Google Sheet. This works and is probably where I should have stopped&hellip; avoiding the rabbit hole that I&#39;ve been down&hellip;
-I threw together a simple Golang implemnentation of the SDK using Google&#39;s Golang API Client Library." />
+<meta property="og:description" content="I&#39;ve spent a few days exploring [Google Fit SDK] as I try to wean myself from my obsession with metrics (of all forms). A quick Googling got me to Robert&#39;s Exporter Google Fit Daily Steps, Weight and Distance to a Google Sheet. This works and is probably where I should have stopped&hellip; avoiding the rabbit hole that I&#39;ve been down&hellip;
+I threw together a simple Golang implementation of the SDK using Google&#39;s Golang API Client Library." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://pretired.dazwilkin.com/posts/200110/" />
 <meta property="article:published_time" content="2020-01-10T00:00:00-08:00" />
 <meta property="article:modified_time" content="2020-01-10T00:00:00-08:00" />
 <meta itemprop="name" content="Google Fit">
-<meta itemprop="description" content="I&#39;ve spent a few days exploring [Google Fit SDK] as I try to wean myself from my obsession with metrics (of all forms). I quick Googling got me to Robert&#39;s Exporter Google Fit Daily Steps, Weight and Distance to a Google Sheet. This works and is probably where I should have stopped&hellip; avoiding the rabbit hole that I&#39;ve been down&hellip;
-I threw together a simple Golang implemnentation of the SDK using Google&#39;s Golang API Client Library.">
+<meta itemprop="description" content="I&#39;ve spent a few days exploring [Google Fit SDK] as I try to wean myself from my obsession with metrics (of all forms). A quick Googling got me to Robert&#39;s Exporter Google Fit Daily Steps, Weight and Distance to a Google Sheet. This works and is probably where I should have stopped&hellip; avoiding the rabbit hole that I&#39;ve been down&hellip;
+I threw together a simple Golang implementation of the SDK using Google&#39;s Golang API Client Library.">
 <meta itemprop="datePublished" content="2020-01-10T00:00:00-08:00" />
 <meta itemprop="dateModified" content="2020-01-10T00:00:00-08:00" />
-<meta itemprop="wordCount" content="1125">
+<meta itemprop="wordCount" content="1138">
 
 
 
 <meta itemprop="keywords" content="Google Fit,Golang," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Google Fit"/>
-<meta name="twitter:description" content="I&#39;ve spent a few days exploring [Google Fit SDK] as I try to wean myself from my obsession with metrics (of all forms). I quick Googling got me to Robert&#39;s Exporter Google Fit Daily Steps, Weight and Distance to a Google Sheet. This works and is probably where I should have stopped&hellip; avoiding the rabbit hole that I&#39;ve been down&hellip;
-I threw together a simple Golang implemnentation of the SDK using Google&#39;s Golang API Client Library."/>
+<meta name="twitter:description" content="I&#39;ve spent a few days exploring [Google Fit SDK] as I try to wean myself from my obsession with metrics (of all forms). A quick Googling got me to Robert&#39;s Exporter Google Fit Daily Steps, Weight and Distance to a Google Sheet. This works and is probably where I should have stopped&hellip; avoiding the rabbit hole that I&#39;ve been down&hellip;
+I threw together a simple Golang implementation of the SDK using Google&#39;s Golang API Client Library."/>
 
       
 <script type="application/javascript">
@@ -147,26 +147,27 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 6 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 1125 words</span>
+        <span class="f6 mv4 dib tracked"> - 1138 words</span>
       
     </header>
 
-    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I've spent a few days exploring [Google Fit SDK] as I try to wean myself from my obsession with metrics (of all forms). I quick Googling got me to Robert's <a href="https://ithoughthecamewithyou.com/post/export-google-fit-daily-steps-to-a-google-sheet">Exporter Google Fit Daily Steps, Weight and Distance to a Google Sheet</a>. This works and is probably where I should have stopped&hellip; avoiding the rabbit hole that I've been down&hellip;</p>
-<p>I threw together a simple Golang implemnentation of the SDK using <a href="https://godoc.org/google.golang.org/api/fitness/v1">Google's Golang API Client Library</a>. Thanks to Robert's example, I was able to infer some of the complexity this API particularly in its use of data types, data sources and datasets. Having used Stackdriver in my previous life, Google Fit's structure bears more than a passing resemblance to Stackdriver's data model and its use of resource types and metric types.</p>
+    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I've spent a few days exploring [Google Fit SDK] as I try to wean myself from my obsession with metrics (of all forms). A quick Googling got me to Robert's <a href="https://ithoughthecamewithyou.com/post/export-google-fit-daily-steps-to-a-google-sheet">Exporter Google Fit Daily Steps, Weight and Distance to a Google Sheet</a>. This works and is probably where I should have stopped&hellip; avoiding the rabbit hole that I've been down&hellip;</p>
+<p>I threw together a simple Golang implementation of the SDK using <a href="https://godoc.org/google.golang.org/api/fitness/v1">Google's Golang API Client Library</a>. Thanks to Robert's example, I was able to infer some of the complexity this API particularly in its use of data types, data sources and datasets. Having used Stackdriver in my previous life, Google Fit's structure bears more than a passing resemblance to Stackdriver's data model and its use of resource types and metric types.</p>
 <p>In essence, there are abstract types that can be measured e.g. Height, Steps, Calories. There are specific sources of these measurements e.g. your Android phone (not any Android phone) and, finally we have the measurements that are made which are the time-series (datasets) of e.g. my Android phone measuring my steps for January 2020. I think Google's documentation would be improved by better explaining this.</p>
 <p>Here are some ways that I've been trying to make sense of this API:</p>
 <h3 id="oauth-2-w-user-data">OAuth 2 w/ User data</h3>
-<p>Because Google Fit largely consumes user data, you must use the three-legged OAuth2 flow that prompts the user to accept scopes (permissions). Corrollary: you cannot use Application Default Credentials and a service account for what follows. Google doesn't provide an API for OAuth2 credentials provisioning some there's some UI work in what follows.</p>
+<p>Because Google Fit largely consumes user data, you must use the three-legged OAuth2 flow that prompts the user to accept scopes (permissions). Corrollary: you cannot use <a href="https://cloud.google.com/docs/authentication/production#providing_credentials_to_your_application">Application Default Credentials</a> and a service account for what follows.</p>
+<p>Google doesn't provide an API for OAuth2 credentials provisioning so there's some UI work in what follows.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=</span><span style="color:#f92672">[</span><span style="color:#f92672">[</span>YOUR-PROEJCT-ID<span style="color:#f92672">]</span><span style="color:#f92672">]</span> <span style="color:#75715e"># e.g. gfit-metrics</span>
 gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 gcloud services enable fitness.googleapis.com --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#75715e"># optionally: --async</span>
-</code></pre></div><p><strong>NB</strong> The service is called <code>fitness</code> even though it's commonly referred to a Google Fit.</p>
+</code></pre></div><p><strong>NB</strong> The service is called <code>fitness</code> even though it's commonly referred to as Google Fit.</p>
 <p>Then browse to:</p>
-<p><code>https://console.cloud.google.com/apis/credentials?project=${RPOJECT}</code></p>
+<p><code>https://console.cloud.google.com/apis/credentials?project=${PROJECT}</code></p>
 <p>And click &ldquo;Create credentials&rdquo;, &ldquo;OAuth client ID&rdquo;, &ldquo;Other&rdquo;, choose a Name (perhaps <code>metrics</code>) and then click &ldquo;Create&rdquo;.</p>
 <p>All being well, you'll be presented with a dialog &ldquo;OAuth client&rdquo; that provides a client ID and a client secret. You should record these but, after clicking &ldquo;OK&rdquo;, you should see the client listed on the screen and, on the right-hand side, there's a button to download the client (and secret) as a JSON file (commonly <code>client_secret.json</code>). Do so:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">SECRET<span style="color:#f92672">=</span>/path/to/your/client_secret.json
-</code></pre></div><p><strong>NB</strong> Google provides examples in each language for implementing the OAuth flow, e.g. <a href="https://developers.google.com/gmail/api/quickstart/go">Golang using Gmail</a></p>
+</code></pre></div><p><strong>NB</strong> Google provides examples in each language for implementing the OAuth flow, e.g. <a href="https://developers.google.com/gmail/api/quickstart/go">Golang using Gmail</a>. You may reuse the OAuth2 code from one of these as it's general-purpose.</p>
 <h3 id="oauth2lhttpsgithubcomgoogleoauth2l"><a href="https://github.com/google/oauth2l">oauth2l</a></h3>
 <p>Google provides a command-line tool to authenticate and retrieve OAuth2 access tokens (essentially implementing the flow noted for Gmail above). This tool can be used to generate an access token using the OAuth client that was generated above to authenticate us to the Google Fit API. I go Docker but you do you:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
