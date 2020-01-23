@@ -6,7 +6,7 @@
     
     <title>(p)retired  | Prometheus AlertManager</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
-    <meta name="generator" content="Hugo 0.62.2" />
+    <meta name="generator" content="Hugo 0.63.0" />
     
     
       <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -180,85 +180,85 @@ if (!doNotTrack) {
 </ul>
 <h3 id="configure-prometheus">Configure Prometheus</h3>
 <p>Added the following to <code>prometheus.yml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">rule_files:
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">rule_files</span>:
 - <span style="color:#e6db74">&#34;/etc/alertmanager/rules/linode.yml&#34;</span>
 
-alerting:
-  alertmanagers:
-    - scheme: http
-      static_configs:
-        - targets:
+<span style="color:#66d9ef">alerting</span>:
+  <span style="color:#66d9ef">alertmanagers</span>:
+    - <span style="color:#66d9ef">scheme</span>: http
+      <span style="color:#66d9ef">static_configs</span>:
+        - <span style="color:#66d9ef">targets</span>:
             - <span style="color:#e6db74">&#34;alertmanager:9093&#34;</span>
 </code></pre></div><p>Rules must be defined in separate rules files. See below for the content for <code>linode.yml</code> and an explanation.</p>
 <p>The <code>alerting</code> section specifies that an AlertManager will be accessible on <code>alertmanager:9093</code>. <code>9093</code> is the default port and the <code>alertmanager</code> hostname will come courtesy of Docker Compose.</p>
 <p><code>linode.yaml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">groups:
-- name: linode
-  rules:
-  - alert: LinodeInstances
-    expr: linode_instance_count &gt; <span style="color:#ae81ff">0</span>
-    for: 60m
-    labels:
-      severity: page
-    annotations:
-      summary: Linode Instances running
-  - alert: LinodeNodeBalancers
-    expr: linode_nodebalancer_count &gt; <span style="color:#ae81ff">0</span>
-    for: 60m
-    labels:
-      severity: page
-    annotations:
-      summary: Linode NodeBalancers running
-</code></pre></div><p>The rule defines a group (of alerts) called <code>linode</code>. These will represent the set I'm going to define for my Linode account leveraging the exporter. There are 2 alerts.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">groups</span>:
+- <span style="color:#66d9ef">name</span>: linode
+  <span style="color:#66d9ef">rules</span>:
+  - <span style="color:#66d9ef">alert</span>: LinodeInstances
+    <span style="color:#66d9ef">expr</span>: linode_instance_count &gt; <span style="color:#ae81ff">0</span>
+    <span style="color:#66d9ef">for</span>: 60m
+    <span style="color:#66d9ef">labels</span>:
+      <span style="color:#66d9ef">severity</span>: page
+    <span style="color:#66d9ef">annotations</span>:
+      <span style="color:#66d9ef">summary</span>: Linode Instances running
+  - <span style="color:#66d9ef">alert</span>: LinodeNodeBalancers
+    <span style="color:#66d9ef">expr</span>: linode_nodebalancer_count &gt; <span style="color:#ae81ff">0</span>
+    <span style="color:#66d9ef">for</span>: 60m
+    <span style="color:#66d9ef">labels</span>:
+      <span style="color:#66d9ef">severity</span>: page
+    <span style="color:#66d9ef">annotations</span>:
+      <span style="color:#66d9ef">summary</span>: Linode NodeBalancers running
+</code></pre></div><p>The rule defines a group (of alerts) called <code>linode</code>. These will represent the set I&rsquo;m going to define for my Linode account leveraging the exporter. There are 2 alerts.</p>
 <ol>
 <li>LinodeInstances</li>
 <li>LinodeNodeBalanacers</li>
 </ol>
-<p>The magic happens with the <code>expr</code> statements. I'm not familiar with PromQL but e.g. <code>linode_instance_count</code> is the name of a metric exposed by the exporter and this alert will be true when that numbers exceeds 0, i.e. I have at least one instance running. The alert will fire when this holds true for an hour (60 minutes) or more. You can see the pattern here. As more metrics are surfaced by the exporter, e.g. Linode Kubernetes Engine, these can be quickly represented with alerts.</p>
+<p>The magic happens with the <code>expr</code> statements. I&rsquo;m not familiar with PromQL but e.g. <code>linode_instance_count</code> is the name of a metric exposed by the exporter and this alert will be true when that numbers exceeds 0, i.e. I have at least one instance running. The alert will fire when this holds true for an hour (60 minutes) or more. You can see the pattern here. As more metrics are surfaced by the exporter, e.g. Linode Kubernetes Engine, these can be quickly represented with alerts.</p>
 <h3 id="configure-alertmanager">Configure AlertManager</h3>
-<p>I'm using Docker Compose and already have the Prometheus container image. Unsurprisingly, there's an image for <a href="https://hub.docker.com/r/prom/alertmanager/">AlertManager</a> too. As with Prometheus, this expects a configuration YAML. Unoriginally, I called this <code>alertmanager.yaml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">route:
-  group_by: [<span style="color:#e6db74">&#34;...&#34;</span>]
-  receiver: email-me
+<p>I&rsquo;m using Docker Compose and already have the Prometheus container image. Unsurprisingly, there&rsquo;s an image for <a href="https://hub.docker.com/r/prom/alertmanager/">AlertManager</a> too. As with Prometheus, this expects a configuration YAML. Unoriginally, I called this <code>alertmanager.yaml</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">route</span>:
+  <span style="color:#66d9ef">group_by</span>: [<span style="color:#e6db74">&#34;...&#34;</span>]
+  <span style="color:#66d9ef">receiver</span>: email-me
 
-receivers:
-- name: email-me
-  email_configs:
-  - to: [[EMAIL-ADDR]]
-    from: [[EMAIL-ADDR]]
-    smarthost: smtp.gmail.com:<span style="color:#ae81ff">587</span>
-    auth_username: [[EMAIL-ADDR]]
-    auth_identity: [[EMAIL-ADDR]]
-    auth_password: [[EMAIL-PASS]]
-</code></pre></div><p>This is one (of many) possible alert <code>receivers</code>. I'm alerting by having emails sent to my Gmail account. I found <a href="https://www.robustperception.io/sending-email-with-the-alertmanager-via-gmail">this</a> helpful explanation on the excellent Prometheus-centric blog <a href="https://www.robustperception.io">Robust Perception</a>. Replace <code>[[EMAIL-ADDR]]</code> with your Gmail address and <code>[[EMAIL-PASS]]</code> with the app token that you generate.</p>
-<p>I'm unfamiliar with the <code>route</code> mechanism but &ndash; IIUC &ndash; this sents every alerts (<code>[&quot;...&quot;]</code>) to <code>email-me</code>.</p>
+<span style="color:#66d9ef">receivers</span>:
+- <span style="color:#66d9ef">name</span>: email-me
+  <span style="color:#66d9ef">email_configs</span>:
+  - <span style="color:#66d9ef">to</span>: [[EMAIL-ADDR]]
+    <span style="color:#66d9ef">from</span>: [[EMAIL-ADDR]]
+    <span style="color:#66d9ef">smarthost</span>: smtp.gmail.com:<span style="color:#ae81ff">587</span>
+    <span style="color:#66d9ef">auth_username</span>: [[EMAIL-ADDR]]
+    <span style="color:#66d9ef">auth_identity</span>: [[EMAIL-ADDR]]
+    <span style="color:#66d9ef">auth_password</span>: [[EMAIL-PASS]]
+</code></pre></div><p>This is one (of many) possible alert <code>receivers</code>. I&rsquo;m alerting by having emails sent to my Gmail account. I found <a href="https://www.robustperception.io/sending-email-with-the-alertmanager-via-gmail">this</a> helpful explanation on the excellent Prometheus-centric blog <a href="https://www.robustperception.io">Robust Perception</a>. Replace <code>[[EMAIL-ADDR]]</code> with your Gmail address and <code>[[EMAIL-PASS]]</code> with the app token that you generate.</p>
+<p>I&rsquo;m unfamiliar with the <code>route</code> mechanism but &ndash; IIUC &ndash; this sents every alerts (<code>[&quot;...&quot;]</code>) to <code>email-me</code>.</p>
 <h3 id="revise-docker-compose">Revise Docker Compose</h3>
 <p>Everything is in place and we can now run the comnbined services by adding <code>prom/alertmanager</code> to the mix:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">prometheus:
-  restart: always
-  depends_on:
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">prometheus</span>:
+  <span style="color:#66d9ef">restart</span>: always
+  <span style="color:#66d9ef">depends_on</span>:
   - linode-exporter
-  image: prom/prometheus:v2<span style="color:#ae81ff">.14</span><span style="color:#ae81ff">.0</span>
-  container_name: prometheus
-  volumes:
+  <span style="color:#66d9ef">image</span>: prom/prometheus:v2<span style="color:#ae81ff">.14</span><span style="color:#ae81ff">.0</span>
+  <span style="color:#66d9ef">container_name</span>: prometheus
+  <span style="color:#66d9ef">volumes</span>:
   - ${PWD}/prometheus.yml:/etc/prometheus/prometheus.yml
   - ${PWD}/linode.yml:/etc/alertmanager/rules/linode.yml
-  expose:
+  <span style="color:#66d9ef">expose</span>:
   - <span style="color:#e6db74">&#34;9090&#34;</span>
-  ports:
+  <span style="color:#66d9ef">ports</span>:
   - <span style="color:#ae81ff">9090</span>:<span style="color:#ae81ff">9090</span>
 
-alertmanager:
-  restart: always
-  depends_on:
+<span style="color:#66d9ef">alertmanager</span>:
+  <span style="color:#66d9ef">restart</span>: always
+  <span style="color:#66d9ef">depends_on</span>:
   - prometheus
-  image: prom/alertmanager:v0<span style="color:#ae81ff">.20</span><span style="color:#ae81ff">.0</span>
-  container_name: alertmanager
-  volumes:
+  <span style="color:#66d9ef">image</span>: prom/alertmanager:v0<span style="color:#ae81ff">.20</span><span style="color:#ae81ff">.0</span>
+  <span style="color:#66d9ef">container_name</span>: alertmanager
+  <span style="color:#66d9ef">volumes</span>:
   - ${PWD}/alertmanager.yml:/etc/alertmanager/alertmanager.yml
-  expose:
+  <span style="color:#66d9ef">expose</span>:
   - <span style="color:#e6db74">&#34;9093&#34;</span>
-  ports:
+  <span style="color:#66d9ef">ports</span>:
   - <span style="color:#ae81ff">9093</span>:<span style="color:#ae81ff">9093</span>
 </code></pre></div><p><strong>NB</strong> Because we added a rules file to <code>prometheus.yml</code>, we must revise the <code>volumes</code> reference for the <code>prometheus</code> service</p>
 <p><strong>NB</strong> <code>9093</code> is the default AlertManager port for receiving alerts (from Prometheus) and for presenting the UI</p>
@@ -278,7 +278,7 @@ prometheus        /bin/prometheus --config.f ...   Up             0.0.0.0:9090-&
 </ul>
 <p>Under Prometheus, you ought now be able to see a list of alerts:</p>
 <p><img src="/images/191219.alertmanager.inactive.png" alt=""></p>
-<p><strong>NB</strong> Because I've no active instances and nodebalancers (yet), these are &ldquo;inactive&rdquo;</p>
+<p><strong>NB</strong> Because I&rsquo;ve no active instances and nodebalancers (yet), these are &ldquo;inactive&rdquo;</p>
 <p>Then, after creating a Linode Kubernetes Engine cluster:</p>
 <p><img src="/images/191219.alertmanager.pending.png" alt=""></p>
 <p>And then, after an hour:</p>
