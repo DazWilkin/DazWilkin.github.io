@@ -6,7 +6,7 @@
     
     <title>(p)retired  | Setting up a GCE Instance as an Inlets Exit Node</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
-    <meta name="generator" content="Hugo 0.63.0" />
+    <meta name="generator" content="Hugo 0.64.0" />
     
     
       <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -43,7 +43,7 @@ Assumptions I&rsquo;m assuming you&rsquo;ve a Google account, have used GCP and 
 gcloud beta billing accounts list If you&rsquo;ve only one billing account and it&rsquo;s the one you wish to use, then you can:">
 <meta itemprop="datePublished" content="2020-01-22T00:00:00-08:00" />
 <meta itemprop="dateModified" content="2020-01-22T00:00:00-08:00" />
-<meta itemprop="wordCount" content="1667">
+<meta itemprop="wordCount" content="1682">
 
 
 
@@ -156,7 +156,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 8 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 1667 words</span>
+        <span class="f6 mv4 dib tracked"> - 1682 words</span>
       
     </header>
 
@@ -391,12 +391,13 @@ gcloud compute instances delete ${INSTANCE} \
 </code></pre></div><p>Then persist the token:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">SECRET<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;inlets-token&#34;</span>
 
-echo <span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+printf <span style="color:#e6db74">&#34;%s&#34;</span> <span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>| gcloud beta secrets create <span style="color:#e6db74">${</span>SECRET<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--data-file<span style="color:#f92672">=</span>- <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--replication-policy<span style="color:#f92672">=</span>automatic
-</code></pre></div><p>Then, when it&rsquo;s needed, we may replace getting the value (i.e. <code>${TOKEN}</code>) with <code>$(gcloud beta secrets versions access 1 --secret=${SECRET} --project=${PROJECT})</code>), i.e.:</p>
+</code></pre></div><p><strong>NB</strong> Using <code>printf</code> rather than <code>echo</code> avoids appending a newline (<code>\n</code>) to the secret</p>
+<p>Then, when it&rsquo;s needed, we may replace getting the value (i.e. <code>${TOKEN}</code>) with <code>$(gcloud beta secrets versions access 1 --secret=${SECRET} --project=${PROJECT})</code>), i.e.:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud beta compute instances create-with-container <span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--zone<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ZONE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
