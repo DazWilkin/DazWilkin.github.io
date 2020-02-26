@@ -6,7 +6,7 @@
     
     <title>(p)retired  | Linode Prometheus Exporter</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
-    <meta name="generator" content="Hugo 0.64.1" />
+    <meta name="generator" content="Hugo 0.65.3" />
     
     
       <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -163,12 +163,12 @@ if (!doNotTrack) {
 <h2 id="api-statistics">API statistics</h2>
 <p>Several API methods provide statistics, e.g. <a href="https://developers.linode.com/api/v4/linode-instances-linode-id-stats">Linode Statistics</a></p>
 <p>Given a Linode Instance ID and a Linode API token, it&rsquo;s trivial to explore these:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -H <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Authorization: Bearer </span><span style="color:#e6db74">${</span>LINODE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> https://api.linode.com/v4/linode/instances/<span style="color:#e6db74">${</span>LINODE_INSTANCE_ID<span style="color:#e6db74">}</span>/stats
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>LINODE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> https://api.linode.com/v4/linode/instances/<span style="color:#e6db74">${</span>LINODE_INSTANCE_ID<span style="color:#e6db74">}</span>/stats
 </code></pre></div><p>The documentation is scarce but statistics are <code>[][]float64</code> (a slice of slices of float64). The first dimension corresponds to each &lsquo;tick&rsquo; of this time-series and is often 64 units long. The second dimension is (always!?) 2 units. The first of these (e.g. <code>stat[X][0]</code>) is, I believe, the epoch is milliseconds. The second (e.g. <code>stats[X][1]</code>) is the value. I added a simple <a href="https://github.com/DazWilkin/linode-exporter/blob/master/collector/timeseries.go"><code>TimeSeries</code></a> type that iterates over each of these series and calculates the minimum, maximum and (2 types of) average value. The simple average is the total of the values divided by the number of values. The more accurate (!?) average is the total of the areas represented by the values (the length of time multipled by the value) divided by the overall time. The latter calculation assumes that the epochs are ordered.</p>
 <h2 id="api-missing-functionality">API missing functionality</h2>
 <p>Several API methods are not implemented by the SDK. I mentioned the new LKE service previously. <a href="https://developers.linode.com/api/v4/nodebalancers-node-balancer-id-stats">NodeBalancer Statistics</a> were also not implemented. I&rsquo;ve submitted a <a href="https://github.com/linode/linodego/pull/111">PR</a> for this method. I used <a href="https://developers.linode.com/api/v4/linode-instances-linode-id-stats">Linode Statistics</a> as my template. Thanks to the Linode team for providing more definitive guidance. There&rsquo;s <a href="https://github.com/linode/linodego/blob/master/template.go">template.go</a> that better explains how to do this. The code was trivial. I was able to leverage the existing NodeBalance tests. The bulk of the code is configuring the method&rsquo;s name, path etc.</p>
 <p>I struggled with the tests but was helped by the Linode team. I realized subsequently this is also somewhat <a href="https://github.com/linode/linodego/blob/master/template.go">documented</a>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export LINODE_TOKEN<span style="color:#f92672">=</span><span style="color:#f92672">[</span><span style="color:#f92672">[</span>YOUR-LINODE-TOKEN<span style="color:#f92672">]</span><span style="color:#f92672">]</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export LINODE_TOKEN<span style="color:#f92672">=[[</span>YOUR-LINODE-TOKEN<span style="color:#f92672">]]</span>
 make test
 </code></pre></div><p>results:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">go vet ./...
@@ -203,7 +203,7 @@ ok  	github.com/linode/linodego	11.390s
       <span style="color:#66d9ef">Content-Type</span>:
       - application/json
       <span style="color:#66d9ef">User-Agent</span>:
-      - linodego <span style="color:#ae81ff">0.12</span><span style="color:#ae81ff">.0</span> https://github.com/linode/linodego
+      - linodego <span style="color:#ae81ff">0.12.0</span> https://github.com/linode/linodego
     <span style="color:#66d9ef">url</span>: https://api.linode.com/v4beta/nodebalancers
     <span style="color:#66d9ef">method</span>: POST
   <span style="color:#66d9ef">response</span>:
@@ -227,7 +227,7 @@ ok  	github.com/linode/linodego	11.390s
 - <span style="color:#66d9ef">request</span>:
     <span style="color:#66d9ef">headers</span>:
       <span style="color:#66d9ef">User-Agent</span>:
-      - linodego <span style="color:#ae81ff">0.12</span><span style="color:#ae81ff">.0</span> https://github.com/linode/linodego
+      - linodego <span style="color:#ae81ff">0.12.0</span> https://github.com/linode/linodego
     <span style="color:#66d9ef">url</span>: https://api.linode.com/v4beta/nodebalancers/<span style="color:#ae81ff">123</span>
     <span style="color:#66d9ef">method</span>: DELETE
   <span style="color:#66d9ef">response</span>:

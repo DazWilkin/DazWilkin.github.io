@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>(p)retired  | OriginStamp: Verifying Proofs</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="generator" content="Hugo 0.65.3" />
+    
+    
+      <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+    
+
+    
+    
+      <link href="/dist/css/app.d98f2eb6bcd1eaedb7edf166bd16af26.css" rel="stylesheet">
+    
+
+    
+
+    
+      
+    
+
+    
+    
+    <meta property="og:title" content="OriginStamp: Verifying Proofs" />
+<meta property="og:description" content="Recently, I wrote about some initial adventures with OriginStamp
+Using OriginStamp&rsquo;s UI or API, submitting a hash results in transactions being submitted to Bitcoin, Ethereum and a German newspaper.
+Using the API, it&rsquo;s possible to query OriginStamp&rsquo;s service for a proof. This post explains how to verify such a proof.
+The diligent reader among you (Hey Mom!) will recall that I submitted a hash for the message:
+Frederik Jack is a bubbly Border Collie The SHA-256 hash of this message is:" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/200226/" />
+<meta property="article:published_time" content="2020-02-26T00:00:00-08:00" />
+<meta property="article:modified_time" content="2020-02-26T00:00:00-08:00" />
+<meta itemprop="name" content="OriginStamp: Verifying Proofs">
+<meta itemprop="description" content="Recently, I wrote about some initial adventures with OriginStamp
+Using OriginStamp&rsquo;s UI or API, submitting a hash results in transactions being submitted to Bitcoin, Ethereum and a German newspaper.
+Using the API, it&rsquo;s possible to query OriginStamp&rsquo;s service for a proof. This post explains how to verify such a proof.
+The diligent reader among you (Hey Mom!) will recall that I submitted a hash for the message:
+Frederik Jack is a bubbly Border Collie The SHA-256 hash of this message is:">
+<meta itemprop="datePublished" content="2020-02-26T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2020-02-26T00:00:00-08:00" />
+<meta itemprop="wordCount" content="791">
+
+
+
+<meta itemprop="keywords" content="Timestamping,OriginStamp,Golang,Merkle,Bitcoin," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="OriginStamp: Verifying Proofs"/>
+<meta name="twitter:description" content="Recently, I wrote about some initial adventures with OriginStamp
+Using OriginStamp&rsquo;s UI or API, submitting a hash results in transactions being submitted to Bitcoin, Ethereum and a German newspaper.
+Using the API, it&rsquo;s possible to query OriginStamp&rsquo;s service for a proof. This post explains how to verify such a proof.
+The diligent reader among you (Hey Mom!) will recall that I submitted a hash for the message:
+Frederik Jack is a bubbly Border Collie The SHA-256 hash of this message is:"/>
+
+      
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="https://pretired.dazwilkin.com/" class="f3 fw2 hover-white no-underline white-90 dib">
+      (p)retired
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+
+    <header class="mt4 w-100">
+      <p class="f6 b helvetica tracked">
+          
+        POSTS
+      </p>
+      <h1 class="f1 athelas mb1">OriginStamp: Verifying Proofs</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2020-02-26T00:00:00-08:00">February 26, 2020</time>
+      
+      
+        <span class="f6 mv4 dib tracked"> - 4 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 791 words</span>
+      
+    </header>
+
+    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>Recently, I <a href="https://pretired.dazwilkin.com/posts/200217/">wrote</a> about some initial adventures with <a href="https://originstamp.org">OriginStamp</a></p>
+<p>Using OriginStamp&rsquo;s <a href="https://originstamp.org/home">UI</a> or API, submitting a hash results in transactions being submitted to Bitcoin, Ethereum and a German newspaper.</p>
+<p>Using the API, it&rsquo;s possible to query OriginStamp&rsquo;s service for a proof. This post explains how to verify such a proof.</p>
+<p>The diligent reader among you (Hey Mom!) will recall that I submitted a hash for the message:</p>
+<pre><code>Frederik Jack is a bubbly Border Collie
+</code></pre><p>The SHA-256 hash of this message is:</p>
+<pre><code>037e945cf8da5945acbcf2390c71a497c6edefdc364ada1f33d76a2b5f8b472b
+</code></pre><blockquote>
+<p><strong>NB</strong> Don&rsquo;t take my word for it, you can test this innumerable ways including, in bash:<!-- raw HTML omitted --><!-- raw HTML omitted --> <code>printf &quot;Frederik Jack is a bubbly Border Collie&quot; | sha256sum</code></p>
+</blockquote>
+<p>You may follow along by checking this hash using OriginStamp&rsquo;s verification tool, choose &ldquo;hash&rdquo; and plug in the above value:</p>
+<pre><code>https://verify.originstamp.com/
+</code></pre><p><img src="/images/200226.originstamp.verify.png" alt="OriginStamp: Verify"></p>
+<p>The Bitcoin ID that&rsquo;s shown is <a href="https://www.blockchain.com/btc/tx/89d145c41dd46e36b9772a853be800be37d32a2cf1b9facf4aee94c4583d99d5">clickable</a></p>
+<p><strong>NB</strong> OriginStamp&rsquo;s German-team uses the German-language version of the site (<code>/de/</code>) which I&rsquo;ve omitted from this link.</p>
+<p>If you have access to OriginStamp&rsquo;s API, you can request a proof for my hash (currency=0 for Bitcoin; proof_type=1 for PDF) but, without sharing OriginStamp&rsquo;s document, let&rsquo;s work through what it provides.</p>
+<h3 id="validate-the-proof">Validate the Proof</h3>
+<p>It starts with a copy of the Merkle Tree proof:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-XML" data-lang="XML"><span style="color:#75715e">&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;</span>
+<span style="color:#f92672">&lt;node</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;69af555efcc31073fcb82977a5beb6fd84f20fe01f663cb1585c84945193f950&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;key&#34;</span><span style="color:#f92672">&gt;</span>
+	<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;e4d9506f6a877a6f15c4e240e53327cc7c38ef37e610ebfc62ce674308b3263e&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+		<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;ee7536d1855cddf24dba36bfc04cdc1db522cef46e49c4d5aa5bde25648db388&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+			<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;9d7c106e64d5e6c40daacb4bcf4397912e31a78fe0e81b9fb4d79da08c7b2808&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+				<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;b918032b5cc7185ee2de8d38907e43b9ef9ffb61b5424ebf8a70643721c0af2f&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+					<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;4b2b83117d905892053e5f4a4d28316a0107b9a360fce4633361e489b7b1359e&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+						<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;10555d6d9b28b8cc551cd2dd99fb270630b2cf2f56f8d70a7893a64b4b57ecb5&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+							<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;c54c5350dba05d216175318dbfa6dd732d1adbdc92beaf320443f523f822f01d&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+								<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;c7ebc60a38854a4671ea786f14ceff0e7e183f75d6fbda3557292bae3b13f23d&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+								<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;a97c1a50c069d3397e9702f28ab38a420b537c6e942b8546860f8fb7a49c70e4&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+									<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;d1776b7c1b51ad1441bf765e194377ac9060f2402d6e91cee5502d8ca3a99546&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+									<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;25d8c347fb71a839c1274ec2ebe666b8dd4a3255403d991be39bb10016aa51f1&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+										<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;c006e869d7ba65ac4d5105888fee6a6bf6a3b38f23c6300137f003a3988238ae&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+											<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;097c397d862795e96abb576eb6bc76365f0235cfa1c938352045d1e62b347b1d&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+											<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;9407b62021fe6335430fc54090b90e6588ac38421309e279460335b5f94d67fb&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+												<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;369cb74a155479eecf22f65337e03a4ad5b935772e2d3348854f3d9d71923960&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+												<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;e220f15411b706ad10ff9990dc7f760ddfec2ebc61a11204fc5b36e140c17e0b&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+													<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;0d899a0e8f72691e3859377c4780a5b54c40e743d1486aeb1e76c038dab9e8ce&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+													<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;e40a25b8bd05b48675a02c8ad7e0c23b6d62385b0acaffbab63f95e39369ebc7&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+														<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;037e945cf8da5945acbcf2390c71a497c6edefdc364ada1f33d76a2b5f8b472b&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;hash&#34;</span><span style="color:#f92672">/&gt;</span>
+														<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;038df16cfbbeed2f029f00587bfcaa9920d4f7bcaeee60ee788d4a66179709c3&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+													<span style="color:#f92672">&lt;/right&gt;</span>
+												<span style="color:#f92672">&lt;/right&gt;</span>
+											<span style="color:#f92672">&lt;/right&gt;</span>
+										<span style="color:#f92672">&lt;/left&gt;</span>
+										<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;c3d44098be84f892ee1fe1c2c6caa52257eb96caaaa3f313edbafdc4a3ba6eae&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+									<span style="color:#f92672">&lt;/right&gt;</span>
+								<span style="color:#f92672">&lt;/right&gt;</span>
+							<span style="color:#f92672">&lt;/left&gt;</span>
+							<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;5b2e60ccb6907fae79d249bf7943b050c28b5fef84b9b44399f58461dd120c4a&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+						<span style="color:#f92672">&lt;/left&gt;</span>
+						<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;c47e581dd90c10aad2cb4121c1a94a3199f9788f4f2e5d0f200f8f167ae2517c&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+					<span style="color:#f92672">&lt;/left&gt;</span>
+					<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;dbdfc7af18a876d64d6fa2f0110e5dc6ead648f3e33f9e0163ceb267d47cd90d&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+				<span style="color:#f92672">&lt;/left&gt;</span>
+				<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;98f7dafd1f8c6ec84a555819d9cd05baed657e3973f86f3fb178dbd13c676bba&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+			<span style="color:#f92672">&lt;/left&gt;</span>
+			<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;36447318383768a406815764e128d404ca1482ec57cd995e12ac97962b33b73e&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+		<span style="color:#f92672">&lt;/left&gt;</span>
+		<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;6e7ca4d2ea8919396dfd66a7d57338cb0ce8bca76043b5a4745e463c2c9d9af8&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+	<span style="color:#f92672">&lt;/left&gt;</span>
+	<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;0f1301c53b6885f23037a81da41f450968a2b133f28b30d65d1fb431da74a9c1&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+<span style="color:#f92672">&lt;/node&gt;</span>
+</code></pre></div><p>I appreciate that presents rather inelegantly but I think it&rsquo;s best to show the structure.</p>
+<p>This is part of a Merkle tree encoded as XML.</p>
+<p>The leaf that we&rsquo;re interested is:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-XML" data-lang="XML"><span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;e40a25b8bd05b48675a02c8ad7e0c23b6d62385b0acaffbab63f95e39369ebc7&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">&gt;</span>
+	<span style="color:#f92672">&lt;left</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;037e945cf8da5945acbcf2390c71a497c6edefdc364ada1f33d76a2b5f8b472b&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;hash&#34;</span><span style="color:#f92672">/&gt;</span>
+	<span style="color:#f92672">&lt;right</span> <span style="color:#a6e22e">value=</span><span style="color:#e6db74">&#34;038df16cfbbeed2f029f00587bfcaa9920d4f7bcaeee60ee788d4a66179709c3&#34;</span> <span style="color:#a6e22e">type=</span><span style="color:#e6db74">&#34;mesh&#34;</span><span style="color:#f92672">/&gt;</span>
+</code></pre></div><p><strong>NB</strong> The has value (<code>037e...</code>) is in there.</p>
+<p>To verify this tree, we must take the left value (<code>L</code>), the right value (<code>R</code>), concatenate them (<code>LR</code>) and hash the result</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">L<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;037e945cf8da5945acbcf2390c71a497c6edefdc364ada1f33d76a2b5f8b472b&#34;</span>
+R<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;038df16cfbbeed2f029f00587bfcaa9920d4f7bcaeee60ee788d4a66179709c3&#34;</span>
+printf <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>L<span style="color:#e6db74">}${</span>R<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> | sha256sum | head --bytes<span style="color:#f92672">=</span><span style="color:#ae81ff">64</span>
+</code></pre></div><p>yields: <code>e40a25b8bd05b48675a02c8ad7e0c23b6d62385b0acaffbab63f95e39369ebc7</code> which, you&rsquo;ll note, is the XML snippet&rsquo;s root <code>right</code> node.</p>
+<p>We recursively apply this rule, collapsing the tree, until we reach the root node (<code>node</code>), I&rsquo;ve done it and I can assure you that, the result is:</p>
+<pre><code>69af555efcc31073fcb82977a5beb6fd84f20fe01f663cb1585c84945193f950
+</code></pre><p>This proves that this merkle tree is consistent, it&rsquo;s root value hash matches the hashes of its children.</p>
+<p>The tree&rsquo;s root hash is also the private key that OriginStamp included in the bitcoin transaction mentioned above.</p>
+<p>So, now we need to go from this private key to a Bitcoin address.</p>
+<h3 id="determine-the-bitcoin-address">Determine the Bitcoin Address</h3>
+<p>This is a rather curious set of steps but it is the process that&rsquo;s defined by the Bitcoin &lsquo;protocol&rsquo; and may be validated using various example, including a serivce that OriginStamp refers to <a href="https://gobittest.appspot.com/Address">TP&rsquo;s Bitcoin Address Tests</a></p>
+<p>If you plug the private key (<code>69af555efcc31073fcb82977a5beb6fd84f20fe01f663cb1585c84945193f950</code>) into TP&rsquo;s site, you&rsquo;ll see all the intermediate steps to the address: <code>1DacsJLsyr77YYkWpNGg1H5Mq3mUf84VzB</code></p>
+<p>Now, if we return to the Bitcoin Transaction that was provided by OriginStamp:</p>
+<p><a href="https://www.blockchain.com/btc/tx/89d145c41dd46e36b9772a853be800be37d32a2cf1b9facf4aee94c4583d99d5">89d145c41dd46e36b9772a853be800be37d32a2cf1b9facf4aee94c4583d99d5</a></p>
+<p>You&rsquo;ll notice that this address (<code>1DacsJLsyr77YYkWpNGg1H5Mq3mUf84VzB</code>) as the first address:</p>
+<p><img src="/images/200226.bitcoin.transaction.png" alt="Bitcoin Transaction: 89d"></p>
+<p>But, how did we get from the private key (<code>69af555efcc31073fcb82977a5beb6fd84f20fe01f663cb1585c84945193f950</code>) to the Bitcoin address?</p>
+<p>The site does the work for us, but let&rsquo;s reproduce it :-)</p>
+<h4 id="step-1-public-key">Step #1: Public Key</h4>
+<p>This took me the longest time to work out!!</p>
+<p>I had help from some friends: <a href="https://stackoverflow.com/q/60385053/609290">https://stackoverflow.com/q/60385053/609290</a></p>
+<p>I had 2 primary issues:</p>
+<ul>
+<li>new(ing) an <code>ECDSA.PrivateKey</code> from a hex-encoded private key</li>
+<li>Identifying that the common default curve (<a href="https://golang.org/pkg/crypto/elliptic/#P256">P256</a> aka secp256r1) was incorrect and that I need to use secp256k1 (and find a Golang implementation)</li>
+</ul>
+<p>I learned more about Elliptic Curves too which is always a good thing, including some nitty-gritty on <a href="https://www.johndcook.com/blog/2018/08/21/a-tale-of-two-elliptic-curves/">the difference between secp256r1 and secp256k1</a></p>
+<blockquote>
+<p>Ethereum has a robust Golang implementation and, interestingly (!?) Ethereum and Bitcoin both use secp256k1, so I used Ethereum&rsquo;s <a href="https://godoc.org/github.com/ethereum/go-ethereum/crypto/secp256k1">secp256k1</a> module</p>
+</blockquote>
+<p>Given a secpk256k1 hex-encoded private key , the following Golang function will return the hex-encoded public key:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Public</span>(<span style="color:#a6e22e">privateKey</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">publicKey</span> <span style="color:#66d9ef">string</span>) {
+	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">e</span> <span style="color:#a6e22e">ecdsa</span>.<span style="color:#a6e22e">PrivateKey</span>
+	<span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">D</span>, <span style="color:#a6e22e">_</span> = new(<span style="color:#a6e22e">big</span>.<span style="color:#a6e22e">Int</span>).<span style="color:#a6e22e">SetString</span>(<span style="color:#a6e22e">privateKey</span>, <span style="color:#ae81ff">16</span>)
+	<span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">PublicKey</span>.<span style="color:#a6e22e">Curve</span> = <span style="color:#a6e22e">secp256k1</span>.<span style="color:#a6e22e">S256</span>()
+	<span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">PublicKey</span>.<span style="color:#a6e22e">X</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">PublicKey</span>.<span style="color:#a6e22e">Y</span> = <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">PublicKey</span>.<span style="color:#a6e22e">Curve</span>.<span style="color:#a6e22e">ScalarBaseMult</span>(<span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">D</span>.<span style="color:#a6e22e">Bytes</span>())
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%x&#34;</span>, <span style="color:#a6e22e">elliptic</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">secp256k1</span>.<span style="color:#a6e22e">S256</span>(), <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">X</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">Y</span>))
+}
+</code></pre></div><p><strong>NB</strong> I&rsquo;m unsure whether <code>fmt.Sprintf(&quot;%x&quot;,....)</code> or <code>hex.EncodeToString(...)</code> is preferable</p>
+<h4 id="step-2-sha-256-hash-of-1">Step 2: SHA-256 Hash of #1</h4>
+<p>Not so fast, speedy!</p>
+<p>That should read: SHA-256 hash of the (hex) decoded value of #1</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#75715e">// Step #1
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">s1</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">hex</span>.<span style="color:#a6e22e">DecodeString</span>(<span style="color:#a6e22e">publicKey</span>)
+
+<span style="color:#75715e">// Step #2: SHA-256
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">sha256</span>.<span style="color:#a6e22e">New</span>()
+<span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Write</span>(<span style="color:#a6e22e">s1</span>)
+<span style="color:#a6e22e">s2</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Sum</span>(<span style="color:#66d9ef">nil</span>)
+<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;2: %x&#34;</span>, <span style="color:#a6e22e">s2</span>)
+</code></pre></div><p>The good news is that the remaining steps are straightfoward! :-)</p>
+<p>The code&rsquo;s here: <a href="https://github.com/DazWilkin/OriginStamp-Proof">https://github.com/DazWilkin/OriginStamp-Proof</a></p>
+<p>HTH!</p>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/timestamping" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Timestamping</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/originstamp" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">OriginStamp</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/golang" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Golang</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/merkle" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Merkle</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/bitcoin" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Bitcoin</a>
+   </li>
+  
+</ul>
+<div class="mt6">
+      
+      
+      </div>
+    </section>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/200219/">FreeTSA &amp; Digitorus&#39; Timestamp SDK</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200217/">OriginStamp Python|Golang SDK Examples</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200206/">Cloud Build wishlist: Mountable Golang Modules Proxy</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200122/">Setting up a GCE Instance as an Inlets Exit Node</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200110/">Google Fit</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200107/">Google Home Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191220/">Google Cloud Platform (GCP) Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191218/">Linode Prometheus Exporter</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2020 
+  </a>
+    <div>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+</div>
+  </div>
+</footer>
+
+    
+
+  <script src="/dist/js/app.3fc0f988d21662902933.js"></script>
+
+
+  </body>
+</html>

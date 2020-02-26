@@ -6,7 +6,7 @@
     
     <title>(p)retired  | Google Fit</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
-    <meta name="generator" content="Hugo 0.64.1" />
+    <meta name="generator" content="Hugo 0.65.3" />
     
     
       <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -158,7 +158,7 @@ if (!doNotTrack) {
 <h3 id="oauth-2-w-user-data">OAuth 2 w/ User data</h3>
 <p>Because Google Fit largely consumes user data, you must use the three-legged OAuth2 flow that prompts the user to accept scopes (permissions). Corrollary: you cannot use <a href="https://cloud.google.com/docs/authentication/production#providing_credentials_to_your_application">Application Default Credentials</a> and a service account for what follows.</p>
 <p>Google doesn&rsquo;t provide an API for OAuth2 credentials provisioning so there&rsquo;s some UI work in what follows.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=</span><span style="color:#f92672">[</span><span style="color:#f92672">[</span>YOUR-PROEJCT-ID<span style="color:#f92672">]</span><span style="color:#f92672">]</span> <span style="color:#75715e"># e.g. gfit-metrics</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=[[</span>YOUR-PROEJCT-ID<span style="color:#f92672">]]</span> <span style="color:#75715e"># e.g. gfit-metrics</span>
 gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 gcloud services enable fitness.googleapis.com --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#75715e"># optionally: --async</span>
 </code></pre></div><p><strong>NB</strong> The service is called <code>fitness</code> even though it&rsquo;s commonly referred to as Google Fit.</p>
@@ -179,18 +179,18 @@ gcloud services enable fitness.googleapis.com --project<span style="color:#f9267
 </span><span style="color:#ae81ff"></span>  --scope<span style="color:#f92672">=</span>fitness.activity.read,fitness.body.read,fitness.location.read
 </code></pre></div><p><strong>NB</strong> <code>${SECRET}</code> is the path to the <code>client_secret.json</code> that we created previously.</p>
 <p>This command fetches the token using the OAuth client and scopes it to read-only requests. Exactly what we&rsquo;ll need below. It will prompt you to open a URL, accept permission to use the API and then provide you with a code that you must copy-paste back to the oauth2l command. All being well, you&rsquo;ll get an access token.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">TOKEN<span style="color:#f92672">=</span><span style="color:#f92672">[</span><span style="color:#f92672">[</span>THE-ACCESS-TOKEN-PRODUCED<span style="color:#f92672">]</span><span style="color:#f92672">]</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">TOKEN<span style="color:#f92672">=[[</span>THE-ACCESS-TOKEN-PRODUCED<span style="color:#f92672">]]</span>
 </code></pre></div><h3 id="curl">Curl</h3>
 <p>Let&rsquo;s ensure <em>alles ist in Ordnung</em>:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources&#34;</span>
 </code></pre></div><p>Should return your list of Google Fit data sources. There may be many. If you&rsquo;ve not already, I recommend installing <a href="https://stedolan.github.io/jq/"><code>jq</code></a></p>
 <p><strong>NB</strong> I learned this week that&rsquo;s there a YAML-based sibling called <a href="https://github.com/mikefarah/yq"><code>yq</code></a> that I must explore!</p>
 <p>Let&rsquo;s refine those results:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl
 --silent
---header <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources&#34;</span> |<span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>jq <span style="color:#e6db74">&#39;.dataSource | length&#39;</span>
 </code></pre></div><p><strong>NB</strong> I&rsquo;ve added <code>--silent</code> to curl to minimize its output</p>
@@ -198,7 +198,7 @@ gcloud services enable fitness.googleapis.com --project<span style="color:#f9267
 <p>What data types do we have?</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl
 --silent
---header <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources&#34;</span> |<span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span> jq <span style="color:#e6db74">&#39;.dataSource | map(.dataType.name) | unique&#39;</span>
 <span style="color:#f92672">[</span>
@@ -220,7 +220,7 @@ gcloud services enable fitness.googleapis.com --project<span style="color:#f9267
 </code></pre></div><p>One of the prevalent data types is <code>com.google.step_count.delta</code>. We can determine whether we have data streams for this type with:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl
 --silent
---header <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources&#34;</span> |<span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span> jq -r <span style="color:#e6db74">&#39;.dataSource|map(select(.dataType.name==&#34;com.google.step_count.delta&#34;))|.[].dataStreamId&#39;</span>
 ...
@@ -235,8 +235,8 @@ END<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>date
 DATASET<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>START<span style="color:#e6db74">}</span><span style="color:#e6db74">-</span><span style="color:#e6db74">${</span>END<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 curl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">https://www.googleapis.com/fitness/v1/users/me/dataSources/</span><span style="color:#e6db74">${</span>DATASOURCE<span style="color:#e6db74">}</span><span style="color:#e6db74">/datasets/</span><span style="color:#e6db74">${</span>DATASET<span style="color:#e6db74">}</span><span style="color:#e6db74">?limit=</span><span style="color:#e6db74">${</span>LIMIT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources/</span><span style="color:#e6db74">${</span>DATASOURCE<span style="color:#e6db74">}</span><span style="color:#e6db74">/datasets/</span><span style="color:#e6db74">${</span>DATASET<span style="color:#e6db74">}</span><span style="color:#e6db74">?limit=</span><span style="color:#e6db74">${</span>LIMIT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 </code></pre></div><p>Let&rsquo;s unpack that:</p>
 <ul>
 <li>We&rsquo;ll limit the number of results to the first 500</li>
@@ -247,9 +247,9 @@ curl <span style="color:#ae81ff">\
 <p>And, to pull the values out for all the returned points:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">https://www.googleapis.com/fitness/v1/users/me/dataSources/</span><span style="color:#e6db74">${</span>DATASOURCE<span style="color:#e6db74">}</span><span style="color:#e6db74">/datasets/</span><span style="color:#e6db74">${</span>DATASET<span style="color:#e6db74">}</span><span style="color:#e6db74">?limit=</span><span style="color:#e6db74">${</span>LIMIT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> |<span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>jq .point<span style="color:#f92672">[</span><span style="color:#f92672">]</span>.value<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.fpVal
+</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources/</span><span style="color:#e6db74">${</span>DATASOURCE<span style="color:#e6db74">}</span><span style="color:#e6db74">/datasets/</span><span style="color:#e6db74">${</span>DATASET<span style="color:#e6db74">}</span><span style="color:#e6db74">?limit=</span><span style="color:#e6db74">${</span>LIMIT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> |<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>jq .point<span style="color:#f92672">[]</span>.value<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.fpVal
 </code></pre></div><h3 id="apis-explorer">APIs Explorer</h3>
 <p>All of the above are available using Google&rsquo;s excellent <a href="https://developers.google.com/apis-explorer">APIs Explorer</a>.</p>
 <p>Specifically, for the <a href="https://developers.google.com/fit/rest/v1/reference/">Google Fit APIs</a></p>
