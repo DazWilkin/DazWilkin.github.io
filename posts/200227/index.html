@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>(p)retired  | ESPHome, MQTT, Prometheus and almost Cloud IoT</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="generator" content="Hugo 0.65.3" />
+    
+    
+      <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+    
+
+    
+    
+      <link href="/dist/css/app.d98f2eb6bcd1eaedb7edf166bd16af26.css" rel="stylesheet">
+    
+
+    
+
+    
+      
+    
+
+    
+    
+    <meta property="og:title" content="ESPHome, MQTT, Prometheus and almost Cloud IoT" />
+<meta property="og:description" content="ESPHome is a very interesting project. I&rsquo;d not heard of it until this week and am surprised that it isn&rsquo;t more newsworthy.
+I&rsquo;m always tinkering with IoT stuff, have a couple of Wemos D1 ESP8266s. They are brought out occasionally for learning. I&rsquo;ve been using them this week with ESPHome. I&rsquo;m looking to buy some Xiaomi BLE temperature sensors and thinking I could read the temperatures from these using the ESPs (thanks to ESPHome) and publish the data to MQTT." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/200227/" />
+<meta property="article:published_time" content="2020-02-27T00:00:00-08:00" />
+<meta property="article:modified_time" content="2020-02-27T00:00:00-08:00" />
+<meta itemprop="name" content="ESPHome, MQTT, Prometheus and almost Cloud IoT">
+<meta itemprop="description" content="ESPHome is a very interesting project. I&rsquo;d not heard of it until this week and am surprised that it isn&rsquo;t more newsworthy.
+I&rsquo;m always tinkering with IoT stuff, have a couple of Wemos D1 ESP8266s. They are brought out occasionally for learning. I&rsquo;ve been using them this week with ESPHome. I&rsquo;m looking to buy some Xiaomi BLE temperature sensors and thinking I could read the temperatures from these using the ESPs (thanks to ESPHome) and publish the data to MQTT.">
+<meta itemprop="datePublished" content="2020-02-27T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2020-02-27T00:00:00-08:00" />
+<meta itemprop="wordCount" content="1805">
+
+
+
+<meta itemprop="keywords" content="esphome,ESP,IoT,Cloud IoT,mosquitto,mqttgateway," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="ESPHome, MQTT, Prometheus and almost Cloud IoT"/>
+<meta name="twitter:description" content="ESPHome is a very interesting project. I&rsquo;d not heard of it until this week and am surprised that it isn&rsquo;t more newsworthy.
+I&rsquo;m always tinkering with IoT stuff, have a couple of Wemos D1 ESP8266s. They are brought out occasionally for learning. I&rsquo;ve been using them this week with ESPHome. I&rsquo;m looking to buy some Xiaomi BLE temperature sensors and thinking I could read the temperatures from these using the ESPs (thanks to ESPHome) and publish the data to MQTT."/>
+
+      
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="https://pretired.dazwilkin.com/" class="f3 fw2 hover-white no-underline white-90 dib">
+      (p)retired
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+
+    <header class="mt4 w-100">
+      <p class="f6 b helvetica tracked">
+          
+        POSTS
+      </p>
+      <h1 class="f1 athelas mb1">ESPHome, MQTT, Prometheus and almost Cloud IoT</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2020-02-27T00:00:00-08:00">February 27, 2020</time>
+      
+      
+        <span class="f6 mv4 dib tracked"> - 9 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 1805 words</span>
+      
+    </header>
+
+    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p><a href="https://esphome.io">ESPHome</a> is a very interesting project. I&rsquo;d not heard of it until this week and am surprised that it isn&rsquo;t more newsworthy.</p>
+<p>I&rsquo;m always tinkering with IoT stuff, have a couple of <a href="https://docs.wemos.cc/en/latest/d1/index.html">Wemos D1</a> ESP8266s. They are brought out occasionally for learning. I&rsquo;ve been using them this week with ESPHome. I&rsquo;m looking to buy some Xiaomi BLE temperature sensors and thinking I could read the temperatures from these using the ESPs (thanks to ESPHome) and publish the data to MQTT. I tried (unsuccessfully) to publish to <a href="https://cloud.google.com/iot-core">Google Cloud IoT</a> (not Google&rsquo;s fault but a limitation in the current ESPHome, I think) but have been successful publishing to a <a href="https://mosquitto.org">Mosquitto</a> broker and rendering the metric data in <a href="https://prometheus.io">Prometheus</a>.</p>
+<blockquote>
+<p>Aside: I recently received a couple of Longan Nano RISC-Vs; I&rsquo;ll hope to blog about them soon too</p>
+</blockquote>
+<h1 id="develop">Develop</h1>
+<h2 id="esphome">ESPHome</h2>
+<p>Install:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">WORK<span style="color:#f92672">=[[</span>YOUR-PROJECT-DIR<span style="color:#f92672">]]</span>
+cd <span style="color:#e6db74">${</span>WORK<span style="color:#e6db74">}</span>
+python3 -m venv venv
+source venv/bin/activate
+pip install esphome
+pip install platformio
+</code></pre></div><p>I learned it&rsquo;s best to run the initial deployment with the ESPs plugged in to a USB port. Once an ESPHome binary is deployed to the device, you can use over-the-air (OTA) for subsequent deployments.</p>
+<h3 id="sensors">Sensors</h3>
+<p>Absent any actual sensors and wanting to get started, I <a href="https://github.com/esphome/feature-requests/issues/617">pinged</a> the ESPHome GitHub repo for guidance on a test (random number) generating sensor. There isn&rsquo;t one in the &lsquo;package&rsquo; but it&rsquo;s trivial to write one. <a href="https://github.com/glmnet">gimnet</a> kindly provided code for &ldquo;Template Sensor&rdquo; (see below) too.</p>
+<p>Here&rsquo;s  my random number (0..100) generator that updates every 60 seconds:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">sensor</span>:
+  - <span style="color:#66d9ef">platform</span>: template
+    <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;Random Numbers&#34;</span>
+    <span style="color:#66d9ef">id</span>: random_sensor
+    <span style="color:#66d9ef">unit_of_measurement</span>: <span style="color:#e6db74">&#34;%&#34;</span>
+    <span style="color:#66d9ef">lambda</span>: |<span style="color:#e6db74">-
+</span><span style="color:#e6db74">      return rand() % 100;</span>
+    <span style="color:#66d9ef">update_interval</span>: 60s
+</code></pre></div><p>Here&rsquo;s <a href="https://github.com/glmnet">gimnet</a>&lsquo;s &ldquo;Template Sensor&rdquo; that I renamed to &ldquo;Counter Sensor&rdquo;:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">sensor</span>:
+- <span style="color:#66d9ef">platform</span>: template
+    <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;Counter Sensor&#34;</span>
+    <span style="color:#66d9ef">id</span>: counter_sensor
+
+<span style="color:#66d9ef">interval</span>:
+  - <span style="color:#66d9ef">interval</span>: 60s
+    <span style="color:#66d9ef">then</span>:
+      <span style="color:#66d9ef">lambda</span>: |<span style="color:#e6db74">-
+</span><span style="color:#e6db74">        static int value1 = 0;</span>
+        id(counter_sensor).publish_state(value1++);
+</code></pre></div><h2 id="mqtt">MQTT</h2>
+<p>I&rsquo;ll describe below my work on attempting to communicate with Google Cloud Platform&rsquo;s MQTT service that&rsquo;s part of <a href="https://cloud.google.com/iot-core">Cloud IoT</a>. As I mentioned, I believe (!) it&rsquo;s not currently possible to publish to a TLS-based MQTT broker. I may be wrong. I&rsquo;ll document what I did below.</p>
+<p>Absent that, I decided to create a local MQTT broker and Eclipse&rsquo;s <a href="https://mosquitto.org">Mosquitto</a> is the exemplar implementation.</p>
+<p>I&rsquo;m going to bundle MQTT, a gateway (!), Prometheus and cAdvisor in a Docker Compose file. Here&rsquo;s the service entry for Mosquitto:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">services</span>:
+  <span style="color:#66d9ef">mqtt</span>:
+    <span style="color:#66d9ef">container_name</span>: mqtt
+    <span style="color:#66d9ef">image</span>: eclipse-mosquitto:<span style="color:#ae81ff">1.6.8</span>
+    <span style="color:#75715e"># volumes:</span>
+    <span style="color:#75715e">#   - ${DIR}/mosquitto.conf:/mosquitto/config/mosquitto.conf</span>
+    <span style="color:#66d9ef">expose</span>:
+      - <span style="color:#e6db74">&#34;1883&#34;</span>
+      - <span style="color:#e6db74">&#34;9001&#34;</span>
+    <span style="color:#66d9ef">ports</span>:
+      - <span style="color:#ae81ff">1883</span>:<span style="color:#ae81ff">1883</span>
+      - <span style="color:#ae81ff">9001</span>:<span style="color:#ae81ff">9001</span>
+</code></pre></div><p><strong>NB</strong> If you wish to tweak the Mosquitto broker config, uncomment the <code>volumes</code> and define a <code>mosquitto.conf</code> file</p>
+<p>I&rsquo;m exposing <code>1883</code> because we&rsquo;ll be accessing the broker from remote ESPs.</p>
+<p>Assuming, I have a broker running on <code>${IP}</code> and <code>${PORT}</code> (default: 1883), here&rsquo;s the ESPHome config. This is all well-documented <a href="https://esphome.io/components/mqtt.html">MQTT Client Component</a></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">mqtt</span>:
+  <span style="color:#66d9ef">broker</span>: ${IP}
+  <span style="color:#66d9ef">port</span>: ${PORT}
+</code></pre></div><h2 id="mqtt-gateway">MQTT Gateway</h2>
+<p><a href="https://inuits.eu/">Inuits</a> has a Golang-based MQTT Gateway for Prometheus.</p>
+<p>See: <a href="https://github.com/inuits/mqttgateway">https://github.com/inuits/mqttgateway</a></p>
+<p>This is analogous to the Prometheus Push Gateway. It listens to MQTT topics and renders MQTT message (values) as Prometheus metrics (using Prometheus&rsquo; exposition format).</p>
+<p>For example, if we use the Mosquitto (container image) <code>mosquitto_pub</code> client to publish a message (<code>42</code>) to MQTT topic <code>prometheus/job/test/instance/test/test</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--interactive --tty <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--net<span style="color:#f92672">=</span>host <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>eclipse-mosquitto:1.6.8 mosquitto_pub <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -h localhost <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -p <span style="color:#ae81ff">1883</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -m <span style="color:#ae81ff">42</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  -t prometheus/job/test/instance/test/test
+</code></pre></div><p>And then curl the MQTT Gateway&rsquo;s metrics endpoint:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -s http://localhost:9337/metrics | grep test
+</code></pre></div><p>You can see 3 metrics are generated: <code>mqtt_test_last_pushed_timestamp</code>, <code>mqtt_test_push_total</code> and <code>test</code></p>
+<p><code>test</code> matches <code>prometheus/job/test/instance/test/test</code> while the other 2 metrics are derived from it.</p>
+<p><code>test</code> is labeled <code>instance=&quot;test&quot;</code> and <code>job=&quot;test&quot;</code> which are derived from the MQTT topic path.</p>
+<p>Very cool!!</p>
+<pre><code># HELP mqtt_test_last_pushed_timestamp Last time test was pushed via MQTT
+# TYPE mqtt_test_last_pushed_timestamp gauge
+mqtt_test_last_pushed_timestamp{instance=&quot;test&quot;,job=&quot;test&quot;} 1.5828373496970892e+09
+# HELP mqtt_test_push_total Number of times test was pushed via MQTT
+# TYPE mqtt_test_push_total counter
+mqtt_test_push_total{instance=&quot;test&quot;,job=&quot;test&quot;} 3
+# HELP test Metric pushed via MQTT
+# TYPE test gauge
+test{instance=&quot;test&quot;,job=&quot;test&quot;} 42
+</code></pre><p>We can manifest this in the ESPHome configuration as:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">interval</span>:
+  - <span style="color:#66d9ef">interval</span>: 60s
+    <span style="color:#66d9ef">then</span>:
+      - <span style="color:#66d9ef">mqtt.publish</span>:
+          <span style="color:#66d9ef">topic</span>: prometheus/job/esphome/node/esp01/temperature
+          <span style="color:#66d9ef">payload</span>: !lambda |<span style="color:#e6db74">-
+</span><span style="color:#e6db74">            return esphome::to_string(rand() % 100);</span>
+</code></pre></div><p>Every 60 seconds, it publishes a random number (as a string) to the topic <code>prometheus/job/esphome/node/esp01/temperature</code></p>
+<p>The GitHub repo does not appear to provide a Docker container image for the code. I tweaked it slightly, migrated the code to Go Modules and then published it as:</p>
+<p><a href="https://hub.docker.com/repository/docker/dazwilkin/mqttgateway">https://hub.docker.com/repository/docker/dazwilkin/mqttgateway</a></p>
+<p>I did this so as to be able to combine the gateway into the Docker Compose file. Here&rsquo;s its service:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">services</span>:
+  <span style="color:#66d9ef">mqttgateway</span>:
+    <span style="color:#66d9ef">depends_on</span>:
+      - mqtt
+    <span style="color:#66d9ef">container_name</span>: mqttgateway
+    <span style="color:#66d9ef">image</span>: dazwilkin/mqttgateway:8938c69bfb9150da432fe7af1a7fe2cfaaa84ded
+    <span style="color:#66d9ef">command</span>:
+      <span style="color:#75715e">#- --web.listen-address=:9337</span>
+      <span style="color:#75715e">#- --web.telemetry-path=/metrics</span>
+      - --mqtt.broker-address=tcp://mqtt:<span style="color:#ae81ff">1883</span>
+      <span style="color:#75715e">#- --mqtt.topic=prometheus/#</span>
+      <span style="color:#75715e">#- --mqtt.prefix=prometheus</span>
+      <span style="color:#75715e"># - --mqtt.username=</span>
+      <span style="color:#75715e"># - --mqtt.password=</span>
+      <span style="color:#75715e"># - --mqtt.clientid=</span>
+    <span style="color:#66d9ef">expose</span>:
+      - <span style="color:#e6db74">&#34;9337&#34;</span>
+    <span style="color:#66d9ef">ports</span>:
+      - <span style="color:#ae81ff">9337</span>:<span style="color:#ae81ff">9337</span>
+</code></pre></div><p><strong>NB</strong> I&rsquo;ve left the flags in place if you wish to change these but, I&rsquo;m using defaults for everyting except the broker&rsquo;s address.</p>
+<p>The broker&rsquo;s address corresponds to the Compose service name for the broker, i.e. <code>mqtt</code>.</p>
+<h2 id="prometheus--cadvisor">Prometheus | cAdvisor</h2>
+<p>The Prometheus configuration is straightforward. It scrapes the MQTT Gateway on <code>mqttgateway:9337</code> and <code>/metrics</code>, itself (the Prometheus server) and cAdvisor:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">services</span>:
+  <span style="color:#66d9ef">prometheus</span>:
+    <span style="color:#66d9ef">restart</span>: always
+    <span style="color:#66d9ef">depends_on</span>:
+      - mqttgateway
+    <span style="color:#66d9ef">image</span>: prom/prometheus:v2<span style="color:#ae81ff">.16.0</span>-rc<span style="color:#ae81ff">.0</span>
+    <span style="color:#66d9ef">container_name</span>: prometheus
+    <span style="color:#66d9ef">volumes</span>:
+      - <span style="color:#e6db74">&#34;${PWD}/prometheus.yml:/etc/prometheus/prometheus.yml&#34;</span>
+    <span style="color:#66d9ef">expose</span>:
+      - <span style="color:#e6db74">&#34;9090&#34;</span> <span style="color:#75715e"># Default HTTP Endpoint</span>
+    <span style="color:#66d9ef">ports</span>:
+      - <span style="color:#ae81ff">9090</span>:<span style="color:#ae81ff">9090</span>
+
+  <span style="color:#66d9ef">cadvisor</span>:
+    <span style="color:#66d9ef">restart</span>: always
+    <span style="color:#66d9ef">image</span>: google/cadvisor:v0<span style="color:#ae81ff">.33.0</span>
+    <span style="color:#66d9ef">container_name</span>: cadvisor
+    <span style="color:#75715e"># command:</span>
+    <span style="color:#75715e"># - --prometheus_endpoint=&#34;/metrics&#34;</span>
+    <span style="color:#66d9ef">volumes</span>:
+      - <span style="color:#e6db74">&#34;/:/rootfs:ro&#34;</span>
+      - <span style="color:#e6db74">&#34;/var/run:/var/run:rw&#34;</span>
+      - <span style="color:#e6db74">&#34;/sys:/sys:ro&#34;</span>
+      - <span style="color:#e6db74">&#34;/var/lib/docker/:/var/lib/docker:ro&#34;</span>
+    <span style="color:#66d9ef">expose</span>:
+      - <span style="color:#e6db74">&#34;8080&#34;</span>
+    <span style="color:#66d9ef">ports</span>:
+      - <span style="color:#ae81ff">8085</span>:<span style="color:#ae81ff">8080</span>
+</code></pre></div><h1 id="run">Run</h1>
+<h2 id="esphome-dashboardlogs">ESPHome Dashboard|Logs</h2>
+<p>Once you&rsquo;ve deployed ESPHome code to an ESP, you may monitor device(s), using the Dashboard. Here are my (imaginatively) named devices:</p>
+<p><img src="/images/200227.esphome.dashboard.png" alt="ESPHome Dashboard"></p>
+<p>You can view logs using the dashboard, or the command-line:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">esphome config/esp01.yaml logs
+
+INFO Reading configuration config/esp01.yaml...
+INFO Starting log output from 192.168.1.201 using esphome API
+INFO Connecting to 192.168.1.201:6053 <span style="color:#f92672">(</span>192.168.1.201<span style="color:#f92672">)</span>
+INFO Successfully connected to 192.168.1.201
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>I<span style="color:#f92672">][</span>app:100<span style="color:#f92672">]</span>: ESPHome version 1.14.3 compiled on Feb <span style="color:#ae81ff">27</span> 2020, 13:06:02
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>wifi:415<span style="color:#f92672">]</span>: WiFi:
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>wifi:283<span style="color:#f92672">]</span>:   SSID: <span style="color:#e6db74">&#39;[[REDACTED]]&#39;</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>wifi:284<span style="color:#f92672">]</span>:   IP Address: 192.168.1.201
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>wifi:286<span style="color:#f92672">]</span>:   BSSID: <span style="color:#f92672">[[</span>REDACTED<span style="color:#f92672">]]</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>wifi:287<span style="color:#f92672">]</span>:   Hostname: <span style="color:#e6db74">&#39;esp01&#39;</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>wifi:291<span style="color:#f92672">]</span>:   Signal strength: -50 dB ▂▄▆█
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>wifi:295<span style="color:#f92672">]</span>:   Channel: <span style="color:#ae81ff">5</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>wifi:296<span style="color:#f92672">]</span>:   Subnet: 255.255.255.0
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>wifi:297<span style="color:#f92672">]</span>:   Gateway: 192.168.1.1
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>wifi:298<span style="color:#f92672">]</span>:   DNS1: <span style="color:#f92672">(</span>IP unset<span style="color:#f92672">)</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>wifi:299<span style="color:#f92672">]</span>:   DNS2: <span style="color:#f92672">(</span>IP unset<span style="color:#f92672">)</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>template.sensor:021<span style="color:#f92672">]</span>: Template Sensor <span style="color:#e6db74">&#39;Random Numbers&#39;</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>template.sensor:021<span style="color:#f92672">]</span>:   Unit of Measurement: <span style="color:#e6db74">&#39;%&#39;</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>template.sensor:021<span style="color:#f92672">]</span>:   Accuracy Decimals: <span style="color:#ae81ff">1</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>template.sensor:022<span style="color:#f92672">]</span>:   Update Interval: 60.0s
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>template.sensor:021<span style="color:#f92672">]</span>: Template Sensor <span style="color:#e6db74">&#39;Counter Sensor&#39;</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>template.sensor:021<span style="color:#f92672">]</span>:   Unit of Measurement: <span style="color:#e6db74">&#39;&#39;</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>template.sensor:021<span style="color:#f92672">]</span>:   Accuracy Decimals: <span style="color:#ae81ff">1</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>template.sensor:022<span style="color:#f92672">]</span>:   Update Interval: 60.0s
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>logger:175<span style="color:#f92672">]</span>: Logger:
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>logger:176<span style="color:#f92672">]</span>:   Level: DEBUG
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>logger:177<span style="color:#f92672">]</span>:   Log Baud Rate: <span style="color:#ae81ff">115200</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>logger:178<span style="color:#f92672">]</span>:   Hardware UART: UART0
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>captive_portal:169<span style="color:#f92672">]</span>: Captive Portal:
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>ota:029<span style="color:#f92672">]</span>: Over-The-Air Updates:
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>ota:030<span style="color:#f92672">]</span>:   Address: 192.168.1.201:8266
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>api:095<span style="color:#f92672">]</span>: API Server:
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>api:096<span style="color:#f92672">]</span>:   Address: 192.168.1.201:6053
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>mqtt:051<span style="color:#f92672">]</span>: MQTT:
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>mqtt:053<span style="color:#f92672">]</span>:   Server Address: 192.168.1.186:1883 <span style="color:#f92672">(</span>192.168.1.186<span style="color:#f92672">)</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>mqtt:054<span style="color:#f92672">]</span>:   Username: <span style="color:#e6db74">&#39;&#39;</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>mqtt:055<span style="color:#f92672">]</span>:   Client ID: <span style="color:#e6db74">&#39;esp01-600194029b3e&#39;</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>mqtt:057<span style="color:#f92672">]</span>:   Discovery prefix: <span style="color:#e6db74">&#39;homeassistant&#39;</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>mqtt:058<span style="color:#f92672">]</span>:   Discovery retain: YES
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>mqtt:060<span style="color:#f92672">]</span>:   Topic Prefix: <span style="color:#e6db74">&#39;esp01&#39;</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>mqtt:062<span style="color:#f92672">]</span>:   Log Topic: <span style="color:#e6db74">&#39;esp01/debug&#39;</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>mqtt.sensor:024<span style="color:#f92672">]</span>: MQTT Sensor <span style="color:#e6db74">&#39;Random Numbers&#39;</span>:
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>mqtt.sensor:028<span style="color:#f92672">]</span>:   State Topic: <span style="color:#e6db74">&#39;esp01/sensor/random_numbers/state&#39;</span>
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>mqtt.sensor:024<span style="color:#f92672">]</span>: MQTT Sensor <span style="color:#e6db74">&#39;Counter Sensor&#39;</span>:
+<span style="color:#f92672">[</span>13:50:36<span style="color:#f92672">][</span>C<span style="color:#f92672">][</span>mqtt.sensor:028<span style="color:#f92672">]</span>:   State Topic: <span style="color:#e6db74">&#39;esp01/sensor/counter_sensor/state&#39;</span>
+<span style="color:#f92672">[</span>13:50:49<span style="color:#f92672">][</span>D<span style="color:#f92672">][</span>sensor:092<span style="color:#f92672">]</span>: <span style="color:#e6db74">&#39;Counter Sensor&#39;</span>: Sending state 15.00000  with <span style="color:#ae81ff">1</span> decimals of accuracy
+<span style="color:#f92672">[</span>13:51:10<span style="color:#f92672">][</span>D<span style="color:#f92672">][</span>sensor:092<span style="color:#f92672">]</span>: <span style="color:#e6db74">&#39;Random Numbers&#39;</span>: Sending state 30.00000 % with <span style="color:#ae81ff">1</span> decimals of accuracy
+<span style="color:#f92672">[</span>13:51:49<span style="color:#f92672">][</span>D<span style="color:#f92672">][</span>sensor:092<span style="color:#f92672">]</span>: <span style="color:#e6db74">&#39;Counter Sensor&#39;</span>: Sending state 16.00000  with <span style="color:#ae81ff">1</span> decimals of accuracy
+<span style="color:#f92672">[</span>13:52:10<span style="color:#f92672">][</span>D<span style="color:#f92672">][</span>sensor:092<span style="color:#f92672">]</span>: <span style="color:#e6db74">&#39;Random Numbers&#39;</span>: Sending state 66.00000 % with <span style="color:#ae81ff">1</span> decimals of accuracy
+<span style="color:#f92672">[</span>13:52:49<span style="color:#f92672">][</span>D<span style="color:#f92672">][</span>sensor:092<span style="color:#f92672">]</span>: <span style="color:#e6db74">&#39;Counter Sensor&#39;</span>: Sending state 17.00000  with <span style="color:#ae81ff">1</span> decimals of accuracy
+<span style="color:#f92672">[</span>13:53:10<span style="color:#f92672">][</span>D<span style="color:#f92672">][</span>sensor:092<span style="color:#f92672">]</span>: <span style="color:#e6db74">&#39;Random Numbers&#39;</span>: Sending state 69.00000 % with <span style="color:#ae81ff">1</span> decimals of accuracy
+<span style="color:#f92672">[</span>13:53:49<span style="color:#f92672">][</span>D<span style="color:#f92672">][</span>sensor:092<span style="color:#f92672">]</span>: <span style="color:#e6db74">&#39;Counter Sensor&#39;</span>: Sending state 18.00000  with <span style="color:#ae81ff">1</span> decimals of accuracy
+<span style="color:#f92672">[</span>13:54:10<span style="color:#f92672">][</span>D<span style="color:#f92672">][</span>sensor:092<span style="color:#f92672">]</span>: <span style="color:#e6db74">&#39;Random Numbers&#39;</span>: Sending state 32.00000 % with <span style="color:#ae81ff">1</span> decimals of accuracy
+<span style="color:#f92672">[</span>13:54:49<span style="color:#f92672">][</span>D<span style="color:#f92672">][</span>sensor:092<span style="color:#f92672">]</span>: <span style="color:#e6db74">&#39;Counter Sensor&#39;</span>: Sending state 19.00000  with <span style="color:#ae81ff">1</span> decimals of accuracy
+<span style="color:#f92672">[</span>13:55:10<span style="color:#f92672">][</span>D<span style="color:#f92672">][</span>sensor:092<span style="color:#f92672">]</span>: <span style="color:#e6db74">&#39;Random Numbers&#39;</span>: Sending state 17.00000 % with <span style="color:#ae81ff">1</span> decimals of accuracy
+</code></pre></div><h2 id="mqtt-gateway-1">MQTT Gateway</h2>
+<p>You may browse the metrics that are being published by the MQTT Gateway, via <code>http://localhost:9337</code></p>
+<p><strong>NB</strong> The Compose file publishes the <code>mqttgateway</code> port <code>9337</code> (as same) on the host.</p>
+<p><img src="/images/200227.mqttgateway.metrics.png" alt="MQTT Gateway metrics"></p>
+<p>That includes many metrics. As you saw before, you can curl the endpoint and grep what you&rsquo;re interested in too:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -s http://localhost:9337/metrics | grep temperature
+
+<span style="color:#75715e"># HELP mqtt_temperature_last_pushed_timestamp Last time temperature was pushed via MQTT</span>
+<span style="color:#75715e"># TYPE mqtt_temperature_last_pushed_timestamp gauge</span>
+mqtt_temperature_last_pushed_timestamp<span style="color:#f92672">{</span>job<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;esphome&#34;</span>,node<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;esp01&#34;</span><span style="color:#f92672">}</span> 1.582849572454579e+09
+mqtt_temperature_last_pushed_timestamp<span style="color:#f92672">{</span>job<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;esphome&#34;</span>,node<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;esp02&#34;</span><span style="color:#f92672">}</span> 1.5828495536682808e+09
+<span style="color:#75715e"># HELP mqtt_temperature_push_total Number of times temperature was pushed via MQTT</span>
+<span style="color:#75715e"># TYPE mqtt_temperature_push_total counter</span>
+mqtt_temperature_push_total<span style="color:#f92672">{</span>job<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;esphome&#34;</span>,node<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;esp01&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">198</span>
+mqtt_temperature_push_total<span style="color:#f92672">{</span>job<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;esphome&#34;</span>,node<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;esp02&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">144</span>
+<span style="color:#75715e"># HELP temperature Metric pushed via MQTT</span>
+<span style="color:#75715e"># TYPE temperature gauge</span>
+temperature<span style="color:#f92672">{</span>job<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;esphome&#34;</span>,node<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;esp01&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">42</span>
+temperature<span style="color:#f92672">{</span>job<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;esphome&#34;</span>,node<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;esp02&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">77</span>
+</code></pre></div><p><strong>NB</strong> I&rsquo;ve configured MQTT clients on both ESPs (esp01,esp02)</p>
+<h2 id="prometheus">Prometheus</h2>
+<p>You may browse the Prometheus UI, via <code>http://localhost:9090</code></p>
+<p>Confirm the targets:</p>
+<p><img src="/images/200227.prometheus.targets.png" alt="Prometheus Targets"></p>
+<p>And Graph the <code>temperature</code> metric:</p>
+<p><img src="/images/200227.prometheus.graph.png" alt="Prometheus Graph temperature"></p>
+<p><strong>NB</strong> I swapped from constant to random values partway through the time period shown above</p>
+<h1 id="google-cloud-iothttpscloudgooglecomcloud-iot"><a href="https://cloud.google.com/cloud-iot">Google Cloud IoT</a></h1>
+<p>It should (!) be possible to publish MQTT messages to Google&rsquo;s hosted MQTT broker part of the Cloud IoT service.</p>
+<p><!-- raw HTML omitted -->This didn&rsquo;t work<!-- raw HTML omitted --></p>
+<p>I think the issue is with using TLS from the ESPHome MQTT client; I&rsquo;ll update when I learn more</p>
+<p>Here&rsquo;s a script that creates a GCP Project, enables IoT and Pub/Sub, creates IoT registry, devices, keys and Pub/Sub topics:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Environment</span>
+PROJECT<span style="color:#f92672">=</span>
+REGION<span style="color:#f92672">=</span>us-central1
+REGISTRY<span style="color:#f92672">=</span>esphome
+EVENT_TOPIC<span style="color:#f92672">=</span>temperature
+STATE_TOPIC<span style="color:#f92672">=</span>state
+
+<span style="color:#75715e"># Project|Billing</span>
+gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+gcloud alpha billing projects link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># GCP Services</span>
+<span style="color:#66d9ef">for</span> SERVICE in <span style="color:#e6db74">&#34;cloudiot&#34;</span> <span style="color:#e6db74">&#34;pubsub&#34;</span>
+<span style="color:#66d9ef">do</span>
+  gcloud services enable <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.googleapis.com <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --async
+<span style="color:#66d9ef">done</span>
+
+<span style="color:#75715e"># Cloud IoT Registry</span>
+gcloud iot registries create <span style="color:#e6db74">${</span>REGISTRY<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--event-notification-config<span style="color:#f92672">=</span>topic<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>EVENT_TOPIC<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--state-pubsub-topic<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>STATE_TOPIC<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--enable-mqtt-config <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Cloud Pub/Sub Topics</span>
+gcloud pubsub topics create <span style="color:#e6db74">${</span>EVENT_TOPIC<span style="color:#e6db74">}</span> <span style="color:#e6db74">${</span>STATE_TOPIC<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Generate ECDSA Keys for devices, e.g.: esp01, esp02</span>
+<span style="color:#66d9ef">for</span> DEVICE in <span style="color:#e6db74">&#34;esp01&#34;</span> <span style="color:#e6db74">&#34;esp02&#34;</span>
+<span style="color:#66d9ef">do</span>
+  openssl ecparam <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -genkey <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -name prime256v1 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -noout <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -out ./keys/<span style="color:#e6db74">${</span>DEVICE<span style="color:#e6db74">}</span>.private.pem
+  openssl ec <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -in ./keys/<span style="color:#e6db74">${</span>DEVICE<span style="color:#e6db74">}</span>.private.pem <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -pubout <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -out ./keys/<span style="color:#e6db74">${</span>DEVICE<span style="color:#e6db74">}</span>.public.pem
+<span style="color:#66d9ef">done</span>
+
+<span style="color:#75715e"># Create Cloud IoT Devices</span>
+<span style="color:#66d9ef">for</span> DEVICE in <span style="color:#e6db74">&#34;esp01&#34;</span> <span style="color:#e6db74">&#34;esp02&#34;</span>
+<span style="color:#66d9ef">do</span>
+  gcloud iot devices create <span style="color:#e6db74">${</span>DEVICE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --registry<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGISTRY<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --public-key<span style="color:#f92672">=</span>path<span style="color:#f92672">=</span>./keys/<span style="color:#e6db74">${</span>DEVICE<span style="color:#e6db74">}</span>.public.pem,type<span style="color:#f92672">=</span>es256-pem
+<span style="color:#66d9ef">done</span>
+</code></pre></div><p>I tweaked Google&rsquo;s JWT sample code <a href="https://cloud.google.com/iot/docs/how-tos/credentials/jwts#iot-core-jwt-go">link</a> in order to generate JWTs from the private keys:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#66d9ef">for</span> DEVICE in <span style="color:#e6db74">&#34;esp01&#34;</span> <span style="color:#e6db74">&#34;esp02&#34;</span>
+<span style="color:#66d9ef">do</span>
+  go run github.com/DazWilkin/JWT <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --private-key<span style="color:#f92672">=</span>../keys/<span style="color:#e6db74">${</span>DEVICE<span style="color:#e6db74">}</span>.private.pem &gt; ../keys/<span style="color:#e6db74">${</span>DEVICE<span style="color:#e6db74">}</span>.jwt
+<span style="color:#66d9ef">done</span>
+</code></pre></div><p>The JWTs are (strings and) used as the <code>password</code> for a MQTT client; the username is unused and may be anything (e.g. <code>unused</code>)</p>
+<p><strong>NB</strong> The JWTs are configured with a relatively near expiry (I used 48 hours) and so will need to recreated</p>
+<p>We also need the fingerprint (!) for Google&rsquo;s CA root certificates (here: <a href="https://pki.google.com/roots.pem)">https://pki.google.com/roots.pem)</a>.</p>
+<p>I was unable to use <code>esphome mqtt-fingerprint</code> for this and used instead:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FINGERPRINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    openssl x509 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>      -in roots.pem <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>      -noout <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>      -fingerprint <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>      -sha1 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>      -inform pem  <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    | cut -d<span style="color:#e6db74">&#39;=&#39;</span> -f <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    | sed <span style="color:#e6db74">&#39;s|:||g&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    | tr <span style="color:#e6db74">&#39;[:upper:]&#39;</span> <span style="color:#e6db74">&#39;[:lower:]&#39;</span><span style="color:#66d9ef">)</span> &amp; echo <span style="color:#e6db74">${</span>FINGERPRINT<span style="color:#e6db74">}</span>
+d1eb23a46d17d68fd92564c2f1f1601764d8e349
+</code></pre></div><p>With which we may now define the broker:</p>
+<ul>
+<li><a href="https://esphome.io/components/mqtt.html#">https://esphome.io/components/mqtt.html#</a></li>
+<li><a href="https://cloud.google.com/iot/docs/how-tos/mqtt-bridge">https://cloud.google.com/iot/docs/how-tos/mqtt-bridge</a></li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">mqtt</span>:
+  <span style="color:#66d9ef">broker</span>: mqtt.googleapis.com
+  <span style="color:#66d9ef">ssl_fingerprints</span>:
+    - ${FINGERPRINT}
+  <span style="color:#66d9ef">username</span>: unused
+  <span style="color:#66d9ef">password</span>: $(cat ./keys/esp01.jwt)
+  <span style="color:#66d9ef">client_id</span>: projects/${PROJECT}/locations/${REGION}/registries/${REGISTRY}/devices/${DEVICE}
+  <span style="color:#66d9ef">birth_message</span>:
+    <span style="color:#66d9ef">topic</span>: /devices/${DEVICE}/events
+    <span style="color:#66d9ef">payload</span>: online
+    <span style="color:#66d9ef">qos</span>: <span style="color:#ae81ff">0</span>
+    <span style="color:#66d9ef">retain</span>: True
+</code></pre></div><p>Unfortunately, this produced errors:</p>
+<pre><code>.piolibdeps/esp01/ESPAsyncTCP-esphome_ID6757/src/ESPAsyncTCP.cpp: In member function 'err_t AsyncServer::_poll(tcp_pcb*)':
+.piolibdeps/esp01/ESPAsyncTCP-esphome_ID6757/src/ESPAsyncTCP.cpp:1324:31: error: no matching function for call to 'AsyncClient::_recv(tcp_pcb*&amp;, pbuf*&amp;, int)'
+         c-&gt;_recv(pcb, p-&gt;pb, 0);
+                               ^
+.piolibdeps/esp01/ESPAsyncTCP-esphome_ID6757/src/ESPAsyncTCP.cpp:1324:31: note: candidate is:
+.piolibdeps/esp01/ESPAsyncTCP-esphome_ID6757/src/ESPAsyncTCP.cpp:565:6: note: void AsyncClient::_recv(std::shared_ptr&lt;ACErrorTracker&gt;&amp;, tcp_pcb*, pbuf*, err_t)
+ void AsyncClient::_recv(std::shared_ptr&lt;ACErrorTracker&gt;&amp; errorTracker, tcp_pcb* pcb, pbuf* pb, err_t err) {
+      ^
+.piolibdeps/esp01/ESPAsyncTCP-esphome_ID6757/src/ESPAsyncTCP.cpp:565:6: note:   candidate expects 4 arguments, 3 provided
+Compiling .pioenvs/esp01/lib8f0/ESP8266mDNS/ESP8266mDNS_Legacy.cpp.o
+Compiling .pioenvs/esp01/lib8f0/ESP8266mDNS/LEAmDNS.cpp.o
+Compiling .pioenvs/esp01/lib8f0/ESP8266mDNS/LEAmDNS_Control.cpp.o
+</code></pre><p>And I was unable to resolve these:</p>
+<ul>
+<li><a href="https://github.com/me-no-dev/ESPAsyncTCP/pull/129/files">PR</a></li>
+<li><a href="https://github.com/marvinroger/async-mqtt-client/pull/165/files">PR</a></li>
+</ul>
+<p>If anyone has guidance, I&rsquo;d appreciate the help!</p>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/esphome" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">esphome</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/esp" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">ESP</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/iot" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">IoT</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/cloud-iot" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Cloud IoT</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/mosquitto" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">mosquitto</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/mqttgateway" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">mqttgateway</a>
+   </li>
+  
+</ul>
+<div class="mt6">
+      
+      
+      </div>
+    </section>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2020 
+  </a>
+    <div>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+</div>
+  </div>
+</footer>
+
+    
+
+  <script src="/dist/js/app.3fc0f988d21662902933.js"></script>
+
+
+  </body>
+</html>
