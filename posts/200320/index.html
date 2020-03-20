@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>(p)retired  | Golang gRPC Cloud Run</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="generator" content="Hugo 0.67.1" />
+    
+    
+      <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+    
+
+    
+    
+      <link href="/dist/css/app.d98f2eb6bcd1eaedb7edf166bd16af26.css" rel="stylesheet">
+    
+
+    
+
+    
+      
+    
+
+    
+    
+    <meta property="og:title" content="Golang gRPC Cloud Run" />
+<meta property="og:description" content="Google explained how to run gRPC servers with Cloud Run. The examples are good but only Python and Node.JS:
+ gRPC comes to Cloud Run gRPC in Google Cloud Run  Missing Golang&hellip;. until now ;-)
+I had problems with 1.14 and so I&rsquo;m using 1.13.
+Project structure I&rsquo;ll tidy up my repo but the code may be found:
+https://github.com/DazWilkin/Golang-gRPC-CloudRun
+tree -L 1 . ├── client ├── cloudbuild.yaml ├── deployment ├── go." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/200320/" />
+<meta property="article:published_time" content="2020-03-20T00:00:00-08:00" />
+<meta property="article:modified_time" content="2020-03-20T00:00:00-08:00" />
+<meta itemprop="name" content="Golang gRPC Cloud Run">
+<meta itemprop="description" content="Google explained how to run gRPC servers with Cloud Run. The examples are good but only Python and Node.JS:
+ gRPC comes to Cloud Run gRPC in Google Cloud Run  Missing Golang&hellip;. until now ;-)
+I had problems with 1.14 and so I&rsquo;m using 1.13.
+Project structure I&rsquo;ll tidy up my repo but the code may be found:
+https://github.com/DazWilkin/Golang-gRPC-CloudRun
+tree -L 1 . ├── client ├── cloudbuild.yaml ├── deployment ├── go.">
+<meta itemprop="datePublished" content="2020-03-20T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2020-03-20T00:00:00-08:00" />
+<meta itemprop="wordCount" content="799">
+
+
+
+<meta itemprop="keywords" content="OriginStamp,rust&#34;,swagger," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Golang gRPC Cloud Run"/>
+<meta name="twitter:description" content="Google explained how to run gRPC servers with Cloud Run. The examples are good but only Python and Node.JS:
+ gRPC comes to Cloud Run gRPC in Google Cloud Run  Missing Golang&hellip;. until now ;-)
+I had problems with 1.14 and so I&rsquo;m using 1.13.
+Project structure I&rsquo;ll tidy up my repo but the code may be found:
+https://github.com/DazWilkin/Golang-gRPC-CloudRun
+tree -L 1 . ├── client ├── cloudbuild.yaml ├── deployment ├── go."/>
+
+      
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="https://pretired.dazwilkin.com/" class="f3 fw2 hover-white no-underline white-90 dib">
+      (p)retired
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+
+    <header class="mt4 w-100">
+      <p class="f6 b helvetica tracked">
+          
+        POSTS
+      </p>
+      <h1 class="f1 athelas mb1">Golang gRPC Cloud Run</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2020-03-20T00:00:00-08:00">March 20, 2020</time>
+      
+      
+        <span class="f6 mv4 dib tracked"> - 4 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 799 words</span>
+      
+    </header>
+
+    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>Google explained how to run gRPC servers with Cloud Run. The examples are good but only Python and Node.JS:</p>
+<ul>
+<li><a href="https://cloud.google.com/blog/products/compute/serve-cloud-run-requests-with-grpc-not-just-http">gRPC comes to Cloud Run</a></li>
+<li><a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example">gRPC in Google Cloud Run</a></li>
+</ul>
+<p>Missing Golang&hellip;. until now ;-)</p>
+<p>I had problems with 1.14 and so I&rsquo;m using 1.13.</p>
+<h2 id="project-structure">Project structure</h2>
+<p>I&rsquo;ll tidy up my repo but the code may be found:</p>
+<p><code>https://github.com/DazWilkin/Golang-gRPC-CloudRun</code></p>
+<pre><code>tree -L 1
+.
+├── client
+├── cloudbuild.yaml
+├── deployment
+├── go.mod
+├── go.sum
+├── protoc
+├── protos
+├── README.md
+└── server
+</code></pre><h2 id="protobuf">Protobuf</h2>
+<p>One minor tweak (for my preference) to the probuf file with the addition of <code>option go_package = &quot;protos&quot;;</code>.</p>
+<p>This defines the package name (<code>protos</code>) in the Go-generated code.</p>
+<p>The protobuf file is placed in <code>./protos</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf">syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">option</span> go_package <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;protos&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">enum</span> Operation {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  ADD <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  SUBTRACT <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">BinaryOperation</span> {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">float</span> first_operand <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">float</span> second_operand <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  Operation operation <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>};<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">CalculationResult</span> {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">float</span> result <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>};<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">service</span> Calculator {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">rpc</span> Calculate (BinaryOperation) <span style="color:#66d9ef">returns</span> (CalculationResult);<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>};<span style="color:#960050;background-color:#1e0010">
+</span></code></pre></div><p>I&rsquo;m using protoc 3.11.4 (with <code>linux-x86_64</code>), revise <code>VERS</code> and <code>ARCH</code> as appropriate:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Dockerfile" data-lang="Dockerfile"><span style="color:#66d9ef">FROM</span><span style="color:#e6db74"> golang:1.13 as build</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">WORKDIR</span><span style="color:#e6db74"> /grpc-cloudrun</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ARG</span> REPO<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;github.com/DazWilkin/Golang-gRPC-CloudRun.git&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> git clone https://<span style="color:#e6db74">${</span>REPO<span style="color:#e6db74">}</span> .<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># Installs protoc and plugins: protoc-gen-go</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ARG</span> VERS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;3.11.4&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ARG</span> ARCH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;linux-x86_64&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> wget https://github.com/protocolbuffers/protobuf/releases/download/v<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>/protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>.zip --output-document<span style="color:#f92672">=</span>./protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>.zip <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    apt update <span style="color:#f92672">&amp;&amp;</span> apt install -y unzip <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    unzip -o protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>.zip -d protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    mv protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>/bin/* /usr/local/bin <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    mv protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>/include/* /usr/local/include <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    go get -u github.com/golang/protobuf/protoc-gen-go<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># Generates the Golang protobuf files</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> protoc <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    --proto_path<span style="color:#f92672">=</span>. <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    --go_out<span style="color:#f92672">=</span>plugins<span style="color:#f92672">=</span>grpc:. <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    ./protos/*.proto<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> CGO_ENABLED<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> GOOS<span style="color:#f92672">=</span>linux <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    go build -a -installsuffix cgo <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -o /go/bin/server <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    github.com/DazWilkin/Golang-gRPC-CloudRun/server<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ENTRYPOINT</span> [<span style="color:#e6db74">&#34;/go/bin/server&#34;</span>]<span style="color:#960050;background-color:#1e0010">
+</span></code></pre></div><p>The GitHub repo includes a <code>cloudbuild.yaml</code> file that you may use with Google Cloud Build:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud services enable cloudbuild.googleapis.com --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+gcloud builds submit . <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--config<span style="color:#f92672">=</span>./cloudbuild.yaml <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--substitutions<span style="color:#f92672">=</span>COMMIT_SHA<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>TAG<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</code></pre></div><blockquote>
+<p><strong>NB</strong> You&rsquo;ll need to build a local copy of the Cloud Builder <a href="https://github.com/GoogleCloudPlatform/cloud-builders-community/tree/master/protoc"><code>protoc</code></a> to use Cloud Build.</p>
+</blockquote>
+<h2 id="server">Server</h2>
+<p>I&rsquo;ve attempted to keep this close to the Python and Node.JS examples.</p>
+<p>main.go:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+
+<span style="color:#f92672">import</span> (
+	<span style="color:#e6db74">&#34;context&#34;</span>
+	<span style="color:#e6db74">&#34;fmt&#34;</span>
+	<span style="color:#e6db74">&#34;log&#34;</span>
+	<span style="color:#e6db74">&#34;net&#34;</span>
+	<span style="color:#e6db74">&#34;os&#34;</span>
+	<span style="color:#e6db74">&#34;sync&#34;</span>
+
+	<span style="color:#a6e22e">pb</span> <span style="color:#e6db74">&#34;github.com/DazWilkin/Golang-gRPC-CloudRun/protos&#34;</span>
+
+	<span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+)
+
+<span style="color:#66d9ef">const</span> (
+	<span style="color:#a6e22e">serviceName</span> = <span style="color:#e6db74">&#34;grpc-cloudrun-server&#34;</span>
+)
+
+<span style="color:#66d9ef">var</span> (
+	<span style="color:#a6e22e">port</span> = <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PORT&#34;</span>)
+)
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Starting: %s&#34;</span>, <span style="color:#a6e22e">serviceName</span>)
+	<span style="color:#66d9ef">defer</span> <span style="color:#66d9ef">func</span>() {
+		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Stopping:%s&#34;</span>, <span style="color:#a6e22e">serviceName</span>)
+	}()
+
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">port</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;&#34;</span> {
+		<span style="color:#a6e22e">port</span> = <span style="color:#e6db74">&#34;8080&#34;</span>
+	}
+	<span style="color:#a6e22e">grpcEndpoint</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;:%s&#34;</span>, <span style="color:#a6e22e">port</span>)
+	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;gRPC endpoint [%s]&#34;</span>, <span style="color:#a6e22e">grpcEndpoint</span>)
+
+	<span style="color:#a6e22e">grpcServer</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">NewServer</span>()
+	<span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">RegisterCalculatorServer</span>(<span style="color:#a6e22e">grpcServer</span>, <span style="color:#a6e22e">NewServer</span>())
+
+	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+	<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">cancel</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">WithCancel</span>(<span style="color:#a6e22e">ctx</span>)
+	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">cancel</span>()
+
+	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">wg</span> <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">WaitGroup</span>
+	<span style="color:#75715e">// gRPC Server
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#ae81ff">1</span>)
+	<span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>() {
+		<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Done</span>()
+		<span style="color:#a6e22e">listen</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Listen</span>(<span style="color:#e6db74">&#34;tcp&#34;</span>, <span style="color:#a6e22e">grpcEndpoint</span>)
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+		}
+		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Starting: gRPC Listener [%s]\n&#34;</span>, <span style="color:#a6e22e">grpcEndpoint</span>)
+		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">grpcServer</span>.<span style="color:#a6e22e">Serve</span>(<span style="color:#a6e22e">listen</span>))
+	}()
+	<span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Wait</span>()
+}
+</code></pre></div><p>and:</p>
+<p>server.go:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+
+<span style="color:#f92672">import</span> (
+	<span style="color:#e6db74">&#34;context&#34;</span>
+	<span style="color:#e6db74">&#34;fmt&#34;</span>
+	<span style="color:#e6db74">&#34;log&#34;</span>
+
+	<span style="color:#a6e22e">pb</span> <span style="color:#e6db74">&#34;github.com/DazWilkin/Golang-gRPC-CloudRun/protos&#34;</span>
+
+	<span style="color:#e6db74">&#34;go.opencensus.io/trace&#34;</span>
+)
+
+<span style="color:#75715e">// Prove that Server implements pb.CalculatorServer by instantiating a Server
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">_</span> <span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">CalculatorServer</span> = (<span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>)(<span style="color:#66d9ef">nil</span>)
+
+<span style="color:#75715e">// Server is a struct implements the pb.CalculatorServer
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Server</span> <span style="color:#66d9ef">struct</span> {
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewServer</span>() <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Server</span>{}
+}
+
+<span style="color:#75715e">// Calculate performs an operation on operands defined by pb.BinaryOperation returning pb.CalculationResult
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">Calculate</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">BinaryOperation</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">CalculationResult</span>, <span style="color:#66d9ef">error</span>) {
+	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;[server:Calculate] Started&#34;</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">ctx</span>.<span style="color:#a6e22e">Err</span>() <span style="color:#f92672">==</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Canceled</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">CalculationResult</span>{}, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;client cancelled: abandoning&#34;</span>)
+	}
+	<span style="color:#75715e">// TODO(dazwilkin) Low-value but required to capture a trace at all
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">span</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">trace</span>.<span style="color:#a6e22e">StartSpan</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;Calculate&#34;</span>)
+	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">span</span>.<span style="color:#a6e22e">End</span>()
+
+	<span style="color:#66d9ef">switch</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">GetOperation</span>() {
+	<span style="color:#66d9ef">case</span> <span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Operation_ADD</span>:
+		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">CalculationResult</span>{
+			<span style="color:#a6e22e">Result</span>: <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">GetFirstOperand</span>() <span style="color:#f92672">+</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">GetSecondOperand</span>(),
+		}, <span style="color:#66d9ef">nil</span>
+	<span style="color:#66d9ef">case</span> <span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">Operation_SUBTRACT</span>:
+		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">CalculationResult</span>{
+			<span style="color:#a6e22e">Result</span>: <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">GetFirstOperand</span>() <span style="color:#f92672">-</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">GetSecondOperand</span>(),
+		}, <span style="color:#66d9ef">nil</span>
+	<span style="color:#66d9ef">default</span>:
+		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">CalculationResult</span>{}, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;undefined operation&#34;</span>)
+	}
+
+}
+</code></pre></div><p>If you clone the repo, you&rsquo;ll have <code>./protos/calculator.pb.go</code>.</p>
+<p>If not, you&rsquo;ll need to grab a release of <a href="https://github.com/protocolbuffers/protobuf/releases"><code>protoc</code></a> and the Go plugin <a href="https://github.com/golang/protobuf"><code>protoc-gen-go</code></a>.</p>
+<p>And generate the Go stubs with:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">protoc <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--proto_path<span style="color:#f92672">=</span>. <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--go_out<span style="color:#f92672">=</span>plugins<span style="color:#f92672">=</span>grpc:. <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>./protos/*.proto
+</code></pre></div><blockquote>
+<p><strong>NB</strong> The Dockerfile handles this for you.</p>
+</blockquote>
+<p>You may test this by running the server in one shell:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PORT<span style="color:#f92672">=</span><span style="color:#ae81ff">50051</span>
+go run server/*.go
+</code></pre></div><p>and accessing it with <a href="https://github.com/fullstorydev/grpcurl"><code>grpcurl</code></a> from another:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/calculator.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#39;{&#34;first_operand&#34;: 2.0, &#34;second_operand&#34;: 3.0, &#34;operation&#34;: &#34;ADD&#34;}&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>localhost:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> Calculator.Calculate
+</code></pre></div><p>all being well, of course:</p>
+<pre><code>{
+  &quot;result&quot;: 5
+}
+</code></pre><h2 id="containerize">Containerize</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">TAG<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>git rev-parse HEAD<span style="color:#66d9ef">)</span> <span style="color:#75715e"># Or your preference</span>
+
+docker build <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--tag<span style="color:#f92672">=</span>gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/server:<span style="color:#e6db74">${</span>TAG<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--file<span style="color:#f92672">=</span>./deployment/Dockerfile.server <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>.
+
+docker push gcr.io/golang-grpc-cloudrun/server:<span style="color:#e6db74">${</span>TAG<span style="color:#e6db74">}</span>
+</code></pre></div><p>You may then test this, by using the same <code>grpcurl</code> command but, running the container image as:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PORT<span style="color:#f92672">=</span><span style="color:#ae81ff">50051</span> <span style="color:#75715e"># On Cloud Run this will be 8080</span>
+docker run <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--interactive --tty <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span>50051:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--env<span style="color:#f92672">=</span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/server:<span style="color:#e6db74">${</span>TAG<span style="color:#e6db74">}</span> 
+</code></pre></div><p>The result should (!) be the same as before ;-)</p>
+<h3 id="cloud-run">Cloud Run:</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;server&#34;</span>
+REGION<span style="color:#f92672">=</span>us-west1 <span style="color:#75715e"># Or ...</span>
+gcloud beta run deploy <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--image<span style="color:#f92672">=</span>gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/server:<span style="color:#e6db74">${</span>TAG<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--allow-unauthenticated
+</code></pre></div><p>This should complete (successfully) by outputting the service&rsquo;s endpoint:</p>
+<pre><code>...
+Service [${SERVICE}] revision [...] has been deployed and is serving 100 percent of traffic at https://${ENDPOINT}
+</code></pre><p>You could:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ENDPOINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  gcloud run services list <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metadata.name=</span><span style="color:#e6db74">${</span>SERVER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span> 
+ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ENDPOINT#https://<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>
+</code></pre></div><p>Thanks to <a href="https://stackoverflow.com/a/16623897/609290">https://stackoverflow.com/a/16623897/609290</a></p>
+<p>And then grpcurl the endpoint with:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/calculator.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#39;{&#34;first_operand&#34;: 2.0, &#34;second_operand&#34;: 3.0, &#34;operation&#34;: &#34;ADD&#34;}&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:443 Calculator.Calculate
+</code></pre></div><blockquote>
+<p><strong>NB</strong> Remove the <code>-plaintext</code> flag this time</p>
+</blockquote>
+<p>{
+&ldquo;result&rdquo;: 5
+}</p>
+<pre><code>
+HTH!</code></pre><ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/originstamp" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">OriginStamp</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/rust" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">rust&#34;</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/swagger" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">swagger</a>
+   </li>
+  
+</ul>
+<div class="mt6">
+      
+      
+      </div>
+    </section>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/200312/">OriginStamp Rust SDK Example</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200226/">OriginStamp: Verifying Proofs</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200219/">FreeTSA &amp; Digitorus&#39; Timestamp SDK</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200217/">OriginStamp Python|Golang SDK Examples</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2020 
+  </a>
+    <div>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+</div>
+  </div>
+</footer>
+
+    
+
+  <script src="/dist/js/app.3fc0f988d21662902933.js"></script>
+
+
+  </body>
+</html>
