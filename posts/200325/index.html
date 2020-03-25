@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>(p)retired  | gRPC, Cloud Run &amp; Endpoints</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="generator" content="Hugo 0.68.3" />
+    
+    
+      <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+    
+
+    
+    
+      <link href="/dist/css/app.d98f2eb6bcd1eaedb7edf166bd16af26.css" rel="stylesheet">
+    
+
+    
+
+    
+      
+    
+
+    
+    
+    <meta property="og:title" content="gRPC, Cloud Run &amp; Endpoints" />
+<meta property="og:description" content="&lt;3 Google but there&rsquo;s quite often an assumption that we&rsquo;re all sitting around the engineering table and, of course, we&rsquo;re not.
+Cloud Endpoints](https://cloud.google.com/endpoints) is a powerful offering but &ndash; IMO &ndash; it&rsquo;s super confusing to understand and complex to deploy.
+If you&rsquo;re familiar with the motivations behind service meshes (e.g. Istio), Cloud Endpoints fits in a similar niche (&ldquo;neesh&rdquo; or &ldquo;nitch&rdquo;?). The underlying ambition is that, developers can take existing code and by adding a proxy (or sidecar), general-purpose abstractions, security, logging etc." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/200325/" />
+<meta property="article:published_time" content="2020-03-25T00:00:00-08:00" />
+<meta property="article:modified_time" content="2020-03-25T00:00:00-08:00" />
+<meta itemprop="name" content="gRPC, Cloud Run &amp; Endpoints">
+<meta itemprop="description" content="&lt;3 Google but there&rsquo;s quite often an assumption that we&rsquo;re all sitting around the engineering table and, of course, we&rsquo;re not.
+Cloud Endpoints](https://cloud.google.com/endpoints) is a powerful offering but &ndash; IMO &ndash; it&rsquo;s super confusing to understand and complex to deploy.
+If you&rsquo;re familiar with the motivations behind service meshes (e.g. Istio), Cloud Endpoints fits in a similar niche (&ldquo;neesh&rdquo; or &ldquo;nitch&rdquo;?). The underlying ambition is that, developers can take existing code and by adding a proxy (or sidecar), general-purpose abstractions, security, logging etc.">
+<meta itemprop="datePublished" content="2020-03-25T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2020-03-25T00:00:00-08:00" />
+<meta itemprop="wordCount" content="912">
+
+
+
+<meta itemprop="keywords" content="Google,Golang&#34;,Cloud Run,gRPC,grpcurl,protobuf,rust,ESP,Cloud Endpoints," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="gRPC, Cloud Run &amp; Endpoints"/>
+<meta name="twitter:description" content="&lt;3 Google but there&rsquo;s quite often an assumption that we&rsquo;re all sitting around the engineering table and, of course, we&rsquo;re not.
+Cloud Endpoints](https://cloud.google.com/endpoints) is a powerful offering but &ndash; IMO &ndash; it&rsquo;s super confusing to understand and complex to deploy.
+If you&rsquo;re familiar with the motivations behind service meshes (e.g. Istio), Cloud Endpoints fits in a similar niche (&ldquo;neesh&rdquo; or &ldquo;nitch&rdquo;?). The underlying ambition is that, developers can take existing code and by adding a proxy (or sidecar), general-purpose abstractions, security, logging etc."/>
+
+      
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="https://pretired.dazwilkin.com/" class="f3 fw2 hover-white no-underline white-90 dib">
+      (p)retired
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+
+    <header class="mt4 w-100">
+      <p class="f6 b helvetica tracked">
+          
+        POSTS
+      </p>
+      <h1 class="f1 athelas mb1">gRPC, Cloud Run &amp; Endpoints</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2020-03-25T00:00:00-08:00">March 25, 2020</time>
+      
+      
+        <span class="f6 mv4 dib tracked"> - 5 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 912 words</span>
+      
+    </header>
+
+    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>&lt;3 Google but there&rsquo;s quite often an assumption that we&rsquo;re all sitting around the engineering table and, of course, we&rsquo;re not.</p>
+<p>Cloud Endpoints](<a href="https://cloud.google.com/endpoints">https://cloud.google.com/endpoints</a>) is a powerful offering but &ndash; IMO &ndash; it&rsquo;s <strong>super</strong> confusing to understand and complex to deploy.</p>
+<p>If you&rsquo;re familiar with the motivations behind service meshes (e.g. <a href="https://istio.io">Istio</a>), Cloud Endpoints fits in a similar niche (&ldquo;neesh&rdquo; or &ldquo;nitch&rdquo;?). The underlying ambition is that, developers can take <strong>existing</strong> code and by adding a proxy (or sidecar), general-purpose abstractions, security, logging etc. may be added. With Cloud Endpoints, the goals are to leveral general-purpose authentication|authorization, logging and monitoring mechanisms offered by Google. And, more specifically, the ability to define your services&rsquo; APIs to Google&rsquo;s infrastructure using either OpenAPI (nee Swagger) or Protobuf so that you may expose, secure, monetize etc. your APIs.</p>
+<p>For a long time, Google used NGINX as a proxy (a) underpinning its Cloud Endpoints ESP (&ldquo;Extensible Service Proxy&rdquo;); (b) and also the sidecar deploying alongside your App Engine flexible apps. For good reasons, <a href="https://envoyproxy.io">Envoy</a> has become a darling of the proxy scene and, with Google&rsquo;s commitment to Istio (and beyond), Envoy has become the proxy underpinning the new version of ESP, <a href="https://github.com/GoogleCloudPlatform/esp-v2">ESPv2</a>.</p>
+<p>A roundabout way of saying that, when you add Cloud Endpoints to your service, you generally want to route all traffic through ESP and have it proxy the traffic to your backend. By so doing, ESP is able to instrument and secure your API calls among other things.</p>
+<p>Having been toying with Cloud Run this week (<a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/blob/master/golang/README.md">Golang</a> and <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/tree/master/rust">Rust</a> samples for <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example">gRPC in Cloud Run</a>), I was compelled to follow a Google tutorial <a href="https://cloud.google.com/endpoints/docs/grpc/get-started-cloud-run#deploy_configuration">Getting Started with Endpoint for Cloud Run</a> to bring everything together and make <code>grpcurl</code> calls to ESPv2 running under Cloud Run proxying traffic to the Golang|Rust gRPC servers also running under Cloud Run.</p>
+<p>Google&rsquo;s documentation is good although I believe the seemingly optional step of <a href="https://cloud.google.com/endpoints/docs/grpc/get-started-cloud-run#configure_esp">Building a new ESPv2 Beta Image</a> is mandatory (<a href="https://issuetracker.google.com/issues/152393789">issue</a>).</p>
+<p>I&rsquo;m always one for bash scripting <em>the shit out of</em> tutorials ;-)</p>
+<p>Assume you&rsquo;re able to <code>./deploy.sh ${PROJECT} [node|pythongolang|rust]</code> from Google&rsquo;s <a href="https://github.com/DazWilkin/grpc-cloud-run-example">gRPC in Google Cloud Run</a> repo, the following should rebuild and deploy the ESPv2 proxy under Cloud Run, configure Cloud Endpoints and route a test <code>grpcurl</code> through the proxy for you:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#!/bin/bash
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e"># Assumes the grpc-calculator service has been deployed to the project</span>
+<span style="color:#75715e"># See ${HOME}/Projects/grpc-cloud-run-examples/</span>
+
+<span style="color:#75715e"># Parameters from Environment</span>
+: <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>PROJECT:?Need to set PROJECT to GCP Project ID<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+: <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>REGION:?Need to set REGION to GCP region where Cloud Run services should be deploy<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+
+<span style="color:#75715e"># The ESPv2 Cloud Run service will be named &#34;proxy&#34;</span>
+<span style="color:#75715e"># The script assumes (!) the existence of a Cloud Run service called &#34;grpc-calculator&#34;</span>
+ESP<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;proxy&#34;</span>
+SRV<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;grpc-calculator&#34;</span>
+
+<span style="color:#75715e"># If not present, download protoc and add it to the path</span>
+VERS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;3.11.4&#34;</span>
+ARCH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;linux-x86_64&#34;</span>
+<span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> ! -d ./protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span> <span style="color:#f92672">]</span>
+<span style="color:#66d9ef">then</span>
+  wget https://github.com/protocolbuffers/protobuf/releases/download/v<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>/protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>.zip <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --output-document<span style="color:#f92672">=</span>./protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>.zip
+  unzip -o protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>.zip -d ./protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>
+<span style="color:#66d9ef">fi</span>
+
+PATH<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PATH<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>/bin
+
+<span style="color:#75715e"># Generate the Protobuf Descriptor file</span>
+protoc <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--include_imports <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--include_source_info <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--proto_path<span style="color:#f92672">=</span>. <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--descriptor_set_out<span style="color:#f92672">=</span>api_descriptor.pb <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>calculator.proto
+
+<span style="color:#75715e"># Cloud Build is here to rebuild the ESPv2 image</span>
+<span style="color:#66d9ef">for</span> SERVICE in <span style="color:#e6db74">&#34;cloudbuild&#34;</span> <span style="color:#e6db74">&#34;endpoints&#34;</span> <span style="color:#e6db74">&#34;servicecontrol&#34;</span> <span style="color:#e6db74">&#34;servicemanagement&#34;</span>
+<span style="color:#66d9ef">do</span>
+  gcloud services enable <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.googleapis.com <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+<span style="color:#66d9ef">done</span>
+
+<span style="color:#75715e"># Need to deploy ESP proxy in order to be able to query it for configuration in api_config.yaml</span>
+<span style="color:#75715e"># However, this ESP version must be redeployed before the project will work</span>
+<span style="color:#75715e"># See `Rebuild ESP Image` below</span>
+gcloud run deploy <span style="color:#e6db74">${</span>ESP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--image<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;gcr.io/endpoints-release/endpoints-runtime-serverless:2&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--allow-unauthenticated <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--platform managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Query Cloud Run for service endpoints (Proxy, Calculator)</span>
+ESP_HOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  gcloud run services list <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metadata.name=</span><span style="color:#e6db74">${</span>ESP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span> 
+ESP_HOST<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ESP_HOST#https://<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># This should have been deployed</span>
+SRV_HOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  gcloud run services list <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metadata.name=</span><span style="color:#e6db74">${</span>SRV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span> 
+SRV_HOST<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>SRV_HOST#https://<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>SRV_HOST<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Construct api_config.yaml using the Endpoints</span>
+echo <span style="color:#e6db74">&#39;
+</span><span style="color:#e6db74">type: google.api.Service
+</span><span style="color:#e6db74">config_version: 3
+</span><span style="color:#e6db74">name: ESP_HOST
+</span><span style="color:#e6db74">title: gRPC Calculator Service
+</span><span style="color:#e6db74">apis:
+</span><span style="color:#e6db74">  - name: Calculator
+</span><span style="color:#e6db74">usage:
+</span><span style="color:#e6db74">  rules:
+</span><span style="color:#e6db74">    - selector: Calculator.Calculate
+</span><span style="color:#e6db74">      allow_unregistered_calls: true
+</span><span style="color:#e6db74">backend:
+</span><span style="color:#e6db74">  rules:
+</span><span style="color:#e6db74">    - selector: &#34;*&#34;
+</span><span style="color:#e6db74">      address: grpcs://SRV_HOST
+</span><span style="color:#e6db74">&#39;</span> |<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>sed <span style="color:#e6db74">&#34;s|name: ESP_HOST|name: </span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> |<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>sed <span style="color:#e6db74">&#34;s|address: grpcs://SRV_HOST|address: grpcs://</span><span style="color:#e6db74">${</span>SRV_HOST<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> &gt; api_config.yaml
+
+<span style="color:#75715e"># Deploy the Endpoints service</span>
+gcloud endpoints services deploy api_descriptor.pb api_config.yaml --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Tidy</span>
+rm api_config.yaml
+
+<span style="color:#75715e"># Rebuild ESP image</span>
+CONFIG<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>gcloud endpoints configs list --service<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span> --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;json&#34;</span> | jq -r .<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.id<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
+./gcloud_build_image -s <span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span> -c <span style="color:#e6db74">${</span>CONFIG<span style="color:#e6db74">}</span> -p <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Redeploy the Cloud Run ESP proxy</span>
+gcloud run deploy <span style="color:#e6db74">${</span>ESP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--image<span style="color:#f92672">=</span>gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/endpoints-runtime-serverless:<span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>CONFIG<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--allow-unauthenticated <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Permit Cloud Run services (i.e. Proxy) running as ${PROJECT_NUM}-compute@ to invoke Cloud Run services (i.e. Calculator)</span>
+PROJECT_NUM<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud projects describe <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(projectNumber)&#34;</span><span style="color:#66d9ef">)</span>
+gcloud run services add-iam-policy-binding <span style="color:#e6db74">${</span>SRV<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--member<span style="color:#f92672">=</span>serviceAccount:<span style="color:#e6db74">${</span>PROJECT_NUM<span style="color:#e6db74">}</span>-compute@developer.gserviceaccount.com <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--role<span style="color:#f92672">=</span>roles/run.invoker <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Test</span>
+grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#39;{&#34;first_operand&#34;: 2.0, &#34;second_operand&#34;: 3.0, &#34;operation&#34;: &#34;ADD&#34;}&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto calculator.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>:443 Calculator.Calculate
+
+<span style="color:#75715e"># Tidy</span>
+rm api_descriptor.pb
+</code></pre></div><p>All being well, this should conclude with:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
+  <span style="color:#f92672">&#34;result&#34;</span>: <span style="color:#ae81ff">5</span>
+}
+</code></pre></div><p>Yes, one of the world&rsquo;s most resource-intensive calculators :-)</p>
+<p>When you&rsquo;re done, you must delete the Endpoints service first as a lien is applied to it:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ESP<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;proxy&#34;</span>
+
+ESP_HOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  gcloud run services list <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metadata.name=</span><span style="color:#e6db74">${</span>ESP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span> 
+ESP_HOST<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ESP_HOST#https://<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>
+
+gcloud endpoints services delete <span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--quiet
+</code></pre></div><p>And then you can optionally delete the Cloud Run services:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">SRV<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;grpc-calculator&#34;</span>
+
+<span style="color:#66d9ef">for</span> SERVICE in <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ESP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>SRV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+<span style="color:#66d9ef">do</span>
+  gcloud run services delete <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --quiet
+<span style="color:#66d9ef">done</span>
+</code></pre></div><p>And then &ndash; if you&rsquo;re absolutely certain you don&rsquo;t need any of its resource &ndash; sure? Whack the entire project:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud projects delete <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
+</code></pre></div><p>HTH!</p>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/google" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Google</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/golang" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Golang&#34;</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/cloud-run" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Cloud Run</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/grpc" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">gRPC</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/grpcurl" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">grpcurl</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/protobuf" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">protobuf</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/rust" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">rust</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/esp" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">ESP</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/cloud-endpoints" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Cloud Endpoints</a>
+   </li>
+  
+</ul>
+<div class="mt6">
+      
+      
+      </div>
+    </section>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/200320/">Golang gRPC Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200310/">Google&#39;s New Golang SDK for Protobuf</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200227/">ESPHome, MQTT, Prometheus and almost Cloud IoT</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200207/">Accessing GCR repos from Kubernetes</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200206/">Cloud Build wishlist: Mountable Golang Modules Proxy</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/190918/">Cloud Functions Simple(st) HTTP Multi-host Proxy</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/190917/">Cloud Functions Simple(st) HTTP Proxy</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2020 
+  </a>
+    <div>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+</div>
+  </div>
+</footer>
+
+    
+
+  <script src="/dist/js/app.3fc0f988d21662902933.js"></script>
+
+
+  </body>
+</html>
