@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>(p)retired  | Google Trillian on Cloud Run</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="generator" content="Hugo 0.68.3" />
+    
+    
+      <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+    
+
+    
+    
+      <link href="/dist/css/app.d98f2eb6bcd1eaedb7edf166bd16af26.css" rel="stylesheet">
+    
+
+    
+
+    
+      
+    
+
+    
+    
+    <meta property="og:title" content="Google Trillian on Cloud Run" />
+<meta property="og:description" content="I&rsquo;ve written previously (Google Trillian for Noobs) about Google&rsquo;s interesting project Trillian and about some of the &ldquo;personalities&rdquo; (e.g. PyPi Transparency) that I&rsquo;ve build using it.
+Having gone slight cra-cra on Cloud Run and gRPC this week with Golang gRPC Cloud Run and gRPC, Cloud Run &amp; Endpoints, I thought it&rsquo;d be fun to deploy Trillian and a personality to Cloud Run.
+It mostly (!) works :-)
+At the end of the post, I&rsquo;ve summarized creating a Cloud SQL instance to host the Trillian data(base)." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/200326/" />
+<meta property="article:published_time" content="2020-03-26T00:00:00-08:00" />
+<meta property="article:modified_time" content="2020-03-26T00:00:00-08:00" />
+<meta itemprop="name" content="Google Trillian on Cloud Run">
+<meta itemprop="description" content="I&rsquo;ve written previously (Google Trillian for Noobs) about Google&rsquo;s interesting project Trillian and about some of the &ldquo;personalities&rdquo; (e.g. PyPi Transparency) that I&rsquo;ve build using it.
+Having gone slight cra-cra on Cloud Run and gRPC this week with Golang gRPC Cloud Run and gRPC, Cloud Run &amp; Endpoints, I thought it&rsquo;d be fun to deploy Trillian and a personality to Cloud Run.
+It mostly (!) works :-)
+At the end of the post, I&rsquo;ve summarized creating a Cloud SQL instance to host the Trillian data(base).">
+<meta itemprop="datePublished" content="2020-03-26T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2020-03-26T00:00:00-08:00" />
+<meta itemprop="wordCount" content="849">
+
+
+
+<meta itemprop="keywords" content="Google,Trillian&#34;,Cloud Run,gRPC,grpcurl," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Google Trillian on Cloud Run"/>
+<meta name="twitter:description" content="I&rsquo;ve written previously (Google Trillian for Noobs) about Google&rsquo;s interesting project Trillian and about some of the &ldquo;personalities&rdquo; (e.g. PyPi Transparency) that I&rsquo;ve build using it.
+Having gone slight cra-cra on Cloud Run and gRPC this week with Golang gRPC Cloud Run and gRPC, Cloud Run &amp; Endpoints, I thought it&rsquo;d be fun to deploy Trillian and a personality to Cloud Run.
+It mostly (!) works :-)
+At the end of the post, I&rsquo;ve summarized creating a Cloud SQL instance to host the Trillian data(base)."/>
+
+      
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="https://pretired.dazwilkin.com/" class="f3 fw2 hover-white no-underline white-90 dib">
+      (p)retired
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+
+    <header class="mt4 w-100">
+      <p class="f6 b helvetica tracked">
+          
+        POSTS
+      </p>
+      <h1 class="f1 athelas mb1">Google Trillian on Cloud Run</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2020-03-26T00:00:00-08:00">March 26, 2020</time>
+      
+      
+        <span class="f6 mv4 dib tracked"> - 4 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 849 words</span>
+      
+    </header>
+
+    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve written previously (<a href="https://medium.com/google-cloud/google-trillian-for-noobs-1a-c87a78e5e585">Google Trillian for Noobs</a>) about Google&rsquo;s interesting project <a href="github.com/google/trillian">Trillian</a> and about some of the &ldquo;personalities&rdquo; (e.g. <a href="https://pretired.dazwilkin.com/posts/190907/">PyPi Transparency</a>) that I&rsquo;ve build using it.</p>
+<p>Having gone slight cra-cra on <a href="cloud.google.com/run">Cloud Run</a> and <a href="https://grpc.io">gRPC</a> this week with <a href="https://pretired.dazwilkin.com/posts/200320/">Golang gRPC Cloud Run</a> and <a href="https://pretired.dazwilkin.com/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a>, I thought it&rsquo;d be fun to deploy Trillian and a personality to Cloud Run.</p>
+<p>It mostly (!) works :-)</p>
+<p>At the end of the post, I&rsquo;ve summarized creating a Cloud SQL instance to host the Trillian data(base).</p>
+<p>You&rsquo;ll need a GCP project, billing established (!?) and Cloud Run enabled</p>
+<h3 id="project">Project</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">BILLING<span style="color:#f92672">=[[</span>YOUR-BILLING<span style="color:#f92672">]]</span>
+PROJECT<span style="color:#f92672">=[[</span>YOUR-PROJECT<span style="color:#f92672">]]</span>
+REGION<span style="color:#f92672">=[[</span>YOUR-REGION<span style="color:#f92672">]]</span> <span style="color:#75715e"># Perhaps &#34;us-west1&#34;</span>
+
+gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+gcloud beta billing projects link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Enable Cloud Run</span>
+gcloud services enable run.googleapis.com <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</code></pre></div><h3 id="cloud-run">Cloud Run</h3>
+<p>OK, using Trillian&rsquo;s public container images, let&rsquo;s deploy a Log Server and a Log Signer configured to use our Cloud SQL instance:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Endpoint for Cloud Run services must be port 8080</span>
+PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.0.0.0:8080&#34;</span>
+
+<span style="color:#75715e"># Cloud SQL Instance details</span>
+INST<span style="color:#f92672">=[</span>YOUR-INST<span style="color:#f92672">]</span> <span style="color:#75715e"># Perhaps &#34;db&#34;</span>
+CONN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  gcloud sql instances describe <span style="color:#e6db74">${</span>INST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(connectionName)&#34;</span><span style="color:#66d9ef">)</span>
+
+<span style="color:#75715e"># Details for the database &#34;test&#34; on the instance</span>
+USER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;test&#34;</span>
+PASS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;zaphod&#34;</span>
+
+<span style="color:#75715e"># Log Server</span>
+gcloud run deploy trillian-log-server <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--image<span style="color:#f92672">=</span>gcr.io/trillian-opensource-ci/log_server@sha256:a027dd696a20c8741a88264d84ee08ff19343f84f297fb3afbf6b23ef799851f <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--args<span style="color:#f92672">=</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;--mysql_uri=</span><span style="color:#e6db74">${</span>USER<span style="color:#e6db74">}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">${</span>PASS<span style="color:#e6db74">}</span><span style="color:#e6db74">@unix(/cloudsql/</span><span style="color:#e6db74">${</span>CONN<span style="color:#e6db74">}</span><span style="color:#e6db74">)/test&#34;</span>,<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;--rpc_endpoint=</span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>,<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;alsologtostderr&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--add-cloudsql-instances<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>CONN<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--set-env-vars<span style="color:#f92672">=</span>INSTANCE_CONNECTION_NAME<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>CONN<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--allow-unauthenticated <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Log Signer</span>
+gcloud run deploy trillian-log-signer <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--image<span style="color:#f92672">=</span>gcr.io/trillian-opensource-ci/log_signer@sha256:7d8ff9fba9863adca440c4ddc51080162d3d246c3b71d3929ce3b57bd6f979cf <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--args<span style="color:#f92672">=</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;--mysql_uri=</span><span style="color:#e6db74">${</span>USER<span style="color:#e6db74">}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">${</span>PASS<span style="color:#e6db74">}</span><span style="color:#e6db74">@unix(/cloudsql/</span><span style="color:#e6db74">${</span>CONN<span style="color:#e6db74">}</span><span style="color:#e6db74">)/test&#34;</span>,<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;--rpc_endpoint=</span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>,<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;--batch_size=1000&#34;</span>,<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;--sequencer_guard_window=0&#34;</span>,<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;--sequencer_interval=200ms&#34;</span>,<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;--force_master&#34;</span>,<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;--logtostderr&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--add-cloudsql-instances<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>CONN<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--set-env-vars<span style="color:#f92672">=</span>INSTANCE_CONNECTION_NAME<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>CONN<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--allow-unauthenticated <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</code></pre></div><blockquote>
+<p><strong>NB</strong> It is possible to pass flags (<code>--flag=value</code>) to Cloud Run but it&rsquo;s not clearly documented</p>
+</blockquote>
+<blockquote>
+<p><strong>NB</strong> We must <strong>triple</strong> reference the database (a) <code>--msql_url=</code>; (b) <code>--add-cloudsql-instance</code>; (c) <code>--set-env-vars=INSTANCE_CONNECTION</code></p>
+</blockquote>
+<p>Cloud Run injects a proxy (sidecar) into deployments and (among other things?) provides a TLS endpoint. In order to connect to the Trillian Log Server, we must (a) get the service&rsquo;s endpoint; (b) grab the server&rsquo;s TLS certificate; (c) create a Trillian Log using the Log Server (on the Cloud SQL database):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"> Grab the Log Server<span style="color:#e6db74">&#39;s (Cloud Run) address
+</span><span style="color:#e6db74">TRILLIAN_LOG_SERVER=$(\
+</span><span style="color:#e6db74">  gcloud run services describe trillian-log-server \
+</span><span style="color:#e6db74">  --platform=managed \
+</span><span style="color:#e6db74">  --region=${REGION} \
+</span><span style="color:#e6db74">  --project=${PROJECT} \
+</span><span style="color:#e6db74">  --format=&#34;value(status.address.url)&#34;)
+</span><span style="color:#e6db74"># Ditch the prefixing &#34;https://&#34;
+</span><span style="color:#e6db74">TRILLIAN_LOG_SERVER=${TRILLIAN_LOG_SERVER#https://} &amp;&amp; echo ${TRILLIAN_LOG_SERVER}
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74"># Determine the Log Server&#39;</span>s certificate
+<span style="color:#75715e"># Cloud Run automatically proxies (sidecar) deployed container&#39;s endpoint</span>
+openssl s_client -showcerts -servername <span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER<span style="color:#e6db74">}</span> -connect <span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER<span style="color:#e6db74">}</span>:443 2&gt;/dev/null &lt;/dev/null <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| sed -ne <span style="color:#e6db74">&#39;/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p&#39;</span> &gt; ./<span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER<span style="color:#e6db74">}</span>.pem
+
+<span style="color:#75715e"># Create a Log ID</span>
+<span style="color:#75715e"># Requires the Log Server&#39;s cert because Cloud Run proxies traffic through TLS</span>
+LOGID<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  go run github.com/google/trillian <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --tls_cert_file<span style="color:#f92672">=</span>./<span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER<span style="color:#e6db74">}</span>.pem <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --admin_server<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER<span style="color:#e6db74">}</span>:443<span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>LOGID<span style="color:#e6db74">}</span>
+</code></pre></div><p>You&rsquo;ll need a Trillian personality for the next step. I&rsquo;m using one that I created earlier but I recommend you deploy your own. Use my example as a guide:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">TAG<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>git rev-parse HEAD<span style="color:#66d9ef">)</span>
+DIGEST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  gcloud container images describe gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/server:<span style="color:#e6db74">${</span>TAG<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(image_summary.digest)&#34;</span><span style="color:#66d9ef">)</span>
+
+<span style="color:#75715e"># NB Cloud Run sidecars the container with a(n Envoy proxied?) TLS endpoint on port 443</span>
+gcloud run deploy pypi-transparency-server <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--image<span style="color:#f92672">=</span>gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/server@<span style="color:#e6db74">${</span>DIGEST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--args<span style="color:#f92672">=</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;--grpc_endpoint=</span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>,<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;--tlog_endpoint=</span><span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER<span style="color:#e6db74">}</span><span style="color:#e6db74">:443&#34;</span>,<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;--tlog_id=</span><span style="color:#e6db74">${</span>LOGID<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>,<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;--package_cache=/tmp&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--allow-unauthenticated <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</code></pre></div><blockquote>
+<p><strong>NB</strong> The personality connects to the Trillian Log Server on the Cloud Run service&rsquo;s host (`${TRILLIAN_LOG_SERVER}) and port 443</p>
+</blockquote>
+<blockquote>
+<p><strong>NB</strong> The personality also uses a log created in the previous step (<code>${LOGID}</code>)</p>
+</blockquote>
+<p>This is where my personality deployment (I think the Trillian services work correctly) falls short. I should be able to now <code>gprcurl</code> the endpoint but this fails:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#39;{ &#34;package&#34;: {&#34;name&#34;: &#34;protobuf&#34;, &#34;version&#34;: &#34;3.11.3&#34;, &#34;filename&#34;: &#34;protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34;, &#34;url&#34;: &#34;https://files.pythonhosted.org/packages/9a/71/5cdb5ed762a537eac39097ae6ecf8785e276b5044efe99b8e53cb3addd7f/protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34; }}&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/pypi_transparency.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/package.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PYPI_SERVER<span style="color:#e6db74">}</span>:443 pypitransparency.v1.PyPiTransparency.AddPackage
+ERROR:
+  Code: Unavailable
+  Message: connection closed
+</code></pre></div><p>Example: <a href="https://pypi.org/project/protobuf/3.11.3/#description">PyPi: protobuf 3.11.3</a></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
+	<span style="color:#f92672">&#34;Package&#34;</span>: {
+		<span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;protobuf&#34;</span>,
+		<span style="color:#f92672">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;3.11.3&#34;</span>,
+		<span style="color:#f92672">&#34;filename&#34;</span>: <span style="color:#e6db74">&#34;protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34;</span>,
+		<span style="color:#f92672">&#34;url&#34;</span>: <span style="color:#e6db74">&#34;https://files.pythonhosted.org/packages/9a/71/5cdb5ed762a537eac39097ae6ecf8785e276b5044efe99b8e53cb3addd7f/protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34;</span>
+	}
+}
+</code></pre></div><p>I&rsquo;ll update this post when I understand my mistake :-)</p>
+<h3 id="cloud-sql">Cloud SQL</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">INST<span style="color:#f92672">=[[</span>YOUR-INST<span style="color:#f92672">]]</span> <span style="color:#75715e"># Perhaps &#34;db&#34;</span>
+ROOT<span style="color:#f92672">=[[</span>YOUR-ROOT<span style="color:#f92672">]]</span> <span style="color:#75715e"># Something unique to this database instance</span>
+gcloud sql instances create <span style="color:#e6db74">${</span>INST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--tier<span style="color:#f92672">=</span>db-f1-micro <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--storage-type<span style="color:#f92672">=</span>HDD <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--availability-type<span style="color:#f92672">=</span>zonal <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--no-backup <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--database-version<span style="color:#f92672">=</span>MYSQL_5_7 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--root-password<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ROOT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</code></pre></div><p>We&rsquo;ll need to create a database on the instance and populate it with Trillian&rsquo;s schema.</p>
+<p>In one shell:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">CONN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  gcloud sql instances describe <span style="color:#e6db74">${</span>INST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(connectionName)&#34;</span><span style="color:#66d9ef">)</span>
+
+./cloud_sql_proxy -instances<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>CONN<span style="color:#e6db74">}</span><span style="color:#f92672">=</span>tcp:3306
+</code></pre></div><blockquote>
+<p><strong>NB</strong> You&rsquo;ll need Google&rsquo;s <a href="https://cloud.google.com/sql/docs/mysql/sql-proxy#install">Cloud SQL Proxy</a></p>
+</blockquote>
+<blockquote>
+<p><strong>NB</strong> Once the proxy is running, it proxies traffic sent to it (<code>localhost</code>) to the remote instance (<code>${DB}</code>)</p>
+</blockquote>
+<p>Then, in another shell, get a client to the database:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">VERSION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;10.4.12&#34;</span>
+docker run <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--interactive --tty <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--net<span style="color:#f92672">=</span>host <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>mariadb:<span style="color:#e6db74">${</span>VERSION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sh -c <span style="color:#e6db74">&#34;exec mysql --host=127.0.0.1 --port=3306 --password=</span><span style="color:#e6db74">${</span>ROOT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</code></pre></div><p>And, paste in:</p>
+<pre><code>drop database if exists test;
+create database test;
+create user if not exists test@'%' identified by 'zaphod';
+grant all on test.* to test@'%';
+</code></pre><p>Then quit it and then:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">USER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;test&#34;</span>
+PASS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;zaphod&#34;</span>
+
+docker run <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--interactive --tty <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--net<span style="color:#f92672">=</span>host <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/trillian.sql:/trillian.sql <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>mariadb:<span style="color:#e6db74">${</span>VERSION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sh -c <span style="color:#e6db74">&#34;exec mysql --host=127.0.0.1 --port=3306 --user=</span><span style="color:#e6db74">${</span>USER<span style="color:#e6db74">}</span><span style="color:#e6db74"> --password=</span><span style="color:#e6db74">${</span>PASS<span style="color:#e6db74">}</span><span style="color:#e6db74"> test &lt; /trillian.sql&#34;</span>
+</code></pre></div><blockquote>
+<p><strong>NB</strong> Here&rsquo;s the script <a href="https://gist.github.com/DazWilkin/5d4cb0974a5f4f4bf88bafdfe8141443"><code>trillian.sql</code></a></p>
+</blockquote>
+<h3 id="tidy">Tidy</h3>
+<p>If you&rsquo;re <strong>absolutely</strong> certain you don&rsquo;t need the project, you can delete everything by deleting the project:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud projects delete <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
+</code></pre></div><p>Otherwise, you can delete the pieces:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#66d9ef">for</span> SERVICE in <span style="color:#e6db74">&#34;trillian-log-server&#34;</span> <span style="color:#e6db74">&#34;trillian-log-signer&#34;</span> <span style="color:#e6db74">&#34;pypi-transparency-server&#34;</span>
+<span style="color:#66d9ef">do</span>
+  gcloud run services delete <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project=<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --quiet
+done
+</code></pre></div><p>and the Cloud SQL instance:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud sql instances delete <span style="color:#e6db74">${</span>INST<span style="color:#e6db74">}</span> --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+
+Done.
+</code></pre></div><ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/google" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Google</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/trillian" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Trillian&#34;</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/cloud-run" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Cloud Run</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/grpc" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">gRPC</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/grpcurl" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">grpcurl</a>
+   </li>
+  
+</ul>
+<div class="mt6">
+      
+      
+      </div>
+    </section>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200320/">Golang gRPC Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200207/">Accessing GCR repos from Kubernetes</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200206/">Cloud Build wishlist: Mountable Golang Modules Proxy</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/190918/">Cloud Functions Simple(st) HTTP Multi-host Proxy</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/190917/">Cloud Functions Simple(st) HTTP Proxy</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2020 
+  </a>
+    <div>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+</div>
+  </div>
+</footer>
+
+    
+
+  <script src="/dist/js/app.3fc0f988d21662902933.js"></script>
+
+
+  </body>
+</html>
