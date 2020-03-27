@@ -41,7 +41,7 @@ It mostly (!) works :-)
 At the end of the post, I&rsquo;ve summarized creating a Cloud SQL instance to host the Trillian data(base).">
 <meta itemprop="datePublished" content="2020-03-26T00:00:00-08:00" />
 <meta itemprop="dateModified" content="2020-03-26T00:00:00-08:00" />
-<meta itemprop="wordCount" content="849">
+<meta itemprop="wordCount" content="1099">
 
 
 
@@ -152,8 +152,8 @@ if (!doNotTrack) {
       <time class="f6 mv4 dib tracked" datetime="2020-03-26T00:00:00-08:00">March 26, 2020</time>
       
       
-        <span class="f6 mv4 dib tracked"> - 4 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 849 words</span>
+        <span class="f6 mv4 dib tracked"> - 6 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 1099 words</span>
       
     </header>
 
@@ -267,12 +267,21 @@ gcloud run deploy pypi-transparency-server <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </code></pre></div><blockquote>
-<p><strong>NB</strong> The personality connects to the Trillian Log Server on the Cloud Run service&rsquo;s host (`${TRILLIAN_LOG_SERVER}) and port 443</p>
+<p><strong>NB</strong> The personality connects to the Trillian Log Server on the Cloud Run service&rsquo;s host (<code>${TRILLIAN_LOG_SERVER}</code>) and port 443</p>
 </blockquote>
 <blockquote>
 <p><strong>NB</strong> The personality also uses a log created in the previous step (<code>${LOGID}</code>)</p>
 </blockquote>
-<p>This is where my personality deployment (I think the Trillian services work correctly) falls short. I should be able to now <code>gprcurl</code> the endpoint but this fails:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Grab the PyPi Transparency Server&#39;s (Cloud Run) address</span>
+PYPI_SERVER<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  gcloud run services describe pypi-transparency-server <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span><span style="color:#66d9ef">)</span>
+<span style="color:#75715e"># Ditch the prefixing &#34;https://&#34;</span>
+PYPI_SERVER<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PYPI_SERVER#https://<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>PYPI_SERVER<span style="color:#e6db74">}</span>
+</code></pre></div><p>This is where my personality deployment (I think the Trillian services work correctly) falls short. I should be able to now <code>gprcurl</code> the endpoint but this fails:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#39;{ &#34;package&#34;: {&#34;name&#34;: &#34;protobuf&#34;, &#34;version&#34;: &#34;3.11.3&#34;, &#34;filename&#34;: &#34;protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34;, &#34;url&#34;: &#34;https://files.pythonhosted.org/packages/9a/71/5cdb5ed762a537eac39097ae6ecf8785e276b5044efe99b8e53cb3addd7f/protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34; }}&#39;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-proto protos/pypi_transparency.proto <span style="color:#ae81ff">\
@@ -291,7 +300,69 @@ ERROR:
 	}
 }
 </code></pre></div><p>I&rsquo;ll update this post when I understand my mistake :-)</p>
-<h3 id="cloud-sql">Cloud SQL</h3>
+<p>Aha! My mistake was that the <code>pypi-transparency-server</code> was failing when making an insecure connection to the <code>trillian-log-server</code> (because this is how I role during development). I revised the <code>pypi-transparency-server</code> so that it uses the system certificate pool to make the connection and now the <code>grpcurl</code> works as expected:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">systemCertPool</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">x509</span>.<span style="color:#a6e22e">SystemCertPool</span>()
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#e6db74">&#34;failed to load system root CA cert pool&#34;</span>)
+}
+  
+<span style="color:#a6e22e">creds</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">credentials</span>.<span style="color:#a6e22e">NewTLS</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Config</span>{
+	<span style="color:#a6e22e">RootCAs</span>: <span style="color:#a6e22e">systemCertPool</span>,
+})
+
+<span style="color:#a6e22e">dialOpts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">DialOption</span>{
+	<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithTransportCredentials</span>(<span style="color:#a6e22e">creds</span>),
+}
+
+<span style="color:#a6e22e">conn</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">Dial</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">tLogEndpoint</span>, <span style="color:#a6e22e">dialOpts</span><span style="color:#f92672">...</span>)
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+}
+<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">conn</span>.<span style="color:#a6e22e">Close</span>()
+</code></pre></div><p>and:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># AddPackage</span>
+grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#39;{ &#34;package&#34;: {&#34;name&#34;: &#34;protobuf&#34;, &#34;version&#34;: &#34;3.11.3&#34;, &#34;filename&#34;: &#34;protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34;, &#34;url&#34;: &#34;https://files.pythonhosted.org/packages/9a/71/5cdb5ed762a537eac39097ae6ecf8785e276b5044efe99b8e53cb3addd7f/protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34; }}&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/pypi_transparency.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/package.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PYPI_SERVER<span style="color:#e6db74">}</span>:443 pypitransparency.v1.PyPiTransparency.AddPackage
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;ok&#34;</span>: true
+<span style="color:#f92672">}</span>
+
+<span style="color:#75715e"># GetPackage</span>
+grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#39;{ &#34;package&#34;: {&#34;name&#34;: &#34;protobuf&#34;, &#34;version&#34;: &#34;3.11.3&#34;, &#34;filename&#34;: &#34;protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34;, &#34;url&#34;: &#34;https://files.pythonhosted.org/packages/9a/71/5cdb5ed762a537eac39097ae6ecf8785e276b5044efe99b8e53cb3addd7f/protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34; }}&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/pypi_transparency.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/package.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PYPI_SERVER<span style="color:#e6db74">}</span>:443 pypitransparency.v1.PyPiTransparency.GetPackage
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;ok&#34;</span>: true
+<span style="color:#f92672">}</span>
+
+<span style="color:#75715e"># The following calls merely parse the protos but...</span>
+grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/pypi_transparency.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/package.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>list pypitransparency.v1.PyPiTransparency
+pypitransparency.v1.PyPiTransparency.AddPackage
+pypitransparency.v1.PyPiTransparency.GetInclusionProof
+pypitransparency.v1.PyPiTransparency.GetPackage
+
+grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/pypi_transparency.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/package.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>describe pypitransparency.v1.PyPiTransparency.AddPackage
+pypitransparency.v1.PyPiTransparency.AddPackage is a method:
+rpc AddPackage <span style="color:#f92672">(</span> .pypitransparency.v1.AddPackageRequest <span style="color:#f92672">)</span> returns <span style="color:#f92672">(</span> .pypitransparency.v1.AddPackageResponse <span style="color:#f92672">)</span>;
+
+grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/pypi_transparency.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto protos/package.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>describe pypitransparency.v1.PyPiTransparency.GetPackage
+pypitransparency.v1.PyPiTransparency.GetPackage is a method:
+rpc GetPackage <span style="color:#f92672">(</span> .pypitransparency.v1.GetPackageRequest <span style="color:#f92672">)</span> returns <span style="color:#f92672">(</span> .pypitransparency.v1.GetPackageResponse <span style="color:#f92672">)</span>;
+</code></pre></div><h3 id="cloud-sql">Cloud SQL</h3>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">INST<span style="color:#f92672">=[[</span>YOUR-INST<span style="color:#f92672">]]</span> <span style="color:#75715e"># Perhaps &#34;db&#34;</span>
 ROOT<span style="color:#f92672">=[[</span>YOUR-ROOT<span style="color:#f92672">]]</span> <span style="color:#75715e"># Something unique to this database instance</span>
 gcloud sql instances create <span style="color:#e6db74">${</span>INST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
