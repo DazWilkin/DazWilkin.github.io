@@ -41,7 +41,7 @@ It mostly (!) works :-)
 At the end of the post, I&rsquo;ve summarized creating a Cloud SQL instance to host the Trillian data(base).">
 <meta itemprop="datePublished" content="2020-03-26T00:00:00-08:00" />
 <meta itemprop="dateModified" content="2020-03-26T00:00:00-08:00" />
-<meta itemprop="wordCount" content="849">
+<meta itemprop="wordCount" content="851">
 
 
 
@@ -153,7 +153,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 4 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 849 words</span>
+        <span class="f6 mv4 dib tracked"> - 851 words</span>
       
     </header>
 
@@ -168,7 +168,8 @@ PROJECT<span style="color:#f92672">=[[</span>YOUR-PROJECT<span style="color:#f92
 REGION<span style="color:#f92672">=[[</span>YOUR-REGION<span style="color:#f92672">]]</span> <span style="color:#75715e"># Perhaps &#34;us-west1&#34;</span>
 
 gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-gcloud beta billing projects link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
+gcloud beta billing projects link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
 
 <span style="color:#75715e"># Enable Cloud Run</span>
 gcloud services enable run.googleapis.com <span style="color:#ae81ff">\
@@ -176,7 +177,7 @@ gcloud services enable run.googleapis.com <span style="color:#ae81ff">\
 </code></pre></div><h3 id="cloud-run">Cloud Run</h3>
 <p>OK, using Trillian&rsquo;s public container images, let&rsquo;s deploy a Log Server and a Log Signer configured to use our Cloud SQL instance:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Endpoint for Cloud Run services must be port 8080</span>
-PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.0.0.0:8080&#34;</span>
+ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.0.0.0:8080&#34;</span>
 
 <span style="color:#75715e"># Cloud SQL Instance details</span>
 INST<span style="color:#f92672">=[</span>YOUR-INST<span style="color:#f92672">]</span> <span style="color:#75715e"># Perhaps &#34;db&#34;</span>
@@ -227,17 +228,17 @@ gcloud run deploy trillian-log-signer <span style="color:#ae81ff">\
 <p><strong>NB</strong> We must <strong>triple</strong> reference the database (a) <code>--msql_url=</code>; (b) <code>--add-cloudsql-instance</code>; (c) <code>--set-env-vars=INSTANCE_CONNECTION</code></p>
 </blockquote>
 <p>Cloud Run injects a proxy (sidecar) into deployments and (among other things?) provides a TLS endpoint. In order to connect to the Trillian Log Server, we must (a) get the service&rsquo;s endpoint; (b) grab the server&rsquo;s TLS certificate; (c) create a Trillian Log using the Log Server (on the Cloud SQL database):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"> Grab the Log Server<span style="color:#e6db74">&#39;s (Cloud Run) address
-</span><span style="color:#e6db74">TRILLIAN_LOG_SERVER=$(\
-</span><span style="color:#e6db74">  gcloud run services describe trillian-log-server \
-</span><span style="color:#e6db74">  --platform=managed \
-</span><span style="color:#e6db74">  --region=${REGION} \
-</span><span style="color:#e6db74">  --project=${PROJECT} \
-</span><span style="color:#e6db74">  --format=&#34;value(status.address.url)&#34;)
-</span><span style="color:#e6db74"># Ditch the prefixing &#34;https://&#34;
-</span><span style="color:#e6db74">TRILLIAN_LOG_SERVER=${TRILLIAN_LOG_SERVER#https://} &amp;&amp; echo ${TRILLIAN_LOG_SERVER}
-</span><span style="color:#e6db74">
-</span><span style="color:#e6db74"># Determine the Log Server&#39;</span>s certificate
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Grab the Log Server&#39;s (Cloud Run) address</span>
+TRILLIAN_LOG_SERVER<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  gcloud run services describe trillian-log-server <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span><span style="color:#66d9ef">)</span>
+<span style="color:#75715e"># Ditch the prefixing &#34;https://&#34;</span>
+TRILLIAN_LOG_SERVER<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER#https://<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Determine the Log Server&#39;s certificate</span>
 <span style="color:#75715e"># Cloud Run automatically proxies (sidecar) deployed container&#39;s endpoint</span>
 openssl s_client -showcerts -servername <span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER<span style="color:#e6db74">}</span> -connect <span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER<span style="color:#e6db74">}</span>:443 2&gt;/dev/null &lt;/dev/null <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>| sed -ne <span style="color:#e6db74">&#39;/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p&#39;</span> &gt; ./<span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER<span style="color:#e6db74">}</span>.pem
@@ -245,7 +246,7 @@ openssl s_client -showcerts -servername <span style="color:#e6db74">${</span>TRI
 <span style="color:#75715e"># Create a Log ID</span>
 <span style="color:#75715e"># Requires the Log Server&#39;s cert because Cloud Run proxies traffic through TLS</span>
 LOGID<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  go run github.com/google/trillian <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  go run github.com/google/trillian/cmd/createtree <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --tls_cert_file<span style="color:#f92672">=</span>./<span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER<span style="color:#e6db74">}</span>.pem <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --admin_server<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER<span style="color:#e6db74">}</span>:443<span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>LOGID<span style="color:#e6db74">}</span>
 </code></pre></div><p>You&rsquo;ll need a Trillian personality for the next step. I&rsquo;m using one that I created earlier but I recommend you deploy your own. Use my example as a guide:</p>
