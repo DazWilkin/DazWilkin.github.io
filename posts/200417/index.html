@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>(p)retired  | Golang Xiaomi Bluetooth Temperature|Humidity (LYWSD03MMC) 2nd Gen</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="generator" content="Hugo 0.69.0" />
+    
+    
+      <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+    
+
+    
+    
+      <link href="/dist/css/app.d98f2eb6bcd1eaedb7edf166bd16af26.css" rel="stylesheet">
+    
+
+    
+
+    
+      
+    
+
+    
+    
+    <meta property="og:title" content="Golang Xiaomi Bluetooth Temperature|Humidity (LYWSD03MMC) 2nd Gen" />
+<meta property="og:description" content="Well, this became more of an adventure that I&rsquo;d originally wanted but, after learning some BLE and, with the help of others (Thanks Jonatha, JsBergbau), I&rsquo;ve sample code that connects to 4 Xiaomi 2nd gen. Thermometers, subscribes to readings and publishes the data to MQTT. From there, I&rsquo;m scraping it using Inuits MQTTGateway into Prometheus.
+Repo: https://github.com/DazWilkin/gomijia2
+Thanks|Credit:  Johnathan McDowell for gomijia and help JsBergbau for help  Background I&rsquo;ve been playing around with ESPHome and blogged around my very positive experience ESPHome, MQTT, Prometheus and almost Cloud IoT." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/200417/" />
+<meta property="article:published_time" content="2020-04-17T00:00:00-08:00" />
+<meta property="article:modified_time" content="2020-04-17T00:00:00-08:00" />
+<meta itemprop="name" content="Golang Xiaomi Bluetooth Temperature|Humidity (LYWSD03MMC) 2nd Gen">
+<meta itemprop="description" content="Well, this became more of an adventure that I&rsquo;d originally wanted but, after learning some BLE and, with the help of others (Thanks Jonatha, JsBergbau), I&rsquo;ve sample code that connects to 4 Xiaomi 2nd gen. Thermometers, subscribes to readings and publishes the data to MQTT. From there, I&rsquo;m scraping it using Inuits MQTTGateway into Prometheus.
+Repo: https://github.com/DazWilkin/gomijia2
+Thanks|Credit:  Johnathan McDowell for gomijia and help JsBergbau for help  Background I&rsquo;ve been playing around with ESPHome and blogged around my very positive experience ESPHome, MQTT, Prometheus and almost Cloud IoT.">
+<meta itemprop="datePublished" content="2020-04-17T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2020-04-17T00:00:00-08:00" />
+<meta itemprop="wordCount" content="1144">
+
+
+
+<meta itemprop="keywords" content="Golang,Xiaomi,BLE,LYWSD03MMC," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Golang Xiaomi Bluetooth Temperature|Humidity (LYWSD03MMC) 2nd Gen"/>
+<meta name="twitter:description" content="Well, this became more of an adventure that I&rsquo;d originally wanted but, after learning some BLE and, with the help of others (Thanks Jonatha, JsBergbau), I&rsquo;ve sample code that connects to 4 Xiaomi 2nd gen. Thermometers, subscribes to readings and publishes the data to MQTT. From there, I&rsquo;m scraping it using Inuits MQTTGateway into Prometheus.
+Repo: https://github.com/DazWilkin/gomijia2
+Thanks|Credit:  Johnathan McDowell for gomijia and help JsBergbau for help  Background I&rsquo;ve been playing around with ESPHome and blogged around my very positive experience ESPHome, MQTT, Prometheus and almost Cloud IoT."/>
+
+      
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="https://pretired.dazwilkin.com/" class="f3 fw2 hover-white no-underline white-90 dib">
+      (p)retired
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+
+    <header class="mt4 w-100">
+      <p class="f6 b helvetica tracked">
+          
+        POSTS
+      </p>
+      <h1 class="f1 athelas mb1">Golang Xiaomi Bluetooth Temperature|Humidity (LYWSD03MMC) 2nd Gen</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2020-04-17T00:00:00-08:00">April 17, 2020</time>
+      
+      
+        <span class="f6 mv4 dib tracked"> - 6 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 1144 words</span>
+      
+    </header>
+
+    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>Well, this became more of an adventure that I&rsquo;d originally wanted but, after learning some BLE and, with the help of others (Thanks Jonatha, JsBergbau), I&rsquo;ve sample code that connects to 4 Xiaomi 2nd gen. Thermometers, subscribes to readings and publishes the data to MQTT. From there, I&rsquo;m scraping it using Inuits <a href="">MQTTGateway</a> into Prometheus.</p>
+<p>Repo: <a href="https://github.com/DazWilkin/gomijia2">https://github.com/DazWilkin/gomijia2</a></p>
+<p><img src="/images/200417.prometheus.png" alt="Prometheus"></p>
+<h3 id="thankscredit">Thanks|Credit:</h3>
+<ul>
+<li><a href="https://github.com/u1f35c">Johnathan McDowell</a> for <a href="https://github.com/u1f35c/gomijia">gomijia</a> and <a href="https://github.com/u1f35c/gomijia/issues/1">help</a></li>
+<li><a href="https://github.com/JsBergbau">JsBergbau</a> for <a href="https://github.com/JsBergbau/MiTemperature2/issues/29#issuecomment-614314939">help</a></li>
+</ul>
+<h3 id="background">Background</h3>
+<p>I&rsquo;ve been playing around with <a href="https://esphome.io">ESPHome</a> and blogged around my very positive experience <a href="https://pretired.dazwilkin.com/posts/200227/">ESPHome, MQTT, Prometheus and almost Cloud IoT</a>. I&rsquo;ve ordered a couple of <a href="https://www.espressif.com/en/products/hardware/esp32-devkitc-googlecloud-iot/overview">ESP32-DevKitC</a> and hope this will enable me to connect to Google <a href="https://cloud.google.com/iot-core">Cloud IoT</a>.</p>
+<p>Meantime I bought 4x Xiaomi 2nd gen. Thermometers (<a href="https://www.google.com/search?q=LYWSD03MMC">LYWSD03MMC</a>). These are Bluetooth Low-Energy (BLE) enabled and are supported by ESPHome. Awaiting the ESP32s, I decided to try to connect to the devices using Golang. The Mi Home app does not find these devices.</p>
+<p>I discovered Jonathan&rsquo;s <a href="https://github.com/u1f35c/gomijia">gomijia</a> but this doesn&rsquo;t work with the 2nd gen. devices. IIUC it&rsquo;s because the 2nd gen. devices don&rsquo;t advertize temperature|humidity values (the orignal device clearly does).</p>
+<p>After much Googling, I discovered JsBergbau&rsquo;s Python <a href="https://github.com/JsBergbau/MiTemperature2">solution</a> and this works. Critically (!) this code uses a device handle (<a href="https://github.com/JsBergbau/MiTemperature2/blob/5cc7924430bb9d3ecb61acbf887ad8c2e1d84ab8/LYWSD03MMC.py#L192"><code>0x0038</code></a> more later) seemingly (!) to tell the device to publish temperature|humidity data on (a different) handle (<code>0x0035</code>).</p>
+<p>With these samples as a guide and after a bunch more Googling about BLE, services, characteristics etc., I was able to get the code to work</p>
+<h3 id="servicescharacteristicshandles">Services|Characteristics|Handles</h3>
+<p>I won&rsquo;t duplicate an overview of BLE here (see <a href="#useful">Useful</a>) but, understanding a BLE device&rsquo;s <a href="https://www.bluetooth.com/specifications/gatt/">GATT</a> is critical. The Linux <a href="http://manpages.ubuntu.com/manpages/cosmic/man1/gatttool.1.html"><code>gatttool</code></a> is very useful. I found PayPay&rsquo;s Golang-based <a href="https://github.com/paypal/gatt"><code>gatt</code></a> to be most useful. Here&rsquo;s the GATT per the PayPal tool for a LYWSD03MMC device:</p>
+<pre><code>State: PoweredOn
+Scanning...
+
+Peripheral ID:A4:C1:38:7B:B0:1A, NAME:(LYWSD03MMC)
+  Local Name        = LYWSD03MMC
+  TX Power Level    = 0
+  Manufacturer Data = []
+  Service Data      = []
+
+Connected
+Service: 1800 (Generic Access)
+Service: 1801 (Generic Attribute)
+Service: 180a (Device Information)
+Service: 180f (Battery Service)
+Service: 000102030405060708090a0b0c0d1912
+
+Service: ebe0ccb07a0a4b0c8a1a6ff2997da3a6
+  Characteristic  ebe0ccc17a0a4b0c8a1a6ff2997da3a6
+    properties    read notify 
+    value         000000 | &quot;\x00\x00\x00&quot;
+  Descriptor      2901 (Characteristic User Description)
+    value         54656d706572617475726520616e642048756d696469 | &quot;Temperature and Humidi&quot;
+  Descriptor      2902 (Client Characteristic Configuration)
+    value         0000 | &quot;\x00\x00&quot;
+
+Service: fe95
+Service: 0000010000656c622e746f696d2e696d
+
+Disconnected
+Done
+</code></pre><p>It&rsquo;s also possible to enumerate a list of <code>handles</code>. The following (<code>0x0036</code> and <code>0x0038</code>) were the ones of interest to me. <code>0x0038</code> is the handle that JsBergbau&rsquo;s writes to in order to trigger being able to subscribe to handle <code>0x0036</code> to read temperature|humidity data.</p>
+<p>Reviewing the device&rsquo;s GATT, I remain unsure which service characteristic corresponds to handle <code>0x0038</code>. I know it has a UUID of <code>00002902-0000-1000-8000-00805f9b34fb</code> but the suffix <code>-0000-1000-8000-00805f9b34fb</code> denotes that this is a standard BLE characteristic and the <code>00002902</code> is not unique in the device&rsquo;s GATT.</p>
+<p>Fortunately, the characteristic corresponding to <code>0x0036</code> does appear in the GATT as shown above (<code>ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6</code>) has a descriptor value of <code>Temperature and Humidi[ty]</code></p>
+<table>
+<thead>
+<tr>
+<th>Handle</th>
+<th>Characteristic</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x0036</td>
+<td>ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6</td>
+</tr>
+<tr>
+<td>0x0038</td>
+<td>00002902-0000-1000-8000-00805f9b34fb</td>
+</tr>
+</tbody>
+</table>
+<h3 id="golang">Golang</h3>
+<p>The code uses <a href="github.com/currantlabs">currantlabs</a> <a href="github.com/currantlabs/ble">ble</a>. Jonathan&rsquo;s code uses a fork of this repo. I do not know what currantlabs is but the repo works. I found it to be challenging to understand the code particularly in enumerating devices, services, characteristics etc. I will focus the rest of this discussion on my (!?) understanding of how the code works. I&rsquo;d value feedback on my misunderstandings.</p>
+<p>First step is to create a Linux (BLE) Device (host) and then use this to connect to BLE devices:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">host</span>,<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">linux</span>.<span style="color:#a6e22e">NewDevice</span>()
+<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">WithSigHandler</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">WithTimeout</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#ae81ff">1</span><span style="color:#f92672">*</span><span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Minute</span>))
+<span style="color:#a6e22e">device</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">host</span>.<span style="color:#a6e22e">Dial</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">NewAddr</span>(<span style="color:#e6db74">&#34;a4:c1:38:00:00:00&#34;</span>))
+</code></pre></div><blockquote>
+<p><strong>TODO</strong>: I&rsquo;ve been meaning to run each device in its own Goroutine. When I tried this previously, I think I experienced concurrency problems. Will retry.</p>
+</blockquote>
+<p>The next step is the magical step that writes a magical value <code>0x1000</code> to the magical handler <code>0x0038</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">c</span><span style="color:#f92672">:=</span><span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">MustParse</span>(<span style="color:#e6db74">&#34;00002902-0000-1000-8000-00805f9b34fb&#34;</span>)
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">p</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">bleClient</span>.<span style="color:#a6e22e">DiscoverProfile</span>(<span style="color:#66d9ef">true</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">u</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">Find</span>(<span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">NewCharacteristic</span>(<span style="color:#a6e22e">c</span>)); <span style="color:#a6e22e">u</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">bleClient</span>.<span style="color:#a6e22e">WriteCharacteristic</span>(<span style="color:#a6e22e">u</span>.(<span style="color:#f92672">*</span><span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">Characteristic</span>), []<span style="color:#66d9ef">byte</span>{<span style="color:#ae81ff">0x10</span>,<span style="color:#ae81ff">0x00</span>}, <span style="color:#66d9ef">false</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Print</span>(<span style="color:#a6e22e">err</span>)
+		}
+	}
+}
+</code></pre></div><blockquote>
+<p><strong>NB</strong> I don&rsquo;t know why this works!</p>
+</blockquote>
+<p>The Golang library requires characteristics to be used instead of handles. Using one of the command-line tools, I was able to enumerate all the handles and their associated characteristics. From other code, I learned that <code>0x0038</code> is critical and <code>00002902-0000-1000-8000-00805f9b34fb</code> is the characteristic that corresponds to this handle.</p>
+<p>I learned (!?) that the library requires <code>DiscoverProfile(true)</code> to be called against the device before other commands will work correctly. After discovering the profile, the code then searches it for the characteristic we&rsquo;re interested in and then it writes <code>0x1000</code> to it.</p>
+<blockquote>
+<p><strong>TODO</strong>: I&rsquo;ve been meaning to duplicate this approach of <code>Find(...)</code> in the next section to avoid iterating over services and characteristics.</p>
+</blockquote>
+<p>Now that the value is written to <code>0x0038</code>, we can look for <code>0x0036</code> and subscribe to notifications from it.</p>
+<p>This involves (currently but see <code>TODO</code> above) iterating over services that match the filter for the service (<code>ebe0ccb07a0a4b0c8a1a6ff2997da3a6</code>) shown in the GATT above that includes the characteristic (<code>ebe0ccc17a0a4b0c8a1a6ff2997da3a6</code>) that corresponds to <code>&quot;Temperature and Humidi[ty]&quot;</code>.</p>
+<p>Again, It appears a requirement to iterate over all the characteristics Descriptors even though I don&rsquo;t reference these!</p>
+<p>The key section is:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Property</span> <span style="color:#f92672">&amp;</span> <span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">CharNotify</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">CCCD</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">continue</span>
+	}
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">UUID</span>.<span style="color:#a6e22e">Equal</span>(<span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">MustParse</span>(<span style="color:#e6db74">&#34;ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6&#34;</span>)) {
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">d</span>.<span style="color:#a6e22e">Client</span>.<span style="color:#a6e22e">Subscribe</span>(<span style="color:#a6e22e">c</span>, <span style="color:#66d9ef">false</span>, <span style="color:#a6e22e">handlerPublisher</span>(<span style="color:#f92672">...</span>)); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Print</span>(<span style="color:#a6e22e">err</span>)
+		}
+    }
+}
+</code></pre></div><blockquote>
+<p><strong>NB</strong> <code>CCCD</code> means <code>Client Characteristic Configuration Descriptor</code> and this must be non-nil to be able tos subscribe to the characteristic.</p>
+</blockquote>
+<p>The initial <code>if</code> checks whether this characteristic supports notifications (<code>ble.CharNotify</code>)</p>
+<p>If this characteristic is the one corresponding to <code>0x0036</code> (i.e. <code>ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6</code>) then we add a handler to its notifications.</p>
+<p>The handler is trivial:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">req</span> []<span style="color:#66d9ef">byte</span>) {
+    <span style="color:#a6e22e">s</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">hex</span>.<span style="color:#a6e22e">EncodeToString</span>(<span style="color:#a6e22e">req</span>)
+    <span style="color:#a6e22e">r</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Unmarshall</span>(<span style="color:#a6e22e">req</span>)
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Unable to unmarshal data (%s)&#34;</span>, <span style="color:#a6e22e">s</span>)
+		}
+		<span style="color:#f92672">...</span>
+	}
+}
+</code></pre></div><p>The Unmarshall step is also a black box to me. I don&rsquo;t know where this is duplicated but I used Fabien&rsquo;s bash <a href="http://www.d0wn.com/using-bash-and-gatttool-to-get-readings-from-xiaomi-mijia-lywsd03mmc-temperature-humidity-sensor/">script</a> as a guide:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Reading</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">Temperature</span> <span style="color:#66d9ef">float64</span>
+	<span style="color:#a6e22e">Humidity</span>    <span style="color:#66d9ef">float64</span>
+}
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Unmarshall</span>(<span style="color:#a6e22e">req</span> []<span style="color:#66d9ef">byte</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">Reading</span>, <span style="color:#66d9ef">error</span>) {
+	<span style="color:#75715e">// 00 01 02 03 04
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// T2 T1 HX ?? ??
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">l</span> <span style="color:#f92672">:=</span> len(<span style="color:#a6e22e">req</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">l</span> <span style="color:#f92672">!=</span> <span style="color:#ae81ff">5</span> {
+		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[X] Expecting 5 bytes; got %d&#34;</span>, <span style="color:#a6e22e">l</span>)
+		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Reading</span>{}, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;Expecting 5 bytes got %d&#34;</span>, <span style="color:#a6e22e">l</span>)
+	}
+	<span style="color:#75715e">// Temperature is stored little endian
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">t</span> <span style="color:#f92672">:=</span> float64(int(<span style="color:#a6e22e">binary</span>.<span style="color:#a6e22e">LittleEndian</span>.<span style="color:#a6e22e">Uint16</span>(<span style="color:#a6e22e">req</span>[<span style="color:#ae81ff">0</span>:<span style="color:#ae81ff">2</span>]))) <span style="color:#f92672">/</span> <span style="color:#ae81ff">100.0</span>
+	<span style="color:#a6e22e">h</span> <span style="color:#f92672">:=</span> float64(<span style="color:#a6e22e">req</span>[<span style="color:#ae81ff">2</span>]) <span style="color:#f92672">/</span> <span style="color:#ae81ff">100.0</span>
+	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Reading</span>{
+		<span style="color:#a6e22e">Temperature</span>: <span style="color:#a6e22e">t</span>,
+		<span style="color:#a6e22e">Humidity</span>:    <span style="color:#a6e22e">h</span>,
+	}, <span style="color:#66d9ef">nil</span>
+}
+</code></pre></div><blockquote>
+<p><strong>NB</strong> I don&rsquo;t know what the other 2 bytes represent :-(</p>
+</blockquote>
+<h3 id="mqtt--mqttgatewayhttpsgithubcominuitsmqttgateway">MQTT | <a href="https://github.com/inuits/mqttgateway">MQTTGateway</a></h3>
+<p>The MQTT publishing is straightforward. I&rsquo;m using Inuits <a href="https://github.com/inuits/mqttgateway">MQTTGateway</a> as described in the other post on ESPHome. The MQTTGateway subscribes to MQTT topics and converts these into Prometheus metrics. It&rsquo;s then trivial to scrape these using Prometheus to produce the graph shown at the top of the post.</p>
+<h3 id="useful">Useful</h3>
+<ul>
+<li>Nordic Semiconductor has excellent resources including <a href="https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Connect-for-mobile">nRF Connect for Mobile</a></li>
+<li>Snippet from <a href="https://www.oreilly.com/library/view/getting-started-with/9781491900550/ch04.html">O&rsquo;Reilly: &ldquo;Getting Started with Bluetooth Low Energy&rdquo;</a> very useful</li>
+<li>Fabien&rsquo;s <a href="http://www.d0wn.com/using-bash-and-gatttool-to-get-readings-from-xiaomi-mijia-lywsd03mmc-temperature-humidity-sensor/">bash</a> script</li>
+</ul>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/golang" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Golang</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/xiaomi" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Xiaomi</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/ble" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">BLE</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/lywsd03mmc" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">LYWSD03MMC</a>
+   </li>
+  
+</ul>
+<div class="mt6">
+      
+      
+      </div>
+    </section>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/200226/">OriginStamp: Verifying Proofs</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200219/">FreeTSA &amp; Digitorus&#39; Timestamp SDK</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200217/">OriginStamp Python|Golang SDK Examples</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200206/">Cloud Build wishlist: Mountable Golang Modules Proxy</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200122/">Setting up a GCE Instance as an Inlets Exit Node</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200110/">Google Fit</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200107/">Google Home Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191220/">Google Cloud Platform (GCP) Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191218/">Linode Prometheus Exporter</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2020 
+  </a>
+    <div>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+</div>
+  </div>
+</footer>
+
+    
+
+  <script src="/dist/js/app.3fc0f988d21662902933.js"></script>
+
+
+  </body>
+</html>
