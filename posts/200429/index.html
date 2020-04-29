@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>(p)retired  | Rust implementation of Crate Transparency using Google Trillian</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="generator" content="Hugo 0.69.2" />
+    
+    
+      <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+    
+
+    
+    
+      <link href="/dist/css/app.d98f2eb6bcd1eaedb7edf166bd16af26.css" rel="stylesheet">
+    
+
+    
+
+    
+      
+    
+
+    
+    
+    <meta property="og:title" content="Rust implementation of Crate Transparency using Google Trillian" />
+<meta property="og:description" content="I&rsquo;ve been hacking on a Rust-based transparent application for Google Trillian. As appears to be my fixation, this personality is for another package manager. This time, Rust&rsquo;s Crates often found in crates.io which is Rust&rsquo;s Package Registry. I discussed this project earlier this month Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian and and earlier approach for Python&rsquo;s packages with pypi-transparency.
+This time, of course, I&rsquo;m using Rust. And, by way of a first for me, for the gRPC server implementation (aka &ldquo;personality&rdquo;)." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/200429/" />
+<meta property="article:published_time" content="2020-04-29T00:00:00-08:00" />
+<meta property="article:modified_time" content="2020-04-29T00:00:00-08:00" />
+<meta itemprop="name" content="Rust implementation of Crate Transparency using Google Trillian">
+<meta itemprop="description" content="I&rsquo;ve been hacking on a Rust-based transparent application for Google Trillian. As appears to be my fixation, this personality is for another package manager. This time, Rust&rsquo;s Crates often found in crates.io which is Rust&rsquo;s Package Registry. I discussed this project earlier this month Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian and and earlier approach for Python&rsquo;s packages with pypi-transparency.
+This time, of course, I&rsquo;m using Rust. And, by way of a first for me, for the gRPC server implementation (aka &ldquo;personality&rdquo;).">
+<meta itemprop="datePublished" content="2020-04-29T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2020-04-29T00:00:00-08:00" />
+<meta itemprop="wordCount" content="1672">
+
+
+
+<meta itemprop="keywords" content="rust,crate,trillian,grpc,protobuf," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Rust implementation of Crate Transparency using Google Trillian"/>
+<meta name="twitter:description" content="I&rsquo;ve been hacking on a Rust-based transparent application for Google Trillian. As appears to be my fixation, this personality is for another package manager. This time, Rust&rsquo;s Crates often found in crates.io which is Rust&rsquo;s Package Registry. I discussed this project earlier this month Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian and and earlier approach for Python&rsquo;s packages with pypi-transparency.
+This time, of course, I&rsquo;m using Rust. And, by way of a first for me, for the gRPC server implementation (aka &ldquo;personality&rdquo;)."/>
+
+      
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="https://pretired.dazwilkin.com/" class="f3 fw2 hover-white no-underline white-90 dib">
+      (p)retired
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+
+    <header class="mt4 w-100">
+      <p class="f6 b helvetica tracked">
+          
+        POSTS
+      </p>
+      <h1 class="f1 athelas mb1">Rust implementation of Crate Transparency using Google Trillian</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2020-04-29T00:00:00-08:00">April 29, 2020</time>
+      
+      
+        <span class="f6 mv4 dib tracked"> - 8 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 1672 words</span>
+      
+    </header>
+
+    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve been hacking on a Rust-based transparent application for Google Trillian. As appears to be my fixation, this personality is for another package manager. This time, Rust&rsquo;s <a href="https://doc.rust-lang.org/1.0.0/book/crates-and-modules.html">Crates</a> often found in <a href="https://crates.io"><code>crates.io</code></a> which is Rust&rsquo;s Package Registry. I discussed this project earlier this month <a href="https://pretired.dazwilkin.com/posts/200403/">Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian</a> and and earlier approach for Python&rsquo;s packages with <a href="https://pretired.dazwilkin.com/posts/190907/">pypi-transparency</a>.</p>
+<p>This time, of course, I&rsquo;m using Rust. And, by way of a first for me, for the gRPC server implementation (aka &ldquo;personality&rdquo;). I&rsquo;ve been lazy thanks to the excellent gRPCurl and have been using it way of a client. Because I&rsquo;m more familiar with Golang and because I&rsquo;ve written (most) other Trillian personalities in Golang, I resorted to quickly implementing Crate Transparency in Golang too in order to uncover bugs with the Rust implementation. I&rsquo;ll write a follow-up post on the complexity I seem to struggle with when using protobufs and gRPC [in Golang].</p>
+<h2 id="the-solution">The Solution</h2>
+<p>The Rust gRPC server:</p>
+<pre><code>Starting: gRPC Listener [50051]
+[CrateTransparencyImpl::add_package] Entered
+[CrateTransparencyImpl::add_package] package {name: &quot;grpc-0.6.1.crate&quot; version: &quot;0.6.1&quot; filename: &quot;/${HOME}/.cargo/registry/cache/github.com-1ecc6299db9ec823/grpc-0.6.1.crate&quot; sha256: &quot;\216S\016\367\211J\020J\034\205%\316hx{4\221\357\242\t\214\345\345EN\203$\352x\2115H&quot;}
+[CrateTransparencyImpl::add_package] Create QueueLeafRequest
+[CrateTransparencyImpl::add_package] queue_leaf
+[CrateTransparencyImpl::add_package] wait
+Ok((Metadata { entries: [MetadataEntry { key: MetadataKey { name: &quot;content-type&quot; }, value: b&quot;application/grpc&quot; }] }, queued_leaf {leaf {merkle_leaf_hash: &quot;\034\364&amp;.\t\200\030r\177\221z\307\206\216cj\214j\316\255hU\016\302\362\356X\004\332v,_&quot; leaf_value: &quot;\n\020grpc-0.6.1.crate\022\0050.6.1\032R/${HOME}/.cargo/registry/cache/github.com-1ecc6299db9ec823/grpc-0.6.1.crate* \216S\016\367\211J\020J\034\205%\316hx{4\221\357\242\t\214\345\345EN\203$\352x\2115H&quot; leaf_identity_hash: &quot;\216S\016\367\211J\020J\034\205%\316hx{4\221\357\242\t\214\345\345EN\203$\352x\2115H&quot; queue_timestamp {seconds: 1588189298 nanos: 559714612}}}, Metadata { entries: [] }))
+[CrateTransparencyImpl::add_package] done
+[CrateTransparencyImpl::add_package] Completed
+[CrateTransparencyImpl::add_package] Entered
+[CrateTransparencyImpl::add_package] package {name: &quot;grpc-0.6.2.crate&quot; version: &quot;0.6.2&quot; filename: &quot;/${HOME}/.cargo/registry/cache/github.com-1ecc6299db9ec823/grpc-0.6.2.crate&quot; sha256: &quot;*\257\035t\037\346\363A?\037\237q\271\237^N&amp;wmV4u\250\245&lt;\345:s\250SL\035&quot;}
+[CrateTransparencyImpl::add_package] Create QueueLeafRequest
+[CrateTransparencyImpl::add_package] queue_leaf
+[CrateTransparencyImpl::add_package] wait
+Ok((Metadata { entries: [MetadataEntry { key: MetadataKey { name: &quot;content-type&quot; }, value: b&quot;application/grpc&quot; }] }, queued_leaf {leaf {merkle_leaf_hash: &quot;\264#]\316\216\036W~=\t\214\034\271&amp;\276c\246?K\3427\262\224%u\246\306\273\017\371v\266&quot; leaf_value: &quot;\n\020grpc-0.6.2.crate\022\0050.6.2\032R/${HOME}/.cargo/registry/cache/github.com-1ecc6299db9ec823/grpc-0.6.2.crate* *\257\035t\037\346\363A?\037\237q\271\237^N&amp;wmV4u\250\245&lt;\345:s\250SL\035&quot; leaf_identity_hash: &quot;*\257\035t\037\346\363A?\037\237q\271\237^N&amp;wmV4u\250\245&lt;\345:s\250SL\035&quot; queue_timestamp {seconds: 1588189298 nanos: 623131819}}}, Metadata { entries: [] }))
+[CrateTransparencyImpl::add_package] done
+[CrateTransparencyImpl::add_package] Completed
+[CrateTransparencyImpl::add_package] Entered
+[CrateTransparencyImpl::add_package] package {name: &quot;protobuf-1.7.5.crate&quot; version: &quot;1.7.5&quot; filename: &quot;/${HOME}/.cargo/registry/cache/github.com-1ecc6299db9ec823/protobuf-1.7.5.crate&quot; sha256: &quot;\341L\315ky\354t\204\022\324\362\337\336\032\200\3726:g\336\364\006)i\370\256\323\327\220\243\017(&quot;}
+[CrateTransparencyImpl::add_package] Create QueueLeafRequest
+[CrateTransparencyImpl::add_package] queue_leaf
+[CrateTransparencyImpl::add_package] wait
+Ok((Metadata { entries: [MetadataEntry { key: MetadataKey { name: &quot;content-type&quot; }, value: b&quot;application/grpc&quot; }] }, queued_leaf {leaf {merkle_leaf_hash: &quot;\343\3758\251,\331\006\237D\\[3k\276\025\006\307\333\372\301K\343\247\236O\246\251e\264\205\371\257&quot; leaf_value: &quot;\n\024protobuf-1.7.5.crate\022\0051.7.5\032V/${HOME}/.cargo/registry/cache/github.com-1ecc6299db9ec823/protobuf-1.7.5.crate* \341L\315ky\354t\204\022\324\362\337\336\032\200\3726:g\336\364\006)i\370\256\323\327\220\243\017(&quot; leaf_identity_hash: &quot;\341L\315ky\354t\204\022\324\362\337\336\032\200\3726:g\336\364\006)i\370\256\323\327\220\243\017(&quot; queue_timestamp {seconds: 1588189298 nanos: 640144786}}}, Metadata { entries: [] }))
+[CrateTransparencyImpl::add_package] done
+[CrateTransparencyImpl::add_package] Completed
+[CrateTransparencyImpl::add_package] Entered
+[CrateTransparencyImpl::add_package] package {name: &quot;protobuf-2.8.0.crate&quot; version: &quot;2.8.0&quot; filename: &quot;/${HOME}/.cargo/registry/cache/github.com-1ecc6299db9ec823/protobuf-2.8.0.crate&quot; sha256: &quot;\212\357\316\311\361B\265$\331\217\310\035\007\202wC\276\211\335e\206\241\272j\262\037\246jP\013?\245&quot;}
+[CrateTransparencyImpl::add_package] Create QueueLeafRequest
+[CrateTransparencyImpl::add_package] queue_leaf
+[CrateTransparencyImpl::add_package] wait
+Ok((Metadata { entries: [MetadataEntry { key: MetadataKey { name: &quot;content-type&quot; }, value: b&quot;application/grpc&quot; }] }, queued_leaf {leaf {merkle_leaf_hash: &quot;$\277}\002$\324\n\032~\021vf\325$\260\375\354\205p_\331PMZ\304\305P\250%&lt;Sw&quot; leaf_value: &quot;\n\024protobuf-2.8.0.crate\022\0052.8.0\032V/${HOME}/.cargo/registry/cache/github.com-1ecc6299db9ec823/protobuf-2.8.0.crate* \212\357\316\311\361B\265$\331\217\310\035\007\202wC\276\211\335e\206\241\272j\262\037\246jP\013?\245&quot; leaf_identity_hash: &quot;\212\357\316\311\361B\265$\331\217\310\035\007\202wC\276\211\335e\206\241\272j\262\037\246jP\013?\245&quot; queue_timestamp {seconds: 1588189298 nanos: 655852669}}}, Metadata { entries: [] }))
+[CrateTransparencyImpl::add_package] done
+[CrateTransparencyImpl::add_package] Completed
+</code></pre><p>The gRPCurl client:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./packages.sh <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| <span style="color:#66d9ef">while</span> read in
+<span style="color:#66d9ef">do</span>
+  echo <span style="color:#e6db74">${</span>in<span style="color:#e6db74">}</span>
+  echo <span style="color:#e6db74">${</span>in<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  | grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -plaintext <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    --import-path<span style="color:#f92672">=</span>protos <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    --proto<span style="color:#f92672">=</span>protos/crate_transparency.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    --proto<span style="color:#f92672">=</span>protos/package.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    -d <span style="color:#e6db74">&#39;@&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>    localhost:50051 crate_transparency.v1.CrateTransparency.AddPackage
+<span style="color:#66d9ef">done</span>
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;package&#34;</span>: <span style="color:#f92672">{</span> <span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;grpc-0.6.1.crate&#34;</span>, <span style="color:#e6db74">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;0.6.1&#34;</span>, <span style="color:#e6db74">&#34;filename&#34;</span>:<span style="color:#e6db74">&#34;/</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cargo/registry/cache/github.com-1ecc6299db9ec823/grpc-0.6.1.crate&#34;</span>, <span style="color:#e6db74">&#34;url&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;sha256&#34;</span>:<span style="color:#e6db74">&#34;jlMO94lKEEochSXOaHh7NJHvogmM5eVFToMk6niJNUg=&#34;</span> <span style="color:#f92672">}</span> <span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;ok&#34;</span>: true
+<span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;package&#34;</span>: <span style="color:#f92672">{</span> <span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;grpc-0.6.2.crate&#34;</span>, <span style="color:#e6db74">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;0.6.2&#34;</span>, <span style="color:#e6db74">&#34;filename&#34;</span>:<span style="color:#e6db74">&#34;/</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cargo/registry/cache/github.com-1ecc6299db9ec823/grpc-0.6.2.crate&#34;</span>, <span style="color:#e6db74">&#34;url&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;sha256&#34;</span>:<span style="color:#e6db74">&#34;Kq8ddB/m80E/H59xuZ9eTiZ3bVY0dailPOU6c6hTTB0=&#34;</span> <span style="color:#f92672">}</span> <span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;ok&#34;</span>: true
+<span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;package&#34;</span>: <span style="color:#f92672">{</span> <span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;protobuf-1.7.5.crate&#34;</span>, <span style="color:#e6db74">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;1.7.5&#34;</span>, <span style="color:#e6db74">&#34;filename&#34;</span>:<span style="color:#e6db74">&#34;/</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cargo/registry/cache/github.com-1ecc6299db9ec823/protobuf-1.7.5.crate&#34;</span>, <span style="color:#e6db74">&#34;url&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;sha256&#34;</span>:<span style="color:#e6db74">&#34;4UzNa3nsdIQS1PLf3hqA+jY6Z970Bilp+K7T15CjDyg=&#34;</span> <span style="color:#f92672">}</span> <span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;ok&#34;</span>: true
+<span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;package&#34;</span>: <span style="color:#f92672">{</span> <span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;protobuf-2.8.0.crate&#34;</span>, <span style="color:#e6db74">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;2.8.0&#34;</span>, <span style="color:#e6db74">&#34;filename&#34;</span>:<span style="color:#e6db74">&#34;/</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cargo/registry/cache/github.com-1ecc6299db9ec823/protobuf-2.8.0.crate&#34;</span>, <span style="color:#e6db74">&#34;url&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;sha256&#34;</span>:<span style="color:#e6db74">&#34;iu/OyfFCtSTZj8gdB4J3Q76J3WWGobpqsh+malALP6U=&#34;</span> <span style="color:#f92672">}</span> <span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;ok&#34;</span>: true
+<span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;package&#34;</span>: <span style="color:#f92672">{</span> <span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;protobuf-2.8.1.crate&#34;</span>, <span style="color:#e6db74">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;2.8.1&#34;</span>, <span style="color:#e6db74">&#34;filename&#34;</span>:<span style="color:#e6db74">&#34;/</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cargo/registry/cache/github.com-1ecc6299db9ec823/protobuf-2.8.1.crate&#34;</span>, <span style="color:#e6db74">&#34;url&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;sha256&#34;</span>:<span style="color:#e6db74">&#34;QDYYNt791Ycf9+hAlsb2REr3/BV/jvF4n1TxR2h8qiA=&#34;</span> <span style="color:#f92672">}</span> <span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;ok&#34;</span>: true
+<span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;package&#34;</span>: <span style="color:#f92672">{</span> <span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;protobuf-2.8.2.crate&#34;</span>, <span style="color:#e6db74">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;2.8.2&#34;</span>, <span style="color:#e6db74">&#34;filename&#34;</span>:<span style="color:#e6db74">&#34;/</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cargo/registry/cache/github.com-1ecc6299db9ec823/protobuf-2.8.2.crate&#34;</span>, <span style="color:#e6db74">&#34;url&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;sha256&#34;</span>:<span style="color:#e6db74">&#34;cHMYUu7HLFbREibIpflq1QWKPatzZHyl9+41HkZPJXE=&#34;</span> <span style="color:#f92672">}</span> <span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;ok&#34;</span>: true
+<span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;package&#34;</span>: <span style="color:#f92672">{</span> <span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;protobuf-2.12.0.crate&#34;</span>, <span style="color:#e6db74">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;2.12.0&#34;</span>, <span style="color:#e6db74">&#34;filename&#34;</span>:<span style="color:#e6db74">&#34;/</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cargo/registry/cache/github.com-1ecc6299db9ec823/protobuf-2.12.0.crate&#34;</span>, <span style="color:#e6db74">&#34;url&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;sha256&#34;</span>:<span style="color:#e6db74">&#34;cZZPNP1RzwSILXrjMl+geU1MrWagPQAD842K5PY7oSY=&#34;</span> <span style="color:#f92672">}</span> <span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;ok&#34;</span>: true
+<span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;package&#34;</span>: <span style="color:#f92672">{</span> <span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;protoc-2.8.1.crate&#34;</span>, <span style="color:#e6db74">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;2.8.1&#34;</span>, <span style="color:#e6db74">&#34;filename&#34;</span>:<span style="color:#e6db74">&#34;/</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cargo/registry/cache/github.com-1ecc6299db9ec823/protoc-2.8.1.crate&#34;</span>, <span style="color:#e6db74">&#34;url&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;sha256&#34;</span>:<span style="color:#e6db74">&#34;OZjEvAr4zL08xoJF7p9yZjxa4vt4vEj/dxmu8RVi7eo=&#34;</span> <span style="color:#f92672">}</span> <span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;ok&#34;</span>: true
+<span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;package&#34;</span>: <span style="color:#f92672">{</span> <span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;protoc-2.8.2.crate&#34;</span>, <span style="color:#e6db74">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;2.8.2&#34;</span>, <span style="color:#e6db74">&#34;filename&#34;</span>:<span style="color:#e6db74">&#34;/</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cargo/registry/cache/github.com-1ecc6299db9ec823/protoc-2.8.2.crate&#34;</span>, <span style="color:#e6db74">&#34;url&#34;</span>:<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;sha256&#34;</span>:<span style="color:#e6db74">&#34;UNlQDqFIimGqltoTkDm3ipLu9koPPILTgXNynwrXPPg=&#34;</span> <span style="color:#f92672">}</span> <span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;ok&#34;</span>: true
+<span style="color:#f92672">}</span>
+</code></pre></div><p>For brevity, I&rsquo;ll omit the output from the equivalent client scripting running <code>GetPackage</code>.</p>
+<p>For testing, I used the Golang server&rsquo;s <code>AddPackage</code> with the Rust server&rsquo;s <code>GetPackage</code> and vice versa to prove (to myself) that it works correctly.</p>
+<p>I&rsquo;ve taken to using <a href="https://adminer.org">Adminer</a> in my deployments (Kubernetes and Docker Compose) as this provides a convenient way to interrogate the MySQL database underlying Trillian. Here&rsquo;s the content of Trillian&rsquo;s <code>SequencedLeafData</code> table after the adds:</p>
+<p><img src="/images/200429.adminer.sequencedleafdata.png" alt="Adminer: SequencedLeafData"></p>
+<p>Or:</p>
+<table>
+<thead>
+<tr>
+<th>TreeId</th>
+<th>LeafIdentityHash</th>
+<th>MerkleLeafHash</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2878187571004555676</td>
+<td>8E530EF7894A104A1C8525CE68787B3491EFA2098CE5E5454E8324EA78893548</td>
+<td>1CF4262E098018727F917AC7868E636A8C6ACEAD68550EC2F2EE5804DA762C5F</td>
+</tr>
+<tr>
+<td>2878187571004555676</td>
+<td>2AAF1D741FE6F3413F1F9F71B99F5E4E26776D563475A8A53CE53A73A8534C1D</td>
+<td>B4235DCE8E1E577E3D098C1CB926BE63A63F4BE237B2942575A6C6BB0FF976B6</td>
+</tr>
+<tr>
+<td>2878187571004555676</td>
+<td>E14CCD6B79EC748412D4F2DFDE1A80FA363A67DEF4062969F8AED3D790A30F28</td>
+<td>E3FD38A92CD9069F445C5B336BBE1506C7DBFAC14BE3A79E4FA6A965B485F9AF</td>
+</tr>
+<tr>
+<td>2878187571004555676</td>
+<td>8AEFCEC9F142B524D98FC81D07827743BE89DD6586A1BA6AB21FA66A500B3FA5</td>
+<td>24BF7D0224D40A1A7E117666D524B0FDEC85705FD9504D5AC4C550A8253C5377</td>
+</tr>
+<tr>
+<td>2878187571004555676</td>
+<td>40361836DEFDD5871FF7E84096C6F6444AF7FC157F8EF1789F54F147687CAA20</td>
+<td>0C5B6C4AAB7530A9BD62A05D386D2D2EB0D1B26EFA09A151F46F7BD9A98E754A</td>
+</tr>
+<tr>
+<td>2878187571004555676</td>
+<td>70731852EEC72C56D11226C8A5F96AD5058A3DAB73647CA5F7EE351E464F2571</td>
+<td>BDC16E3B66F21EB4716C56511277926EB0A8752B3CB0ABBFA353DA13CA4F0EB3</td>
+</tr>
+<tr>
+<td>2878187571004555676</td>
+<td>71964F34FD51CF04882D7AE3325FA0794D4CAD66A03D0003F38D8AE4F63BA126</td>
+<td>05EB079DD4F44869991813F57FA98A2E6CA6A9BD430F06F644964E18597FC3E9</td>
+</tr>
+<tr>
+<td>2878187571004555676</td>
+<td>3998C4BC0AF8CCBD3CC68245EE9F72663C5AE2FB78BC48FF7719AEF11562EDEA</td>
+<td>9219736E509B0FE1C6D656407E6828B90D50FA2E5F1B755CFA0567D1872A9B16</td>
+</tr>
+<tr>
+<td>2878187571004555676</td>
+<td>50D9500EA1488A61AA96DA139039B78A92EEF64A0F3C82D38173729F0AD73CF8</td>
+<td>240170616A9D18D13DDEA042316C3499C66E837DAC024B65487BF7E3DAAEC6CE</td>
+</tr>
+</tbody>
+</table>
+<p>To show working, let&rsquo;s pick one of these crates: <code>protobuf=2.12.0</code></p>
+<p>This crate is cached in <code>${HOME}/.cargo/registry/cache/github.com-1ecc6299db9ec823/protobuf-2.12.0.crate</code></p>
+<p>This crate&rsquo;s SHA256 hash is:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">DIGEST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>cat <span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span>/.cargo/registry/cache/github.com-1ecc6299db9ec823/protobuf-2.12.0.crate | sha256sum | head --bytes<span style="color:#f92672">=</span>64<span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>DIGEST<span style="color:#e6db74">}</span>
+71964f34fd51cf04882d7ae3325fa0794d4cad66a03d0003f38d8ae4f63ba126
+</code></pre></div><blockquote>
+<p><strong>NB</strong> if you eyeball the Trillian <code>SequencedLeafData</code> table above, you should be able to find <code>LeafIdentityHash</code> value matching the above</p>
+</blockquote>
+<blockquote>
+<p><strong>NB</strong> I&rsquo;m explicitly setting the <code>LeafIdentityHash</code> to be the Crate&rsquo;s SHA-256 hash as this value represents a unique identifier of the Crate.</p>
+</blockquote>
+<p>The definition for <code>package.proto</code> is:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf"><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">Package</span> {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">string</span> name <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">string</span> version <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">string</span> filename <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">string</span> url <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">bytes</span> sha256 <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span></code></pre></div><blockquote>
+<p><strong>NB</strong> <code>sha256</code> is bytes (not string)</p>
+</blockquote>
+<p>We can convert the SHA256 digest into bytes and then base-64 encode it:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">BASE64<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>printf <span style="color:#e6db74">${</span>DIGEST<span style="color:#e6db74">}</span> | xxd -r -p | base64 --wrap<span style="color:#f92672">=</span>0<span style="color:#66d9ef">)</span><span style="color:#f92672">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>BASE64<span style="color:#e6db74">}</span>
+cZZPNP1RzwSILXrjMl+geU1MrWagPQAD842K5PY7oSY<span style="color:#f92672">=</span>
+</code></pre></div><p>It is this <code>${BASE64}</code> value that we use with gRPCurl to pass the <code>sha256</code> value (as bytes) using gRPCurl:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#34;
+</span><span style="color:#e6db74">{
+</span><span style="color:#e6db74">    \&#34;package\&#34;: { 
+</span><span style="color:#e6db74">        \&#34;name\&#34;:\&#34;protobuf\&#34;,
+</span><span style="color:#e6db74">        \&#34;version\&#34;:\&#34;2.12.0\&#34;,
+</span><span style="color:#e6db74">        \&#34;filename\&#34;:\&#34;\&#34;,
+</span><span style="color:#e6db74">        \&#34;url\&#34;:\&#34;\&#34;,
+</span><span style="color:#e6db74">        \&#34;sha256\&#34;: \&#34;</span><span style="color:#e6db74">${</span>BASE64<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;
+</span><span style="color:#e6db74">    }
+</span><span style="color:#e6db74">}&#34;</span> |<span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--import-path<span style="color:#f92672">=</span>protos <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--proto<span style="color:#f92672">=</span>protos/crate_transparency.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--proto<span style="color:#f92672">=</span>protos/package.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#39;@&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>localhost:50051 crate_transparency.v1.CrateTransparency.AddPackage
+</code></pre></div><blockquote>
+<p><strong>NB</strong> Apologies for the ugly escaping, this is to permit the <code>${BASE64}</code> substitution</p>
+</blockquote>
+<h2 id="protobufs">Protobufs</h2>
+<p>This is a work in progress but, my first take is 3 methods <code>AddPackage</code>, <code>GetPackage</code> and <code>GetInclusionProof</code>. The latter (the most complex) is not yet implemented by the Rust server.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf">syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#f92672">package</span> crate_transparency<span style="color:#f92672">.</span>v1;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">service</span> CrateTransparency {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">rpc</span> AddPackage(AddPackageRequest) <span style="color:#66d9ef">returns</span> (AddPackageResponse) {};<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">rpc</span> GetPackage(GetPackageRequest) <span style="color:#66d9ef">returns</span> (GetPackageResponse) {};<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">rpc</span> GetInclusionProof(GetInclusionProofRequest) <span style="color:#66d9ef">returns</span> (GetInclusionProofResponse) {};<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">AddPackageRequest</span> {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  Package <span style="color:#f92672">package</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">AddPackageResponse</span> {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">bool</span> ok <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">GetPackageRequest</span> {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  Package <span style="color:#f92672">package</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">GetPackageResponse</span> {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">bool</span> ok <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">GetInclusionProofRequest</span> {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  Package <span style="color:#f92672">package</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">GetInclusionProofResponse</span> {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">bool</span> ok <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">Package</span> {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">string</span> name <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">string</span> version <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">string</span> filename <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">string</span> url <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">bytes</span> sha256 <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span></code></pre></div><blockquote>
+<p><strong>NB</strong> For Golang, the <code>option</code> is becoming mandatory and I learned that it&rsquo;s best to use it particularly if you&rsquo;re using modules to manage the output location of the compiler: <code>option go_package = &quot;github.com/DazWilkin/crate-transparency/protos&quot;;</code></p>
+</blockquote>
+<h2 id="server">Server</h2>
+<p>I can&rsquo;t tell you that code flew from my mind into Visual Studio Code but, having used <a href="https://github.com/stepancheg">Stepan Koltsov</a>&lsquo;s excellent <a href="https://github.com/stepancheg/rust-protobuf"><code>rust-protobuf</code></a> and <a href="https://github.com/stepancheg/grpc-rust"><code>grpc-rust</code></a> crates previously, the process was not as complicated as I&rsquo;d anticipated.</p>
+<blockquote>
+<p><strong>NB</strong> One thing that Golang does better than Rust is that Golang modules are uniquely identified by repo, so e.g. <code>github.com/google/trillian</code>. The above <a href="https://github.com/stepancheg/rust-protobuf"><code>rust-protobuf</code></a> repo becomes a Crate called <a href="https://crate.io/crates/protobuf"><code>protobuf</code></a>. It&rsquo;s only by checking the &lsquo;Repository&rsquo; link on the crate.io page that this mapping is evident. It&rsquo;s not just Rust, Python has the same issue with PyPi. It&rsquo;s the little things!</p>
+</blockquote>
+<p>In further disclosure, I&rsquo;m a Rust noob and working my way through two Rust programming books so, I&rsquo;d appreciate coding feedback and apologize if I mangling the language.</p>
+<p>One thing I really like with <code>rust-protobuf</code> is that it&rsquo;s straightforward and convenient to use it to compile Rust sources from protos:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
+    protoc_rust_grpc::run(protoc_rust_grpc::Args {
+        out_dir: <span style="color:#e6db74">&#34;./src/protos&#34;</span>,
+        includes: <span style="color:#66d9ef">&amp;</span>[<span style="color:#e6db74">&#34;protos&#34;</span>],
+        input: <span style="color:#66d9ef">&amp;</span>[
+            <span style="color:#e6db74">&#34;protos/crate_transparency.proto&#34;</span>,
+            <span style="color:#e6db74">&#34;protos/package.proto&#34;</span>,
+        ],
+        rust_protobuf: <span style="color:#a6e22e">true</span>,
+        ..Default::default()
+    })
+    .expect(<span style="color:#e6db74">&#34;protoc-rust-grpc&#34;</span>);
+}
+</code></pre></div><blockquote>
+<p><strong>NB</strong> One thing I often forget, is that this is, of course, dependent on <code>protoc</code> and the compiler must be in the path before this will work.</p>
+</blockquote>
+<blockquote>
+<p><strong>NB</strong> I remain unclear on the best practice for locating protoc compiled sources but I&rsquo;ve been using <code>./protos</code> in both Golang and Rust (mostly) without issue.</p>
+</blockquote>
+<p>As we expect, we must implement the methods defined by the proto.</p>
+<p>The only nuance here is that the struct (<code>CrateTransparencyImpl</code>) that implements <code>CrateTransparency</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span> ::protos::{
+    crate_transparency::{
+        AddPackageRequest, AddPackageResponse,
+        GetPackageRequest, GetPackageResponse,
+        GetInclusionProofRequest, GetInclusionProofResponse,
+    },
+    crate_transparency_grpc::CrateTransparency,
+};
+
+<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">CrateTransparencyImpl</span> {
+    client: <span style="color:#a6e22e">TrillianLogClient</span>,
+    log_id: <span style="color:#66d9ef">i64</span>,
+}
+<span style="color:#66d9ef">impl</span> CrateTransparencyImpl {
+    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">new</span>(
+        client: <span style="color:#a6e22e">TrillianLogClient</span>,
+        log_id: <span style="color:#66d9ef">i64</span>,
+    ) -&gt; <span style="color:#a6e22e">CrateTransparencyImpl</span> {
+        CrateTransparencyImpl { client, log_id }
+    }
+}
+<span style="color:#66d9ef">impl</span> CrateTransparency <span style="color:#66d9ef">for</span> CrateTransparencyImpl {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">add_package</span>(
+        <span style="color:#f92672">&amp;</span>self,
+        _: <span style="color:#a6e22e">RequestOptions</span>,
+        rqst: <span style="color:#a6e22e">AddPackageRequest</span>,
+    ) -&gt; <span style="color:#a6e22e">SingleResponse</span><span style="color:#f92672">&lt;</span>AddPackageResponse<span style="color:#f92672">&gt;</span> {}
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">get_package</span>(
+        <span style="color:#f92672">&amp;</span>self,
+        _: <span style="color:#a6e22e">RequestOptions</span>,
+        rqst: <span style="color:#a6e22e">GetPackageRequest</span>,
+    ) -&gt; <span style="color:#a6e22e">SingleResponse</span><span style="color:#f92672">&lt;</span>GetPackageResponse<span style="color:#f92672">&gt;</span> {}
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">get_inclusion_proof</span>(
+        <span style="color:#f92672">&amp;</span>self,
+        _: <span style="color:#a6e22e">RequestOptions</span>,
+        rqst: <span style="color:#a6e22e">GetInclusionProofRequest</span>,
+    ) -&gt; <span style="color:#a6e22e">SingleResponse</span><span style="color:#f92672">&lt;</span>GetInclusionProofResponse<span style="color:#f92672">&gt;</span> {}
+}
+</code></pre></div><p>This is where most of my hacking came to the fore and, in truth, the code herein requires <code>SinglePointerField</code> and <code>RepeatedField</code> and <code>SingleResponse</code> which I continue to find confusing.</p>
+<p><code>AddPackage</code> and <code>GetPackage</code> are similar and straightforward. In both cases we need to marshal the <code>Package</code> (!) data, we can do this using <code>write_to_bytes()</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">let</span> package <span style="color:#f92672">=</span> rqst.get_package();
+
+<span style="color:#66d9ef">let</span> leaf_value <span style="color:#f92672">=</span> package
+    .write_to_bytes()
+    .expect(<span style="color:#e6db74">&#34;Unable to marshall `Package` to bytes&#34;</span>);
+</code></pre></div><p>For <code>AddPackage</code>, we then construct a <code>LogLeaf</code> using the <code>leaf_value</code> and we explicity set the <code>leaf_identity_hash</code> to be value of the Crate file&rsquo;s SHA-256 hash (this was provided by the client in <code>sha256</code>). We create <code>QueueLeafRequest</code> using the <code>LogLeaf</code> and the Trillian Log ID (<code>log_id</code>) and we ship it to Trillian using <code>queue_leaf</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">let</span> leaf_identity_hash <span style="color:#f92672">=</span> package.get_sha256().to_vec();
+
+<span style="color:#66d9ef">let</span> leaf <span style="color:#f92672">=</span> LogLeaf {
+    leaf_value: <span style="color:#a6e22e">leaf_value</span>,
+    leaf_identity_hash: <span style="color:#a6e22e">leaf_identity_hash</span>,
+    ..Default::default()
+};
+
+<span style="color:#66d9ef">let</span> r <span style="color:#f92672">=</span> QueueLeafRequest {
+    log_id: <span style="color:#a6e22e">self</span>.log_id,
+    leaf: ::protobuf::SingularPtrField::some(leaf),
+    ..Default::default()
+};
+
+<span style="color:#66d9ef">let</span> rsp <span style="color:#f92672">=</span> self.client.queue_leaf(
+    ::grpc::RequestOptions {
+        ..Default::default()
+    },
+    r,
+);
+
+rsp.wait();
+</code></pre></div><p>For <code>GetPackage</code>, we need to create a <code>leaf_hash</code> to construct a <code>GetLeavesByHashRequest</code> used by <code>get_leaves_by_hash</code>.</p>
+<p>However, there are two wrinkles here:</p>
+<p>First, Trillian uses <a href="https://tools.ietf.org/html/rfc6962">RFC6962: Certificate Transparency</a>. This includes a tweaked mechanism to hash values. The mechanism is based on SHA-256 but, for our purposes, we must prefix the <code>Vec&lt;u8&gt;</code> corresponding to the <code>leaf_value</code> with <code>0x00</code>.</p>
+<p>Second, <code>leaf_hash</code> is of type <a href="https://github.com/google/trillian/blob/125ecc094811d2649f879e810b97e776bdd7ab21/trillian_log_api.proto#L391"><code>repeated bytes</code></a> and so we must take the <code>Vec&lt;u8&gt;</code> representing the hashed <code>leaf_value</code> and put this in another vector (<code>Vec&lt;Vec&lt;u8&gt;&gt;</code>).</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> v: Vec<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">u8</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[<span style="color:#ae81ff">0x00</span>];
+v.append(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> leaf_value);
+
+<span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> hasher <span style="color:#f92672">=</span> Sha256::new();
+hasher.input(v);
+<span style="color:#66d9ef">let</span> d <span style="color:#f92672">=</span> hasher.result();
+
+<span style="color:#66d9ef">let</span> v <span style="color:#f92672">=</span> d.to_vec();
+<span style="color:#66d9ef">let</span> vv <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[v];
+<span style="color:#66d9ef">let</span> leaf_hash <span style="color:#f92672">=</span> protobuf::RepeatedField::from_vec(vv);
+</code></pre></div><blockquote>
+<p><strong>NB</strong> As with the Golang (SDK), this method should be refactored into something permitting: <code>hasher = RFC6962::new()</code>.</p>
+</blockquote>
+<p>Then we&rsquo;re ready to create the <code>GetLeavesByHashRequest</code>, make the request (<code>get_leaves_by_hash</code>) to Trillian and deal with the results.</p>
+<p>In this case, we expect zero (not found) or one (found) leaves to be returned.</p>
+<p>Now that we can <code>AddPackage</code> and <code>GetPackage</code>, the basic functionality is available and the overview tests, shown at the top of this post, may be run.</p>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/rust" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">rust</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/crate" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">crate</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/trillian" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">trillian</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/grpc" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">grpc</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/protobuf" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">protobuf</a>
+   </li>
+  
+</ul>
+<div class="mt6">
+      
+      
+      </div>
+    </section>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200403/">Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200320/">Golang gRPC Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200310/">Google&#39;s New Golang SDK for Protobuf</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/190907/">pypi-transparency</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2020 
+  </a>
+    <div>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+</div>
+  </div>
+</footer>
+
+    
+
+  <script src="/dist/js/app.3fc0f988d21662902933.js"></script>
+
+
+  </body>
+</html>
