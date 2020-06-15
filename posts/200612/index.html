@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>(p)retired  | waPC &amp; Protobufs</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="generator" content="Hugo 0.72.0" />
+    
+    
+      <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+    
+
+    
+    
+      <link href="/dist/css/app.d98f2eb6bcd1eaedb7edf166bd16af26.css" rel="stylesheet">
+    
+
+    
+
+    
+      
+    
+
+    
+    
+    <meta property="og:title" content="waPC &amp; Protobufs" />
+<meta property="og:description" content="I&rsquo;m hacking around with a solution that combines WASM and Google Trillian.
+Ultimately, I&rsquo;d like to be able to ship WASM (binaries) to a Trillian personality and then invoke (exported) functions on them. Some this was borne from the interesting exploration of Kruslet and its application of wascc.
+I&rsquo;m still booting into WASM but it&rsquo;s a very interesting technology that has most interesting potential outside the browser. Some folks have been trailblazing the technology and I have been reading Kevin Hoffman&rsquo;s medium and wascc (nee waxosuit) work." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/200612/" />
+<meta property="article:published_time" content="2020-06-12T00:00:00-08:00" />
+<meta property="article:modified_time" content="2020-06-12T00:00:00-08:00" />
+<meta itemprop="name" content="waPC &amp; Protobufs">
+<meta itemprop="description" content="I&rsquo;m hacking around with a solution that combines WASM and Google Trillian.
+Ultimately, I&rsquo;d like to be able to ship WASM (binaries) to a Trillian personality and then invoke (exported) functions on them. Some this was borne from the interesting exploration of Kruslet and its application of wascc.
+I&rsquo;m still booting into WASM but it&rsquo;s a very interesting technology that has most interesting potential outside the browser. Some folks have been trailblazing the technology and I have been reading Kevin Hoffman&rsquo;s medium and wascc (nee waxosuit) work.">
+<meta itemprop="datePublished" content="2020-06-12T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2020-06-12T00:00:00-08:00" />
+<meta itemprop="wordCount" content="1675">
+
+
+
+<meta itemprop="keywords" content="wasm,wapc,wascc,krustlet,protobufs," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="waPC &amp; Protobufs"/>
+<meta name="twitter:description" content="I&rsquo;m hacking around with a solution that combines WASM and Google Trillian.
+Ultimately, I&rsquo;d like to be able to ship WASM (binaries) to a Trillian personality and then invoke (exported) functions on them. Some this was borne from the interesting exploration of Kruslet and its application of wascc.
+I&rsquo;m still booting into WASM but it&rsquo;s a very interesting technology that has most interesting potential outside the browser. Some folks have been trailblazing the technology and I have been reading Kevin Hoffman&rsquo;s medium and wascc (nee waxosuit) work."/>
+
+      
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="https://pretired.dazwilkin.com/" class="f3 fw2 hover-white no-underline white-90 dib">
+      (p)retired
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+
+    <header class="mt4 w-100">
+      <p class="f6 b helvetica tracked">
+          
+        POSTS
+      </p>
+      <h1 class="f1 athelas mb1">waPC &amp; Protobufs</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2020-06-12T00:00:00-08:00">June 12, 2020</time>
+      
+      
+        <span class="f6 mv4 dib tracked"> - 8 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 1675 words</span>
+      
+    </header>
+
+    <section class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;m hacking around with a solution that combines WASM and Google <a href="github.com/google/trillian">Trillian</a>.</p>
+<p>Ultimately, I&rsquo;d like to be able to ship WASM (binaries) to a Trillian personality and then invoke (exported) functions on them. Some this was borne from the interesting exploration of <a href="https://github.com/deislabs/krustlet">Kruslet</a> and its application of <a href="https://wascc.dev/">wascc</a>.</p>
+<p>I&rsquo;m still booting into WASM but it&rsquo;s a <em>very</em> interesting technology that has most interesting potential outside the browser. Some folks have been trailblazing the technology and I have been reading Kevin Hoffman&rsquo;s <a href="https://medium.com/@KevinHoffman">medium</a> and <a href="https://wascc.dev/">wascc</a> (nee waxosuit) work. From this, I stumbled upon Kevin&rsquo;s <a href="https://medium.com/@KevinHoffman/introducing-wapc-dc9d8b0c2223">waPC</a> and I&rsquo;m using waPC in this prototyping as a way to exchange data between clients and servers running WASM binaries.</p>
+<h2 id="protobufs">Protobufs</h2>
+<p>It seems (!?) to me that <a href="https://developers.google.com/protocol-buffers">protobufs</a> could be a convenient way to pass function data around in my solution. <a href="https://github.com/google/trillian">Trillian</a> is a gRPC-based platform. Communication between Trillian personalities and Trillian&rsquo;s runtime is via gRPC. Often, Trillian personalities extend gRPC to their own clients too. I plan to use gRPC in this way in this proposed solution.</p>
+<p>So, if a Trillian personality (client) ships WASM to a Trillian server using gRPC (and protobufs), it&rsquo;s natural to also use protobufs (but not gRPC) to invoke the WASM functions on the host. However, WASM binaries run in their host&rsquo;s runtime process; there&rsquo;s no network stack between the two and thus no need for the R(emote) in RPC (and thus gRPC). Kevin&rsquo;s waPC provides a mechanism for transferring bytes between a host runtime and a guest WASM binary (and vice versa).</p>
+<p>So, this project demonstrates taking arbitrary protobuf messages encoded as <a href="https://developers.google.com/protocol-buffers/docs/proto3#any">Any</a> which are envelopes containing bytes (and a unique descriptor of the type), and shipping these across the WASM host:guest boundary using waPC</p>
+<h2 id="example">Example</h2>
+<p>I&rsquo;m a rust noob; feedback is always welcome!</p>
+<p>Here&rsquo;s the prototypical <a href="https://docs.rs/wapc-guest/0.3.1/wapc_guest/">example</a>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">crate</span> wapc_guest <span style="color:#66d9ef">as</span> guest;
+
+<span style="color:#66d9ef">use</span> guest::prelude::<span style="color:#f92672">*</span>;
+
+wapc_handler<span style="color:#f92672">!</span>(handle_wapc);
+
+<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">handle_wapc</span>(operation: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
+    <span style="color:#66d9ef">match</span> operation {
+        <span style="color:#e6db74">&#34;sample:mirror&#34;</span> <span style="color:#f92672">=&gt;</span> mirror(msg),
+        _ <span style="color:#f92672">=&gt;</span> Err(<span style="color:#e6db74">&#34;bad dispatch&#34;</span>.into()),
+    }
+}
+
+<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">mirror</span>(msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
+    <span style="color:#75715e">// Calls into Host
+</span><span style="color:#75715e"></span>    host_call(<span style="color:#e6db74">&#34;something&#34;</span>, <span style="color:#e6db74">&#34;Host&#34;</span>, <span style="color:#e6db74">&#34;Call&#34;</span>, <span style="color:#e6db74">b&#34;[mirror] Entered&#34;</span>)<span style="color:#f92672">?</span>;
+    <span style="color:#75715e">// Implement Guest function
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> s <span style="color:#f92672">=</span> <span style="color:#66d9ef">match</span> <span style="color:#66d9ef">str</span>::from_utf8(msg) {
+        Ok(v) <span style="color:#f92672">=&gt;</span> v.chars().rev().collect::<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span>(),
+        Err(e) <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;Invalid UTF-8: {}&#34;</span>, e),
+    };
+    Ok(s.into_bytes())
+}
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> IIUC the operation (<code>sample:mirror</code>) is simply a string key, i.e. there&rsquo;s no real structure to it but the host&rsquo;s call must match one of the function&rsquo;s supported by the guest.</p>
+</blockquote>
+<p>The <code>match</code> in <code>handle_wapc</code> maps an arbitrary set of incoming string keys with functions.</p>
+<p>The implementation of <code>mirror</code> is only slightly confusing with the addition of the <code>host_call</code> but this function calls back to the host with a unique ID for the guest and an operation (string) and payload that could also be pattern-matched on the host for routing to specific functions.</p>
+<h2 id="protobuf-wapc">Protobuf-waPC</h2>
+<p>All that&rsquo;s left to do is permit the host and guest to exchange protobuf messages this way. As mentioned above, waPC requires bytes for exchange and so we must transform arbitrary protobuf messages down to bytes.</p>
+<p>In my prototype, I&rsquo;m using a very simple protobuf service with 2 methods (<code>add</code>,<code>sub</code>) and sharing <code>SimplexRequest</code> requests (parameters) and <code>SimplexResponse</code> response (results):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf">syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#f92672">package</span> examples;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">option</span> go_package <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;github.com/[[PROJECT]]/protos&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">service</span> SimplexService {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">rpc</span> add(SimplexRequest) <span style="color:#66d9ef">returns</span> (SimplexResponse) {};<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">rpc</span> sub(SimplexRequest) <span style="color:#66d9ef">returns</span> (SimplexResponse) {};<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">SimplexRequest</span> {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">int32</span> a <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">int32</span> b <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">SimplexResponse</span> {<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">int32</span> result <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span></code></pre></div><p>I&rsquo;m using Stepancheg&rsquo;s <a href="https://crates.io/crates/protobuf">protobuf</a> crate and this permits compiling protobufs to Rust sources using a <code>build.rs</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
+    <span style="color:#66d9ef">match</span> protoc_rust::Codegen::new()
+        .out_dir(<span style="color:#e6db74">&#34;src/protos&#34;</span>)
+        .include(<span style="color:#e6db74">&#34;../protos&#34;</span>)
+        .inputs(<span style="color:#f92672">&amp;</span>[<span style="color:#e6db74">&#34;../protos/simplex.proto&#34;</span>])
+        .run()
+    {
+        Ok(_) <span style="color:#f92672">=&gt;</span> println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;Successfully compiled protobufs&#34;</span>),
+        Err(e) <span style="color:#f92672">=&gt;</span> println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{:?}&#34;</span>, e),
+    }
+}
+</code></pre></div><p>I&rsquo;m then, of course, using the generated structs in both the host (<code>main.rs</code>) and WASM binary (<code>lib.rs</code>) projects.</p>
+<h2 id="rust-wasm-guest">Rust WASM Guest</h2>
+<p>Let&rsquo;s start with the WASM guest.</p>
+<p>We simply add our upcoming functions (<code>add</code> and <code>sub</code>) to the handler:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">handle_wapc</span>(operation: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
+    <span style="color:#66d9ef">match</span> operation {
+        <span style="color:#e6db74">&#34;e:mirror&#34;</span> <span style="color:#f92672">=&gt;</span> example::mirror(msg),
+        <span style="color:#e6db74">&#34;e:add&#34;</span> <span style="color:#f92672">=&gt;</span> example::add(msg),
+        <span style="color:#e6db74">&#34;e:sub&#34;</span> <span style="color:#f92672">=&gt;</span> example::sub(msg),
+        _ <span style="color:#f92672">=&gt;</span> Err(<span style="color:#e6db74">&#34;bad dispatch&#34;</span>.into()),
+    }
+}
+</code></pre></div><p>These functions have a signature: <code>&amp;[u8] -&gt; wapc_guest::prelude::CallResult</code> (borrowed slice of bytes to ). We&rsquo;re going to implement our WASM functions as if service (stubs) were generated for us by protobuf, i.e.:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">add</span>(rqst: <span style="color:#a6e22e">SimplexRequest</span>) -&gt; <span style="color:#a6e22e">SimplexResponse</span> {}
+<span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">sub</span>(rqst: <span style="color:#a6e22e">SimplexRequest</span>) -&gt; <span style="color:#a6e22e">SimplexResponse</span> {}
+</code></pre></div><p>You&rsquo;ll recall from the above that there&rsquo;s a protobuf (well-known-type) <code>Any</code> that can be used to envelope arbitrary message types, let&rsquo;s use that:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">add</span>(msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
+    <span style="color:#75715e">// From bytes --&gt; Any
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> rqst <span style="color:#f92672">=</span> Any {
+        type_url: <span style="color:#e6db74">&#34;type.googleapis.com/examples.SimplexRequest&#34;</span>.to_string(),
+        value: <span style="color:#a6e22e">msg</span>.iter().cloned().collect(),
+        ..Default::default()
+    };
+    <span style="color:#75715e">// Call the RPC
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> resp <span style="color:#f92672">=</span> x::add(rqst)<span style="color:#f92672">?</span>;
+    <span style="color:#75715e">// Any --&gt; bytes
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> b <span style="color:#f92672">=</span> resp.get_value();
+    <span style="color:#66d9ef">let</span> v <span style="color:#f92672">=</span> b.iter().cloned().collect();
+    Ok(v)
+}
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> the module <code>x</code> is primarily to keep similarly named functions distinct by namespace.</p>
+</blockquote>
+<p>This get us from message bytes to an <code>Any</code> that includes the bytes (not as a vector) and a type. This type is prefixed by <code>type.googleapis.com</code> and then uses the protobuf package name (<code>examples</code>) and the message (<code>SimpleRequest</code>) to uniquely reference it. This could be anything as long as the receiving end is able to match the same type (string) to the appropriate protobuf message.</p>
+<p>Then, we need implementations for e.g. <code>Any-&gt; Any</code> so, for <code>add</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">add</span>(any: <span style="color:#a6e22e">Any</span>) -&gt; Result<span style="color:#f92672">&lt;</span>Any, ProtobufError<span style="color:#f92672">&gt;</span> {
+    <span style="color:#75715e">// From Any --&gt; SimplexRequest
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> rqst <span style="color:#f92672">=</span> <span style="color:#66d9ef">match</span> any.unpack::<span style="color:#f92672">&lt;</span>SimplexRequest<span style="color:#f92672">&gt;</span>() {
+        Ok(v) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">match</span> v {
+            Some(m) <span style="color:#f92672">=&gt;</span> m,
+            None <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;protobuf type mismatch&#34;</span>),
+            },
+        Err(e) <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;protobuf message parse failure: {}&#34;</span>, e),
+    };
+    <span style="color:#75715e">// Call the RPC
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> resp: <span style="color:#a6e22e">SimplexResponse</span> <span style="color:#f92672">=</span> server::add(rqst);
+    <span style="color:#75715e">// From SimplexResponse --&gt; Any
+</span><span style="color:#75715e"></span>    Any::pack(<span style="color:#f92672">&amp;</span>resp)
+}
+</code></pre></div><p>Which gets us from <code>Any</code> to e.g. <code>SimplexRequest</code> that we can use to invoke our protobuf implementation of <code>add</code> and then we return <code>SimplexResponse</code> as an <code>Any</code>.</p>
+<blockquote>
+<p><strong>NOTE</strong> <code>pack</code> uses the message&rsquo;s descriptor to set the type of <code>Any</code>. In this case (for <code>SimplexResponse</code>) it will be <code>type.googleapis.com/examples.SimplexResponse</code>.</p>
+</blockquote>
+<p>We compile the code with:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cargo clean <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>cargo build --target wasm32-unknown-unknown
+</code></pre></div><p>And, all being well, this generates:</p>
+<pre><code class="language-console" data-lang="console">ls -l target/wasm32-unknown-unknown/debug/
+total 16452
+build
+deps
+examples
+incremental
+simplex.d
+simplex.wasm
+</code></pre><blockquote>
+<p><strong>NOTE</strong> We&rsquo;re only interested in <code>simple.wasm</code>.</p>
+</blockquote>
+<h2 id="rust-wasm-host">Rust WASM Host</h2>
+<p>The host is essentially everything above in reverse ;-)</p>
+<p>We want to make calls of the form:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">let</span> rqst <span style="color:#f92672">=</span> SimplexRequest {
+    a: <span style="color:#ae81ff">39</span>,
+    b: <span style="color:#ae81ff">3</span>,
+    ..Default::default()
+};
+<span style="color:#66d9ef">let</span> resp <span style="color:#f92672">=</span> add(rqst);
+assert_eq<span style="color:#f92672">!</span>(resp.get_result(), <span style="color:#ae81ff">42</span>);
+println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{:?}&#34;</span>, resp);
+</code></pre></div><p>As with the waPC example, the host loads the compiled WASM binary file and creates a <code>WapcHost</code> from the WASM and a callback (to handle the guest&rsquo;s <code>host_call</code>s). In this prototype, the host makes simple calls into the guest&rsquo;s functions, e.g.:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">let</span> resp <span style="color:#f92672">=</span> host.call(op: <span style="color:#e6db74">&#34;e:add&#34;</span>, payload: <span style="color:#a6e22e">v</span>)<span style="color:#f92672">?</span>;
+</code></pre></div><p>But the payload <code>v</code> needs to be a slice of bytes, so:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">add</span>(rqst: <span style="color:#a6e22e">SimplexRequest</span>) -&gt; <span style="color:#a6e22e">SimplexResponse</span> {
+    <span style="color:#66d9ef">let</span> any: <span style="color:#a6e22e">Any</span> <span style="color:#f92672">=</span> Any::pack(message: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">rqst</span>).expect(<span style="color:#e6db74">&#34;unable to pack message&#34;</span>);
+    <span style="color:#75715e">// Use the Any&#39;s value as the message in the call
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// NB Discard the Any&#39;s type here
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> v: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>] <span style="color:#f92672">=</span> any.get_value();
+    <span style="color:#75715e">// Make the call
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> resp: Vec<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">u8</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> host.call(op: <span style="color:#e6db74">&#34;e:add&#34;</span>, payload: <span style="color:#a6e22e">v</span>)<span style="color:#f92672">?</span>;
+    <span style="color:#75715e">// Create another Any from the response
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// NB Statically assign the Any&#39;s type here
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> any: <span style="color:#a6e22e">Any</span> <span style="color:#f92672">=</span> Any {
+        type_url: <span style="color:#e6db74">&#34;type.googleapis.com/examples.SimplexResponse&#34;</span>.to_string(),
+        value: <span style="color:#a6e22e">resp</span>,
+        ..Default::default()
+    };
+    <span style="color:#75715e">// From Any --&gt; SimpleResponse (panic otherwise)
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">match</span> any.unpack::<span style="color:#f92672">&lt;</span>SimplexResponse<span style="color:#f92672">&gt;</span>() {
+        Ok(v: Option<span style="color:#f92672">&lt;</span>SimpleResponse<span style="color:#f92672">&gt;</span>) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">match</span> v {
+            Some(m: <span style="color:#a6e22e">SimpleResponse</span>) <span style="color:#f92672">=&gt;</span> m,
+            None <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;protobuf message type mismatch&#34;</span>),
+        },
+        Err(e: <span style="color:#a6e22e">ProtobufError</span>) <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;protobuf message parse mismatch: {}&#34;</span>, e),
+    }
+}
+</code></pre></div><p>To avoid having to close over <code>host</code> and to better abstract the functionality:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Stub</span> {
+    host: <span style="color:#a6e22e">WapcHost</span>,
+}
+<span style="color:#66d9ef">impl</span> Stub {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">_add</span>(self: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> Self, any: <span style="color:#a6e22e">Any</span>) -&gt; <span style="color:#a6e22e">Any</span> {
+        <span style="color:#75715e">// NB Discard the incoming Any&#39;s type here
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">let</span> rqst: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>] <span style="color:#f92672">=</span> any.get_value();
+        <span style="color:#75715e">// Make the call
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">let</span> resp: Vec<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">u8</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> self.host.call(<span style="color:#e6db74">&#34;e:add&#34;</span>, rqst).unwrap();
+        <span style="color:#75715e">// Create another Any from the response
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// NB Statically assign the Any&#39;s type here
+</span><span style="color:#75715e"></span>        Any {
+            type_url: <span style="color:#e6db74">&#34;type.googleapis.com/examples.SimplexResponse&#34;</span>.to_string(),
+            value: <span style="color:#a6e22e">resp</span>,
+            ..Default::default()
+        }
+    }
+    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">add</span>(self: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> Self, rqst: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">SimplexRequest</span>) -&gt; <span style="color:#a6e22e">SimplexResponse</span> {
+        <span style="color:#66d9ef">let</span> rqst: <span style="color:#a6e22e">Any</span> <span style="color:#f92672">=</span> Any::pack(rqst).expect(<span style="color:#e6db74">&#34;unable to pack message&#34;</span>);
+        <span style="color:#66d9ef">let</span> resp <span style="color:#f92672">=</span> self._add(rqst);
+        <span style="color:#75715e">// From Any --&gt; SimpleResponse (panic otherwise)
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">match</span> resp.unpack::<span style="color:#f92672">&lt;</span>SimplexResponse<span style="color:#f92672">&gt;</span>() {
+            Ok(v) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">match</span> v {
+                Some(m) <span style="color:#f92672">=&gt;</span> m,
+                None <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;protobuf message type mismatch&#34;</span>),
+            },
+            Err(e) <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;protobuf message parse mismatch: {}&#34;</span>, e),
+        }
+    }
+}
+</code></pre></div><p>Running this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cargo run
+</code></pre></div><p>Gets us:</p>
+<pre><code class="language-console" data-lang="console">cargo run
+   Compiling simplex v0.1.0 (/home/.../host)
+    Finished dev [unoptimized + debuginfo] target(s) in 5.61s
+     Running `target/debug/simplex`
+result: 42
+</code></pre><h2 id="conclusion">Conclusion</h2>
+<p>Out-of-the-box, WASM currently permits only numbers to be used as function parameters and a single number value to be returned. Using, waPC, it&rsquo;s possible to invoke functions using bytes and receive results as bytes. Using protobufs and the Any well-known type, these lower-level bytes can be typed. Even though the example described above is both trivial and easily implemented without protobufs and waPC (because simple math functions are possible using WASM&rsquo;s current parameter|result constraints), the example should (!) support arbitrary protobuf messages.</p>
+<h2 id="backgrounder">Backgrounder</h2>
+<p>WASM-related technologies as I understand them. Much has been written about WASM and I won&rsquo;t attempt to replicate that or explain WASM here. Suffice to say that the Krustlet team makes a compelling argument for the utility of WASM in its blog post announcing Krustlet when it writes <a href="https://deislabs.io/posts/introducing-krustlet/#a-comparison-of-linux-containers-and-webassembly">&ldquo;A comparison of Linux Containers and WebAssembly&rdquo;</a>.</p>
+<p>Assuming we&rsquo;re running WASM outside of the browser, we need a host|runtime environment for it. There are several being developed (<a href="https://wasmtime.dev/">wasmtime</a>, <a href="https://github.com/bytecodealliance/lucet">lucet</a>, <a href="https://wascc.dev/">wascc</a>). An immediate problem is how WASM functions may access host functionality (e.g. networking) and a solution is an interface called <a href="https://wasi.dev/">WASI</a> that all of the aforementioned runtimes support (it&rsquo;s like *nix&rsquo;s POSIX) and ensures that not only does WASM run unchanged between runtimes but that a host runtime implements functionality expected of a WASI runtime. wascc goes further and provides a mechanism for pluggable &lsquo;capabilities&rsquo; (e.g. <a href="https://github.com/wascc/http-server-provider">HTTP Server Provider</a>, logging, redis etc.) that provide higher-level functionality to WASM binaries. When I find the time, I&rsquo;d like to write a Prometheus Provider.</p>
+<p>Lastly, moving data into and from WASM binaries is currently limited (to numerical data and shared memory) see <a href="https://hacks.mozilla.org/2017/07/memory-in-webassembly-and-why-its-safer-than-you-think/">link</a>. There&rsquo;s a proposal for WASM <a href="https://hacks.mozilla.org/2019/08/webassembly-interface-types/">Inteface Types</a> which appears to provide a more powerful (typed?) mechanism. There&rsquo;s also <a href="https://wascc.dev/docs/concepts/wapc/">waPC</a> which provides a low-level &lsquo;bytes&rsquo; format that I&rsquo;m using in this project.</p>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/wasm" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">wasm</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/wapc" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">wapc</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/wascc" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">wascc</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/krustlet" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">krustlet</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/protobufs" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">protobufs</a>
+   </li>
+  
+</ul>
+<div class="mt6">
+      
+      
+      </div>
+    </section>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/200508/">Google Container Registry w/ OCI</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2020 
+  </a>
+    <div>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+</div>
+  </div>
+</footer>
+
+    
+
+  <script src="/dist/js/app.3fc0f988d21662902933.js"></script>
+
+
+  </body>
+</html>
