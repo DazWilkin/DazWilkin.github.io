@@ -6,7 +6,7 @@
     
     <title>Adventures around BPF | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
-    <meta name="generator" content="Hugo 0.74.3" />
+    <meta name="generator" content="Hugo 0.75.1" />
     
     
       <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -206,41 +206,41 @@ compilation terminated.
 </code></pre></div><p>I then stumbled upon <a href="https://www.weave.works/oss/scope/">Weave Scope</a> perhaps through this post <a href="https://www.weave.works/blog/improving-performance-reliability-weave-scope-ebpf/">&ldquo;Improving performance and reliability in Weave Scope with eBPF&rdquo;</a>. I&rsquo;d not used Weave Scope and find it rather excellent. I&rsquo;ve used <a href="https://github.com/google/cadvisor">cAdvisor</a> for somewhat similar goals but will now use both. The rest of this post is about playing around with Weave Scope.</p>
 <p>Running it on my local machine:</p>
 <p>Docker Compose is easiest. The following runs Weave Scope and 2 plugins: <a href="https://github.com/weaveworks-plugins/scope-iowait">iowait</a> and <a href="https://github.com/weaveworks-plugins/scope-traffic-control">traffic-control</a>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">version</span>: <span style="color:#e6db74">&#34;3&#34;</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#34;3&#34;</span>
 
-<span style="color:#66d9ef">services</span>:
-  <span style="color:#66d9ef">scope</span>:
-    <span style="color:#66d9ef">image</span>: weaveworks/scope:<span style="color:#ae81ff">1.12.0</span>
-    <span style="color:#66d9ef">container_name</span>: scope
-    <span style="color:#66d9ef">network_mode</span>: host
-    <span style="color:#66d9ef">pid</span>: host
-    <span style="color:#66d9ef">privileged</span>: <span style="color:#66d9ef">true</span>
-    <span style="color:#66d9ef">labels</span>:
+<span style="color:#f92672">services</span>:
+  <span style="color:#f92672">scope</span>:
+    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">weaveworks/scope:1.12.0</span>
+    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">scope</span>
+    <span style="color:#f92672">network_mode</span>: <span style="color:#ae81ff">host</span>
+    <span style="color:#f92672">pid</span>: <span style="color:#ae81ff">host</span>
+    <span style="color:#f92672">privileged</span>: <span style="color:#66d9ef">true</span>
+    <span style="color:#f92672">labels</span>:
     - <span style="color:#e6db74">&#34;works.weave.role=system&#34;</span>
-    <span style="color:#66d9ef">volumes</span>:
-    - /var/run/docker.sock:/var/run/docker.sock:rw
-    - /var/run/scope/plugins:/var/run/scope/plugins
-    <span style="color:#66d9ef">command</span>:
+    <span style="color:#f92672">volumes</span>:
+    - <span style="color:#ae81ff">/var/run/docker.sock:/var/run/docker.sock:rw</span>
+    - <span style="color:#ae81ff">/var/run/scope/plugins:/var/run/scope/plugins</span>
+    <span style="color:#f92672">command</span>:
     - <span style="color:#e6db74">&#34;--probe.docker=true&#34;</span>
     - <span style="color:#e6db74">&#34;--weave=false&#34;</span>
 
-  <span style="color:#66d9ef">iowait</span>:
-    <span style="color:#66d9ef">image</span>: weaveworksplugins/scope-iowait:latest
-    <span style="color:#66d9ef">container_name</span>: iowait
-    <span style="color:#66d9ef">network_mode</span>: host
-    <span style="color:#66d9ef">volumes</span>:
-    - /var/run/scope/plugins/iowait:/var/run/scope/plugins/iowait
-    <span style="color:#66d9ef">Commmand</span>:
+  <span style="color:#f92672">iowait</span>:
+    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">weaveworksplugins/scope-iowait:latest</span>
+    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">iowait</span>
+    <span style="color:#f92672">network_mode</span>: <span style="color:#ae81ff">host</span>
+    <span style="color:#f92672">volumes</span>:
+    - <span style="color:#ae81ff">/var/run/scope/plugins/iowait:/var/run/scope/plugins/iowait</span>
+    <span style="color:#f92672">Commmand</span>:
     - <span style="color:#e6db74">&#34;--name=weaveworksplugins-scope-iowait&#34;</span>
 
-  <span style="color:#66d9ef">traffic-control</span>:
-    <span style="color:#66d9ef">image</span>: weaveworksplugins/scope-traffic-control:latest
-    <span style="color:#66d9ef">container_name</span>: traffic-control
-    <span style="color:#66d9ef">network_mode</span>: host
-    <span style="color:#66d9ef">volumes</span>:
-    - /var/run/docker.sock:/var/run/docker.sock
-    - /var/run/scope/plugins/traffic-control:/var/run/scope/plugins/traffic-control
-    <span style="color:#66d9ef">command</span>:
+  <span style="color:#f92672">traffic-control</span>:
+    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">weaveworksplugins/scope-traffic-control:latest</span>
+    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">traffic-control</span>
+    <span style="color:#f92672">network_mode</span>: <span style="color:#ae81ff">host</span>
+    <span style="color:#f92672">volumes</span>:
+    - <span style="color:#ae81ff">/var/run/docker.sock:/var/run/docker.sock</span>
+    - <span style="color:#ae81ff">/var/run/scope/plugins/traffic-control:/var/run/scope/plugins/traffic-control</span>
+    <span style="color:#f92672">command</span>:
     - <span style="color:#e6db74">&#34;--name=weaveworksplugins-scope-traffic-control&#34;</span>
 </code></pre></div><p>But, if you&rsquo;d prefer to run the containers separately, then:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
@@ -388,72 +388,72 @@ INFO[0000] Listening...
 </span><span style="color:#ae81ff"></span>| jq .
 </code></pre></div><p>The output for this is edited for clarity as it is more lengthy:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">{
-  <span style="color:#66d9ef">&#34;Container&#34;: </span>{
-    <span style="color:#66d9ef">&#34;nodes&#34;: </span>{
-      <span style="color:#66d9ef">&#34;26b59de3ea355da095623112b25d57d9dca9e07d365a1d2cdd66f03e79b95169;&lt;container&gt;&#34;: </span>{
-        <span style="color:#66d9ef">&#34;latestControls&#34;: </span>{
-          <span style="color:#66d9ef">&#34;traffic-control-table-clear&#34;: </span>{
-            <span style="color:#66d9ef">&#34;timestamp&#34;: </span><span style="color:#e6db74">&#34;2019-12-31T20:41:51.005774828Z&#34;</span>,
-            <span style="color:#66d9ef">&#34;value&#34;: </span>{
-              <span style="color:#66d9ef">&#34;dead&#34;: </span><span style="color:#66d9ef">false</span>
+  <span style="color:#f92672">&#34;Container&#34;: </span>{
+    <span style="color:#f92672">&#34;nodes&#34;: </span>{
+      <span style="color:#f92672">&#34;26b59de3ea355da095623112b25d57d9dca9e07d365a1d2cdd66f03e79b95169;&lt;container&gt;&#34;: </span>{
+        <span style="color:#f92672">&#34;latestControls&#34;: </span>{
+          <span style="color:#f92672">&#34;traffic-control-table-clear&#34;: </span>{
+            <span style="color:#f92672">&#34;timestamp&#34;: </span><span style="color:#e6db74">&#34;2019-12-31T20:41:51.005774828Z&#34;</span>,
+            <span style="color:#f92672">&#34;value&#34;: </span>{
+              <span style="color:#f92672">&#34;dead&#34;: </span><span style="color:#66d9ef">false</span>
             }
           },
-          ...
+          <span style="color:#ae81ff">...</span>
         },
-        <span style="color:#66d9ef">&#34;latest&#34;: </span>{
-          <span style="color:#66d9ef">&#34;traffic-control-table-latency&#34;: </span>{
-            <span style="color:#66d9ef">&#34;timestamp&#34;: </span><span style="color:#e6db74">&#34;2019-12-31T20:41:51.005774828Z&#34;</span>,
-            <span style="color:#66d9ef">&#34;value&#34;: </span><span style="color:#e6db74">&#34;-&#34;</span>
+        <span style="color:#f92672">&#34;latest&#34;: </span>{
+          <span style="color:#f92672">&#34;traffic-control-table-latency&#34;: </span>{
+            <span style="color:#f92672">&#34;timestamp&#34;: </span><span style="color:#e6db74">&#34;2019-12-31T20:41:51.005774828Z&#34;</span>,
+            <span style="color:#f92672">&#34;value&#34;: </span><span style="color:#e6db74">&#34;-&#34;</span>
           },
-          <span style="color:#66d9ef">&#34;traffic-control-table-pktloss&#34;: </span>{
-            <span style="color:#66d9ef">&#34;timestamp&#34;: </span><span style="color:#e6db74">&#34;2019-12-31T20:41:51.005774828Z&#34;</span>,
-            <span style="color:#66d9ef">&#34;value&#34;: </span><span style="color:#e6db74">&#34;-&#34;</span>
+          <span style="color:#f92672">&#34;traffic-control-table-pktloss&#34;: </span>{
+            <span style="color:#f92672">&#34;timestamp&#34;: </span><span style="color:#e6db74">&#34;2019-12-31T20:41:51.005774828Z&#34;</span>,
+            <span style="color:#f92672">&#34;value&#34;: </span><span style="color:#e6db74">&#34;-&#34;</span>
           }
         }
       },
-      ...
+      <span style="color:#ae81ff">...</span>
     },
-    <span style="color:#66d9ef">&#34;controls&#34;: </span>{
-      <span style="color:#66d9ef">&#34;traffic-control-table-clear&#34;: </span>{
-        <span style="color:#66d9ef">&#34;id&#34;: </span><span style="color:#e6db74">&#34;traffic-control-table-clear&#34;</span>,
-        <span style="color:#66d9ef">&#34;human&#34;: </span><span style="color:#e6db74">&#34;Clear traffic control settings&#34;</span>,
-        <span style="color:#66d9ef">&#34;icon&#34;: </span><span style="color:#e6db74">&#34;fa-times-circle&#34;</span>,
-        <span style="color:#66d9ef">&#34;rank&#34;: </span><span style="color:#ae81ff">24</span>
+    <span style="color:#f92672">&#34;controls&#34;: </span>{
+      <span style="color:#f92672">&#34;traffic-control-table-clear&#34;: </span>{
+        <span style="color:#f92672">&#34;id&#34;: </span><span style="color:#e6db74">&#34;traffic-control-table-clear&#34;</span>,
+        <span style="color:#f92672">&#34;human&#34;: </span><span style="color:#e6db74">&#34;Clear traffic control settings&#34;</span>,
+        <span style="color:#f92672">&#34;icon&#34;: </span><span style="color:#e6db74">&#34;fa-times-circle&#34;</span>,
+        <span style="color:#f92672">&#34;rank&#34;: </span><span style="color:#ae81ff">24</span>
       },
-      ...
+      <span style="color:#ae81ff">...</span>
     },
-    <span style="color:#66d9ef">&#34;metadata_templates&#34;: </span>{
-      <span style="color:#66d9ef">&#34;traffic-control-latency&#34;: </span>{
-        <span style="color:#66d9ef">&#34;id&#34;: </span><span style="color:#e6db74">&#34;traffic-control-latency&#34;</span>,
-        <span style="color:#66d9ef">&#34;label&#34;: </span><span style="color:#e6db74">&#34;Latency&#34;</span>,
-        <span style="color:#66d9ef">&#34;priority&#34;: </span><span style="color:#ae81ff">13.5</span>,
-        <span style="color:#66d9ef">&#34;from&#34;: </span><span style="color:#e6db74">&#34;latest&#34;</span>
+    <span style="color:#f92672">&#34;metadata_templates&#34;: </span>{
+      <span style="color:#f92672">&#34;traffic-control-latency&#34;: </span>{
+        <span style="color:#f92672">&#34;id&#34;: </span><span style="color:#e6db74">&#34;traffic-control-latency&#34;</span>,
+        <span style="color:#f92672">&#34;label&#34;: </span><span style="color:#e6db74">&#34;Latency&#34;</span>,
+        <span style="color:#f92672">&#34;priority&#34;: </span><span style="color:#ae81ff">13.5</span>,
+        <span style="color:#f92672">&#34;from&#34;: </span><span style="color:#e6db74">&#34;latest&#34;</span>
       },
-      <span style="color:#66d9ef">&#34;traffic-control-pktloss&#34;: </span>{
-        <span style="color:#66d9ef">&#34;id&#34;: </span><span style="color:#e6db74">&#34;traffic-control-pktloss&#34;</span>,
-        <span style="color:#66d9ef">&#34;label&#34;: </span><span style="color:#e6db74">&#34;Packet Loss&#34;</span>,
-        <span style="color:#66d9ef">&#34;priority&#34;: </span><span style="color:#ae81ff">13.6</span>,
-        <span style="color:#66d9ef">&#34;from&#34;: </span><span style="color:#e6db74">&#34;latest&#34;</span>
+      <span style="color:#f92672">&#34;traffic-control-pktloss&#34;: </span>{
+        <span style="color:#f92672">&#34;id&#34;: </span><span style="color:#e6db74">&#34;traffic-control-pktloss&#34;</span>,
+        <span style="color:#f92672">&#34;label&#34;: </span><span style="color:#e6db74">&#34;Packet Loss&#34;</span>,
+        <span style="color:#f92672">&#34;priority&#34;: </span><span style="color:#ae81ff">13.6</span>,
+        <span style="color:#f92672">&#34;from&#34;: </span><span style="color:#e6db74">&#34;latest&#34;</span>
       }
     },
-    <span style="color:#66d9ef">&#34;table_templates&#34;: </span>{
-      <span style="color:#66d9ef">&#34;traffic-control-table&#34;: </span>{
-        <span style="color:#66d9ef">&#34;id&#34;: </span><span style="color:#e6db74">&#34;traffic-control-table&#34;</span>,
-        <span style="color:#66d9ef">&#34;label&#34;: </span><span style="color:#e6db74">&#34;Traffic Control&#34;</span>,
-        <span style="color:#66d9ef">&#34;prefix&#34;: </span><span style="color:#e6db74">&#34;traffic-control-table-&#34;</span>
+    <span style="color:#f92672">&#34;table_templates&#34;: </span>{
+      <span style="color:#f92672">&#34;traffic-control-table&#34;: </span>{
+        <span style="color:#f92672">&#34;id&#34;: </span><span style="color:#e6db74">&#34;traffic-control-table&#34;</span>,
+        <span style="color:#f92672">&#34;label&#34;: </span><span style="color:#e6db74">&#34;Traffic Control&#34;</span>,
+        <span style="color:#f92672">&#34;prefix&#34;: </span><span style="color:#e6db74">&#34;traffic-control-table-&#34;</span>
       }
     }
   },
-  <span style="color:#66d9ef">&#34;Plugins&#34;: </span>[
+  <span style="color:#f92672">&#34;Plugins&#34;: </span>[
     {
-      <span style="color:#66d9ef">&#34;id&#34;: </span><span style="color:#e6db74">&#34;traffic-control&#34;</span>,
-      <span style="color:#66d9ef">&#34;label&#34;: </span><span style="color:#e6db74">&#34;Traffic control&#34;</span>,
-      <span style="color:#66d9ef">&#34;description&#34;: </span><span style="color:#e6db74">&#34;Adds traffic controls to the running Docker containers&#34;</span>,
-      <span style="color:#66d9ef">&#34;interfaces&#34;: </span>[
+      <span style="color:#f92672">&#34;id&#34;: </span><span style="color:#e6db74">&#34;traffic-control&#34;</span>,
+      <span style="color:#f92672">&#34;label&#34;: </span><span style="color:#e6db74">&#34;Traffic control&#34;</span>,
+      <span style="color:#f92672">&#34;description&#34;: </span><span style="color:#e6db74">&#34;Adds traffic controls to the running Docker containers&#34;</span>,
+      <span style="color:#f92672">&#34;interfaces&#34;: </span>[
         <span style="color:#e6db74">&#34;reporter&#34;</span>,
         <span style="color:#e6db74">&#34;controller&#34;</span>
       ],
-      <span style="color:#66d9ef">&#34;api_version&#34;: </span><span style="color:#e6db74">&#34;1&#34;</span>
+      <span style="color:#f92672">&#34;api_version&#34;: </span><span style="color:#e6db74">&#34;1&#34;</span>
     }
   ]
 }

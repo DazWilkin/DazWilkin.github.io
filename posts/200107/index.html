@@ -6,7 +6,7 @@
     
     <title>Google Home Exporter | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
-    <meta name="generator" content="Hugo 0.74.3" />
+    <meta name="generator" content="Hugo 0.75.1" />
     
     
       <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -189,7 +189,7 @@ if (!doNotTrack) {
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;m obsessing over Prometheus exporters. First came <a href="https://pretired.dazwilkin.com/posts/191218/">Linode Exporter</a>, then <a href="https://pretired.dazwilkin.com/posts/191220/">GCP Exporter</a> and, on Sunday, I stumbled upon a reverse-engineered <a href="https://rithvikvibhu.github.io/GHLocalApi/">API for Google Home</a> devices and so wrote a very basic <a href="https://github.com/DazWilkin/gohome">Google Home SDK</a> and a similarly basic <a href="https://github.com/DazWilkin/home-exporter">Google Home Exporter</a>:</p>
-<p><img src="/static/images/200107.home-exporter.png" alt="Prometheus Graphs"></p>
+<p><img src="/images/200107.home-exporter.png" alt="Prometheus Graphs"></p>
 <p>The SDK only implements <code>/setup/eureka_info</code> and then only some of the returned properties. There&rsquo;s not a lot of metric-like data to use besides <code>SignalLevel</code> (<code>signal_level</code>) and <code>NoiseLevel</code> (<code>noise_level</code>). I&rsquo;m not clear on the meaning of some of the properties.</p>
 <p>As the API documentation explains, given a Google Home device endpoint (<code>{IP}</code>), you should be able to <code>curl --request GET http://${IP}:8008/setup/eureka_info</code>. The Golang SDK represents just a subset of this, sufficient to do something useful with the data in the Home Exporter and, since I was unmarshaling anyway, why not package that as a basic SDK!?</p>
 <p>As the Home Exporter&rsquo;s <a href="https://github.com/DazWilkin/home-exporter/blob/master/README.md">README</a> hopefully conveys, you can run the exporter directly:</p>
@@ -209,7 +209,7 @@ dazwilkin/home-exporter:5b5417c279b1f045bd817caa9112afed26dc20f3
 </span><span style="color:#ae81ff"></span>  --endpoint<span style="color:#f92672">=</span>:9999 <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --metricsPath<span style="color:#f92672">=</span>/metrics
 </code></pre></div><p><strong>NB</strong> The Docker container image port is fixed at <code>:9999</code> but you may publish this on your host port (<code>{$PORT}</code>)</p>
-<p>Or using Docker Compose. Using Docker Compose bundles cAdvisor and Prometheus. You&rsquo;ll need to configure (including renaming|duplicating) <code>exporter-X</code> and these services&rsquo; <code>--device=</code> and <code>ports</code> to represent your Google Home devices and their IP addresses, and, if you wish to publish the Exporter&rsquo;s metrics to your host (you do not need to do this), you&rsquo;ll need to ensure you don&rsquo;t have any port collisions.</p>
+<p>Or using Docker Compose. Using Docker Compose bundles cAdvisor and Prometheus. You&rsquo;ll need to configure (including renaming|duplicating) <code>exporter-X</code> and these services' <code>--device=</code> and <code>ports</code> to represent your Google Home devices and their IP addresses, and, if you wish to publish the Exporter&rsquo;s metrics to your host (you do not need to do this), you&rsquo;ll need to ensure you don&rsquo;t have any port collisions.</p>
 <p>At this point, I think I may have written Prometheus Exporters for the majority of the technologies that I wish to measure. I&rsquo;m going to try reflashing an old router with DD-WRT to see whether I can pull metrics for that too. But, then I&rsquo;m really done :-)</p>
 <ul class="pa0">
   

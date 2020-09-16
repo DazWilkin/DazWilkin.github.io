@@ -6,7 +6,7 @@
     
     <title>ESPHome, MQTT, Prometheus and almost Cloud IoT | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
-    <meta name="generator" content="Hugo 0.74.3" />
+    <meta name="generator" content="Hugo 0.75.1" />
     
     
       <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -206,52 +206,52 @@ pip install platformio
 <h3 id="sensors">Sensors</h3>
 <p>Absent any actual sensors and wanting to get started, I <a href="https://github.com/esphome/feature-requests/issues/617">pinged</a> the ESPHome GitHub repo for guidance on a test (random number) generating sensor. There isn&rsquo;t one in the &lsquo;package&rsquo; but it&rsquo;s trivial to write one. <a href="https://github.com/glmnet">gimnet</a> kindly provided code for &ldquo;Template Sensor&rdquo; (see below) too.</p>
 <p>Here&rsquo;s  my random number (0..100) generator that updates every 60 seconds:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">sensor</span>:
-  - <span style="color:#66d9ef">platform</span>: template
-    <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;Random Numbers&#34;</span>
-    <span style="color:#66d9ef">id</span>: random_sensor
-    <span style="color:#66d9ef">unit_of_measurement</span>: <span style="color:#e6db74">&#34;%&#34;</span>
-    <span style="color:#66d9ef">lambda</span>: |<span style="color:#e6db74">-
-</span><span style="color:#e6db74">      return rand() % 100;</span>
-    <span style="color:#66d9ef">update_interval</span>: 60s
-</code></pre></div><p>Here&rsquo;s <a href="https://github.com/glmnet">gimnet</a>&rsquo;s &ldquo;Template Sensor&rdquo; that I renamed to &ldquo;Counter Sensor&rdquo;:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">sensor</span>:
-- <span style="color:#66d9ef">platform</span>: template
-    <span style="color:#66d9ef">name</span>: <span style="color:#e6db74">&#34;Counter Sensor&#34;</span>
-    <span style="color:#66d9ef">id</span>: counter_sensor
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">sensor</span>:
+  - <span style="color:#f92672">platform</span>: <span style="color:#ae81ff">template</span>
+    <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;Random Numbers&#34;</span>
+    <span style="color:#f92672">id</span>: <span style="color:#ae81ff">random_sensor</span>
+    <span style="color:#f92672">unit_of_measurement</span>: <span style="color:#e6db74">&#34;%&#34;</span>
+    <span style="color:#f92672">lambda</span>: <span style="color:#e6db74">|-
+</span><span style="color:#e6db74">      return rand() % 100;
+</span><span style="color:#e6db74">    update_interval: 60s
+</span></code></pre></div><p>Here&rsquo;s <a href="https://github.com/glmnet">gimnet</a>&rsquo;s &ldquo;Template Sensor&rdquo; that I renamed to &ldquo;Counter Sensor&rdquo;:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">sensor</span>:
+- <span style="color:#f92672">platform</span>: <span style="color:#ae81ff">template</span>
+    <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;Counter Sensor&#34;</span>
+    <span style="color:#f92672">id</span>: <span style="color:#ae81ff">counter_sensor</span>
 
-<span style="color:#66d9ef">interval</span>:
-  - <span style="color:#66d9ef">interval</span>: 60s
-    <span style="color:#66d9ef">then</span>:
-      <span style="color:#66d9ef">lambda</span>: |<span style="color:#e6db74">-
-</span><span style="color:#e6db74">        static int value1 = 0;</span>
-        id(counter_sensor).publish_state(value1++);
-</code></pre></div><h2 id="mqtt">MQTT</h2>
+<span style="color:#f92672">interval</span>:
+  - <span style="color:#f92672">interval</span>: <span style="color:#ae81ff">60s</span>
+    <span style="color:#f92672">then</span>:
+      <span style="color:#f92672">lambda</span>: <span style="color:#e6db74">|-
+</span><span style="color:#e6db74">        static int value1 = 0;
+</span><span style="color:#e6db74">        id(counter_sensor).publish_state(value1++);
+</span></code></pre></div><h2 id="mqtt">MQTT</h2>
 <p>I&rsquo;ll describe below my work on attempting to communicate with Google Cloud Platform&rsquo;s MQTT service that&rsquo;s part of <a href="https://cloud.google.com/iot-core">Cloud IoT</a>. As I mentioned, I believe (!) it&rsquo;s not currently possible to publish to a TLS-based MQTT broker. I may be wrong. I&rsquo;ll document what I did below.</p>
 <p>Absent that, I decided to create a local MQTT broker and Eclipse&rsquo;s <a href="https://mosquitto.org">Mosquitto</a> is the exemplar implementation.</p>
 <p>I&rsquo;m going to bundle MQTT, a gateway (!), Prometheus and cAdvisor in a Docker Compose file. Here&rsquo;s the service entry for Mosquitto:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">services</span>:
-  <span style="color:#66d9ef">mqtt</span>:
-    <span style="color:#66d9ef">container_name</span>: mqtt
-    <span style="color:#66d9ef">image</span>: eclipse-mosquitto:<span style="color:#ae81ff">1.6.8</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">services</span>:
+  <span style="color:#f92672">mqtt</span>:
+    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">mqtt</span>
+    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">eclipse-mosquitto:1.6.8</span>
     <span style="color:#75715e"># volumes:</span>
     <span style="color:#75715e">#   - ${DIR}/mosquitto.conf:/mosquitto/config/mosquitto.conf</span>
-    <span style="color:#66d9ef">expose</span>:
+    <span style="color:#f92672">expose</span>:
       - <span style="color:#e6db74">&#34;1883&#34;</span>
       - <span style="color:#e6db74">&#34;9001&#34;</span>
-    <span style="color:#66d9ef">ports</span>:
+    <span style="color:#f92672">ports</span>:
       - <span style="color:#ae81ff">1883</span>:<span style="color:#ae81ff">1883</span>
       - <span style="color:#ae81ff">9001</span>:<span style="color:#ae81ff">9001</span>
 </code></pre></div><p><strong>NB</strong> If you wish to tweak the Mosquitto broker config, uncomment the <code>volumes</code> and define a <code>mosquitto.conf</code> file</p>
 <p>I&rsquo;m exposing <code>1883</code> because we&rsquo;ll be accessing the broker from remote ESPs.</p>
 <p>Assuming, I have a broker running on <code>${IP}</code> and <code>${PORT}</code> (default: 1883), here&rsquo;s the ESPHome config. This is all well-documented <a href="https://esphome.io/components/mqtt.html">MQTT Client Component</a></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">mqtt</span>:
-  <span style="color:#66d9ef">broker</span>: ${IP}
-  <span style="color:#66d9ef">port</span>: ${PORT}
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">mqtt</span>:
+  <span style="color:#f92672">broker</span>: <span style="color:#ae81ff">${IP}</span>
+  <span style="color:#f92672">port</span>: <span style="color:#ae81ff">${PORT}</span>
 </code></pre></div><h2 id="mqtt-gateway">MQTT Gateway</h2>
 <p><a href="https://inuits.eu/">Inuits</a> has a Golang-based MQTT Gateway for Prometheus.</p>
 <p>See: <a href="https://github.com/inuits/mqttgateway">https://github.com/inuits/mqttgateway</a></p>
-<p>This is analogous to the Prometheus Push Gateway. It listens to MQTT topics and renders MQTT message (values) as Prometheus metrics (using Prometheus&rsquo; exposition format).</p>
+<p>This is analogous to the Prometheus Push Gateway. It listens to MQTT topics and renders MQTT message (values) as Prometheus metrics (using Prometheus' exposition format).</p>
 <p>For example, if we use the Mosquitto (container image) <code>mosquitto_pub</code> client to publish a message (<code>42</code>) to MQTT topic <code>prometheus/job/test/instance/test/test</code>:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--interactive --tty <span style="color:#ae81ff">\
@@ -277,68 +277,68 @@ mqtt_test_push_total{instance=&quot;test&quot;,job=&quot;test&quot;} 3
 # TYPE test gauge
 test{instance=&quot;test&quot;,job=&quot;test&quot;} 42
 </code></pre><p>We can manifest this in the ESPHome configuration as:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">interval</span>:
-  - <span style="color:#66d9ef">interval</span>: 60s
-    <span style="color:#66d9ef">then</span>:
-      - <span style="color:#66d9ef">mqtt.publish</span>:
-          <span style="color:#66d9ef">topic</span>: prometheus/job/esphome/node/esp01/temperature
-          <span style="color:#66d9ef">payload</span>: !lambda |<span style="color:#e6db74">-
-</span><span style="color:#e6db74">            return esphome::to_string(rand() % 100);</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">interval</span>:
+  - <span style="color:#f92672">interval</span>: <span style="color:#ae81ff">60s</span>
+    <span style="color:#f92672">then</span>:
+      - <span style="color:#f92672">mqtt.publish</span>:
+          <span style="color:#f92672">topic</span>: <span style="color:#ae81ff">prometheus/job/esphome/node/esp01/temperature</span>
+          <span style="color:#f92672">payload</span>: !<span style="color:#ae81ff">lambda |-</span>
+            <span style="color:#ae81ff">return esphome::to_string(rand() % 100);</span>
 </code></pre></div><p>Every 60 seconds, it publishes a random number (as a string) to the topic <code>prometheus/job/esphome/node/esp01/temperature</code></p>
 <p>The GitHub repo does not appear to provide a Docker container image for the code. I tweaked it slightly, migrated the code to Go Modules and then published it as:</p>
 <p><a href="https://hub.docker.com/repository/docker/dazwilkin/mqttgateway">https://hub.docker.com/repository/docker/dazwilkin/mqttgateway</a></p>
 <p>I did this so as to be able to combine the gateway into the Docker Compose file. Here&rsquo;s its service:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">services</span>:
-  <span style="color:#66d9ef">mqttgateway</span>:
-    <span style="color:#66d9ef">depends_on</span>:
-      - mqtt
-    <span style="color:#66d9ef">container_name</span>: mqttgateway
-    <span style="color:#66d9ef">image</span>: dazwilkin/mqttgateway:8938c69bfb9150da432fe7af1a7fe2cfaaa84ded
-    <span style="color:#66d9ef">command</span>:
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">services</span>:
+  <span style="color:#f92672">mqttgateway</span>:
+    <span style="color:#f92672">depends_on</span>:
+      - <span style="color:#ae81ff">mqtt</span>
+    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">mqttgateway</span>
+    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">dazwilkin/mqttgateway:8938c69bfb9150da432fe7af1a7fe2cfaaa84ded</span>
+    <span style="color:#f92672">command</span>:
       <span style="color:#75715e">#- --web.listen-address=:9337</span>
       <span style="color:#75715e">#- --web.telemetry-path=/metrics</span>
-      - --mqtt.broker-address=tcp://mqtt:<span style="color:#ae81ff">1883</span>
+      - --<span style="color:#ae81ff">mqtt.broker-address=tcp://mqtt:1883</span>
       <span style="color:#75715e">#- --mqtt.topic=prometheus/#</span>
       <span style="color:#75715e">#- --mqtt.prefix=prometheus</span>
       <span style="color:#75715e"># - --mqtt.username=</span>
       <span style="color:#75715e"># - --mqtt.password=</span>
       <span style="color:#75715e"># - --mqtt.clientid=</span>
-    <span style="color:#66d9ef">expose</span>:
+    <span style="color:#f92672">expose</span>:
       - <span style="color:#e6db74">&#34;9337&#34;</span>
-    <span style="color:#66d9ef">ports</span>:
+    <span style="color:#f92672">ports</span>:
       - <span style="color:#ae81ff">9337</span>:<span style="color:#ae81ff">9337</span>
 </code></pre></div><p><strong>NB</strong> I&rsquo;ve left the flags in place if you wish to change these but, I&rsquo;m using defaults for everyting except the broker&rsquo;s address.</p>
 <p>The broker&rsquo;s address corresponds to the Compose service name for the broker, i.e. <code>mqtt</code>.</p>
 <h2 id="prometheus--cadvisor">Prometheus | cAdvisor</h2>
 <p>The Prometheus configuration is straightforward. It scrapes the MQTT Gateway on <code>mqttgateway:9337</code> and <code>/metrics</code>, itself (the Prometheus server) and cAdvisor:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">services</span>:
-  <span style="color:#66d9ef">prometheus</span>:
-    <span style="color:#66d9ef">restart</span>: always
-    <span style="color:#66d9ef">depends_on</span>:
-      - mqttgateway
-    <span style="color:#66d9ef">image</span>: prom/prometheus:v2<span style="color:#ae81ff">.16.0</span>-rc<span style="color:#ae81ff">.0</span>
-    <span style="color:#66d9ef">container_name</span>: prometheus
-    <span style="color:#66d9ef">volumes</span>:
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">services</span>:
+  <span style="color:#f92672">prometheus</span>:
+    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
+    <span style="color:#f92672">depends_on</span>:
+      - <span style="color:#ae81ff">mqttgateway</span>
+    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">prom/prometheus:v2.16.0-rc.0</span>
+    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">prometheus</span>
+    <span style="color:#f92672">volumes</span>:
       - <span style="color:#e6db74">&#34;${PWD}/prometheus.yml:/etc/prometheus/prometheus.yml&#34;</span>
-    <span style="color:#66d9ef">expose</span>:
+    <span style="color:#f92672">expose</span>:
       - <span style="color:#e6db74">&#34;9090&#34;</span> <span style="color:#75715e"># Default HTTP Endpoint</span>
-    <span style="color:#66d9ef">ports</span>:
+    <span style="color:#f92672">ports</span>:
       - <span style="color:#ae81ff">9090</span>:<span style="color:#ae81ff">9090</span>
 
-  <span style="color:#66d9ef">cadvisor</span>:
-    <span style="color:#66d9ef">restart</span>: always
-    <span style="color:#66d9ef">image</span>: google/cadvisor:v0<span style="color:#ae81ff">.33.0</span>
-    <span style="color:#66d9ef">container_name</span>: cadvisor
+  <span style="color:#f92672">cadvisor</span>:
+    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
+    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">google/cadvisor:v0.33.0</span>
+    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">cadvisor</span>
     <span style="color:#75715e"># command:</span>
     <span style="color:#75715e"># - --prometheus_endpoint=&#34;/metrics&#34;</span>
-    <span style="color:#66d9ef">volumes</span>:
+    <span style="color:#f92672">volumes</span>:
       - <span style="color:#e6db74">&#34;/:/rootfs:ro&#34;</span>
       - <span style="color:#e6db74">&#34;/var/run:/var/run:rw&#34;</span>
       - <span style="color:#e6db74">&#34;/sys:/sys:ro&#34;</span>
       - <span style="color:#e6db74">&#34;/var/lib/docker/:/var/lib/docker:ro&#34;</span>
-    <span style="color:#66d9ef">expose</span>:
+    <span style="color:#f92672">expose</span>:
       - <span style="color:#e6db74">&#34;8080&#34;</span>
-    <span style="color:#66d9ef">ports</span>:
+    <span style="color:#f92672">ports</span>:
       - <span style="color:#ae81ff">8085</span>:<span style="color:#ae81ff">8080</span>
 </code></pre></div><h1 id="run">Run</h1>
 <h2 id="esphome-dashboardlogs">ESPHome Dashboard|Logs</h2>
@@ -516,18 +516,18 @@ d1eb23a46d17d68fd92564c2f1f1601764d8e349
 <li><a href="https://esphome.io/components/mqtt.html#">https://esphome.io/components/mqtt.html#</a></li>
 <li><a href="https://cloud.google.com/iot/docs/how-tos/mqtt-bridge">https://cloud.google.com/iot/docs/how-tos/mqtt-bridge</a></li>
 </ul>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#66d9ef">mqtt</span>:
-  <span style="color:#66d9ef">broker</span>: mqtt.googleapis.com
-  <span style="color:#66d9ef">ssl_fingerprints</span>:
-    - ${FINGERPRINT}
-  <span style="color:#66d9ef">username</span>: unused
-  <span style="color:#66d9ef">password</span>: $(cat ./keys/esp01.jwt)
-  <span style="color:#66d9ef">client_id</span>: projects/${PROJECT}/locations/${REGION}/registries/${REGISTRY}/devices/${DEVICE}
-  <span style="color:#66d9ef">birth_message</span>:
-    <span style="color:#66d9ef">topic</span>: /devices/${DEVICE}/events
-    <span style="color:#66d9ef">payload</span>: online
-    <span style="color:#66d9ef">qos</span>: <span style="color:#ae81ff">0</span>
-    <span style="color:#66d9ef">retain</span>: True
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">mqtt</span>:
+  <span style="color:#f92672">broker</span>: <span style="color:#ae81ff">mqtt.googleapis.com</span>
+  <span style="color:#f92672">ssl_fingerprints</span>:
+    - <span style="color:#ae81ff">${FINGERPRINT}</span>
+  <span style="color:#f92672">username</span>: <span style="color:#ae81ff">unused</span>
+  <span style="color:#f92672">password</span>: <span style="color:#ae81ff">$(cat ./keys/esp01.jwt)</span>
+  <span style="color:#f92672">client_id</span>: <span style="color:#ae81ff">projects/${PROJECT}/locations/${REGION}/registries/${REGISTRY}/devices/${DEVICE}</span>
+  <span style="color:#f92672">birth_message</span>:
+    <span style="color:#f92672">topic</span>: <span style="color:#ae81ff">/devices/${DEVICE}/events</span>
+    <span style="color:#f92672">payload</span>: <span style="color:#ae81ff">online</span>
+    <span style="color:#f92672">qos</span>: <span style="color:#ae81ff">0</span>
+    <span style="color:#f92672">retain</span>: <span style="color:#66d9ef">True</span>
 </code></pre></div><p>Unfortunately, this produced errors:</p>
 <pre><code>.piolibdeps/esp01/ESPAsyncTCP-esphome_ID6757/src/ESPAsyncTCP.cpp: In member function 'err_t AsyncServer::_poll(tcp_pcb*)':
 .piolibdeps/esp01/ESPAsyncTCP-esphome_ID6757/src/ESPAsyncTCP.cpp:1324:31: error: no matching function for call to 'AsyncClient::_recv(tcp_pcb*&amp;, pbuf*&amp;, int)'
