@@ -27,35 +27,35 @@
     
     
     <meta property="og:title" content="Visual Studio Code plus Google Cloud Shell" />
-<meta property="og:description" content="It&rsquo;s practical to access a Cloud Shell VM file system remotely (using ssh, natch) using Visual Studio Code.
-I&rsquo;m using this to explore the development of Google Assistant apps because I&rsquo;d prefer not install Node.JS and npm on my workstation.
-You may enumerate your Cloud Shell VMs access details with:
-curl \ --header &#34;Authorization: Bearer $(gcloud auth print-access-token)&#34; \ --header &#34;Accept: application/json&#34; \ https://cloudshell.googleapis.com/v1alpha1/users/me/environments/default You should receive:
-{ &#34;name&#34;: &#34;users/[[EMAIL]]/environments/default&#34;, &#34;id&#34;: &#34;default&#34;, &#34;dockerImage&#34;: &#34;gcr." />
+<meta property="og:description" content="Update: 2020-09-24 Three updates since I wrote the post:
+gcloud alpha cloud-shell get-mount-command ${DIR} It&rsquo;s possible to use sshfs to mount the Cloud Shell home directory locally:
+DIR=/path/to/dir gcloud alpha cloud-shell get-mount-command ${DIR} Which generates something of the form:
+sshfs [[USERNAME]]@[[HOST]]: ${DIR} \ -p [[PORT]] \ -oIdentityFile=~/.ssh/google_compute_engine \ -oStrictHostKeyChecking=no You may then code --new-window ${DIR}
+curl command may lack .sshHost curl&rsquo;ing the cloudshell.googleapis.com endpoint will result in a null value for ." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://pretired.dazwilkin.com/posts/200917/" />
 <meta property="article:published_time" content="2020-09-17T00:00:00-07:00" />
 <meta property="article:modified_time" content="2020-09-17T00:00:00-07:00" />
 <meta itemprop="name" content="Visual Studio Code plus Google Cloud Shell">
-<meta itemprop="description" content="It&rsquo;s practical to access a Cloud Shell VM file system remotely (using ssh, natch) using Visual Studio Code.
-I&rsquo;m using this to explore the development of Google Assistant apps because I&rsquo;d prefer not install Node.JS and npm on my workstation.
-You may enumerate your Cloud Shell VMs access details with:
-curl \ --header &#34;Authorization: Bearer $(gcloud auth print-access-token)&#34; \ --header &#34;Accept: application/json&#34; \ https://cloudshell.googleapis.com/v1alpha1/users/me/environments/default You should receive:
-{ &#34;name&#34;: &#34;users/[[EMAIL]]/environments/default&#34;, &#34;id&#34;: &#34;default&#34;, &#34;dockerImage&#34;: &#34;gcr.">
+<meta itemprop="description" content="Update: 2020-09-24 Three updates since I wrote the post:
+gcloud alpha cloud-shell get-mount-command ${DIR} It&rsquo;s possible to use sshfs to mount the Cloud Shell home directory locally:
+DIR=/path/to/dir gcloud alpha cloud-shell get-mount-command ${DIR} Which generates something of the form:
+sshfs [[USERNAME]]@[[HOST]]: ${DIR} \ -p [[PORT]] \ -oIdentityFile=~/.ssh/google_compute_engine \ -oStrictHostKeyChecking=no You may then code --new-window ${DIR}
+curl command may lack .sshHost curl&rsquo;ing the cloudshell.googleapis.com endpoint will result in a null value for .">
 <meta itemprop="datePublished" content="2020-09-17T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2020-09-17T00:00:00-07:00" />
-<meta itemprop="wordCount" content="399">
+<meta itemprop="wordCount" content="614">
 
 
 
 <meta itemprop="keywords" content="Visual Studio Code,Cloud Shell," />
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Visual Studio Code plus Google Cloud Shell"/>
-<meta name="twitter:description" content="It&rsquo;s practical to access a Cloud Shell VM file system remotely (using ssh, natch) using Visual Studio Code.
-I&rsquo;m using this to explore the development of Google Assistant apps because I&rsquo;d prefer not install Node.JS and npm on my workstation.
-You may enumerate your Cloud Shell VMs access details with:
-curl \ --header &#34;Authorization: Bearer $(gcloud auth print-access-token)&#34; \ --header &#34;Accept: application/json&#34; \ https://cloudshell.googleapis.com/v1alpha1/users/me/environments/default You should receive:
-{ &#34;name&#34;: &#34;users/[[EMAIL]]/environments/default&#34;, &#34;id&#34;: &#34;default&#34;, &#34;dockerImage&#34;: &#34;gcr."/>
+<meta name="twitter:description" content="Update: 2020-09-24 Three updates since I wrote the post:
+gcloud alpha cloud-shell get-mount-command ${DIR} It&rsquo;s possible to use sshfs to mount the Cloud Shell home directory locally:
+DIR=/path/to/dir gcloud alpha cloud-shell get-mount-command ${DIR} Which generates something of the form:
+sshfs [[USERNAME]]@[[HOST]]: ${DIR} \ -p [[PORT]] \ -oIdentityFile=~/.ssh/google_compute_engine \ -oStrictHostKeyChecking=no You may then code --new-window ${DIR}
+curl command may lack .sshHost curl&rsquo;ing the cloudshell.googleapis.com endpoint will result in a null value for ."/>
 
       
 <script type="application/javascript">
@@ -193,11 +193,43 @@ if (!doNotTrack) {
 
       
       
-        <span class="f6 mv4 dib tracked"> - 2 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 399 words</span>
+        <span class="f6 mv4 dib tracked"> - 3 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 614 words</span>
       
     </header>
-    <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>It&rsquo;s practical to access a Cloud Shell VM file system remotely (using ssh, natch) using Visual Studio Code.</p>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><h2 id="update-2020-09-24">Update: 2020-09-24</h2>
+<p>Three updates since I wrote the post:</p>
+<h3 id="gcloud-alpha-cloud-shell-get-mount-command-dir"><code>gcloud alpha cloud-shell get-mount-command ${DIR}</code></h3>
+<p>It&rsquo;s possible to use <code>sshfs</code> to mount the Cloud Shell home directory locally:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">DIR<span style="color:#f92672">=</span>/path/to/dir
+gcloud alpha cloud-shell get-mount-command <span style="color:#e6db74">${</span>DIR<span style="color:#e6db74">}</span>
+</code></pre></div><p>Which generates something of the form:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sshfs <span style="color:#f92672">[[</span>USERNAME<span style="color:#f92672">]]</span>@<span style="color:#f92672">[[</span>HOST<span style="color:#f92672">]]</span>: <span style="color:#e6db74">${</span>DIR<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-p <span style="color:#f92672">[[</span>PORT<span style="color:#f92672">]]</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-oIdentityFile<span style="color:#f92672">=</span>~/.ssh/google_compute_engine <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-oStrictHostKeyChecking<span style="color:#f92672">=</span>no
+</code></pre></div><p>You may then <code>code --new-window ${DIR}</code></p>
+<h3 id="curl-command-may-lack-sshhost">curl command may lack <code>.sshHost</code></h3>
+<p>curl&rsquo;ing the <code>cloudshell.googleapis.com</code> endpoint will result in a null value for <code>.sshHost</code> if the Cloud Shell VM must be recreated. The <code>gcloud</code> command avoids this by using an operation to poll the endpoint until the VM exists. The hacky alternative is to run <code>gcloud alpha cloud-shell ssh</code> to force the VM to be created before running the curl command.</p>
+<h3 id="awk">Awk</h3>
+<p>The SSH config file may be generated using <code>jq</code> and <code>awk</code>. Assuming the following <code>cloudshell.awk</code> script:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-awk" data-lang="awk">BEGIN { FS <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;\t&#34;</span> }
+{ <span style="color:#66d9ef">print</span> <span style="color:#e6db74">&#34;Host \&#34;Cloud Shell\&#34;&#34;</span> }
+{ <span style="color:#66d9ef">printf</span> <span style="color:#e6db74">&#34;  Hostname %s\n&#34;</span>,<span style="color:#f92672">$</span><span style="color:#ae81ff">1</span> }
+{ <span style="color:#66d9ef">printf</span> <span style="color:#e6db74">&#34;  LogLevel %s\n&#34;</span>,<span style="color:#e6db74">&#34;verbose&#34;</span> }
+{ <span style="color:#66d9ef">printf</span> <span style="color:#e6db74">&#34;  IdentityFile %s\n&#34;</span>,<span style="color:#e6db74">&#34;~/.ssh/google_compute_engine&#34;</span> }
+{ <span style="color:#66d9ef">printf</span> <span style="color:#e6db74">&#34;  User %s\n&#34;</span>,<span style="color:#f92672">$</span><span style="color:#ae81ff">2</span> }
+{ <span style="color:#66d9ef">printf</span> <span style="color:#e6db74">&#34;  Port %s\n&#34;</span>,<span style="color:#f92672">$</span><span style="color:#ae81ff">3</span> }
+</code></pre></div><p>You may:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#66d9ef">$(</span>gcloud auth print-access-token<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Accept: application/json&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>https://cloudshell.googleapis.com/v1alpha1/users/me/environments/default?alt<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;. | [.sshHost, .sshUsername, .sshPort] | @tsv&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| awk -f cloudshell.awk &gt; vscode.sshconfig
+</code></pre></div><h2 id="original">Original</h2>
+<p>It&rsquo;s practical to access a Cloud Shell VM file system remotely (using ssh, natch) using Visual Studio Code.</p>
 <p>I&rsquo;m using this to explore the development of Google Assistant apps because I&rsquo;d prefer not install Node.JS and npm on my workstation.</p>
 <p>You may enumerate your Cloud Shell VMs access details with:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
