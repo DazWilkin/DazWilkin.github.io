@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Hugo and Google Cloud Storage | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="generator" content="Hugo 0.75.1" />
+    
+    
+      <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+    
+
+    
+    
+      <link href="/dist/css/app.4fc0b62e4b82c997bb0041217cd6b979.css" rel="stylesheet">
+    
+
+    
+
+    
+      
+
+    
+
+    
+    
+    <meta property="og:title" content="Hugo and Google Cloud Storage" />
+<meta property="og:description" content="I&rsquo;m using Hugo as a static site generator for this blog. I&rsquo;m using Firebase (for free) to host lefsilver.
+I have other domains that I want to promote and decided to use Google Cloud Storage buckets for these sites. Using Google Cloud Storage for Hosting a static website and using Hugo to deploy sites to Google Cloud Storage (GCS) are documented but, I didn&rsquo;t find a location where this is combined into a single tutorial and I wanted to add an explanation for ensuring your sites are included in Google&rsquo;s and Bing&rsquo;s search indexes." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/200930/" />
+<meta property="article:published_time" content="2020-09-30T00:00:00-07:00" />
+<meta property="article:modified_time" content="2020-09-30T00:00:00-07:00" />
+<meta itemprop="name" content="Hugo and Google Cloud Storage">
+<meta itemprop="description" content="I&rsquo;m using Hugo as a static site generator for this blog. I&rsquo;m using Firebase (for free) to host lefsilver.
+I have other domains that I want to promote and decided to use Google Cloud Storage buckets for these sites. Using Google Cloud Storage for Hosting a static website and using Hugo to deploy sites to Google Cloud Storage (GCS) are documented but, I didn&rsquo;t find a location where this is combined into a single tutorial and I wanted to add an explanation for ensuring your sites are included in Google&rsquo;s and Bing&rsquo;s search indexes.">
+<meta itemprop="datePublished" content="2020-09-30T00:00:00-07:00" />
+<meta itemprop="dateModified" content="2020-09-30T00:00:00-07:00" />
+<meta itemprop="wordCount" content="1214">
+
+
+
+<meta itemprop="keywords" content="hugo,google,GCS,cloud-storage," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Hugo and Google Cloud Storage"/>
+<meta name="twitter:description" content="I&rsquo;m using Hugo as a static site generator for this blog. I&rsquo;m using Firebase (for free) to host lefsilver.
+I have other domains that I want to promote and decided to use Google Cloud Storage buckets for these sites. Using Google Cloud Storage for Hosting a static website and using Hugo to deploy sites to Google Cloud Storage (GCS) are documented but, I didn&rsquo;t find a location where this is combined into a single tutorial and I wanted to add an explanation for ensuring your sites are included in Google&rsquo;s and Bing&rsquo;s search indexes."/>
+
+      
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+  <div id="sharing" class="mt3">
+
+    
+    <a href="https://www.facebook.com/sharer.php?u=https://pretired.dazwilkin.com/posts/200930/" class="facebook no-underline" aria-label="share on Facebook">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M28.765,50.32h6.744V33.998h4.499l0.596-5.624h-5.095  l0.007-2.816c0-1.466,0.14-2.253,2.244-2.253h2.812V17.68h-4.5c-5.405,0-7.307,2.729-7.307,7.317v3.377h-3.369v5.625h3.369V50.32z   M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;"/></svg>
+
+    </a>
+
+    
+    
+    <a href="https://twitter.com/share?url=https://pretired.dazwilkin.com/posts/200930/&amp;text=Hugo%20and%20Google%20Cloud%20Storage" class="twitter no-underline" aria-label="share on Twitter">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M37.167,22.283c-2.619,0.953-4.274,3.411-4.086,6.101  l0.063,1.038l-1.048-0.127c-3.813-0.487-7.145-2.139-9.974-4.915l-1.383-1.377l-0.356,1.017c-0.754,2.267-0.272,4.661,1.299,6.271  c0.838,0.89,0.649,1.017-0.796,0.487c-0.503-0.169-0.943-0.296-0.985-0.233c-0.146,0.149,0.356,2.076,0.754,2.839  c0.545,1.06,1.655,2.097,2.871,2.712l1.027,0.487l-1.215,0.021c-1.173,0-1.215,0.021-1.089,0.467  c0.419,1.377,2.074,2.839,3.918,3.475l1.299,0.444l-1.131,0.678c-1.676,0.976-3.646,1.526-5.616,1.568  C19.775,43.256,19,43.341,19,43.405c0,0.211,2.557,1.397,4.044,1.864c4.463,1.377,9.765,0.783,13.746-1.568  c2.829-1.673,5.657-5,6.978-8.221c0.713-1.716,1.425-4.851,1.425-6.354c0-0.975,0.063-1.102,1.236-2.267  c0.692-0.678,1.341-1.419,1.467-1.631c0.21-0.403,0.188-0.403-0.88-0.043c-1.781,0.636-2.033,0.551-1.152-0.402  c0.649-0.678,1.425-1.907,1.425-2.267c0-0.063-0.314,0.042-0.671,0.233c-0.377,0.212-1.215,0.53-1.844,0.72l-1.131,0.361l-1.027-0.7  c-0.566-0.381-1.361-0.805-1.781-0.932C39.766,21.902,38.131,21.944,37.167,22.283z M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4  s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/></svg>
+
+    </a>
+
+    
+    <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/200930/&amp;title=Hugo%20and%20Google%20Cloud%20Storage" class="linkedin no-underline" aria-label="share on LinkedIn">
+      <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+    </a>
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Hugo and Google Cloud Storage</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2020-09-30T00:00:00-07:00">September 30, 2020</time>
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 6 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 1214 words</span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;m using <a href="gohugo.io">Hugo</a> as a static site generator for <a href="pretired.dazwilkin.com">this</a> blog. I&rsquo;m using <a href="firebase.google.com">Firebase</a> (for free) to host <a href="lefsilver.com">lefsilver</a>.</p>
+<p>I have other domains that I want to promote and decided to use Google Cloud Storage buckets for these sites. Using <a href="cloud.google.com/storage">Google Cloud Storage</a> for <a href="https://cloud.google.com/storage/docs/hosting-static-website">Hosting a static website</a> and using Hugo to deploy sites to <a href="https://gohugo.io/hosting-and-deployment/hugo-deploy/#google-cloud-storage-gcs">Google Cloud Storage (GCS)</a> are documented but, I didn&rsquo;t find a location where this is combined into a single tutorial and I wanted to add an explanation for ensuring your sites are included in Google&rsquo;s and Bing&rsquo;s search indexes.</p>
+<p>I assume you&rsquo;ve installed Hugo; I&rsquo;m running Ubuntu and I run <a href="https://gohugo.io/getting-started/installing/#snap-package">Hugo as a Snap Package</a></p>
+<p>I assume you own a domain (<code>${DOMAIN}</code>) and wish to create a website on it (<code>www.${DOMAIN}</code>).</p>
+<blockquote>
+<p><strong>NOTE</strong> The site we&rsquo;re going to create will not use TLS; you can add a Load-balancer in front of a GCS bucket if you wish to use TLS but this costs $$$</p>
+</blockquote>
+<p>You will need:</p>
+<ul>
+<li>Domain</li>
+<li>Google Cloud Platform (GCP) Project &amp; Billing account</li>
+<li>GitHub repo</li>
+</ul>
+<h2 id="environment">Environment</h2>
+<p>For convenience, I&rsquo;m going to define here some constants that we&rsquo;ll be using in the remainder of this tutorial:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">BILLING<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-BILLING]&#34;</span>
+PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-PROJECT]&#34;</span>
+WEBSITE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;www.[[YOUR-DOMAIN]&#34;</span>
+</code></pre></div><h2 id="create-hugo-site">Create Hugo site</h2>
+<p>The following commands create a directory <code>${WEBSITE}</code> in the working directory and prepopulates it with Hugo&rsquo;s basic site content, then changes to this directory.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">hugo new site <span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
+cd <span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
+</code></pre></div><p>If you wish, you may run a debugging server:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">hugo server -D
+</code></pre></div><p>And may browse your site on http://localhost:1313</p>
+<h2 id="create-gcp-project-and-enable-billing">Create GCP Project and Enable Billing</h2>
+<p>If you have an existing GCP Project in which you want to create a Google Cloud Storage (GCS) bucket, then skip this step. Otherwise, a GCP Project must be created to hold the GCS bucket. You will need to have a billing account linked to the project in order to continue.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+gcloud beta billing projects link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
+</code></pre></div><h2 id="create-cloud-storage-bucket">Create Cloud Storage Bucket</h2>
+<p>Now, we may create a bucket in a project. The bucket must be named to reflect your domain name, i.e. for <code>example.org</code>, the bucket name would be <code>www.example.org</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gsutil mb <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-b on <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-p <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>gs://<span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> GCS bucket names are unique and using <code>${WEBSITE}</code> as the value may require verification</p>
+</blockquote>
+<blockquote>
+<p><strong>NOTE</strong> <code>-b on</code> provides <a href="https://cloud.google.com/storage/docs/gsutil/commands/mb#uniform-bucket-level-access">Uniform Bucket-Level Access</a></p>
+</blockquote>
+<h2 id="configure-access-and-define-indexhtml-and-404html">Configure access and define <code>index.html</code> and <code>404.html</code></h2>
+<p>We want to make the bucket&rsquo;s contents world-viewable and we achieve this by making everyone object viewers (<code>allUsers:objectViewer</code>).</p>
+<p>We will also configure the site to default to <code>./index.html</code> and, on errors, <code>./404.html</code>. We&rsquo;ve not yet created either of these files but will do so in a subsequent step.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gsutil iam ch allUsers:objectViewer gs://<span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
+gsutil web set -m index.html -e 404.html gs://<span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
+</code></pre></div><h2 id="service-account">Service Account</h2>
+<p>For convenience and security, we&rsquo;re going to create a serivce account that will be used (only) by Hugo to deploy our site (copy the content of the <code>./public</code> directory) to the GCS bucket. The following commands create a service account called <code>${ACCOUNT}</code> in our project (<code>${PROJECT}</code>), generate a key for it (called <code>./${ACCOUNT}.json</code>) that is stored within the site&rsquo;s local directory and grants the service account permission to deploy content to the bucket <code>${BUCKET}</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ACCOUNT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;hugo-deployer&#34;</span> <span style="color:#75715e"># Or your preference</span>
+
+gcloud iam service-accounts create <span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+EMAIL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span><span style="color:#e6db74">@</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">.iam.gserviceaccount.com&#34;</span>
+
+gcloud iam service-accounts keys create <span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--iam-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+MEMBER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;serviceAccount:</span><span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+ROLE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;roles/storage.objectAdmin&#34;</span>
+BINDING<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>MEMBER<span style="color:#e6db74">}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">${</span>ROLE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+
+gsutil iam ch <span style="color:#e6db74">${</span>BINDING<span style="color:#e6db74">}</span> gs://<span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> <code>gsutil iam ch</code> grants the service account <code>storage.objectAdmin</code> to the bucket (only)</p>
+</blockquote>
+<h2 id="create-github-repo">Create GitHub repo</h2>
+<p>Create an empty, private GitHub repo and follow GitHub&rsquo;s instructions to initialize the local clone:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git init
+git remote add origin https://github.com/...
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> Even though we copying the site&rsquo;s <code>./public</code> directory content to the GCS bucket, we will commit our source files to the GitHub repo that we created previously.</p>
+</blockquote>
+<h2 id="add-ananke-gohugo-theme">Add Ananke Gohugo theme</h2>
+<p>The <a href="https://themes.gohugo.io/gohugo-theme-ananke/">Ananke Gohugo theme</a> is one of <a href="https://themes.gohugo.io/">many</a> but, it&rsquo;s an exemplar. It is recommended to add it as a submodule and we must then revise the site&rsquo;s configuration file (<code>./config.toml</code>) to reflect it:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git submodule add https://github.com/budparr/gohugo-theme-ananke.git themes/ananke
+echo <span style="color:#e6db74">&#39;theme = &#34;ananke&#34;&#39;</span> &gt;&gt; ./config.toml
+</code></pre></div><h2 id="configure-site">Configure site</h2>
+<p>The following configuration should be sufficient.</p>
+<p>In addition to reflecting the value of your <code>${WEBSITE}</code>, these changes:</p>
+<ul>
+<li>enable <code>robots.txt</code> and <code>sitemap.xml</code> which are used by search engines to trawl your content</li>
+<li>configure the GCS bucket (<code>gs://[[WEBSITE]]</code>) as a deployment target for Hugo</li>
+<li>add configuration for static content so that this is gzipped and cached (for one year)</li>
+</ul>
+<p>Edit <code>${PWD}/config.toml</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-TOML" data-lang="TOML"><span style="color:#a6e22e">baseURL</span> = <span style="color:#e6db74">&#34;http://[[WEBSITE]]/&#34;</span>
+<span style="color:#a6e22e">languageCode</span> = <span style="color:#e6db74">&#34;en-us&#34;</span>
+<span style="color:#a6e22e">title</span> = <span style="color:#e6db74">&#34;Your Title Here&#34;</span>
+<span style="color:#a6e22e">theme</span> = <span style="color:#e6db74">&#34;ananke&#34;</span>
+<span style="color:#a6e22e">enableRobotsTXT</span> = <span style="color:#66d9ef">true</span>
+
+[<span style="color:#a6e22e">sitemap</span>]
+<span style="color:#a6e22e">changefreq</span> = <span style="color:#e6db74">&#34;monthly&#34;</span>
+<span style="color:#a6e22e">filename</span> = <span style="color:#e6db74">&#34;sitemap.xml&#34;</span>
+
+[<span style="color:#a6e22e">params</span>]
+<span style="color:#a6e22e">show_reading_time</span> = <span style="color:#66d9ef">true</span>
+
+[<span style="color:#a6e22e">deployment</span>]
+
+[[<span style="color:#a6e22e">deployment</span>.<span style="color:#a6e22e">targets</span>]]
+<span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;gcs&#34;</span>
+<span style="color:#a6e22e">URL</span> = <span style="color:#e6db74">&#34;gs://[[WEBSITE]]&#34;</span>
+
+[[<span style="color:#a6e22e">deployment</span>.<span style="color:#a6e22e">matchers</span>]]
+<span style="color:#75715e">#  Cache static assets for 1 year.</span>
+<span style="color:#a6e22e">pattern</span> = <span style="color:#e6db74">&#34;^.+\\.(js|css|svg|ttf)$&#34;</span>
+<span style="color:#a6e22e">cacheControl</span> = <span style="color:#e6db74">&#34;max-age=31536000, no-transform, public&#34;</span>
+<span style="color:#a6e22e">gzip</span> = <span style="color:#66d9ef">true</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> Replace <code>[[WEBSITE]]</code> with the value of <code>${WEBSITE}</code></p>
+</blockquote>
+<h2 id="create-basic-content">Create Basic Content</h2>
+<p>We&rsquo;re closely following Hugo&rsquo;s <a href="https://gohugo.io/getting-started/quick-start/">Quick Start</a> guide with one exception. The guide assumes we&rsquo;re building a blog site. If that&rsquo;s what you want, follow the quick start. For this tutorial, we&rsquo;re using Hugo and the Ananke theme to create a web site. Rather than periodic posts, we&rsquo;ll create a possibly more complex structured site rooted on <code>index.html</code>.</p>
+<p>See:</p>
+<ul>
+<li><a href="https://gohugo.io/templates/homepage/">Hugo Custom Homepage</a></li>
+<li><a href="https://gohugo.io/templates/404/">Hugo Custom 404</a></li>
+</ul>
+<p>Following the steps described in these 2 links, you will create <code>_index.md</code>, <code>index.html</code> and <code>404.html</code>. Feel free to tweak these files as you wish. For now <code>_index.md</code> need only exist and need not contain any content&hellip; Perhaps, if you&rsquo;d like &ldquo;Hello, World!&rdquo;.</p>
+<p>You should have this file structure:</p>
+<pre><code class="language-console" data-lang="console">.
+├── archetypes
+├── config.toml
+├── content
+│   └── _index.md
+├── data
+├── layouts
+│   ├── 404.html
+│   └── index.html
+├── resources
+├── static
+└── themes
+    └── ananke
+</code></pre><h2 id="deploy">Deploy</h2>
+<p>Yay!</p>
+<p>This is a 2-step process.</p>
+<p>We must first generate the site (<code>hugo</code>). This creates (if necessary) and regenerates the content of <code>./public</code> directory.</p>
+<p>Second, we push the generated site (i.e. <code>./public</code>) to the GCS bucket. To do this step requires 2 pieces of data. A reference to the service account key that we created previously (passed in the environment using <code>GOOGLE_APPLICATION_CREDENTIALS</code>) and a deployment target. When we edited <code>./config.toml</code>, we created a deployment target called <code>gcs</code> (in the value of <code>deployment.targets.name</code>)</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">hugo deploy <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>GOOGLE_APPLICATION_CREDENTIALS<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>hugo deploy <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--target<span style="color:#f92672">=</span>gcs
+</code></pre></div><h2 id="enjoy">Enjoy</h2>
+<p>Assuming the <code>hugo deploy</code> completes successfully, you should be able to browse your site http://[[WEBSITE]]</p>
+<p>You may also check the robots.txt (http://[[WEBSITE]]/robots.txt) and Sitemap (http://[[WEBSITE]]/sitemap.xml)</p>
+<h2 id="commit">Commit</h2>
+<p>Even though <code>hugo deploy</code> will publish the generated site to the GCS bucket, you should still commit your changes to the GitHub repo.</p>
+<p>At a minimum:</p>
+<pre><code class="language-console" data-lang="console">content/_index.md
+layouts/404.html
+layouts.index.html
+.gitignore
+.gitmodules
+config.toml
+</code></pre><p>You may wish to use a <code>.gitignore</code>:</p>
+<pre><code class="language-console" data-lang="console"># Don't commit Service Account key
+hugo-deployer.json
+
+# No need to commit generated files
+public/
+</code></pre><h2 id="google-analytics">Google Analytics</h2>
+<p>If you use <a href="https://analytics.google.com/analytics">Google Analytics</a>, you may add your site&rsquo;s Tracking ID to the top most section of <code>./config.toml</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-TOML" data-lang="TOML"><span style="color:#a6e22e">googleAnalytics</span> = <span style="color:#e6db74">&#34;UA-123456789-1&#34;</span>
+</code></pre></div><h2 id="search-engines">Search Engines</h2>
+<p>You will need to perform the following steps to add that your website to Google&rsquo;s and Bing&rsquo;s search index to ensure it appears in these engines' search results.</p>
+<ul>
+<li><a href="https://search.google.com/search-console">Google Search Console</a></li>
+<li><a href="https://www.bing.com/webmasters">Bing Webmaster</a></li>
+</ul>
+<p>For each website, add the site on each of these sites.</p>
+<p>You may also wish to specify the Sitemap URL too: http://[[WEBSITE]]/sitemap.xml</p>
+<p>You may be required to prove ownership of the domain (again). The Consoles will provide options to you to complete this step.</p>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/hugo" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">hugo</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/google" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">google</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/gcs" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">GCS</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/cloud-storage" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">cloud-storage</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/200916/">Actions SDK Conversational Quickstart</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2020 
+  </a>
+    <div>
+
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+</div>
+  </div>
+</footer>
+
+    
+
+  <script src="/dist/js/app.3fc0f988d21662902933.js"></script>
+
+
+  </body>
+</html>
