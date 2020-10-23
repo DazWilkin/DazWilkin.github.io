@@ -318,10 +318,10 @@ SSHKEYID<span style="color:#f92672">=[[</span>YOUR-SSH-KEY-ID<span style="color:
 <p>If you have <a href="https://stedolan.github.io/jq/"><code>jq</code></a> installed:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">IP<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  doctl compute droplet list <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>json | jq -r <span style="color:#e6db74">&#39;.[]|select(.name==&#34;akri&#34;)|.networks.v4[]|select(.type==&#34;public&#34;)|.ip_address&#39;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>json | jq -r <span style="color:#e6db74">&#34;.[]|select(.name==\&#34;</span><span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;)|.networks.v4[]|select(.type==\&#34;public\&#34;)|.ip_address&#34;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>echo <span style="color:#e6db74">${</span>IP<span style="color:#e6db74">}</span>
 </code></pre></div><p>If not:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">IP<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>doctl compute droplet list | grep akri | awk <span style="color:#e6db74">&#39;{print $3}&#39;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">IP<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>doctl compute droplet list | grep <span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span> | awk <span style="color:#e6db74">&#39;{print $3}&#39;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>echo <span style="color:#e6db74">${</span>IP<span style="color:#e6db74">}</span>
 </code></pre></div><p>Then you may ssh in to the instance:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">SSHKEY<span style="color:#f92672">=[[</span>/path/to/you/key<span style="color:#f92672">]]</span>
@@ -336,7 +336,7 @@ ssh -i <span style="color:#e6db74">${</span>SSHKEY<span style="color:#e6db74">}<
 </code></pre></div><p>The script is complete when the following log line appears:</p>
 <pre><code class="language-console" data-lang="console">service/akri-video-streaming-app created
 </code></pre><h2 id="access-1">Access</h2>
-<p>We need to determine the NodePort of the service. You can either ssh in to the instance and then run the command to determine the NodePort. Or, you may combine the steps:</p>
+<p>We need to determine the NodePort of the service. You can either ssh in to the droplet and then run the command to determine the NodePort. Or, you may combine the steps:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">COMMAND<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;\
 </span><span style="color:#e6db74">  sudo microk8s.kubectl get service/akri-video-streaming-app \
 </span><span style="color:#e6db74">  --output=jsonpath=&#39;{.spec.ports[?(@.name==\&#34;http\&#34;)].nodePort}&#39;&#34;</span>
