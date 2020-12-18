@@ -208,7 +208,7 @@ if (!doNotTrack) {
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;m debugging an <a href="https://github.com/deislabs/akri/issues/177">issue</a> with Akri <code>Zeroconf</code> <a href="https://github.com/DazWilkin/akri/tree/protocol-zeroconf">protocol</a> in which Instance environment variables are no longer (!) being surfaced within the Broker pods. In my adventures, it seemed useful to better understand how Akri works and specifically, how Akri uses Kubernetes <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/">Device Plugins</a>.</p>
 <p>IIUC plugins register with the Kubelet (!) via a gRPC service (<code>Registration</code>) that the Kubelet exposes on a UNIX socket at <code>/var/lib/kubelet/device-plugins/kubelet.sock</code></p>
-<p>Then (!) if successful, devices should be reported by the Node&rsquo;s metadata (spec) and available to be bound to Pod&rsquo;s.</p>
+<p>Then (!) if successful, devices should be reported by the Node&rsquo;s metadata (spec) and available to be bound to Pods.</p>
 <p>Here&rsquo;s the directory listing once a <code>kubelet</code> is running:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ls -l /var/lib/kubelet/device-plugins/
 
@@ -236,7 +236,7 @@ srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:
 srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-ddec04-1608227293.sock
 srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-ef5d4a-1608227293.sock
 </code></pre></div><p>You can eyeball the Instance names (<code>zeroconf-XXXXXX</code>) to see the matching socket <code>zeroconf-XXXXXX-1608227293.sock</code></p>
-<p>Each of these <code>zeroconf-XXXXXX-*</code> sockets is also a GRPC endpoint exposing a service called <code>DevicePlugin</code>.</p>
+<p>Each of these <code>zeroconf-XXXXXX-*</code> sockets is also a gRPC endpoint exposing a service called <code>DevicePlugin</code>.</p>
 <p>The Kubelet annotates the Node with details of these devices.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NODE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri&#34;</span>
 HANDLER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;zeroconf&#34;</span>
@@ -266,7 +266,7 @@ kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6
 <span style="color:#f92672">}</span>
 </code></pre></div><p>Again, you can see that each device is now mapped to an entry in the Node&rsquo;s <code>.status.allocatable</code> and <code>.status.capacity</code> values.</p>
 <p>Because the Akri Agent registers the devices using Kubernetes' Device Plugins, Akri names devices that it&rsquo;s managing using the prefix <code>akri.sh/</code>.</p>
-<p>Ultimately, when Akri creates Broker Pods for these device Instances, the Kubernetes spec includes, e.g.:</p>
+<p>Ultimately, when Akri creates Broker Pods for these device Instances, the resulting Kubernetes spec includes, e.g.:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">spec</span>:
   <span style="color:#f92672">containers</span>:
   - <span style="color:#f92672">image</span>: <span style="color:#ae81ff">ghcr.io/dazwilkin/zeroconf-broker@sha256:993e5b8d...</span>
@@ -277,8 +277,8 @@ kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6
         <span style="color:#f92672">akri.sh/akri-zeroconf-218f68</span>: <span style="color:#e6db74">&#34;1&#34;</span>
       <span style="color:#f92672">requests</span>:
         <span style="color:#f92672">akri.sh/akri-zeroconf-218f68</span>: <span style="color:#e6db74">&#34;1&#34;</span>
-</code></pre></div><p>And this maps against the Node&rsquo;s allocatable|capacity values such that, once taken (by a Broker Pod), the device (Instance) is no longer (unless shared) available to be bound to a different Pod.</p>
-<p>It&rsquo;s important to know that, as far as the Device Plugins functionality is concerned, advertising resource (device) availability and capacity to a Node, is the entirety of its function. Some Pod that wishes to use the resources (per above), will make a claim for a specific resource type (e.g. <code>akri.sh/akri-zeroconf-218f68</code> above) and some discrete (integral) quantity (e.g. <code>&quot;1&quot;</code>) but, once this is provided to the Pod, the Pod must then e.g. load relevant device drivers and communicate with the device as normal (as if there were no Kubernetes infrastructure).</p>
+</code></pre></div><p>And this maps against the Node&rsquo;s <code>allocatable</code>|<code>capacity</code> values such that, once taken (by a Broker Pod), the device (Instance) is no longer (unless shared) available to be bound to a different Pod.</p>
+<p>It&rsquo;s important to know that, as far as the Device Plugins functionality is concerned, advertising resource (device) availability and capacity to a Node, is the entirety of its function. Any Pod that wishes to use the resources (per above), will make a claim for the resource type (e.g. <code>akri.sh/akri-zeroconf-218f68</code> above) and some discrete (integral) quantity (e.g. <code>&quot;1&quot;</code>) but, once this is provided to the Pod, the Pod must then e.g. load relevant device drivers and communicate with the device as normal (as if there were no Kubernetes infrastructure).</p>
 <p>What Akri provides beyond this is that handlers can be configured to mount environment variables, devices and volumes. Further, Akri&rsquo;s model of proposing (these aren&rsquo;t required) Broker Pods is somewhat akin to the idea of device twins. Broker Pods could be standardized in a deployment to e.g. always surface gRPC services and these services could then be provided to application developers as a standard mechanism for device interaction.</p>
 <p>That&rsquo;s all!</p>
 <ul class="pa0">
