@@ -41,7 +41,7 @@
 <meta itemprop="description" content="Kubernetes Device Plugins and Akri">
 <meta itemprop="datePublished" content="2020-12-17T00:00:00-08:00" />
 <meta itemprop="dateModified" content="2020-12-17T00:00:00-08:00" />
-<meta itemprop="wordCount" content="855">
+<meta itemprop="wordCount" content="1102">
 
 
 
@@ -202,8 +202,8 @@ if (!doNotTrack) {
 
       
       
-        <span class="f6 mv4 dib tracked"> - 5 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 855 words</span>
+        <span class="f6 mv4 dib tracked"> - 6 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 1102 words</span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;m debugging an <a href="https://github.com/deislabs/akri/issues/177">issue</a> with Akri <code>Zeroconf</code> <a href="https://github.com/DazWilkin/akri/tree/protocol-zeroconf">protocol</a> in which Instance environment variables are no longer (!) being surfaced within the Broker pods. In my adventures, it seemed useful to better understand how Akri works and specifically, how Akri uses Kubernetes <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/">Device Plugins</a>.</p>
@@ -280,7 +280,97 @@ kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6
 </code></pre></div><p>And this maps against the Node&rsquo;s <code>allocatable</code>|<code>capacity</code> values such that, once taken (by a Broker Pod), the device (Instance) is no longer (unless shared) available to be bound to a different Pod.</p>
 <p>It&rsquo;s important to know that, as far as the Device Plugins functionality is concerned, advertising resource (device) availability and capacity to a Node, is the entirety of its function. Any Pod that wishes to use the resources (per above), will make a claim for the resource type (e.g. <code>akri.sh/akri-zeroconf-218f68</code> above) and some discrete (integral) quantity (e.g. <code>&quot;1&quot;</code>) but, once this is provided to the Pod, the Pod must then e.g. load relevant device drivers and communicate with the device as normal (as if there were no Kubernetes infrastructure).</p>
 <p>What Akri provides beyond this is that handlers can be configured to mount environment variables, devices and volumes. Further, Akri&rsquo;s model of proposing (these aren&rsquo;t required) Broker Pods is somewhat akin to the idea of device twins. Broker Pods could be standardized in a deployment to e.g. always surface gRPC services and these services could then be provided to application developers as a standard mechanism for device interaction.</p>
-<h2 id="grpcurl">gRPCurl</h2>
+<h2 id="allocatablecapacity-tidying">Allocatable|Capacity Tidying</h2>
+<p>I&rsquo;d been unable to determine how to <code>PATCH</code> a Node&rsquo;s <code>.status.allocatable</code> and <code>.status.capacity</code>. Then I stumbled upon <a href="https://kubernetes.io/docs/tasks/administer-cluster/extended-resource-node/">Advertise Extended Resources for a Node</a> and it provided the solution.</p>
+<p>I had:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Kubernetes Node name</span>
+NODE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri&#34;</span>
+
+kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| jq <span style="color:#e6db74">&#34;.status.capacity&#34;</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;akri.sh/nessie-64ebdb&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-074bbf&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-129a69&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-218f68&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-2b9223&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-320a0c&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-3ada00&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-4e7c97&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-591f22&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-7548ec&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-8e12f9&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-90d0fb&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-9e1938&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-bc5064&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-ddec04&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-e7f45d&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-f1acf2&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;akri.sh/zeroconf-f27f70&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;2&#34;</span>,
+  <span style="color:#e6db74">&#34;ephemeral-storage&#34;</span>: <span style="color:#e6db74">&#34;8934656Ki&#34;</span>,
+  <span style="color:#e6db74">&#34;example.com/dongle&#34;</span>: <span style="color:#e6db74">&#34;4&#34;</span>,
+  <span style="color:#e6db74">&#34;hugepages-1Gi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;hugepages-2Mi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;8050104Ki&#34;</span>,
+  <span style="color:#e6db74">&#34;pods&#34;</span>: <span style="color:#e6db74">&#34;110&#34;</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> And a matching set in <code>.status.allocatable</code></p>
+</blockquote>
+<p>And:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Kubernetes Node name</span>
+NODE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri&#34;</span>
+
+<span style="color:#75715e"># Query the list for these items</span>
+FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri.sh/zeroconf&#34;</span>
+DEVICES<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  | jq -r <span style="color:#e6db74">&#34;.status.capacity | with_entries(select(.key|contains(\&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;))) | keys[]&#34;</span><span style="color:#66d9ef">)</span>
+
+<span style="color:#75715e"># Iterate over the list of devices</span>
+<span style="color:#66d9ef">for</span> DEVICE in <span style="color:#e6db74">${</span>DEVICES<span style="color:#e6db74">}</span>
+<span style="color:#66d9ef">do</span>
+  <span style="color:#75715e"># This replaces e.g. `akri.sh/` with `akri.sh~1` to accommodate PATCH&#39;ing</span>
+  DEVICE<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>DEVICE/<span style="color:#ae81ff">\/</span>/~1<span style="color:#e6db74">}</span>
+  <span style="color:#75715e"># PATCH the Node&#39;s `.status.capacity` and remove the device</span>
+  curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --header <span style="color:#e6db74">&#34;Content-Type: application/json-patch+json&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --request PATCH <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --data <span style="color:#e6db74">&#34;[{\&#34;op\&#34;: \&#34;remove\&#34;, \&#34;path\&#34;: \&#34;/status/capacity/</span><span style="color:#e6db74">${</span>DEVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;}]&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  http://localhost:8888/api/v1/nodes/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span>/status
+<span style="color:#66d9ef">done</span>
+</code></pre></div><p>Then:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| jq <span style="color:#e6db74">&#34;.status.capacity&#34;</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;akri.sh/nessie-64ebdb&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;2&#34;</span>,
+  <span style="color:#e6db74">&#34;ephemeral-storage&#34;</span>: <span style="color:#e6db74">&#34;9983232Ki&#34;</span>,
+  <span style="color:#e6db74">&#34;example.com/dongle&#34;</span>: <span style="color:#e6db74">&#34;4&#34;</span>,
+  <span style="color:#e6db74">&#34;hugepages-1Gi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;hugepages-2Mi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;8152504Ki&#34;</span>,
+  <span style="color:#e6db74">&#34;pods&#34;</span>: <span style="color:#e6db74">&#34;110&#34;</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><p>The system deletes the matching entry is <code>.status.allocatable</code> automatically:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| jq <span style="color:#e6db74">&#34;.status.allocatable&#34;</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;akri.sh/nessie-64ebdb&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;2&#34;</span>,
+  <span style="color:#e6db74">&#34;ephemeral-storage&#34;</span>: <span style="color:#e6db74">&#34;8934656Ki&#34;</span>,
+  <span style="color:#e6db74">&#34;example.com/dongle&#34;</span>: <span style="color:#e6db74">&#34;4&#34;</span>,
+  <span style="color:#e6db74">&#34;hugepages-1Gi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;hugepages-2Mi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+  <span style="color:#e6db74">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;8050104Ki&#34;</span>,
+  <span style="color:#e6db74">&#34;pods&#34;</span>: <span style="color:#e6db74">&#34;110&#34;</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><h2 id="grpcurl">gRPCurl</h2>
 <p>The protobuf listed in the Kubernetes <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/">Device Plugin</a> documentation is incomplete but, I grabbed a copy of the v1beta1.Registration service <a href="https://github.com/kubernetes/kubernetes/blob/cea1d4e20b4a7886d8ff65f34c6d4f95efcb4742/staging/src/k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1/api.proto">here</a> and hacked its reference to <a href="https://raw.githubusercontent.com/gogo/protobuf/master/gogoproto/gogo.proto"><code>gogoproto/gogo.proto</code></a></p>
 <p>Then, assuming:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ls -l /var/lib/kubelet/device-plugins/
