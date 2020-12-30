@@ -41,7 +41,7 @@
 <meta itemprop="description" content="Kubernetes webhook for Akri Configurations">
 <meta itemprop="datePublished" content="2020-12-29T00:00:00-08:00" />
 <meta itemprop="dateModified" content="2020-12-29T00:00:00-08:00" />
-<meta itemprop="wordCount" content="1895">
+<meta itemprop="wordCount" content="1940">
 
 
 
@@ -202,8 +202,8 @@ if (!doNotTrack) {
 
       
       
-        <span class="f6 mv4 dib tracked"> - 9 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 1895 words</span>
+        <span class="f6 mv4 dib tracked"> - 10 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 1940 words</span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I spent some time last week writing my first <a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/">admission webhook</a> for Kubernetes. I wrote the handler in Golang because I&rsquo;m most familiar with Golang and because, as Kubernetes' native language, I was more confident that the necessary SDKs would exist and that the documentation would likely use Golang by default. I struggled to find useful documentation and so this post is to help you (and me!) remember how to do this next time!</p>
@@ -255,7 +255,12 @@ Configuration does not include <span style="color:#e6db74">`</span>resources.lim
 <li>ValidatingWebhookConfiguration that binds the webhook (service) to Kubernetes &ldquo;resources&rdquo;</li>
 </ul>
 <p>I&rsquo;ll include as much detail as possible below because the crevasses are to be found!</p>
-<h2 id="webhook">Webhook</h2>
+<h2 id="admissionregistration-versions">AdmissionRegistration versions</h2>
+<p>IIUC <code>admissionregistration.k8s.io/v1beta1</code> which I describe herein is being deprecated and won&rsquo;t be available in Kubernetes v1.19+. It is replaced by <code>admissionregistration.k8s.io/v1</code>. You may determine which (hopefully one of the two) versions is available in your cluster:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl api-versions | grep admission
+admissionregistration.k8s.io/v1
+admissionregistration.k8s.io/v1beta1
+</code></pre></div><h2 id="webhook">Webhook</h2>
 <p>The webhook handler is trivial:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">var</span> (
 	<span style="color:#a6e22e">crtFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;tls-crt-file&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;TLS certificate file&#34;</span>)
