@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  
+  <title>Kubernetes webhooks | (p)retired</title>
+  <meta name="viewport" content="width=device-width,minimum-scale=1">
+  <meta name="description"
+    content="Kubernetes webhook for Akri Configurations">
+  <meta name="generator" content="Hugo 0.79.1" />
+  
+  
+  <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+  
+
+  
+  
+  <link href="/dist/css/app.4fc0b62e4b82c997bb0041217cd6b979.css" rel="stylesheet">
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  <link href="https://us-central1-webmention.cloudfunctions.net/webmention" rel="webmention" />
+
+  <meta property="og:title" content="Kubernetes webhooks" />
+<meta property="og:description" content="Kubernetes webhook for Akri Configurations" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/201229/" />
+<meta property="article:published_time" content="2020-12-29T00:00:00-08:00" />
+<meta property="article:modified_time" content="2020-12-29T00:00:00-08:00" />
+<meta itemprop="name" content="Kubernetes webhooks">
+<meta itemprop="description" content="Kubernetes webhook for Akri Configurations">
+<meta itemprop="datePublished" content="2020-12-29T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2020-12-29T00:00:00-08:00" />
+<meta itemprop="wordCount" content="1874">
+
+
+
+<meta itemprop="keywords" content="kubernetes,webhook,golang,akri," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Kubernetes webhooks"/>
+<meta name="twitter:description" content="Kubernetes webhook for Akri Configurations"/>
+
+  
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+  
+  
+</head>
+
+<body
+  class="ma0 avenir bg-near-white production">
+
+  
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+<a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+  <svg height="32px" 
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="32px"
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+  <main class="pb7" role="main">
+    
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+  <div id="sharing" class="mt3">
+
+    
+    <a href="https://www.facebook.com/sharer.php?u=https://pretired.dazwilkin.com/posts/201229/" class="facebook no-underline" aria-label="share on Facebook">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M28.765,50.32h6.744V33.998h4.499l0.596-5.624h-5.095  l0.007-2.816c0-1.466,0.14-2.253,2.244-2.253h2.812V17.68h-4.5c-5.405,0-7.307,2.729-7.307,7.317v3.377h-3.369v5.625h3.369V50.32z   M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;"/></svg>
+
+    </a>
+
+    
+    
+    <a href="https://twitter.com/share?url=https://pretired.dazwilkin.com/posts/201229/&amp;text=Kubernetes%20webhooks" class="twitter no-underline" aria-label="share on Twitter">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M37.167,22.283c-2.619,0.953-4.274,3.411-4.086,6.101  l0.063,1.038l-1.048-0.127c-3.813-0.487-7.145-2.139-9.974-4.915l-1.383-1.377l-0.356,1.017c-0.754,2.267-0.272,4.661,1.299,6.271  c0.838,0.89,0.649,1.017-0.796,0.487c-0.503-0.169-0.943-0.296-0.985-0.233c-0.146,0.149,0.356,2.076,0.754,2.839  c0.545,1.06,1.655,2.097,2.871,2.712l1.027,0.487l-1.215,0.021c-1.173,0-1.215,0.021-1.089,0.467  c0.419,1.377,2.074,2.839,3.918,3.475l1.299,0.444l-1.131,0.678c-1.676,0.976-3.646,1.526-5.616,1.568  C19.775,43.256,19,43.341,19,43.405c0,0.211,2.557,1.397,4.044,1.864c4.463,1.377,9.765,0.783,13.746-1.568  c2.829-1.673,5.657-5,6.978-8.221c0.713-1.716,1.425-4.851,1.425-6.354c0-0.975,0.063-1.102,1.236-2.267  c0.692-0.678,1.341-1.419,1.467-1.631c0.21-0.403,0.188-0.403-0.88-0.043c-1.781,0.636-2.033,0.551-1.152-0.402  c0.649-0.678,1.425-1.907,1.425-2.267c0-0.063-0.314,0.042-0.671,0.233c-0.377,0.212-1.215,0.53-1.844,0.72l-1.131,0.361l-1.027-0.7  c-0.566-0.381-1.361-0.805-1.781-0.932C39.766,21.902,38.131,21.944,37.167,22.283z M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4  s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/></svg>
+
+    </a>
+
+    
+    <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/201229/&amp;title=Kubernetes%20webhooks" class="linkedin no-underline" aria-label="share on LinkedIn">
+      <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+    </a>
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Kubernetes webhooks</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2020-12-29T00:00:00-08:00">December 29, 2020</time>
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 9 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 1874 words</span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I spent some time last week writing my first <a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/">admission webhook</a> for Kubernetes. I wrote the handler in Golang because I&rsquo;m most familiar with Golang and because, as Kubernetes' native language, I was more confident that the necessary SDKs would exist and that the documentation would likely use Golang by default. I struggled to find useful documentation and so this post is to help you (and me!) remember how to do this next time!</p>
+<p>If I have time, I&rsquo;m going to rewrite the handler in Rust. The webhook validates <a href="https://github.com/deislabs/akri">Akri</a> <a href="https://github.com/deislabs/akri/blob/main/docs/architecture.md#akri-configuration-crd">Configuration (CRDs)</a> and, because Akri is written in Rust, it would likely be better if this handler were too.</p>
+<h2 id="outcome">Outcome</h2>
+<p>So, &ldquo;What&rsquo;s an admission webhook?&rdquo; and &ldquo;Why would I want one?&rdquo;. I&rsquo;m going to provide a skeleton for building Kubernetes webhooks but will use the Akri webhook by way of example. It arose from an <a href="https://github.com/deislabs/akri/issues/180">issue</a> that I encountered with an Akri Configuration for a Zeroconf protocol implementation. I had:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">akri.sh/v0</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Configuration</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">zeroconf</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">protocol</span>:
+    <span style="color:#f92672">zeroconf</span>:
+      <span style="color:#f92672">kind</span>: <span style="color:#e6db74">&#34;_rust._tcp&#34;</span>
+      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8888</span>
+      <span style="color:#f92672">txtRecords</span>:
+        <span style="color:#f92672">project</span>: <span style="color:#ae81ff">akri</span>
+        <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">zeroconf</span>
+        <span style="color:#f92672">component</span>: <span style="color:#ae81ff">avahi-publish</span>
+  <span style="color:#f92672">capacity</span>: <span style="color:#ae81ff">1</span>
+  <span style="color:#f92672">brokerPodSpec</span>:
+    <span style="color:#f92672">containers</span>:
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">zeroconf-broker</span>
+        <span style="color:#f92672">image</span>: <span style="color:#ae81ff">some-image</span>
+    <span style="color:#f92672">resources</span>: <span style="color:#ae81ff">&lt;------------ INCORRECTLY INDENTED AFTER EDIT</span>
+              <span style="color:#f92672">limits</span>: 
+                <span style="color:#f92672">&#34;{{PLACEHOLDER}}&#34;: </span><span style="color:#e6db74">&#34;1&#34;</span>
+</code></pre></div><p>And, as you can see from the comment, I munged the YAML after editing it, the <code>resources</code> section was moved from under <code>containers</code> to be under <code>brokerProdSpec</code>. The result is invalid YAML but this was not caught by Kubernetes because the configuration is for a CRD rather than an internal type.</p>
+<p>And so, <strong>without</strong> a <code>ValidatingWebhookConfiguration</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>./zeroconf.yam
+akri.sh/v0/configuration created
+</code></pre></div><p>And, <strong>with</strong> a <code>ValidatingWebhookConfiguration</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>./zeroconf.yaml 
+Error from server: error when creating <span style="color:#e6db74">&#34;./zeroconf.yaml&#34;</span>:
+admission webhook <span style="color:#e6db74">&#34;webhook.akri.sh&#34;</span> denied the request:
+Configuration does not include <span style="color:#e6db74">`</span>resources.limits<span style="color:#e6db74">`</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> not only do we get validation of the CRD (<code>reosurces.limits</code> is missing) but the (erroneous) Configuration is not applied to the cluster.</p>
+</blockquote>
+<p>By way of background, <code>resources</code> is a instance of <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#resourcerequirements-v1-core">ResourceRequirements</a> and is used to limit the amount of resources allowed to be used by a container. Akri uses this facility to bind containers to IoT device <a href="https://github.com/deislabs/akri/blob/main/docs/architecture.md#akri-instance-crd"><code>Instances</code></a> (another Akri CRD) that are &lsquo;twinned&rsquo; to the cluster.</p>
+<p>In my erroneous YAML, this section was not present including the important <code>{{PLACEHOLDER}}</code> value, Akri was unable to bind my container to an Akri (device) Instance and, the container had no mounted environment variables which are the conduit through which a container can interact with an IoT device.</p>
+<p>Nothing good, basically.</p>
+<h2 id="overview">Overview</h2>
+<p>A <a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#validatingadmissionwebhook"><code>ValidatingAdmissionWebhook</code></a> is one of many webhook types supported by Kubernetes. As the name suggests (and the previous example shows), these validate Kubernetes configurations. Exactly what we need in my case.</p>
+<p>Kubernetes Webhooks comprise several components:</p>
+<ul>
+<li>Deployment (minimally a Pod) running an HTTP server with a handler (the webhook) secured by TLS</li>
+<li>Service exposing the Deployment</li>
+<li>ValidatingWebhookConfiguration that binds the webhook (service) to Kubernetes &ldquo;resources&rdquo;</li>
+</ul>
+<p>I&rsquo;ll include as much detail as possible below because the crevasses are to be found!</p>
+<h2 id="webhook">Webhook</h2>
+<p>The webhook handler is trivial:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">var</span> (
+	<span style="color:#a6e22e">crtFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;tls-crt-file&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;TLS certificate file&#34;</span>)
+	<span style="color:#a6e22e">keyFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;tls-key-file&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;TLS key file&#34;</span>)
+	<span style="color:#a6e22e">port</span>    = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Int</span>(<span style="color:#e6db74">&#34;port&#34;</span>, <span style="color:#ae81ff">0</span>, <span style="color:#e6db74">&#34;Webhook Port&#34;</span>)
+)
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+    <span style="color:#a6e22e">cert</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">LoadX509KeyPair</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">crtFile</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">keyFile</span>)
+	<span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Config</span>{
+		<span style="color:#a6e22e">Certificates</span>: []<span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Certificate</span>{<span style="color:#a6e22e">cert</span>},
+	}
+
+	<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/validate&#34;</span>, <span style="color:#a6e22e">validate</span>)
+
+    <span style="color:#a6e22e">addr</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;:%d&#34;</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">port</span>)
+	<span style="color:#a6e22e">server</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Server</span>{
+		<span style="color:#a6e22e">Addr</span>:      <span style="color:#a6e22e">addr</span>,
+		<span style="color:#a6e22e">TLSConfig</span>: <span style="color:#a6e22e">config</span>,
+	}
+
+	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">ListenAndServeTLS</span>(<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>))
+}
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> <code>validate</code> is a regular Golang HTTP handler.</p>
+</blockquote>
+<p>Kubernetes requires that webhooks are secured by TLS.</p>
+<p>For testing (!) purposes, you can generate a self-signed certificate and key, using <code>openssl</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">openssl req <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-x509 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-nodes <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-newkey rsa:2048 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-keyout localhost.key <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-out localhost.crt <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-days <span style="color:#ae81ff">365</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-subj <span style="color:#e6db74">&#34;/CN=localhost&#34;</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> <code>-x509</code> does not generate a certificate-signing request (CSR). When you deploy to Kubernetes, you&rsquo;ll need to use the instructions in the <a href="#Certificiates">Certificates</a> section below to include a CSR and have the Kubernetes cluster approve this in order to generate a correctly-signed certificate.</p>
+</blockquote>
+<p>The <code>validate</code> function is where we grab <a href="https://pkg.go.dev/k8s.io/api/admission/v1beta1#AdmissionReview"><code>AdmissionReview</code></a> messages that are shipped to us by Kubernetes to invoke our webhook. We&rsquo;ll create an <a href="https://pkg.go.dev/k8s.io/api/admission/v1beta1#AdmissionResponse"><code>AdmissionResponse</code></a> to send back.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">validate</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
+	<span style="color:#a6e22e">contentType</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;Content-Type&#34;</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">contentType</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;application/json&#34;</span> {
+		<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusBadRequest</span>)
+		<span style="color:#66d9ef">return</span>
+	}
+
+    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">body</span> []<span style="color:#66d9ef">byte</span>
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Body</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadAll</span>(<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Body</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#a6e22e">body</span> = <span style="color:#a6e22e">data</span>
+		}
+	}
+
+	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionReview</span>{}
+
+	<span style="color:#a6e22e">sch</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">NewScheme</span>()
+	<span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">clientgoscheme</span>.<span style="color:#a6e22e">AddToScheme</span>(<span style="color:#a6e22e">sch</span>)
+	<span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">apiextv1beta1</span>.<span style="color:#a6e22e">AddToScheme</span>(<span style="color:#a6e22e">sch</span>)
+
+	<span style="color:#a6e22e">decode</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">serializer</span>.<span style="color:#a6e22e">NewCodecFactory</span>(<span style="color:#a6e22e">sch</span>).<span style="color:#a6e22e">UniversalDeserializer</span>().<span style="color:#a6e22e">Decode</span>
+
+	<span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">decode</span>(<span style="color:#a6e22e">body</span>, <span style="color:#66d9ef">nil</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">rqst</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusBadRequest</span>)
+		<span style="color:#66d9ef">return</span>
+	}
+
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Request</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusBadRequest</span>)
+		<span style="color:#66d9ef">return</span>
+	}
+
+
+	<span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">validateSomething</span>(<span style="color:#a6e22e">rqst</span>)
+
+	<span style="color:#a6e22e">bytes</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionReview</span>{
+		<span style="color:#a6e22e">Response</span>: <span style="color:#a6e22e">resp</span>,
+	})
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusInternalServerError</span>)
+		<span style="color:#66d9ef">return</span>
+	}
+	<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">Write</span>(<span style="color:#a6e22e">bytes</span>)
+}
+</code></pre></div><ol>
+<li>The message will be POSTed to the webhook (not captured here)</li>
+<li>The <code>Content-Type</code> of the incoming request must be <code>application/json</code></li>
+<li>The request body is what we&rsquo;re interested in</li>
+<li><a href="https://pkg.go.dev/k8s.io/apimachinery@v0.20.1/pkg/runtime"><code>runtime</code></a>, <a href="https://pkg.go.dev/k8s.io/client-go@v11.0.0+incompatible/kubernetes/scheme"><code>clientgoscheme</code></a>; and <a href="https://pkg.go.dev/k8s.io/apiextensions-apiserver@v0.20.1/pkg/apis/apiextensions/v1beta1?utm_source=gopls"><code>apiextv1beta</code></a> is an incantation that I discovered in Kubernetes' webhook tests (See: <a href="https://github.com/kubernetes-sigs/mutating-trace-admission-controller/blob/8800f77acd67b2e30a34a284b393f018a154e2ea/webhook.go#L38">webhook.go</a>)</li>
+<li>Combined with magic from [<code>UniversalDeserializer](https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime/serializer#CodecFactory.UniversalDeserializer) gives us the ability to unmarshal the request body into an </code>AdmissionReview`</li>
+<li>This is what we&rsquo;re after and encapsulates the request that our webhook should validate; in this case <code>validateSomething</code></li>
+</ol>
+<p>Up to this point, the code has been generic and applicable to any <code>ValidatingWebhookConfiguration</code>. I&rsquo;m going to leave the <code>validateSomething</code> open to your implementation:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">validateSomething</span>(<span style="color:#a6e22e">rqst</span> <span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionReview</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span> {
+	<span style="color:#75715e">// See: https://github.com/kubernetes/apimachinery/issues/102
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">raw</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Request</span>.<span style="color:#a6e22e">Object</span>.<span style="color:#a6e22e">Raw</span>
+
+	<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">raw</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span>{
+			<span style="color:#a6e22e">UID</span>:     <span style="color:#a6e22e">uid</span>,
+			<span style="color:#a6e22e">Allowed</span>: <span style="color:#66d9ef">false</span>,
+			<span style="color:#a6e22e">Result</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Status</span>{
+				<span style="color:#a6e22e">Message</span>: <span style="color:#e6db74">&#34;object contains no data&#34;</span>,
+			},
+		}
+	}
+
+	<span style="color:#a6e22e">something</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Something</span>{}
+
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">raw</span>, <span style="color:#a6e22e">something</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span>{
+			<span style="color:#a6e22e">UID</span>:     <span style="color:#a6e22e">uid</span>,
+			<span style="color:#a6e22e">Allowed</span>: <span style="color:#66d9ef">false</span>,
+			<span style="color:#a6e22e">Result</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Status</span>{
+				<span style="color:#a6e22e">Message</span>: <span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>(),
+			},
+		}
+	}
+
+    <span style="color:#75715e">// Process `something`
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// If there are any problems with `something`
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span>{
+		<span style="color:#a6e22e">UID</span>:     <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Request</span>.<span style="color:#a6e22e">UID</span>,
+        <span style="color:#a6e22e">Allowed</span>: <span style="color:#66d9ef">false</span>,
+        <span style="color:#a6e22e">Result</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Status</span>{
+				<span style="color:#a6e22e">Message</span>: <span style="color:#a6e22e">message</span>,
+        },
+    }
+
+    <span style="color:#75715e">// If we reach this far, all&#39;s good
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span>{
+		<span style="color:#a6e22e">UID</span>:     <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Request</span>.<span style="color:#a6e22e">UID</span>,
+		<span style="color:#a6e22e">Allowed</span>: <span style="color:#66d9ef">true</span>,
+    }
+}
+</code></pre></div><ol>
+<li>The configuration that was attempt applied, deleted or updated to the cluster, triggering the webhook, is accessible as <code>AdmissionReview.Request.Object.Raw</code></li>
+<li>It&rsquo;s possible best to limit one webhook to one Kubernetes resource|<code>Kind</code> but this isn&rsquo;t a requirement. If your webhook is invoked for multiple resource types, you&rsquo;ll need to disambiguate them here.</li>
+<li>Then the raw object must be unmarshaled into a Golang type (that we can process), in the above, a type called <code>Something</code>.</li>
+<li>At any point during the webhook&rsquo;s evaluation, we can early return an <code>AdmissionResponse</code> with its <code>Allowed</code> property set to <code>false</code>. The handler will report that it <code>denied the request</code> and we can provide a more detailed error message using <code>Result.Message</code>.</li>
+<li>It is import thant all <code>AdmissionResponse</code> messages include the incoming request&rsquo;s <code>Request.UID</code> so that these can be matched.</li>
+<li>It is convention that Golang functions early return errors and then conclude with the happy state <code>Allowed: true</code> as shown above. If none of our tests fails, the configuration file passes muster.</li>
+</ol>
+<p>You may test the handler (using the <code>localhost</code> cert and key) POST&rsquo;ing an <code>AdmissionRequest</code> body to the server that includes some form of your <code>Something</code> object.</p>
+<h2 id="certificates">Certificates</h2>
+<p>Before we can deploy to Kubernetes, we&rsquo;ll need to create a certificate signing request. The following script is drawn heavily from Kubernetes <a href="https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/">Create CertificateSigningRequest</a>:</p>
+<ol>
+<li>Uses <code>openssl</code> to create a private key and a certificate signing request (csr). Importantly, the certificate&rsquo;s Common Name must be <code>${SERVICE}.${NAMESPACE}.svc</code>. This is a qualified service name for in-cluster use and ensures that the service is accessible across namespaces.</li>
+<li>Creates a Kubernetes <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#certificatesigningrequest-v1-certificates-k8s-io">CertificateSigningRequest</a> using the csr file generated by <code>openssl</code>. The name of this is just <code>${SERVICE}.${NAMESPACE}</code></li>
+<li><code>kubectl</code> is used to approve the CSR</li>
+<li><code>kubectl</code> is used to get the signed certificate (<code>.status.certificate</code>) from the cluster</li>
+<li><code>kubectl</code> is used to create a Secret that will be mounted into the <code>Deployment</code> combining this certificate and the previously created private key.</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">DIR<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/secrets
+SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;webhook&#34;</span>
+NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;default&#34;</span>
+
+FILENAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>DIR<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">.</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+
+openssl req <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-new <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-sha256 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-newkey rsa:2048 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-keyout <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.key <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-out <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.csr <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-nodes <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-subj <span style="color:#e6db74">&#34;/CN=</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">.</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">.svc&#34;</span>
+
+echo <span style="color:#e6db74">&#34;
+</span><span style="color:#e6db74">apiVersion: certificates.k8s.io/v1beta1
+</span><span style="color:#e6db74">kind: CertificateSigningRequest
+</span><span style="color:#e6db74">metadata:
+</span><span style="color:#e6db74">  name: </span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">.</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">spec:
+</span><span style="color:#e6db74">  groups:
+</span><span style="color:#e6db74">  - system:authenticated
+</span><span style="color:#e6db74">  request: </span><span style="color:#66d9ef">$(</span>cat <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.csr | base64 | tr -d <span style="color:#e6db74">&#39;\n&#39;</span><span style="color:#66d9ef">)</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">  usages:
+</span><span style="color:#e6db74">  - digital signature
+</span><span style="color:#e6db74">  - key encipherment
+</span><span style="color:#e6db74">  - server auth
+</span><span style="color:#e6db74">&#34;</span> | kubectl apply --filename<span style="color:#f92672">=</span>-
+
+kubectl certificate approve <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.<span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+
+kubectl get csr <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.<span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.status.certificate}&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| base64 --decode &gt; <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.crt
+
+kubectl create secret tls <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--cert<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.crt <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--key<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.key
+</code></pre></div><h2 id="deployment">Deployment</h2>
+<p>We&rsquo;re now able to deploy the webhook handler to the cluster.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apps/v1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Deployment</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE</span>
+  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">NAMESPACE</span>
+  <span style="color:#f92672">labels</span>:
+    <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
+  <span style="color:#f92672">selector</span>:
+    <span style="color:#f92672">matchLabels</span>:
+      <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
+  <span style="color:#f92672">template</span>:
+    <span style="color:#f92672">metadata</span>:
+      <span style="color:#f92672">labels</span>:
+        <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
+    <span style="color:#f92672">spec</span>:
+      <span style="color:#f92672">containers</span>:
+        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">webhook</span>
+          <span style="color:#f92672">image</span>: <span style="color:#ae81ff">your-image</span>
+          <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">Always</span>
+          <span style="color:#f92672">args</span>:
+            - --<span style="color:#ae81ff">tls-crt-file=/secrets/tls.crt</span>
+            - --<span style="color:#ae81ff">tls-key-file=/secrets/tls.key</span>
+            - --<span style="color:#ae81ff">port=8443</span>
+            - --<span style="color:#ae81ff">logtostderr</span>
+            - -<span style="color:#ae81ff">v=2</span>
+          <span style="color:#f92672">volumeMounts</span>:
+            - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">secrets</span>
+              <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/secrets</span>
+              <span style="color:#f92672">readOnly</span>: <span style="color:#66d9ef">true</span>
+      <span style="color:#f92672">volumes</span>:
+        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">secrets</span>
+          <span style="color:#f92672">secret</span>:
+            <span style="color:#f92672">secretName</span>: <span style="color:#ae81ff">SERVICE</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> the above includes <code>PLACEHOLDER</code> values that we must replace with the value created during the previous (<a href="#Certificates">Certificates</a>) step. To do this, you can use <code>sed</code> to replace <code>PLACEHOLDER</code> with values:</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cat ./deployment.yaml <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|SERVICE|</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|NAMESPACE|</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</code></pre></div><h2 id="service">Service</h2>
+<p>The Service exposes the Deployment (on port <code>:8443</code>) on port of <code>:443</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE</span>
+  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">NAMESPACE</span>
+  <span style="color:#f92672">labels</span>:
+    <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">selector</span>:
+    <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
+  <span style="color:#f92672">ports</span>:
+    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">http</span>
+      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">443</span>
+      <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">8443</span>
+</code></pre></div><p>Again, we must replace the <code>PLACEHOLDER</code> values:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cat ./service.yaml <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|SERVICE|</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|NAMESPACE|</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</code></pre></div><h2 id="validatingadmissionwebook">ValidatingAdmissionWebook</h2>
+<p>Finally, we can combine the Service (using the <code>Deployment</code>) into a <code>ValidatingWebhookConfiguration</code>.</p>
+<p>The configuration is <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#validatingwebhook-v1-admissionregistration-k8s-io"><code>admissionregistration.k8s.io/v1</code></a></p>
+<p>This process was kinda gnarly too but I found a configuation that worked for me:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">admissionregistration.k8s.io/v1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ValidatingWebhookConfiguration</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE</span>
+  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">NAMESPACE</span>
+  <span style="color:#f92672">labels</span>:
+    <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
+<span style="color:#f92672">webhooks</span>:
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE.NAMESPACE.svc</span>
+    <span style="color:#f92672">clientConfig</span>:
+      <span style="color:#f92672">service</span>:
+        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE</span>
+        <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">NAMESPACE</span>
+        <span style="color:#f92672">port</span>: <span style="color:#ae81ff">443</span>
+        <span style="color:#f92672">path</span>: <span style="color:#e6db74">&#34;/validate&#34;</span>
+      <span style="color:#f92672">caBundle</span>: <span style="color:#ae81ff">CABUNDLE</span>
+    <span style="color:#f92672">rules</span>:
+      - <span style="color:#f92672">operations</span>:
+          - <span style="color:#e6db74">&#34;CREATE&#34;</span>
+          - <span style="color:#e6db74">&#34;UPDATE&#34;</span>
+        <span style="color:#f92672">apiGroups</span>:
+          - <span style="color:#e6db74">&#34;akri.sh&#34;</span>
+        <span style="color:#f92672">apiVersions</span>:
+          - <span style="color:#e6db74">&#34;v0&#34;</span>
+        <span style="color:#f92672">resources</span>:
+          - <span style="color:#e6db74">&#34;configurations&#34;</span>
+        <span style="color:#f92672">scope</span>: <span style="color:#e6db74">&#34;*&#34;</span>
+    <span style="color:#f92672">admissionReviewVersions</span>:
+      - <span style="color:#ae81ff">v1beta1</span>
+    <span style="color:#f92672">sideEffects</span>: <span style="color:#ae81ff">None</span>
+</code></pre></div><ol>
+<li><code>webhooks.name</code> must match the Common Name from the certificate signing request, i.e. <code>${SERVICE}.${NAMESPACE}.svc</code>. This is qualified endpoint by which the webhook may be accessed within the cluster.</li>
+<li>We&rsquo;ll use port <code>:443</code> as exposed by the Service</li>
+<li>The path to the webhook was defined (statically) in the Golang code <code>/validate</code> (but could of course be defined by a flag or environment variable if preferred).</li>
+<li>Instructions to grab the value for <code>CABUNDLE</code> are shown below.</li>
+<li>The <code>rules</code> define the trigger for the webhook. I found this very difficult to get right and so I&rsquo;m leaving this as-is here to hopefully help you. In my case the Akri Configuration CRD is defined as <code>akri.sh/v0/configurations</code> and this decomposes into an <code>apiGroups</code> with value <code>akri.sh</code>, an <code>apiVersions</code> with value <code>v0</code> and one <code>resource</code> (though you can provide multiple) of <code>configurations</code>. In my case, I want <code>kubectl apply</code> (i.e. <code>CREATE</code> and <code>UPDATE</code> but not <code>DELETE</code>) operations.</li>
+<li>The <code>scope</code> can be <code>Namespaced</code> or <code>Cluster</code> but I left this as <code>*</code> (either).</li>
+<li>You&rsquo;ll recall that our Golang code used <code>v1beta1.Admission[Review|Response]</code> and so that&rsquo;s referenced here too.</li>
+</ol>
+<p>We must also provide this resource with cluster&rsquo;s CA bundle:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">CABUNDLE<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  kubectl get secrets <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.items[?(@.metadata.annotations[&#39;kubernetes\.io/service-account\.name&#39;]==&#39;default&#39;)].data.ca\.crt}&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>CABUNDLE<span style="color:#e6db74">}</span>
+</code></pre></div><p>Then, we can replace this along with the <code>SERVICE</code> and <code>NAMESPACE</code> values using <code>sed</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cat ./webhook.yaml <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|SERVICE|</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|NAMESPACE|</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|CABUNDLE|</span><span style="color:#e6db74">${</span>CABUNDLE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</code></pre></div><h2 id="testing">Testing</h2>
+<p>You may now test your webhook handler by <code>CREATE</code>ing or <code>UPDATE</code>ing whatever resource you defined as <code>Something</code>.</p>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/kubernetes" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">kubernetes</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/webhook" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">webhook</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/golang" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">golang</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/akri" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">akri</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/201113/">Akri</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201217/">Kubernetes Device Plugins</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201029/">GitHub Actions &amp;&amp; GitHub Container Registry</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201022/">akri</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200908/">Trillian Map Mode</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200817/">WASM Transparency</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200807/">waPC and MsgPack (Rust|Golang)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200630/">Golang Protobuf APIv2</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200310/">Google&#39;s New Golang SDK for Protobufs</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191211/">NGINX Ingress</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+  </main>
+  <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2020 
+  </a>
+    <div>
+
+
+<a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+  <svg height="32px" 
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="32px"
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+</div>
+  </div>
+</footer>
+
+  
+
+  <script src="/dist/js/app.3fc0f988d21662902933.js"></script>
+
+
+</body>
+
+</html>
