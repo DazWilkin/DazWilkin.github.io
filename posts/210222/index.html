@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  
+  <title>Dapr | (p)retired</title>
+  <meta name="viewport" content="width=device-width,minimum-scale=1">
+  <meta name="description"
+    content="dapr exploration using MicroK8s with some Golang gRPC">
+  <meta name="generator" content="Hugo 0.80.0" />
+  
+  
+  <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+  
+
+  
+
+  
+  
+    <link rel="stylesheet" href="/ananke/dist/main.css_5c99d70a7725bacd4c701e995b969fea.css" >
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  <link href="https://us-central1-webmention.cloudfunctions.net/webmention" rel="webmention" />
+
+  <meta property="og:title" content="Dapr" />
+<meta property="og:description" content="dapr exploration using MicroK8s with some Golang gRPC" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/210222/" />
+<meta property="article:published_time" content="2021-02-22T00:00:00-08:00" />
+<meta property="article:modified_time" content="2021-02-22T00:00:00-08:00" />
+<meta itemprop="name" content="Dapr">
+<meta itemprop="description" content="dapr exploration using MicroK8s with some Golang gRPC">
+<meta itemprop="datePublished" content="2021-02-22T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2021-02-22T00:00:00-08:00" />
+<meta itemprop="wordCount" content="2388">
+
+
+
+<meta itemprop="keywords" content="dapr,microk8s,grpc,golang," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Dapr"/>
+<meta name="twitter:description" content="dapr exploration using MicroK8s with some Golang gRPC"/>
+
+  
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+  
+  
+</head>
+
+<body class="ma0 avenir bg-near-white production">
+
+  
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+<a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+  <svg height="32px" 
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="32px"
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+  <main class="pb7" role="main">
+    
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+  <div id="sharing" class="mt3">
+
+    
+    <a href="https://www.facebook.com/sharer.php?u=https://pretired.dazwilkin.com/posts/210222/" class="facebook no-underline" aria-label="share on Facebook">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M28.765,50.32h6.744V33.998h4.499l0.596-5.624h-5.095  l0.007-2.816c0-1.466,0.14-2.253,2.244-2.253h2.812V17.68h-4.5c-5.405,0-7.307,2.729-7.307,7.317v3.377h-3.369v5.625h3.369V50.32z   M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;"/></svg>
+
+    </a>
+
+    
+    
+    <a href="https://twitter.com/share?url=https://pretired.dazwilkin.com/posts/210222/&amp;text=Dapr" class="twitter no-underline" aria-label="share on Twitter">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M37.167,22.283c-2.619,0.953-4.274,3.411-4.086,6.101  l0.063,1.038l-1.048-0.127c-3.813-0.487-7.145-2.139-9.974-4.915l-1.383-1.377l-0.356,1.017c-0.754,2.267-0.272,4.661,1.299,6.271  c0.838,0.89,0.649,1.017-0.796,0.487c-0.503-0.169-0.943-0.296-0.985-0.233c-0.146,0.149,0.356,2.076,0.754,2.839  c0.545,1.06,1.655,2.097,2.871,2.712l1.027,0.487l-1.215,0.021c-1.173,0-1.215,0.021-1.089,0.467  c0.419,1.377,2.074,2.839,3.918,3.475l1.299,0.444l-1.131,0.678c-1.676,0.976-3.646,1.526-5.616,1.568  C19.775,43.256,19,43.341,19,43.405c0,0.211,2.557,1.397,4.044,1.864c4.463,1.377,9.765,0.783,13.746-1.568  c2.829-1.673,5.657-5,6.978-8.221c0.713-1.716,1.425-4.851,1.425-6.354c0-0.975,0.063-1.102,1.236-2.267  c0.692-0.678,1.341-1.419,1.467-1.631c0.21-0.403,0.188-0.403-0.88-0.043c-1.781,0.636-2.033,0.551-1.152-0.402  c0.649-0.678,1.425-1.907,1.425-2.267c0-0.063-0.314,0.042-0.671,0.233c-0.377,0.212-1.215,0.53-1.844,0.72l-1.131,0.361l-1.027-0.7  c-0.566-0.381-1.361-0.805-1.781-0.932C39.766,21.902,38.131,21.944,37.167,22.283z M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4  s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/></svg>
+
+    </a>
+
+    
+    <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/210222/&amp;title=Dapr" class="linkedin no-underline" aria-label="share on LinkedIn">
+      <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+    </a>
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Dapr</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2021-02-22T00:00:00-08:00">February 22, 2021</time>
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 12 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 2388 words</span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>It&rsquo;s a good name, I read it as &ldquo;dapper&rdquo; but I frequently type &ldquo;darp&rdquo; :-(</p>
+<p>Was interested to <a href="https://blog.dapr.io/posts/2021/02/17/announcing-dapr-v1.0/">read</a> that <a href="https://dapr.io/">Dapr</a> is now v1.0 and decided to check it out. I was initially confused between Dapr and service mesh functionality. But, having used Dapr, it appears to be more focused in aiding the development of (cloud-native) (distributed) apps by providing developers with abstractions for e.g. service discovery, eventing, observability whereas service meshes feel (!) more oriented towards simplifying the deployment of existing apps. Both use the concept of proxies, deployed alongside app components (as sidecars on Kubernetes) to provide their functionality to apps.</p>
+<p>I started with the <a href="https://github.com/dapr/quickstarts/tree/v1.0.0/hello-kubernetes">hello-kubernetes</a> quickstart. You&rsquo;ll need to clone this in order to use its Kubernetes' manifests below.</p>
+<p>I like <a href="https://microk8s.io">MicroK8s</a> and used it in the following. I&rsquo;m also trying to more disciplined in using non-<code>default</code> namespaces in my clusters to ensure that apps works in non-<code>default</code> namespaces but, more importantly because non-<code>default</code> namespaces can be deleted thereby cleaning up.</p>
+<p>Dapr requires a more recent version of Helm (version?) than is shipped with MicroK8s 1.20.0 and so I found it easiest to use Helm in a container.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;dapr-system&#34;</span>
+
+kubectl create namespace <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</code></pre></div><p>And then, something of the form:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">alias helm3<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;docker run \
+</span><span style="color:#e6db74">--interactive --tty --rm \
+</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.kube:/root/.kube \
+</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.helm:/root/.helm \
+</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.config/helm:/root/.config/helm \
+</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cache/helm:/root/.cache/helm \
+</span><span style="color:#e6db74">alpine/helm:3.5.2&#34;</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> Curiously, I&rsquo;ve been having issues with Dapr not functioning and, when e.g. checking <code>dapr-sidecar-injector</code> logs, receiving TLS handshake errors (always on <code>10.0.0.226</code>!?). Unfortunately,this issue only arises when you try to deploy a Dapr app (e.g. a Deployment with the Dapr annotations). Uninstalling and reinstalling Dapr appears to overcome (!?) this issue.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs deployment/dapr-sidecar-injector <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+2021/02/20 19:21:18 http: TLS handshake error from 10.0.0.226:46102: remote error: tls: bad certificate
+</code></pre></div><p>What&rsquo;s also curious is that error is always for <code>10.0.0.226</code> and there&rsquo;s nothing running on that IP:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get endpoints <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</code></pre></div></blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">helm3 repo list
+helm3 repo add dapr https://dapr.github.io/helm-charts/
+helm3 repo update
+helm3 install dapr dapr/dapr --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> --wait
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> The above command mounts your <code>KUBECONFIG</code> file and 3 Helm-specific directorties (<code>.helm</code>, <code>.config/helm</code>, <code>.cache/helm</code>) into the container. These permit Helm to deploy to your cluster and to persist its state (e.g. repos) across invocations.</p>
+</blockquote>
+<p>Yields:</p>
+<pre><code class="language-console" data-lang="console">NAME: dapr
+LAST DEPLOYED: Thu Feb 19 12:00:00 2021
+NAMESPACE: dapr-system
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+Thank you for installing Dapr: High-performance, lightweight serverless runtime for cloud and edge
+
+Your release is named dapr.
+
+To get started with Dapr, we recommend using our quickstarts:
+https://github.com/dapr/quickstarts
+
+For more information on running Dapr, visit:
+https://dapr.io
+
+</code></pre><p>Then you can:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get all --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+NAME                                         READY   STATUS
+pod/dapr-dashboard-65cc964bdd-ckv8h          1/1     Running
+pod/dapr-operator-754ffcd-cx7sk              1/1     Running
+pod/dapr-placement-server-0                  1/1     Running
+pod/dapr-sentry-f4fd59d65-v89jk              1/1     Running
+pod/dapr-sidecar-injector-5cd4454dcc-h5445   1/1     Running
+
+NAME                            TYPE        PORT<span style="color:#f92672">(</span>S<span style="color:#f92672">)</span>
+service/dapr-api                ClusterIP   80/TCP
+service/dapr-dashboard          ClusterIP   8080/TCP
+service/dapr-placement-server   ClusterIP   50005/TCP,8201/TCP
+service/dapr-sentry             ClusterIP   80/TCP
+service/dapr-sidecar-injector   ClusterIP   443/TCP
+
+NAME                                    READY   UP-TO-DATE   AVAIL
+deployment.apps/dapr-dashboard          1/1     <span style="color:#ae81ff">1</span>            <span style="color:#ae81ff">1</span>
+deployment.apps/dapr-operator           1/1     <span style="color:#ae81ff">1</span>            <span style="color:#ae81ff">1</span>
+deployment.apps/dapr-sentry             1/1     <span style="color:#ae81ff">1</span>            <span style="color:#ae81ff">1</span>
+deployment.apps/dapr-sidecar-injector   1/1     <span style="color:#ae81ff">1</span>            <span style="color:#ae81ff">1</span>
+
+NAME                                               DESIRED
+replicaset.apps/dapr-dashboard-65cc964bdd          <span style="color:#ae81ff">1</span>
+replicaset.apps/dapr-operator-754ffcd              <span style="color:#ae81ff">1</span>
+replicaset.apps/dapr-sentry-f4fd59d65              <span style="color:#ae81ff">1</span>
+replicaset.apps/dapr-sidecar-injector-5cd4454dcc   <span style="color:#ae81ff">1</span>
+
+NAME                                     READY
+statefulset.apps/dapr-placement-server   1/1
+
+NAME
+configuration.dapr.io/daprsystem
+</code></pre></div><p>Then install Redis:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">helm3 repo add bitnami https://charts.bitnami.com/bitnami
+helm3 repo update
+helm3 install redis bitnami/redis --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> The instructions were unclear but I installed Redis into the same namespace (<code>${NAMESPACE}</code>) as Dapr. It&rsquo;s likely this isn&rsquo;t required.</p>
+</blockquote>
+<p>Yields:</p>
+<pre><code class="language-console" data-lang="console">NAME: redis
+LAST DEPLOYED: Thu Feb 19 12:00:00 2021
+NAMESPACE: dapr-system
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+** Please be patient while the chart is being deployed **
+Redis(TM) can be accessed via port 6379 on the following DNS names from within your cluster:
+
+redis-master.dapr-system.svc.cluster.local for read/write operations
+redis-slave.dapr-system.svc.cluster.local for read-only operations
+
+
+To get your password run:
+
+export REDIS_PASSWORD=$(\
+  kubectl get secret redis \
+  --namespace=dapr-system \
+  --output=jsonpath=&quot;{.data.redis-password}&quot; \
+| base64 --decode)
+
+To connect to your Redis(TM) server:
+
+1. Run a Redis(TM) pod that you can use as a client:
+
+kubectl run redis-client --rm --tty -i --restart='Never' \
+--namespace dapr-system \
+--env REDIS_PASSWORD=$REDIS_PASSWORD \
+--image docker.io/bitnami/redis:6.0.10-debian-10-r19 \
+-- bash
+
+2. Connect using the Redis(TM) CLI:
+
+redis-cli -h redis-master -a $REDIS_PASSWORD
+redis-cli -h redis-slave -a $REDIS_PASSWORD
+
+To connect to your database from outside the cluster execute the following commands:
+
+kubectl port-forward service/redis-master\
+--namespace=dapr-system 6379:6379 &amp;
+    redis-cli -h 127.0.0.1 -p 6379 -a $REDIS_PASSWORD
+</code></pre><p>The Helm install for Redis creates a Secret (<code>redis</code>) containing the Redis password. You need only update the <code>redis-master</code>&rsquo;s DNS in the <code>hello-kubernetes</code> quickstart&rsquo;s <code>redis.yaml</code> file in the <code>deploy</code> directory. You can:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;s|redis-master:6379|redis-master.</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">.svc.cluster.local:6379|g&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>./deploy/redis.yaml <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>- <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</code></pre></div><p>This manifest creates a Dapr <code>Component</code> CRD called <code>statestore</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get component/statestore <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>yaml
+</code></pre></div><p>Yields:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">dapr.io/v1alpha1</span>
+<span style="color:#f92672">auth</span>:
+  <span style="color:#f92672">secretStore</span>: <span style="color:#ae81ff">kubernetes</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Component</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">statestore</span>
+  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">dapr-system</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">metadata</span>:
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">redisHost</span>
+    <span style="color:#f92672">value</span>: <span style="color:#ae81ff">redis-master.dapr-system.svc.cluster.local:6379</span>
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">redisPassword</span>
+    <span style="color:#f92672">secretKeyRef</span>:
+      <span style="color:#f92672">key</span>: <span style="color:#ae81ff">redis-password</span>
+      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">redis</span>
+  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">state.redis</span>
+  <span style="color:#f92672">version</span>: <span style="color:#ae81ff">v1</span>
+</code></pre></div><p>Another CRD that&rsquo;s created by Dapr is <code>Configurations</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get configuration/daprsystem <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>yaml
+</code></pre></div><p>Yields:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">dapr.io/v1alpha1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Configuration</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">annotations</span>:
+    <span style="color:#f92672">meta.helm.sh/release-name</span>: <span style="color:#ae81ff">dapr</span>
+    <span style="color:#f92672">meta.helm.sh/release-namespace</span>: <span style="color:#ae81ff">dapr-system</span>
+  <span style="color:#f92672">labels</span>:
+    <span style="color:#f92672">app.kubernetes.io/managed-by</span>: <span style="color:#ae81ff">Helm</span>
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">daprsystem</span>
+  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">dapr-system</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">metric</span>:
+    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+  <span style="color:#f92672">mtls</span>:
+    <span style="color:#f92672">allowedClockSkew</span>: <span style="color:#ae81ff">15m</span>
+    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+    <span style="color:#f92672">workloadCertTTL</span>: <span style="color:#ae81ff">24h</span>
+</code></pre></div><p>Dapr includes a web-based dashboard that I found quite useful. You can port-forward to it:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl port-forward service/dapr-dashboard <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> 8080:8080
+</code></pre></div><p>And then browse <code>http://localhost:8080</code></p>
+<p><img src="/images/210222.dapr.dashboard.png" alt="Dashboard"></p>
+<p>The Quickstart then has you install a Node.JS &ldquo;server&rdquo; app:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--filename<span style="color:#f92672">=</span>./deploy/node.yaml <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> Before proceeding, I recommend you check the <code>dapr-sidecar-injector</code> logs at this point to determine whether you&rsquo;re receiving the certificate error I mentioned above. If you are, delete <code>node.yaml</code>, (helm) uninstall Dapr and try installing them both again. You do not need to delete Redis.</p>
+</blockquote>
+<p>To confirm that the Deployment has succeeded including that Dapr has injected a sidecar into the Deployment&rsquo;s Pods, you can:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get pods <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--selector<span style="color:#f92672">=</span>app<span style="color:#f92672">=</span>node <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.items[*].spec.containers[*].image}&#34;</span>
+</code></pre></div><p>You should gets 2 containers in the result (albeit output on one line):</p>
+<pre><code class="language-console" data-lang="console">dapriosamples/hello-k8s-node:latest
+docker.io/daprio/daprd:1.0.0
+</code></pre><blockquote>
+<p><strong>NOTE</strong> A side-effect of the injector is that the Deployment will not include <code>daprd</code>; you can&rsquo;t <code>kubectl get</code> or <code>kubectl describe</code> the Deployment to see the <code>daprd</code> added.</p>
+</blockquote>
+<p>The server has a simple API:</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/order</code></td>
+<td>GET</td>
+<td>Gets the most recent order</td>
+</tr>
+<tr>
+<td><code>/neworder</code></td>
+<td>POST</td>
+<td>Adds a new order</td>
+</tr>
+<tr>
+<td><code>/ports</code></td>
+<td>GET</td>
+<td>Gets Dapr&rsquo;s HTTP</td>
+</tr>
+</tbody>
+</table>
+<p>Because the app&rsquo;s Deployment includes Dapr annotations (see below), when applied to the cluster, Dapr detected the Deployment and injected a sidecar into the Pods:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">annotations</span>:
+  <span style="color:#f92672">dapr.io/enabled</span>: <span style="color:#e6db74">&#34;true&#34;</span>
+  <span style="color:#f92672">dapr.io/app-id</span>: <span style="color:#e6db74">&#34;nodeapp&#34;</span>
+  <span style="color:#f92672">dapr.io/app-port</span>: <span style="color:#e6db74">&#34;3000&#34;</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> In the above <code>appi-id</code> of <code>nodeapp</code> just so happens to be the same name as the Kubernetes Deployment but it could be something entirely different. The <code>app-port</code> tells Dapr which port it should route traffic to (see below).</p>
+</blockquote>
+<p>We can gets logs for the NodeJS app:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs deployment/nodeapp <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>node <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+
+Node App listening on port 3000!
+</code></pre></div><p>And, logs for the Dapr (daemon) sidecar with:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs deployment/nodeapp <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>daprd <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;starting Dapr Runtime -- version 1.0.0 -- commit 6314733&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;log level set to: info&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metrics server started on :9090/&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;loading default configuration&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;kubernetes mode configured&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;app id: foo&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;mTLS enabled. creating sidecar authenticator&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;trust anchors and cert chain extracted successfully&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;authenticator created&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Initialized name resolution to kubernetes&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;component loaded. name: kubernetes, type: secretstores.kubernetes/v1&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;waiting for all outstanding components to be processed&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;all outstanding components processed&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled gRPC tracing middleware&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled gRPC metrics middleware&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;API gRPC server is running on port 50001&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled metrics http middleware&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled tracing http middleware&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http server is running on port 3500&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;The request body size parameter is: 4&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled gRPC tracing middleware&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled gRPC metrics middleware&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;sending workload csr request to sentry&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;certificate signed successfully&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;internal gRPC server is running on port 50002&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;application protocol: http. waiting on port 3000.  This will block until the app is listening on that port.&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;starting workload cert expiry watcher. current cert expires on: 2021-02-20 19:01:33 +0000 UTC&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;application discovered on port 3000&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;application configuration loaded&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;actor runtime started. actor idle timeout: 1h0m0s. actor scan interval: 30s&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;dapr initialized. Status: Running. Init Elapsed 28.082543ms&#34;</span>
+msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;placement tables updated, version: 0&#34;</span>
+</code></pre></div><p>What isn&rsquo;t clear from the Quickstart, is that the Dapr daemon (<code>daprd</code>) is the conduit through which an application (in one Pod) talks to the Dapr system.</p>
+<p>Here&rsquo;s a simple proof:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#39;
+</span><span style="color:#e6db74">apiVersion: apps/v1
+</span><span style="color:#e6db74">kind: Deployment
+</span><span style="color:#e6db74">metadata:
+</span><span style="color:#e6db74">  name: debug
+</span><span style="color:#e6db74">  labels:
+</span><span style="color:#e6db74">    app: debug
+</span><span style="color:#e6db74">spec:
+</span><span style="color:#e6db74">  replicas: 1
+</span><span style="color:#e6db74">  selector:
+</span><span style="color:#e6db74">    matchLabels:
+</span><span style="color:#e6db74">      app: debug
+</span><span style="color:#e6db74">  template:
+</span><span style="color:#e6db74">    metadata:
+</span><span style="color:#e6db74">      labels:
+</span><span style="color:#e6db74">        app: debug
+</span><span style="color:#e6db74">      annotations:
+</span><span style="color:#e6db74">        dapr.io/enabled: &#34;true&#34;
+</span><span style="color:#e6db74">        dapr.io/app-id: &#34;debug&#34;
+</span><span style="color:#e6db74">    spec:
+</span><span style="color:#e6db74">      containers:
+</span><span style="color:#e6db74">        - name: busybox
+</span><span style="color:#e6db74">          image: radial/busyboxplus:curl
+</span><span style="color:#e6db74">          command:
+</span><span style="color:#e6db74">            - ash
+</span><span style="color:#e6db74">            - -c
+</span><span style="color:#e6db74">            - &#34;while true; do sleep 30; done&#34;
+</span><span style="color:#e6db74">&#39;</span> | kubectl apply --filename<span style="color:#f92672">=</span>- <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</code></pre></div><p>This creates a Pod for us that we can use to evaluate Dapr&rsquo;s API:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl exec deployment/debug <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--stdin --tty <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--container busybox <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-- ash
+</code></pre></div><p>And then from within the shell:</p>
+<pre><code class="language-ash" data-lang="ash">curl \
+--request GET \
+http://localhost:3500/v1.0/invoke/nodeapp/method/ports
+{&quot;DAPR_HTTP_PORT&quot;:&quot;3500&quot;,&quot;DAPR_GRPC_PORT&quot;:&quot;50001&quot;}
+
+curl \
+--request GET \
+http://localhost:3500/v1.0/metadata
+{&quot;id&quot;:&quot;ashapp&quot;,&quot;actors&quot;:[],&quot;extended&quot;:{},&quot;components&quot;:[{&quot;name&quot;:&quot;statestore&quot;,&quot;type&quot;:&quot;state.redis&quot;,&quot;version&quot;:&quot;v1&quot;}]}
+</code></pre><p>The API is documented <a href="https://docs.dapr.io/reference/api/">here</a></p>
+<blockquote>
+<p><strong>NOTE</strong> The references to <code>localhost</code> that we&rsquo;re using refer to the network namespace <strong>within</strong> the Pod. You&rsquo;ll see that the <code>DAPR_HTTP_PORT</code> was returned as <code>3500</code> helps us understand that we&rsquo;re talking to the <code>darpd</code> container (Dapr) within the Pod to access this API. And it is able to access (proxy) e.g. other services (<code>nodeapp</code>) on our behalf.</p>
+</blockquote>
+<blockquote>
+<p><strong>NOTE</strong> I&rsquo;m deploying <code>debug</code> to Namespace <code>${NAMESPACE}</code> but, if you deploy <code>debug</code> to a different namespace (e.g. <code>test</code>), you will need to postfix <code>nodeapp</code> with the namespace (e.g. <code>/invoke/nodeapp.dapr-system/...</code>) in order to access it with the API.</p>
+</blockquote>
+<p>Per the Node.JS app&rsquo;s API, we can also add a <code>neworder</code> using:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--request POST <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Content-type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#39;{&#34;data&#34;:{&#34;orderId&#34;:1000}}&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--write-out <span style="color:#e6db74">&#39;%{response_code}&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>http://localhost:3500/v1.0/invoke/nodeapp/method/neworder
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> Because we&rsquo;re POST&rsquo;ing JSON to the endpoint, we must include the header</p>
+</blockquote>
+<blockquote>
+<p><strong>NOTE</strong> <code>request POST</code> is redundant but included to be exhaustive.</p>
+</blockquote>
+<p>This should yield <code>200</code> (HTTP OK)</p>
+<p>After deploying the Node.JS app, the Dapr dashboard will include the app on it&rsquo;s homepage and you can check its metadata, configurations, logs etc.</p>
+<p><img src="/images/210222.dashboard.nodepython.png" alt="Dashboard running NodeJS|Python"></p>
+<p>There&rsquo;s a Python app included in the Quickstart which repeatedly POSTs <code>neworder</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>./deploy/python.yaml <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</code></pre></div><p>Initially, the Python app may log an error <code>failed to establish connection</code> but, it should soon connect via Dapr (!) to the Node.JS app:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs deployment/pythonapp <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>python <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+
+HTTPConnectionPool<span style="color:#f92672">(</span>host<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;localhost&#39;</span>, port<span style="color:#f92672">=</span>3500<span style="color:#f92672">)</span>: Max retries exceeded with url: /v1.0/invoke/nodeapp/method/neworder <span style="color:#f92672">(</span>Caused by NewConnectionError<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;&lt;urllib3.connection.HTTPConnection object at 0x7f1935152cd0&gt;: Failed to establish a new connection: [Errno 111] Connection refused&#39;</span><span style="color:#f92672">))</span>
+HTTP 500 <span style="color:#f92672">=</span>&gt; <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;errorCode&#34;</span>:<span style="color:#e6db74">&#34;ERR_DIRECT_INVOKE&#34;</span>,<span style="color:#e6db74">&#34;message&#34;</span>:<span style="color:#e6db74">&#34;invoke API is not ready&#34;</span><span style="color:#f92672">}</span>
+
+kubectl logs deployment/nodeapp <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>node <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+
+Node App listening on port 3000!
+DAPR_HTTP_PORT: <span style="color:#ae81ff">3500</span>
+DAPR_GRPC_PORT: <span style="color:#ae81ff">50001</span>
+Got a new order! Order ID: <span style="color:#ae81ff">1000</span>
+Successfully persisted state.
+Got a new order! Order ID: <span style="color:#ae81ff">3</span>
+Successfully persisted state.
+Got a new order! Order ID: <span style="color:#ae81ff">4</span>
+Successfully persisted state.
+Got a new order! Order ID: <span style="color:#ae81ff">5</span>
+Successfully persisted state.
+...
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> The Python app is hard-coded to point to the Node.JS server in the same namespace:</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python">dapr_port <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>getenv(<span style="color:#e6db74">&#34;DAPR_HTTP_PORT&#34;</span>, <span style="color:#ae81ff">3500</span>)
+dapr_url <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;http://localhost:{}/v1.0/invoke/nodeapp/method/neworder&#34;</span><span style="color:#f92672">.</span>format(dapr_port)
+</code></pre></div><p>We can show cross-namespacing using the <code>ash</code> app:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;different&#34;</span>
+kubectl create namespace <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+
+echo <span style="color:#e6db74">&#39;
+</span><span style="color:#e6db74">apiVersion: apps/v1
+</span><span style="color:#e6db74">kind: Deployment
+</span><span style="color:#e6db74">metadata:
+</span><span style="color:#e6db74">  name: debug
+</span><span style="color:#e6db74">  labels:
+</span><span style="color:#e6db74">    app: debug
+</span><span style="color:#e6db74">spec:
+</span><span style="color:#e6db74">  replicas: 1
+</span><span style="color:#e6db74">  selector:
+</span><span style="color:#e6db74">    matchLabels:
+</span><span style="color:#e6db74">      app: debug
+</span><span style="color:#e6db74">  template:
+</span><span style="color:#e6db74">    metadata:
+</span><span style="color:#e6db74">      labels:
+</span><span style="color:#e6db74">        app: debug
+</span><span style="color:#e6db74">      annotations:
+</span><span style="color:#e6db74">        dapr.io/enabled: &#34;true&#34;
+</span><span style="color:#e6db74">        dapr.io/app-id: &#34;debug&#34;
+</span><span style="color:#e6db74">    spec:
+</span><span style="color:#e6db74">      containers:
+</span><span style="color:#e6db74">        - name: busybox
+</span><span style="color:#e6db74">          image: radial/busyboxplus:curl
+</span><span style="color:#e6db74">          command:
+</span><span style="color:#e6db74">            - ash
+</span><span style="color:#e6db74">            - -c
+</span><span style="color:#e6db74">            - &#34;while true; do sleep 30; done&#34;
+</span><span style="color:#e6db74">&#39;</span> | kubectl apply --filename<span style="color:#f92672">=</span>- <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+
+kubectl exec deployment/debug <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--stdin --tty <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--container busybox <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-- ash
+</code></pre></div><p>For completeness, let&rsquo;s call the Dapr API through this Pod&rsquo;s <code>daprd</code>. Remember we&rsquo;re in a <code>${DIFFERENT}</code> namespace:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl localhost:3500/v1.0/metadata
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;id&#34;</span>:<span style="color:#e6db74">&#34;debug&#34;</span>,<span style="color:#e6db74">&#34;actors&#34;</span>:<span style="color:#f92672">[]</span>,<span style="color:#e6db74">&#34;extended&#34;</span>:<span style="color:#f92672">{}</span>,<span style="color:#e6db74">&#34;components&#34;</span>:<span style="color:#f92672">[{</span><span style="color:#e6db74">&#34;name&#34;</span>:<span style="color:#e6db74">&#34;statestore&#34;</span>,<span style="color:#e6db74">&#34;type&#34;</span>:<span style="color:#e6db74">&#34;state.redis&#34;</span>,<span style="color:#e6db74">&#34;version&#34;</span>:<span style="color:#e6db74">&#34;v1&#34;</span><span style="color:#f92672">}]}</span>
+</code></pre></div><p>That still works.</p>
+<p>Now let&rsquo;s try our original (now incorrect) call against the Node.JS server&rsquo;s API:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl localhost:3500/v1.0/invoke/nodeapp/method/ports <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--max-time <span style="color:#ae81ff">2</span>
+
+curl: <span style="color:#f92672">(</span>28<span style="color:#f92672">)</span> Operation timed out after <span style="color:#ae81ff">2000</span> milliseconds with <span style="color:#ae81ff">0</span> bytes received
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> The <code>--max-time</code> is to ensure you don&rsquo;t wait too long for what we know won&rsquo;t work</p>
+</blockquote>
+<p>This is because, <code>nodeapp</code> is not present in the <code>${DIFFERENT}</code> namespace and thus inaccessible.</p>
+<p>So, how do we access <code>nodeapp</code> in the <code>${NAMESPACE}==dapr-system</code> namespace? We append the app&rsquo;s namespace to its name: <code>nodeapp</code> &ndash;&gt; <code>nodeapp.dapr-system</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl localhost:3500/v1.0/invoke/nodeapp.dapr-system/method/ports <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--max-time <span style="color:#ae81ff">2</span>
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;DAPR_HTTP_PORT&#34;</span>:<span style="color:#e6db74">&#34;3500&#34;</span>,<span style="color:#e6db74">&#34;DAPR_GRPC_PORT&#34;</span>:<span style="color:#e6db74">&#34;50001&#34;</span><span style="color:#f92672">}</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> We don&rsquo;t use the namespace when we Deploy(ment) the app only when we reference it.</p>
+</blockquote>
+<p>The Node.JS app&rsquo;s <code>neworder</code> function persists the data received (i.e. <code>{&quot;orderId&quot;:1000}</code>) to the Dapr-configured state store (in this example, Redis). When we applied <code>redis.yaml</code>, this created a <code>Component</code> CRD called <code>statestore</code> that was configured to point to the Redis deployment that we <code>helm install</code>&lsquo;ed.</p>
+<p>Now, from within Dapr applications (like the Node.JS app), we can use the Dapr API to persist (application) state.</p>
+<p>This isn&rsquo;t as easy to test using the Dapr API becuase state is scoped to the app.</p>
+<p>Using the Debug Deployment:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># POST foo=bar</span>
+curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--request POST <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Content-type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#39;[{&#34;key&#34;:&#34;foo&#34;,&#34;value&#34;:&#34;bar&#34;}]&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>http://localhost:3500/v1.0/state/statestore
+
+<span style="color:#75715e"># GET foo</span>
+curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>http://localhost:3500/v1.0/state/statestore/foo
+<span style="color:#e6db74">&#34;bar&#34;</span>
+</code></pre></div><p>And, accessing the Redis CLI (using the instructions provided by way of output from the Helm install command):</p>
+<pre><code class="language-command" data-lang="command">HGETALL debug||foo
+1) &quot;data&quot;
+2) &quot;\&quot;bar\&quot;&quot;
+3) &quot;version&quot;
+4) &quot;2&quot;
+</code></pre><blockquote>
+<p><strong>NOTE</strong> The key value (<code>foo</code>) is prefixed by the app&rsquo;s name <code>debug</code></p>
+</blockquote>
+<p>From the Redis client, I can get the Node.JS (<code>nodeapp</code>) <code>order</code> key value too:</p>
+<pre><code class="language-command" data-lang="command">HGETALL nodeapp||order
+1) &quot;data&quot;
+2) &quot;{\&quot;orderId\&quot;:3531}&quot;
+3) &quot;version&quot;
+4) &quot;3531&quot;
+</code></pre><p>Lastly, I wanted to experiment with the gRPC mechanism. I used the Darp GO SDK&rsquo;s example code to write an even simpler server and client.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;example&#34;</span>
+
+kubectl apply <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--filename<span style="color:#f92672">=</span>./kubernetes/server.yaml 
+--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+
+kubectl apply <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--filename<span style="color:#f92672">=</span>./kubernetes/client.yaml
+--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+
+kubectl logs deployment/server <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>app <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+
+2021/02/22 21:28:26 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Entered <span style="color:#f92672">(</span>port: 50051<span style="color:#f92672">)</span>
+2021/02/22 21:28:26 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Start gRPC service: :50051
+2021/02/22 21:28:45 <span style="color:#f92672">[</span>main:echo<span style="color:#f92672">]</span> Entered
+2021/02/22 21:28:45 <span style="color:#f92672">[</span>main:echo<span style="color:#f92672">]</span> ContentType:text/plain, Verb:POST, QueryString:map<span style="color:#f92672">[]</span>, DataTypeURL:, Hello Freddie
+2021/02/22 21:28:50 <span style="color:#f92672">[</span>main:echo<span style="color:#f92672">]</span> Entered
+2021/02/22 21:28:50 <span style="color:#f92672">[</span>main:echo<span style="color:#f92672">]</span> ContentType:text/plain, Verb:POST, QueryString:map<span style="color:#f92672">[]</span>, DataTypeURL:, Hello Freddie
+
+kubectl logs deployment/client <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>app <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+
+2021/02/22 21:28:45 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Entered <span style="color:#f92672">(</span>appID: server<span style="color:#f92672">)</span>
+dapr client initializing <span style="color:#66d9ef">for</span>: 127.0.0.1:50001
+<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+</code></pre></div><p>In this example, even though the server is created generically <code>server, err := daprd.NewService(endpoint)</code>, the Kubernetes manifest annotation includes <code>dapr.io/app-protocol: &quot;grpc&quot;</code> and this configures Dapr to use gRPC for communication with the service. The server must be implemented to support gRPC messages:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">AddServiceInvocationHandler</span>(<span style="color:#e6db74">&#34;echo&#34;</span>,
+  <span style="color:#a6e22e">echo</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">in</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">common</span>.<span style="color:#a6e22e">InvocationEvent</span>) (<span style="color:#a6e22e">out</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">common</span>.<span style="color:#a6e22e">Content</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>) {
+	<span style="color:#f92672">...</span>
+}
+</code></pre></div><p>But, the client need only make generic call invocations:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">InvokeMethodWithContent</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">appID</span>, <span style="color:#e6db74">&#34;echo&#34;</span>, <span style="color:#e6db74">&#34;post&#34;</span>, <span style="color:#a6e22e">content</span>)
+</code></pre></div><p>And, we can therefore invoke the server&rsquo;s method (<code>echo</code>) via REST too:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--request POST <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#39;Hello Freddie!&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>localhost:3500/v1.0/invoke/server/method/echo
+</code></pre></div><p>Yields:</p>
+<pre><code class="language-console" data-lang="console">Hello Freddie!
+</code></pre><p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/dapr" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">dapr</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/microk8s" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">microk8s</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/grpc" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">grpc</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/golang" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">golang</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/201113/">Akri</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201229/">Kubernetes Webhooks</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201217/">Kubernetes Device Plugins</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201029/">GitHub Actions &amp;&amp; GitHub Container Registry</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201022/">akri</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200908/">Trillian Map Mode</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200817/">WASM Transparency</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200807/">waPC and MsgPack (Rust|Golang)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200717/">Remotely invoking WASM functions using gRPC and waPC</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200630/">Golang Protobuf APIv2</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200429/">Rust implementation of Crate Transparency using Google Trillian</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200310/">Google&#39;s New Golang SDK for Protobufs</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+  </main>
+  <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2021 
+  </a>
+    <div>
+
+
+<a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+  <svg height="32px" 
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="32px"
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+</div>
+  </div>
+</footer>
+
+</body>
+
+</html>
