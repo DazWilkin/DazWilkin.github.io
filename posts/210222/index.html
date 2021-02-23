@@ -44,7 +44,7 @@
 <meta itemprop="description" content="dapr exploration using MicroK8s with some Golang gRPC">
 <meta itemprop="datePublished" content="2021-02-22T00:00:00-08:00" />
 <meta itemprop="dateModified" content="2021-02-22T00:00:00-08:00" />
-<meta itemprop="wordCount" content="2398">
+<meta itemprop="wordCount" content="2463">
 
 
 
@@ -205,7 +205,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 12 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 2398 words</span>
+        <span class="f6 mv4 dib tracked"> - 2463 words</span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>It&rsquo;s a good name, I read it as &ldquo;dapper&rdquo; but I frequently type &ldquo;darp&rdquo; :-(</p>
@@ -722,7 +722,7 @@ dapr client initializing <span style="color:#66d9ef">for</span>: 127.0.0.1:50001
 </code></pre></div><p>In this example, even though the server is created generically <code>server, err := daprd.NewService(endpoint)</code>, the Kubernetes manifest annotation includes <code>dapr.io/app-protocol: &quot;grpc&quot;</code> and this configures Dapr to use gRPC for communication with the service. The server must be implemented to support gRPC messages:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">AddServiceInvocationHandler</span>(<span style="color:#e6db74">&#34;echo&#34;</span>,
   <span style="color:#a6e22e">echo</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">in</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">common</span>.<span style="color:#a6e22e">InvocationEvent</span>) (<span style="color:#a6e22e">out</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">common</span>.<span style="color:#a6e22e">Content</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>) {
-	<span style="color:#f92672">...</span>
+  <span style="color:#f92672">...</span>
 }
 </code></pre></div><p>But, the client need only make generic call invocations:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">InvokeMethodWithContent</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">appID</span>, <span style="color:#e6db74">&#34;echo&#34;</span>, <span style="color:#e6db74">&#34;post&#34;</span>, <span style="color:#a6e22e">content</span>)
@@ -733,7 +733,17 @@ dapr client initializing <span style="color:#66d9ef">for</span>: 127.0.0.1:50001
 </span><span style="color:#ae81ff"></span>localhost:3500/v1.0/invoke/server/method/echo
 </code></pre></div><p>Yields:</p>
 <pre><code class="language-console" data-lang="console">Hello Freddie!
-</code></pre><p>That&rsquo;s all!</p>
+</code></pre><p>While you&rsquo;re running a debug shell, you can check Dapr&rsquo;s (Prometheus) metrics:</p>
+<blockquote>
+<p><strong>NOTE</strong> By default, metrics are exposed on <code>:9090</code> but you can configure the port using one of Dapr&rsquo;s Pod <a href="https://docs.dapr.io/operations/hosting/kubernetes/kubernetes-annotations/">annotations</a>, namely <code>dapr.io/metrics-port</code>.</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl --request GET <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>http://localhost:9090/metrics
+</code></pre></div><p>Or, if you&rsquo;d prefer you can <code>port-forward</code> to a <code>daprd</code> in <code>${NAMESPACE}</code> and view the metrics in a browser:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl port-forward deployment/server <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>9090:9090
+</code></pre></div><p>That&rsquo;s all!</p>
 <ul class="pa0">
   
    <li class="list">
