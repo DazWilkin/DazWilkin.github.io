@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  
+  <title>Prometheus VPA Recommendations | (p)retired</title>
+  <meta name="viewport" content="width=device-width,minimum-scale=1">
+  <meta name="description"
+    content="Visualizing VPA Recommendations with Prometheus">
+  <meta name="generator" content="Hugo 0.80.0" />
+  
+  
+  <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+  
+
+  
+
+  
+  
+    <link rel="stylesheet" href="/ananke/dist/main.css_5c99d70a7725bacd4c701e995b969fea.css" >
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  <link href="https://us-central1-webmention.cloudfunctions.net/webmention" rel="webmention" />
+
+  <meta property="og:title" content="Prometheus VPA Recommendations" />
+<meta property="og:description" content="Visualizing VPA Recommendations with Prometheus" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/210305/" />
+<meta property="article:published_time" content="2021-03-05T00:00:00-08:00" />
+<meta property="article:modified_time" content="2021-03-05T00:00:00-08:00" />
+<meta itemprop="name" content="Prometheus VPA Recommendations">
+<meta itemprop="description" content="Visualizing VPA Recommendations with Prometheus">
+<meta itemprop="datePublished" content="2021-03-05T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2021-03-05T00:00:00-08:00" />
+<meta itemprop="wordCount" content="1344">
+
+
+
+<meta itemprop="keywords" content="kubernetes,microk8s,virtualpodautoscaler,prometheus,kube-state-metrics,kube-metrics," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Prometheus VPA Recommendations"/>
+<meta name="twitter:description" content="Visualizing VPA Recommendations with Prometheus"/>
+
+  
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+  
+  
+</head>
+
+<body class="ma0 avenir bg-near-white production">
+
+  
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+<a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+  <svg height="32px" 
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="32px"
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+  <main class="pb7" role="main">
+    
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+  <div id="sharing" class="mt3">
+
+    
+    <a href="https://www.facebook.com/sharer.php?u=https://pretired.dazwilkin.com/posts/210305/" class="facebook no-underline" aria-label="share on Facebook">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M28.765,50.32h6.744V33.998h4.499l0.596-5.624h-5.095  l0.007-2.816c0-1.466,0.14-2.253,2.244-2.253h2.812V17.68h-4.5c-5.405,0-7.307,2.729-7.307,7.317v3.377h-3.369v5.625h3.369V50.32z   M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;"/></svg>
+
+    </a>
+
+    
+    
+    <a href="https://twitter.com/share?url=https://pretired.dazwilkin.com/posts/210305/&amp;text=Prometheus%20VPA%20Recommendations" class="twitter no-underline" aria-label="share on Twitter">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M37.167,22.283c-2.619,0.953-4.274,3.411-4.086,6.101  l0.063,1.038l-1.048-0.127c-3.813-0.487-7.145-2.139-9.974-4.915l-1.383-1.377l-0.356,1.017c-0.754,2.267-0.272,4.661,1.299,6.271  c0.838,0.89,0.649,1.017-0.796,0.487c-0.503-0.169-0.943-0.296-0.985-0.233c-0.146,0.149,0.356,2.076,0.754,2.839  c0.545,1.06,1.655,2.097,2.871,2.712l1.027,0.487l-1.215,0.021c-1.173,0-1.215,0.021-1.089,0.467  c0.419,1.377,2.074,2.839,3.918,3.475l1.299,0.444l-1.131,0.678c-1.676,0.976-3.646,1.526-5.616,1.568  C19.775,43.256,19,43.341,19,43.405c0,0.211,2.557,1.397,4.044,1.864c4.463,1.377,9.765,0.783,13.746-1.568  c2.829-1.673,5.657-5,6.978-8.221c0.713-1.716,1.425-4.851,1.425-6.354c0-0.975,0.063-1.102,1.236-2.267  c0.692-0.678,1.341-1.419,1.467-1.631c0.21-0.403,0.188-0.403-0.88-0.043c-1.781,0.636-2.033,0.551-1.152-0.402  c0.649-0.678,1.425-1.907,1.425-2.267c0-0.063-0.314,0.042-0.671,0.233c-0.377,0.212-1.215,0.53-1.844,0.72l-1.131,0.361l-1.027-0.7  c-0.566-0.381-1.361-0.805-1.781-0.932C39.766,21.902,38.131,21.944,37.167,22.283z M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4  s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/></svg>
+
+    </a>
+
+    
+    <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/210305/&amp;title=Prometheus%20VPA%20Recommendations" class="linkedin no-underline" aria-label="share on LinkedIn">
+      <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+    </a>
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Prometheus VPA Recommendations</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2021-03-05T00:00:00-08:00">March 5, 2021</time>
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 7 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 1344 words</span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>Phew!</p>
+<p><a href="https://en.wikipedia.org/wiki/For_Want_of_a_Nail">For Want of a Nail</a></p>
+<p>I was interested in learning how to <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">Manage Resources for Containers</a>. On the way, I learned and discovered:</p>
+<ul>
+<li><a href="#kubectl-top"><code>kubectl top</code></a></li>
+<li><a href="#vertical-pod-autoscaler-vpa">Vertical Pod Autoscaler</a></li>
+<li>A (valuable) digression through <a href="#digression-podmonitor">PodMonitor</a></li>
+<li><a href="#kube-state-metrics"><code>kube-state-metrics</code></a></li>
+<li><a href="#kubectl-patch">`kubectl-patch</a></li>
+<li>Created a <a href="#graph">Graph</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+<h2 id="kubernetes-resources">Kubernetes Resources</h2>
+<p>Visual Studio Code has begun to bug me (reasonably) to add <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/"><code>resources</code></a> to Kubernetes manifests.</p>
+<p>E.g.:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">resources</span>:
+  <span style="color:#f92672">limits</span>:
+    <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;1&#34;</span>
+    <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;512Mi&#34;</span>
+</code></pre></div><p>I&rsquo;ve been spending time with Deislab&rsquo;s <a href="https://github.com/deislabs/akri">Akri</a> and decided to determine whether Akri&rsquo;s primary resources (Agent, Controller) and some of my creations HTTP Device and Discovery, were being suitably constrained.</p>
+<p>None of them are.</p>
+<p>The immediate question is, what CPU and memory requests and limits should I use?</p>
+<h2 id="kubectl-top"><code>kubectl top</code></h2>
+<p><code>kubectl top</code> is proposed:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl top pods <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>akri-system
+
+NAME                        CPU<span style="color:#f92672">(</span>cores<span style="color:#f92672">)</span>   MEMORY<span style="color:#f92672">(</span>bytes<span style="color:#f92672">)</span>   
+akri-agent-dhm4s            0m           14Mi            
+akri-controller-vlvvv       0m           5Mi             
+akri-http-discovery-v4dfn   0m           4Mi             
+akri-http-0d65a6-pod        1m           6Mi             
+akri-http-1daa25-pod        1m           7Mi             
+akri-http-286fb9-pod        1m           6Mi             
+akri-http-31f1eb-pod        1m           5Mi             
+akri-http-464fa2-pod        1m           6Mi             
+</code></pre></div><h2 id="metrics-server"><code>metrics-server</code></h2>
+<p>To get instrumentation for <code>kubectl top</code>, you must be running <a href="https://github.com/kubernetes-sigs/metrics-server"><code>metrics-server</code></a></p>
+<p>I&rsquo;m using <a href="https://microk8s.io">MicroK8s</a> and installing <code>metrics-server</code> is as simple as:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">microk8s enable metrics-server
+</code></pre></div><p>Check the <code>metrics-server</code> <a href="https://github.com/kubernetes-sigs/metrics-server">repo</a> for installation instructions if you&rsquo;re not use MicroK8s.</p>
+<h2 id="vertical-pod-autoscaler-vpa">Vertical Pod Autoscaler (VPA)</h2>
+<p>Daniel&rsquo;s <a href="https://medium.com/infrastructure-adventures/vertical-pod-autoscaler-deep-dive-limitations-and-real-world-examples-9195f8422724">Vertical Pod Autoscaler deep dive</a> is very helpful. I recommend it.</p>
+<p>I was unfamiliar with this tool.</p>
+<p>I&rsquo;m becoming reacquainted with Helm (partly through the Akri project) and, while still find the tool a little over-wrought, dropping the cluster-side tiller has been good and, I will admit, it&rsquo;s probably the best way to deploy applications to clusters.</p>
+<p>MicroK8s (1.20) includes an older version of Helm so I&rsquo;ve switched to aliasing <code>helm3</code> to the Helm team&rsquo;s container image:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">microk8s.helm3 version
+version.BuildInfo<span style="color:#f92672">{</span>Version:<span style="color:#e6db74">&#34;v3.0.2&#34;</span>, GitCommit:<span style="color:#e6db74">&#34;19e47ee3283ae98139d98460de796c1be1e3975f&#34;</span>, GitTreeState:<span style="color:#e6db74">&#34;clean&#34;</span>, GoVersion:<span style="color:#e6db74">&#34;go1.13.5&#34;</span><span style="color:#f92672">}</span>
+
+VERS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;3.5.2&#34;</span>
+alias helm3<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;docker run \
+</span><span style="color:#e6db74">--interactive --tty --rm \
+</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.kube:/root/.kube \
+</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.helm:/root/.helm \
+</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.config/helm:/root/.config/helm \
+</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cache/helm:/root/.cache/helm \
+</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/akri/deployment:/apps \
+</span><span style="color:#e6db74">alpine/helm:</span><span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</code></pre></div><p>There&rsquo;s a Helm chart (for everything) including VPA thanks to the <a href="https://www.fairwinds.com/">Fairwinds</a> team:</p>
+<p><a href="https://github.com/FairwindsOps/charts/tree/master/stable/vpa">https://github.com/FairwindsOps/charts/tree/master/stable/vpa</a></p>
+<blockquote>
+<p><strong>NOTE</strong> Fairwinds provides a tool called <a href="https://www.fairwinds.com/blog/introducing-goldilocks-a-tool-for-recommending-resource-requests">Goldilocks</a> which is VPA plus some UI tooling.</p>
+</blockquote>
+<p>You can:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">helm3 repo add fairwinds-stable https://charts.fairwinds.com/stable
+<span style="color:#e6db74">&#34;fairwinds-stable&#34;</span> has been added to your repositories
+
+helm3 repo update
+
+NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;vpa-system&#34;</span>
+helm3 install vpa fairwinds-stable/vpa <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--create-namespace
+</code></pre></div><p>Once VPA is installed, it&rsquo;s configured by creating <code>VerticalPodAutoscaler</code> Kinds.</p>
+<p>Since I mentioned Akri, here are two <code>VerticalPodAutoscaler</code> manifests (<a href="https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#example-vpa-configuration">Example</a>). The first for Akri&rsquo;s Agent (DaemonSet) and the second for Akri&rsquo;s Controller (Deployment). <code>VerticalPodAutoscaler</code>s are created in the Namespace where the resources reside. In this case, where I&rsquo;ve deployed Akri in the <code>akri-system</code> namespace.</p>
+<p>These are defined with <code>UpdateMode: &quot;Off&quot;</code> because I want them to calculate recommendations but not enforce them:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#39;
+</span><span style="color:#e6db74">apiVersion: autoscaling.k8s.io/v1
+</span><span style="color:#e6db74">kind: VerticalPodAutoscaler
+</span><span style="color:#e6db74">metadata:
+</span><span style="color:#e6db74">  name: akri-agent
+</span><span style="color:#e6db74">spec:
+</span><span style="color:#e6db74">  targetRef:
+</span><span style="color:#e6db74">    apiVersion: &#34;apps/v1&#34;
+</span><span style="color:#e6db74">    kind:       DaemonSet
+</span><span style="color:#e6db74">    name:       akri-agent-daemonset
+</span><span style="color:#e6db74">  updatePolicy:
+</span><span style="color:#e6db74">    updateMode: &#34;Off&#34; 
+</span><span style="color:#e6db74">&#39;</span> | kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span>akri-system
+ 
+echo <span style="color:#e6db74">&#39;
+</span><span style="color:#e6db74">apiVersion: autoscaling.k8s.io/v1
+</span><span style="color:#e6db74">kind: VerticalPodAutoscaler
+</span><span style="color:#e6db74">metadata:
+</span><span style="color:#e6db74">  name: akri-controller
+</span><span style="color:#e6db74">spec:
+</span><span style="color:#e6db74">  targetRef:
+</span><span style="color:#e6db74">    apiVersion: &#34;apps/v1&#34;
+</span><span style="color:#e6db74">    kind:       Deployment
+</span><span style="color:#e6db74">    name:       akri-controller-deployment
+</span><span style="color:#e6db74">  updatePolicy:
+</span><span style="color:#e6db74">    updateMode: &#34;Off&#34; 
+</span><span style="color:#e6db74">&#39;</span> | kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span>akri-system
+</code></pre></div><p>After a short time, you can query these to see what recommendations have been calculated:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get vpa <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>akri-system <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.items[*].status.recommendation}&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| jq -r .
+</code></pre></div><p>Yields:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
+  <span style="color:#f92672">&#34;containerRecommendations&#34;</span>: [
+    {
+      <span style="color:#f92672">&#34;containerName&#34;</span>: <span style="color:#e6db74">&#34;akri-agent&#34;</span>,
+      <span style="color:#f92672">&#34;lowerBound&#34;</span>: {
+        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
+        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
+      },
+      <span style="color:#f92672">&#34;target&#34;</span>: {
+        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
+        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
+      },
+      <span style="color:#f92672">&#34;uncappedTarget&#34;</span>: {
+        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
+        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
+      },
+      <span style="color:#f92672">&#34;upperBound&#34;</span>: {
+        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;521m&#34;</span>,
+        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;1118671679&#34;</span>
+      }
+    }
+  ]
+}
+{
+  <span style="color:#f92672">&#34;containerRecommendations&#34;</span>: [
+    {
+      <span style="color:#f92672">&#34;containerName&#34;</span>: <span style="color:#e6db74">&#34;akri-controller&#34;</span>,
+      <span style="color:#f92672">&#34;lowerBound&#34;</span>: {
+        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
+        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
+      },
+      <span style="color:#f92672">&#34;target&#34;</span>: {
+        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
+        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
+      },
+      <span style="color:#f92672">&#34;uncappedTarget&#34;</span>: {
+        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
+        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
+      },
+      <span style="color:#f92672">&#34;upperBound&#34;</span>: {
+        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;521m&#34;</span>,
+        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;545693548&#34;</span>
+      }
+    }
+  ]
+}
+</code></pre></div><p>Very useful!</p>
+<p>So, I got to thinking, can I monitor these in Prometheus?</p>
+<p>Why, yes, you can but&hellip;</p>
+<h2 id="digression-podmonitor">Digression: PodMonitor</h2>
+<p>Daniel&rsquo;s blog mentions that the <code>recommender</code> exposes (Prometheus) metrics.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get deployment/vpa-recommender <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>vpa-system <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.template.spec.containers[?(@.name==&#39;vpa&#39;)].ports}&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| jq .
+</code></pre></div><p>Yields:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">[
+  {
+    <span style="color:#f92672">&#34;containerPort&#34;</span>: <span style="color:#ae81ff">8942</span>,
+    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;metrics&#34;</span>,
+    <span style="color:#f92672">&#34;protocol&#34;</span>: <span style="color:#e6db74">&#34;TCP&#34;</span>
+  }
+]
+</code></pre></div><p>And, if you <code>port-forward</code> to this, you can indeed see Prometheus metrics:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl port-forward deployment/vpa-recommender <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>vpa-system <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>8942:8942
+</code></pre></div><p>And then:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl --silent localhost:8942/metrics <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| grep <span style="color:#e6db74">&#34;TYPE vpa_recommender[_a-z]*&#34;</span>
+<span style="color:#75715e"># TYPE vpa_recommender_aggregate_container_states_count gauge</span>
+<span style="color:#75715e"># TYPE vpa_recommender_execution_latency_seconds histogram</span>
+<span style="color:#75715e"># TYPE vpa_recommender_recommendation_latency_seconds histogram</span>
+<span style="color:#75715e"># TYPE vpa_recommender_vpa_objects_count gauge</span>
+</code></pre></div><p>But, after digressing on this for a while, I realized this isn&rsquo;t what I want. There&rsquo;s insufficient detail here.</p>
+<p>I did learn about the Prometheus Operator&rsquo;s [PodMonitor]s though. I discovered that you can create these to surface resources in Prometheus' service discovery which is very clever:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get podmonitor/vpa-recommender <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>vpa-system <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>yaml
+</code></pre></div><p>Yields:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">monitoring.coreos.com/v1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PodMonitor</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">vpa-recommender</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">podMetricsEndpoints</span>:
+  - <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/metrics</span>
+    <span style="color:#f92672">port</span>: <span style="color:#ae81ff">metrics</span>
+  <span style="color:#f92672">selector</span>:
+    <span style="color:#f92672">matchLabels</span>:
+      <span style="color:#f92672">app.kubernetes.io/component</span>: <span style="color:#ae81ff">recommender</span>
+      <span style="color:#f92672">app.kubernetes.io/instance</span>: <span style="color:#ae81ff">vpa</span>
+</code></pre></div><h3 id="prometheus">Prometheus</h3>
+<p>For what follows, we will need Prometheus. I highly recommend the Prometheus Operator and, if you&rsquo;re using MicroK8s, you can deploy this trivially using:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">microk8s enable prometheus
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> This includes Grafana and &ndash; as I learned after another digression &ndash; <code>kube-state-metrics</code>. If only I&rsquo;d looked more closely at the service discovery page (see below) and noticed the <code>monitoring/kube-state-metrics</code> entries!</p>
+</blockquote>
+<p><img src="/images/210305.prometheus.sd.png" alt="Prometheus: Service Discovery"></p>
+<h3 id="kube-state-metrics"><code>kube-state-metrics</code></h3>
+<p>It turns out that what I really need is <a href="https://github.com/kubernetes/kube-state-metrics"><code>kube-state-metrics</code></a></p>
+<blockquote>
+<p><strong>LESSON</strong> <code>metrics-server</code> and <code>kube-state-metrics</code> are different</p>
+<ol>
+<li><code>metrics-server</code> (<a href="https://github.com/kubernetes-sigs/metrics-server">https://github.com/kubernetes-sigs/metrics-server</a>)</li>
+<li><code>kube-state-metrics</code> (<a href="https://github.com/kubernetes/kube-state-metrics">https://github.com/kubernetes/kube-state-metrics</a>)</li>
+</ol>
+<p>Explained here: <a href="https://github.com/kubernetes/kube-state-metrics#kube-state-metrics-vs-metrics-server"><code>kube-state-metrics</code> vs. <code>metrics-server</code></a></p>
+</blockquote>
+<p>I cloned the <code>kube-state-metrics</code> repo and deployed the <code>./examples/standard</code> but was unable to get Prometheus to enumerate metrics for VPA that should be prefixed <code>kube_verticalpodautoscaler</code>. Eventually, I realized that I was using a duplicate <code>kube-state-metrics</code> in <code>kube-system</code> and I could simply use the <code>kube-state-metrics</code> in <code>monitoring</code> that came with the Prometheus Operator!</p>
+<blockquote>
+<p><strong>LESSON</strong> <code>kube-state-metrics</code> is bundled with the Prometheus Operator but it needs to reconfigured.</p>
+</blockquote>
+<p><code>kube-state-metrics</code> includes metrics for Vertical Pod Autoscaler (<a href="https://github.com/kubernetes/kube-state-metrics#enabling-verticalpodautoscalers">note</a>). The documentation states that these are disabled by default <strong>and</strong> require a specific version (<code>v1beta2</code>) of the VPA CRDs.</p>
+<p>Fortunately, I was good on the CRD versions:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get crd/verticalpodautoscalers.autoscaling.k8s.io <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.versions[*].name}&#34;</span>
+v1beta1 v1beta2 v1
+</code></pre></div><p>But:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs deployment/kube-state-metrics <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>kube-state-metrics
+
+...
+Active resources:
+  certificatesigningrequests,configmaps,cronjobs,
+  daemonsets,deployments,endpoints,horizontalpodautoscalers,
+  ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,
+  namespaces,networkpolicies,nodes,persistentvolumeclaims,
+  persistentvolumes,poddisruptionbudgets,pods,replicasets,
+  replicationcontrollers,resourcequotas,secrets,services,
+  statefulsets,storageclasses,validatingwebhookconfigurations,
+  volumeattachments
+...
+</code></pre></div><p>The list of <code>Active resources</code> does not include <code>verticalpodautoscalers</code> probably because these are disabled by default (per the docs).</p>
+<p>Double-checking on Prometheus' UI (<code>:9090</code>) expression browser, I was able to enumerate some <code>kube_</code> metrics from <code>kube-state-metrics</code> but none <code>kube_verticalpodautoscaler_</code>.</p>
+<p>The issue is that the <code>kube-state-metrics</code> Deployment as deployed by the Operator is not configured to use <code>verticalpodautoscalers</code>; it does not include <code>verticalpodautoscalers</code> in its <code>resources</code> flag as defined by the <a href="https://github.com/kubernetes/kube-state-metrics/blob/master/docs/cli-arguments.md">CLI</a>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get deployment/kube-state-metrics <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.template.spec.containers[?(@.name==&#39;kube-state-metrics&#39;)]}&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| jq .
+</code></pre></div><p>Yields:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
+  <span style="color:#f92672">&#34;args&#34;</span>: [
+    <span style="color:#e6db74">&#34;--host=127.0.0.1&#34;</span>,
+    <span style="color:#e6db74">&#34;--port=8081&#34;</span>,
+    <span style="color:#e6db74">&#34;--telemetry-host=127.0.0.1&#34;</span>,
+    <span style="color:#e6db74">&#34;--telemetry-port=8082&#34;</span>,
+  ],
+  <span style="color:#f92672">&#34;image&#34;</span>: <span style="color:#e6db74">&#34;.../kube-state-metrics:v1.9.7&#34;</span>,
+  <span style="color:#f92672">&#34;imagePullPolicy&#34;</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>,
+  <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;kube-state-metrics&#34;</span>,
+  <span style="color:#f92672">&#34;resources&#34;</span>: {},
+  <span style="color:#f92672">&#34;terminationMessagePath&#34;</span>: <span style="color:#e6db74">&#34;/dev/termination-log&#34;</span>,
+  <span style="color:#f92672">&#34;terminationMessagePolicy&#34;</span>: <span style="color:#e6db74">&#34;File&#34;</span>
+}
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> The Operator doesn&rsquo;t specify Pod <code>&quot;resources&quot;: {}</code> either :-)</p>
+</blockquote>
+<p>I don&rsquo;t understand why but the Operator deploys sidecars with this container too which complicates the next step:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get deployment/kube-state-metrics <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.template.spec.containers[*].name}&#34;</span>
+kube-state-metrics kube-rbac-proxy-main kube-rbac-proxy-self
+</code></pre></div><h2 id="kubectl-patch"><code>kubectl patch</code></h2>
+<p>Ideally, we want to jam a <code>--resource=...</code> flag into that <code>args</code> list and re-apply the Deployment.</p>
+<p>The easiest way to do this if you can get it to work is to use <code>kubectl patch</code> and, though the documentation is <a href="https://kubernetes.io/docs/tasks/manage-kubernetes-objects/update-api-object-kubectl-patch/">confusing</a>, I&rsquo;ve previously used [JSON Patch] and find this the most powerful.</p>
+<p>Starting with the JSONPath above (plus the bit for Args):</p>
+<p><code>.spec.template.spec.containers[?(@.name=='kube-state-metrics')].args</code></p>
+<p>We can convert this to JSON Patch:</p>
+<p><code>.spec.template.spec.containers/0/args/-</code></p>
+<blockquote>
+<p><strong>NOTE</strong></p>
+<ol>
+<li>JSON Patch doesn&rsquo;t permit JSONPath&rsquo;s array filtering so we must select the 0th <code>containers/0</code></li>
+<li>JSON Patch provides <code>-</code> to add something to the end (<code>-</code>) of the <code>args</code> array</li>
+</ol>
+</blockquote>
+<p>We need only provide the value that we wish to add. This will be all the resources that were available by default <strong>plus</strong> <code>verticalpodautoscalers</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">RESOURCES<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;certificatesigningrequests,configmaps,cronjobs,&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;daemonsets,deployments,endpoints,horizontalpodautoscalers,&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;namespaces,networkpolicies,nodes,persistentvolumeclaims,&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;persistentvolumes,poddisruptionbudgets,pods,replicasets,&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;replicationcontrollers,resourcequotas,secrets,services,&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;statefulsets,storageclasses,validatingwebhookconfigurations,&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;verticalpodautoscalers,volumeattachments&#34;</span>
+
+PATCH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[{&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;&#39;op&#39;: &#39;add&#39;,&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;&#39;path&#39;:&#39;/spec/template/spec/containers/0/args/-&#39;,&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;&#39;value&#39;:\&#34;--resources=</span><span style="color:#e6db74">${</span>RESOURCES<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;}]&#34;</span>
+
+
+kubectl patch deployment/kube-state-metrics <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--patch<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>PATCH<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> I was unable to get <code>--dry-run=...</code> to work :-(</p>
+</blockquote>
+<p>And then:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get deployment/kube-state-metrics <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.template.spec.containers[0]}&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| jq .
+</code></pre></div><p>This time yields:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
+  <span style="color:#f92672">&#34;args&#34;</span>: [
+    <span style="color:#e6db74">&#34;--host=127.0.0.1&#34;</span>,
+    <span style="color:#e6db74">&#34;--port=8081&#34;</span>,
+    <span style="color:#e6db74">&#34;--telemetry-host=127.0.0.1&#34;</span>,
+    <span style="color:#e6db74">&#34;--telemetry-port=8082&#34;</span>,
+    <span style="color:#e6db74">&#34;--resources=...,verticalpodautoscalers,...&#34;</span>
+  ],
+  <span style="color:#f92672">&#34;image&#34;</span>: <span style="color:#e6db74">&#34;.../kube-state-metrics:v1.9.7&#34;</span>,
+  <span style="color:#f92672">&#34;imagePullPolicy&#34;</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>,
+  <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;kube-state-metrics&#34;</span>,
+  <span style="color:#f92672">&#34;resources&#34;</span>: {},
+  <span style="color:#f92672">&#34;terminationMessagePath&#34;</span>: <span style="color:#e6db74">&#34;/dev/termination-log&#34;</span>,
+  <span style="color:#f92672">&#34;terminationMessagePolicy&#34;</span>: <span style="color:#e6db74">&#34;File&#34;</span>
+}
+</code></pre></div><p>And&hellip;</p>
+<h2 id="graph">Graph</h2>
+<p><img src="/images/210305.prometheus.graph.png" alt="Prometheus: Graph"></p>
+<p>Which is excellent if not terribly interesting; I should probably now put some load on the system to give it an opportunity to find some realistic values.</p>
+<p>That&rsquo;s all!</p>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="https://medium.com/infrastructure-adventures/vertical-pod-autoscaler-deep-dive-limitations-and-real-world-examples-9195f8422724">Vertical Pod Autoscaler deep dive, limitations and real-world examples</a></li>
+<li><a href="https://github.com/kubernetes/autoscaler/blob/master/vertical-pod-autoscaler">Vertical Pod Autoscaler</a></li>
+<li><a href="http://jsonpatch.com/">JSON Patch</a></li>
+<li><a href="https://kubernetes.io/docs/reference/kubectl/jsonpath/">JSONPath</a></li>
+<li><a href="https://github.com/kubernetes-sigs/metrics-server"><code>metrics-server</code></a></li>
+</ul>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/kubernetes" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">kubernetes</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/microk8s" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">microk8s</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/virtualpodautoscaler" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">virtualpodautoscaler</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/prometheus" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">prometheus</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/kube-state-metrics" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">kube-state-metrics</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/kube-metrics" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">kube-metrics</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/201217/">Kubernetes Device Plugins</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201113/">Akri</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201022/">akri</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210222/">Dapr</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210122/">Krustlet on DO Managed Kubernetes</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210108/">Kubernetes cert-manager</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201229/">Kubernetes Webhooks</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201008/">Deploying a Rust HTTP server to DigitalOcean App Platform</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191211/">NGINX Ingress</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+  </main>
+  <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2021 
+  </a>
+    <div>
+
+
+<a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+  <svg height="32px" 
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="32px"
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+</div>
+  </div>
+</footer>
+
+</body>
+
+</html>
