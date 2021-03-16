@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  
+  <title>Programmatically deploying Cloud Run services (Golang|Python) | (p)retired</title>
+  <meta name="viewport" content="width=device-width,minimum-scale=1">
+  <meta name="description"
+    content="Programmatically deploying Cloud Run services (Golang|Python)">
+  <meta name="generator" content="Hugo 0.80.0" />
+  
+  
+  <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+  
+
+  
+
+  
+  
+    <link rel="stylesheet" href="/ananke/dist/main.css_5c99d70a7725bacd4c701e995b969fea.css" >
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  <link href="https://us-central1-webmention.cloudfunctions.net/webmention" rel="webmention" />
+
+  <meta property="og:title" content="Programmatically deploying Cloud Run services (Golang|Python)" />
+<meta property="og:description" content="Programmatically deploying Cloud Run services (Golang|Python)" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/210316/" />
+<meta property="article:published_time" content="2021-03-16T00:00:00-07:00" />
+<meta property="article:modified_time" content="2021-03-16T00:00:00-07:00" />
+<meta itemprop="name" content="Programmatically deploying Cloud Run services (Golang|Python)">
+<meta itemprop="description" content="Programmatically deploying Cloud Run services (Golang|Python)">
+<meta itemprop="datePublished" content="2021-03-16T00:00:00-07:00" />
+<meta itemprop="dateModified" content="2021-03-16T00:00:00-07:00" />
+<meta itemprop="wordCount" content="1420">
+
+
+
+<meta itemprop="keywords" content="google,run,cloud-run,golang,python," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Programmatically deploying Cloud Run services (Golang|Python)"/>
+<meta name="twitter:description" content="Programmatically deploying Cloud Run services (Golang|Python)"/>
+
+  
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+  
+  
+</head>
+
+<body class="ma0 avenir bg-near-white production">
+
+  
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+<a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+  <svg height="32px" 
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="32px"
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+  <main class="pb7" role="main">
+    
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+  <div id="sharing" class="mt3">
+
+    
+    <a href="https://www.facebook.com/sharer.php?u=https://pretired.dazwilkin.com/posts/210316/" class="facebook no-underline" aria-label="share on Facebook">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M28.765,50.32h6.744V33.998h4.499l0.596-5.624h-5.095  l0.007-2.816c0-1.466,0.14-2.253,2.244-2.253h2.812V17.68h-4.5c-5.405,0-7.307,2.729-7.307,7.317v3.377h-3.369v5.625h3.369V50.32z   M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;"/></svg>
+
+    </a>
+
+    
+    
+    <a href="https://twitter.com/share?url=https://pretired.dazwilkin.com/posts/210316/&amp;text=Programmatically%20deploying%20Cloud%20Run%20services%20%28Golang%7cPython%29" class="twitter no-underline" aria-label="share on Twitter">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M37.167,22.283c-2.619,0.953-4.274,3.411-4.086,6.101  l0.063,1.038l-1.048-0.127c-3.813-0.487-7.145-2.139-9.974-4.915l-1.383-1.377l-0.356,1.017c-0.754,2.267-0.272,4.661,1.299,6.271  c0.838,0.89,0.649,1.017-0.796,0.487c-0.503-0.169-0.943-0.296-0.985-0.233c-0.146,0.149,0.356,2.076,0.754,2.839  c0.545,1.06,1.655,2.097,2.871,2.712l1.027,0.487l-1.215,0.021c-1.173,0-1.215,0.021-1.089,0.467  c0.419,1.377,2.074,2.839,3.918,3.475l1.299,0.444l-1.131,0.678c-1.676,0.976-3.646,1.526-5.616,1.568  C19.775,43.256,19,43.341,19,43.405c0,0.211,2.557,1.397,4.044,1.864c4.463,1.377,9.765,0.783,13.746-1.568  c2.829-1.673,5.657-5,6.978-8.221c0.713-1.716,1.425-4.851,1.425-6.354c0-0.975,0.063-1.102,1.236-2.267  c0.692-0.678,1.341-1.419,1.467-1.631c0.21-0.403,0.188-0.403-0.88-0.043c-1.781,0.636-2.033,0.551-1.152-0.402  c0.649-0.678,1.425-1.907,1.425-2.267c0-0.063-0.314,0.042-0.671,0.233c-0.377,0.212-1.215,0.53-1.844,0.72l-1.131,0.361l-1.027-0.7  c-0.566-0.381-1.361-0.805-1.781-0.932C39.766,21.902,38.131,21.944,37.167,22.283z M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4  s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/></svg>
+
+    </a>
+
+    
+    <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/210316/&amp;title=Programmatically%20deploying%20Cloud%20Run%20services%20%28Golang%7cPython%29" class="linkedin no-underline" aria-label="share on LinkedIn">
+      <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+    </a>
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Programmatically deploying Cloud Run services (Golang|Python)</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2021-03-16T00:00:00-07:00">March 16, 2021</time>
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 7 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 1420 words</span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>Phew! Programmitcally deploying Cloud Run services should be easy but it didn&rsquo;t find it so.</p>
+<p>My issues were that the Cloud Run Admin (!) API is poorly documented and it uses non-standard endpoints (thanks Sal!). Here, for others who may struggle with this, is how I got this to work.</p>
+<h2 id="goal">Goal</h2>
+<p>Programmatically (have Golang, Python, want Rust) deploy services to Cloud Run.</p>
+<p>i.e. achieve this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud run deploy <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--image<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>IMAGE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--no-allow-unauthenticated <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</code></pre></div><blockquote>
+<p><strong>TRICK</strong> <a href="https://cloud.google.com/sdk/gcloud/reference#--log-http"><code>--log-http</code></a> is your friend</p>
+</blockquote>
+<p>I&rsquo;ll document this here as it&rsquo;s generally applicable but, as I struggled to emulate the <code>gcloud run deploy</code> command in code, I used <code>--log-http</code> to see how Cloud SDK achieves this. Running the above command with <code>--log-http</code> yields:</p>
+<pre><code class="language-console" data-lang="console">uri: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT}/services/${NAME}
+method: GET
+...
+uri: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT}/services
+method: POST
+== body start ==
+{
+    &quot;apiVersion&quot;: &quot;serving.knative.dev/v1&quot;,
+    &quot;kind&quot;: &quot;Service&quot;,
+    &quot;metadata&quot;: {
+        &quot;annotations&quot;: {...},
+        &quot;labels&quot;: {},
+        &quot;name&quot;: &quot;${NAME}&quot;,
+        &quot;namespace&quot;: &quot;${PROJECT}&quot;
+    },
+    &quot;spec&quot;: {...}
+    ...
+</code></pre><p>I draw your attention to:</p>
+<ol>
+<li>The endpoint is <code>https://${REGION}-run.googleapis.com</code>. This is documented <a href="https://cloud.google.com/run/docs/reference/rest/#service-endpoint">Service Endpoint</a>. It&rsquo;s possible to GET (lists) on <code>https://run.googleapis.com</code> but to create, edit, delete etc. you must use <code>https://${REGION}-run.googleapis.com</code>.</li>
+<li>The path includes <code>namespaces/${PROJECT}</code>. The <a href="https://cloud.google.com/run/docs/reference/rest/v1/namespaces.services/create">documentation</a> explains that this value may be either the Project ID or the Project number. Because the service is a Kubernetes API, Namespaces are employed.</li>
+<li>The <code>POST</code>&rsquo;s body is a Kubernetes (Knative) Service manifest. It is documented by Google <a href="https://cloud.google.com/run/docs/reference/rest/v1/namespaces.services#Service">here</a> but I found some inconsistencies in this documentation.</li>
+</ol>
+<blockquote>
+<p><strong>TRICK</strong> Once deployed, you can view a service either in the Console or using e.g. gcloud to verify the YAML manifest</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud run services describe <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span>yaml
+</code></pre></div><h2 id="code">Code</h2>
+<p>There are 2 insights necessary to get the code to work:</p>
+<ol>
+<li>The endpoint must be adjusted to reflect <code>https://${REGION}-run.googleapis.com</code></li>
+<li>The manifest must be error-free</li>
+</ol>
+<p>After some searching, I was unable to find either Cloud Client Libraries for the Cloud Run Admin service or Protobufs. Google provides [API Client Libraries] in multiple languages for every service. API Client Libraries are the historical REST-based mechanism, are machine-generated and are a good fallback. Google Cloud (!) offers an alternative called Cloud Client Libraries. These are (often) hand-crafted and sometimes use gRPC (rather than REST). For some of its services, Google provides the services' Protobufs and this provides a mechanism by which developers can use <code>protoc</code> to generate client libraries in their language of choice.</p>
+<p>Google&rsquo;s <a href="https://cloud.google.com/apis/docs/client-libraries-explained">Client Libraries Explained</a></p>
+<p>An (as-)definitive(-as-it-gets) list of Google&rsquo;s <a href="https://cloud.google.com/apis/docs/cloud-client-libraries">Cloud Client Libraries</a>. Here&rsquo;s the Golang <a href="https://pkg.go.dev/cloud.google.com/go#readme-supported-apis">Supported APIs</a> for Cloud Client Libraries and the Python <a href="https://github.com/googleapis/google-cloud-python#libraries">Libraries</a>. It&rsquo;s possible (!) that there&rsquo;s a Cloud Client available for one language but not another. In this case, it appears there are no Cloud Client Libraries for Cloud Run (Admin) API.</p>
+<p>So, then I had a look for gRPC (Protobuf) definitions. Confusingly, this repo is called <a href="https://github.com/googleapis/googleapis"><code>googleapis/googleapis</code></a> and you must navigate directories to find <a href="https://github.com/googleapis/googleapis/tree/master/google">libraries</a> and then those for <a href="https://github.com/googleapis/googleapis/tree/master/google/cloud">cloud</a>. No Cloud Run.</p>
+<p>So, back to the ever-reliable <a href="https://developers.google.com/api-client-library/">API Client Libraries</a>. This page&rsquo;s links tend to go directly to the GitHub repo but, for Golang, here&rsquo;s the documentation <a href="https://pkg.go.dev/google.golang.org/api#section-directories">list</a> and for Python <a href="https://github.com/googleapis/google-api-python-client/blob/master/docs/dyn/index.md">list</a>.</p>
+<blockquote>
+<p><strong>NOTE</strong> For Golang, the API Client Libraries are <code>google.golang.org</code> and the Cloud Client Libraries are <code>cloud.google.com</code></p>
+</blockquote>
+<blockquote>
+<p><strong>INSIGHT</strong> Cloud Run Admin API|service <strong>only</strong> has API Client Libraries.</p>
+</blockquote>
+<p>The API Client Libraries <strong>all</strong> provide a mechanism (called <code>ClientOptions</code>) to override the default service endpoint. I was unfamiliar with this until a friend (thanks Sal!) told me about it:</p>
+<ul>
+<li>Golang&rsquo;s <a href="https://pkg.go.dev/google.golang.org/api/option">option</a></li>
+<li>Python&rsquo;s <a href="https://googleapis.dev/python/google-api-core/latest/client_options.html">ClientOptions</a></li>
+</ul>
+<h3 id="environment">Environment</h3>
+<p>For the client code to work, we need a GCP Project, Billing Account, Service Account(s) etc.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[[YOUR-PROJECT]]&#34;</span>
+BILLING<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[[YOUR-BILLING]]&#34;</span>
+DEPLOYR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;deployr&#34;</span>
+INVOKER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;invoker&#34;</span>
+
+gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+gcloud beta billing projects link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
+
+gcloud services enable run.googleapis.com <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># For Deploying Services</span>
+gcloud iam service-accounts create <span style="color:#e6db74">${</span>DEPLOYR<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+
+EMAIL<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>DEPLOYR<span style="color:#e6db74">}</span>@<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>.iam.gserviceaccount.com
+
+gcloud iam service-accounts keys create <span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>DEPLOYR<span style="color:#e6db74">}</span>.json <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--iam-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+gcloud projects add-iam-policy-binding <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--member<span style="color:#f92672">=</span>serviceAccount:<span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--role<span style="color:#f92672">=</span>roles/run.admin
+
+<span style="color:#75715e"># For Services to invoke other services</span>
+gcloud iam service-accounts create <span style="color:#e6db74">${</span>INVOKER<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Deployer must be able to act-as the Invoker</span>
+gcloud iam service-accounts add-iam-policy-binding <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>INVOKER<span style="color:#e6db74">}</span>@<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>.iam.gserviceaccount.com <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--member<span style="color:#f92672">=</span>serviceAccount:<span style="color:#e6db74">${</span>DEPLOYR<span style="color:#e6db74">}</span>@<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>.iam.gserviceaccount.com <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--role<span style="color:#f92672">=</span>roles/iam.serviceAccountUser <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Export variables</span>
+export PROJECT
+export REGION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[[YOUR-REGION]]&#34;</span>
+export IMAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[[YOUR-IMAGE]]&#34;</span>
+export ACCOUNT<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>INVOKER<span style="color:#e6db74">}</span>
+
+export GOOGLE_APPLICATION_CREDENTIALS<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>DEPLOYR<span style="color:#e6db74">}</span>.json
+</code></pre></div><h3 id="golang">Golang</h3>
+<p>I&rsquo;ll annotate the code below where there&rsquo;s novelty.</p>
+<p>It can be challenging to determine which Google client library to use. Google doesn&rsquo;t always effectively cull dead repos from GitHub.</p>
+<p>With Golang, the machine-generated documentation is always <em>excellent</em>:</p>
+<p><a href="https://pkg.go.dev/google.golang.org/api/run/v1">https://pkg.go.dev/google.golang.org/api/run/v1</a></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+
+<span style="color:#f92672">import</span> (
+  <span style="color:#e6db74">&#34;context&#34;</span>
+  <span style="color:#e6db74">&#34;fmt&#34;</span>
+  <span style="color:#e6db74">&#34;log&#34;</span>
+  <span style="color:#e6db74">&#34;os&#34;</span>
+
+  <span style="color:#e6db74">&#34;google.golang.org/api/googleapi&#34;</span>
+  <span style="color:#e6db74">&#34;google.golang.org/api/option&#34;</span>
+  <span style="color:#a6e22e">run</span> <span style="color:#e6db74">&#34;google.golang.org/api/run/v1&#34;</span>
+)
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+  <span style="color:#a6e22e">project</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PROJECT&#34;</span>)
+  <span style="color:#a6e22e">region</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;REGION&#34;</span>)
+  <span style="color:#a6e22e">image</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;IMAGE&#34;</span>)
+  <span style="color:#a6e22e">account</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;ACCOUNT&#34;</span>)
+</code></pre></div><p>Per above, we must use API Client Libraries, hence <code>google.golang.org</code>. We&rsquo;re also using Golang&rsquo;s Client Options and so <code>google.golang.org/api/option</code>.</p>
+<p>For simplicity, we&rsquo;re assuming a bunch of variables from the environment including the Region.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang">  <span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+
+  <span style="color:#a6e22e">url</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;https://%s-run.googleapis.com/&#34;</span>, <span style="color:#a6e22e">region</span>)
+  <span style="color:#a6e22e">opts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">option</span>.<span style="color:#a6e22e">ClientOption</span>{
+    <span style="color:#a6e22e">option</span>.<span style="color:#a6e22e">WithEndpoint</span>(<span style="color:#a6e22e">url</span>),
+  }
+
+  <span style="color:#a6e22e">runService</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">run</span>.<span style="color:#a6e22e">NewService</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">opts</span><span style="color:#f92672">...</span>)
+  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+  }
+</code></pre></div><p>The Region is important because, the Cloud Run Admin service&rsquo;s endpoint is dependent on the Region when we wish to deploy new services. The code above uses <code>ClientOption</code> to override the service&rsquo;s default (<code>https://run.googleapis.com</code>) endpoint with one prefixed with the Region. This is applied to the configuration using <code>WithEndpoint</code>.</p>
+<blockquote>
+<p><strong>NOTE</strong> The endpoint is also <code>${REGION}-run</code> (hyphenated).</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang">  <span style="color:#a6e22e">name</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;golang&#34;</span>
+  <span style="color:#a6e22e">containerName</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(
+    <span style="color:#e6db74">&#34;%s-%s-%s&#34;</span>,
+    <span style="color:#a6e22e">name</span>,
+    <span style="color:#e6db74">&#34;00001&#34;</span>,
+    <span style="color:#e6db74">&#34;abc&#34;</span>,
+  )
+  <span style="color:#a6e22e">serviceAccount</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(
+    <span style="color:#e6db74">&#34;%s@%s.iam.gserviceaccount.com&#34;</span>,
+    <span style="color:#a6e22e">account</span>,
+    <span style="color:#a6e22e">project</span>,
+  )
+
+
+  <span style="color:#a6e22e">service</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">run</span>.<span style="color:#a6e22e">Service</span>{
+    <span style="color:#a6e22e">ApiVersion</span>: <span style="color:#e6db74">&#34;serving.knative.dev/v1&#34;</span>,
+    <span style="color:#a6e22e">Kind</span>:       <span style="color:#e6db74">&#34;Service&#34;</span>,
+    <span style="color:#a6e22e">Metadata</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">run</span>.<span style="color:#a6e22e">ObjectMeta</span>{
+      <span style="color:#a6e22e">Name</span>:      <span style="color:#a6e22e">name</span>,
+      <span style="color:#a6e22e">Namespace</span>: <span style="color:#a6e22e">project</span>,
+      <span style="color:#a6e22e">Labels</span>: <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{
+        <span style="color:#e6db74">&#34;test&#34;</span>:                          <span style="color:#e6db74">&#34;test&#34;</span>,
+        <span style="color:#e6db74">&#34;cloud.googleapis.com/location&#34;</span>: <span style="color:#a6e22e">region</span>,
+      },
+      <span style="color:#a6e22e">Annotations</span>: <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{
+        <span style="color:#e6db74">&#34;client.knative.dev/user-image&#34;</span>:   <span style="color:#a6e22e">image</span>,
+        <span style="color:#e6db74">&#34;run.googleapis.com/launch-stage&#34;</span>: <span style="color:#e6db74">&#34;BETA&#34;</span>,
+        <span style="color:#e6db74">&#34;run.googleapis.com/sandbox&#34;</span>:      <span style="color:#e6db74">&#34;gvisor&#34;</span>,
+      },
+    },
+    <span style="color:#a6e22e">Spec</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">run</span>.<span style="color:#a6e22e">ServiceSpec</span>{
+      <span style="color:#a6e22e">Template</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">run</span>.<span style="color:#a6e22e">RevisionTemplate</span>{
+        <span style="color:#a6e22e">Metadata</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">run</span>.<span style="color:#a6e22e">ObjectMeta</span>{
+          <span style="color:#a6e22e">Name</span>: <span style="color:#a6e22e">containerName</span>,
+          <span style="color:#a6e22e">Annotations</span>: <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{
+            <span style="color:#e6db74">&#34;autoscaling.knative.dev/maxScale&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
+            <span style="color:#e6db74">&#34;client.knative.dev/user-image&#34;</span>:    <span style="color:#a6e22e">image</span>,
+            <span style="color:#e6db74">&#34;run.googleapis.com/launch-stage&#34;</span>:  <span style="color:#e6db74">&#34;BETA&#34;</span>,
+            <span style="color:#e6db74">&#34;run.googleapis.com/sandbox&#34;</span>:       <span style="color:#e6db74">&#34;gvisor&#34;</span>,
+          },
+        },
+        <span style="color:#a6e22e">Spec</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">run</span>.<span style="color:#a6e22e">RevisionSpec</span>{
+          <span style="color:#a6e22e">Containers</span>: []<span style="color:#f92672">*</span><span style="color:#a6e22e">run</span>.<span style="color:#a6e22e">Container</span>{
+            {
+              <span style="color:#a6e22e">Image</span>: <span style="color:#a6e22e">image</span>,
+              <span style="color:#a6e22e">Ports</span>: []<span style="color:#f92672">*</span><span style="color:#a6e22e">run</span>.<span style="color:#a6e22e">ContainerPort</span>{
+                {
+                  <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;http1&#34;</span>,
+                  <span style="color:#a6e22e">ContainerPort</span>: <span style="color:#ae81ff">8080</span>,
+                },
+              },
+            },
+          },
+          <span style="color:#a6e22e">ServiceAccountName</span>: <span style="color:#a6e22e">serviceAccount</span>,
+        },
+      },
+    },
+  }
+</code></pre></div><p>The creation of a <code>run.Service</code> is the heart of the code and, as you&rsquo;d suspect, is where we define the Cloud Run service. This type is to be found under the Cloud Run service&rsquo;s <code>namespaces.services.create</code> <a href="https://cloud.google.com/run/docs/reference/rest/v1/namespaces.services/create">method</a> and is called <a href="https://cloud.google.com/run/docs/reference/rest/v1/namespaces.services#Service">Service</a>.</p>
+<p>In theory, you should be able to treat Google&rsquo;s documentation as definitive but I struggled with some discrepancies:</p>
+<ul>
+<li><code>Metadata.Labels</code>: I was unable to use dot-notation for the keys</li>
+<li><code>Metadata.Annotations</code>: I&rsquo;m unsure where these annotations are documented</li>
+<li><code>Spec.Template.Metadata.Name</code>: Can&rsquo;t just be <code>name</code> and must be <code>{something}-[0-9]{5}-[a-z]{3}</code></li>
+<li><code>Spec.Template.Spec.Containers[].Ports.Name</code>: This is documented but it can&rsquo;t be <code>http</code>, use <code>http1</code></li>
+<li><code>Spec.Template.Spec.Containers[].Ports.Protocol</code>: I was unable to use <code>TCP</code>; either remove it or use <code>&quot;&quot;</code></li>
+<li><code>Spec.Template.Spec.Containers[].Resources</code>: This is permitted but I&rsquo;ve omitted it</li>
+<li><code>Spec.Template.Traffic</code>: I was unsuccessful using this and so omitted it</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang">  <span style="color:#a6e22e">parent</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;namespaces/%s&#34;</span>, <span style="color:#a6e22e">project</span>)
+  <span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runService</span>.<span style="color:#a6e22e">Namespaces</span>.<span style="color:#a6e22e">Services</span>.<span style="color:#a6e22e">Create</span>(<span style="color:#a6e22e">parent</span>, <span style="color:#a6e22e">service</span>)
+  <span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Do</span>()
+
+  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">e</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">err</span>.(<span style="color:#f92672">*</span><span style="color:#a6e22e">googleapi</span>.<span style="color:#a6e22e">Error</span>); <span style="color:#a6e22e">ok</span> {
+      <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;Failed to deploy: %s [%d]\n%s&#34;</span>,
+        <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">Message</span>,
+        <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">Code</span>,
+        <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">Body</span>,
+      )
+    }
+    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+  }
+
+  <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Print</span>(<span style="color:#a6e22e">resp</span>)
+}
+</code></pre></div><p>Once the manifest is correct(!), you can make the request and, if there are no errors, return the response.</p>
+<blockquote>
+<p><strong>NOTE</strong> The <code>parent</code> value is different for Cloud Run and uses <code>namespace/${PROJECT}</code>.</p>
+</blockquote>
+<p>Then you should be able to: <code>go run .</code></p>
+<p>And then:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud run services describe <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</code></pre></div><h3 id="python">Python</h3>
+<p>Here&rsquo;s a somewhat idiosyncratic version of the Golang code in Python:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python"><span style="color:#f92672">import</span> google.auth
+<span style="color:#f92672">import</span> os
+
+<span style="color:#f92672">from</span> google.api_core.client_options <span style="color:#f92672">import</span> ClientOptions
+<span style="color:#f92672">from</span> googleapiclient <span style="color:#f92672">import</span> discovery
+
+REGION <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>getenv(<span style="color:#e6db74">&#34;REGION&#34;</span>)
+IMAGE <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>getenv(<span style="color:#e6db74">&#34;IMAGE&#34;</span>)
+ACCOUNT <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>getenv(<span style="color:#e6db74">&#34;ACCOUNT&#34;</span>)
+
+url <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;https://{region}-run.googleapis.com/&#34;</span><span style="color:#f92672">.</span>format(region<span style="color:#f92672">=</span>REGION)
+options <span style="color:#f92672">=</span> ClientOptions(api_endpoint<span style="color:#f92672">=</span>url)
+
+credentials, project <span style="color:#f92672">=</span> google<span style="color:#f92672">.</span>auth<span style="color:#f92672">.</span>default()
+
+service <span style="color:#f92672">=</span> discovery<span style="color:#f92672">.</span>build(<span style="color:#e6db74">&#34;run&#34;</span>, <span style="color:#e6db74">&#34;v1&#34;</span>,
+  client_options<span style="color:#f92672">=</span>options, credentials<span style="color:#f92672">=</span>credentials)
+
+name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;python&#34;</span>
+container_name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;{name}-{counter}-{postfix}&#34;</span><span style="color:#f92672">.</span>format(
+  name<span style="color:#f92672">=</span>name, counter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;00001&#34;</span>, postfix<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;abc&#34;</span>)
+service_account <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;{account}@{project}.iam.gserviceaccount.com&#34;</span><span style="color:#f92672">.</span>format(
+  account<span style="color:#f92672">=</span>ACCOUNT, project<span style="color:#f92672">=</span>project)
+
+body <span style="color:#f92672">=</span> {
+  <span style="color:#e6db74">&#34;apiVersion&#34;</span>: <span style="color:#e6db74">&#34;serving.knative.dev/v1&#34;</span>,
+  <span style="color:#e6db74">&#34;kind&#34;</span>: <span style="color:#e6db74">&#34;Service&#34;</span>,
+  <span style="color:#e6db74">&#34;metadata&#34;</span>: {
+    <span style="color:#e6db74">&#34;name&#34;</span>: name,
+    <span style="color:#e6db74">&#34;namespace&#34;</span>: project,
+    <span style="color:#e6db74">&#34;labels&#34;</span>: {
+      <span style="color:#e6db74">&#34;test&#34;</span>: <span style="color:#e6db74">&#34;test&#34;</span>,
+      <span style="color:#e6db74">&#34;cloud.googleapis.com/location&#34;</span>: REGION,
+    },
+    <span style="color:#e6db74">&#34;annotations&#34;</span>: {
+      <span style="color:#e6db74">&#34;client.knative.dev/user-image&#34;</span>: IMAGE,
+      <span style="color:#e6db74">&#34;run.googleapis.com/launch-stage&#34;</span>: <span style="color:#e6db74">&#34;BETA&#34;</span>,
+      <span style="color:#e6db74">&#34;run.googleapis.com/sandbox&#34;</span>: <span style="color:#e6db74">&#34;gvisor&#34;</span>,
+    },
+  },
+  <span style="color:#e6db74">&#34;spec&#34;</span>: {
+    <span style="color:#e6db74">&#34;template&#34;</span>: {
+      <span style="color:#e6db74">&#34;metadata&#34;</span>: {
+        <span style="color:#e6db74">&#34;name&#34;</span>: container_name,
+        <span style="color:#e6db74">&#34;annotations&#34;</span>: {
+          <span style="color:#e6db74">&#34;client.knative.dev/user-image&#34;</span>: IMAGE,
+          <span style="color:#e6db74">&#34;run.googleapis.com/launch-stage&#34;</span>: <span style="color:#e6db74">&#34;BETA&#34;</span>,
+          <span style="color:#e6db74">&#34;run.googleapis.com/sandbox&#34;</span>: <span style="color:#e6db74">&#34;gvisor&#34;</span>,
+        },
+      },
+      <span style="color:#e6db74">&#34;spec&#34;</span>: {
+        <span style="color:#e6db74">&#34;containers&#34;</span>: [{
+          <span style="color:#e6db74">&#34;image&#34;</span>: IMAGE,
+          <span style="color:#e6db74">&#34;ports&#34;</span>: [{
+            <span style="color:#e6db74">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;http1&#34;</span>,
+            <span style="color:#e6db74">&#34;containerPort&#34;</span>: <span style="color:#ae81ff">8080</span>,
+          }]
+        }],
+        <span style="color:#e6db74">&#34;serviceAccountName&#34;</span>: service_account,
+      }
+    }
+  }
+}
+
+parent <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;namespaces/{project}&#34;</span><span style="color:#f92672">.</span>format(project<span style="color:#f92672">=</span>project)
+rqst <span style="color:#f92672">=</span> service<span style="color:#f92672">.</span>namespaces()<span style="color:#f92672">.</span>services()<span style="color:#f92672">.</span>create(parent<span style="color:#f92672">=</span>parent, body<span style="color:#f92672">=</span>body)
+resp <span style="color:#f92672">=</span> rqst<span style="color:#f92672">.</span>execute()
+<span style="color:#66d9ef">print</span>(resp)
+
+</code></pre></div><h3 id="testing">Testing</h3>
+<p>Once you&rsquo;ve deployed a service (requiring authentication), you can test it using:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ENDPOINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  gcloud run services describe <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>
+
+curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--verbose <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#66d9ef">$(</span>gcloud auth print-identity-token<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>
+</code></pre></div><h3 id="tidy">Tidy</h3>
+<p>When you&rsquo;re done, you may either delete the Project entirely:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud projects delete <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
+</code></pre></div><p>Or delete the services:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud run services delete <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--quiet
+</code></pre></div><p>And service accounts:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#66d9ef">for</span> ACCOUNT in <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>DEPLOYR<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>INVOKER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+<span style="color:#66d9ef">do</span>
+  gcloud iam service-accounts delete <span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>@<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>.iam.gserviceaccount.com <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --quiet
+<span style="color:#66d9ef">done</span>
+</code></pre></div><p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/google" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">google</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/run" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">run</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/cloud-run" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">cloud-run</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/golang" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">golang</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/python" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">python</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/210222/">Dapr</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201229/">Kubernetes Webhooks</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201203/">webmention</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201113/">Akri</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201029/">GitHub Actions &amp;&amp; GitHub Container Registry</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200930/">Hugo and Google Cloud Storage</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200916/">Actions SDK Conversational Quickstart</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200908/">Trillian Map Mode</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200817/">WASM Transparency</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200807/">waPC and MsgPack (Rust|Golang)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200630/">Golang Protobuf APIv2</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200310/">Google&#39;s New Golang SDK for Protobufs</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+  </main>
+  <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2021 
+  </a>
+    <div>
+
+
+<a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+  <svg height="32px" 
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="32px"
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+</div>
+  </div>
+</footer>
+
+</body>
+
+</html>
