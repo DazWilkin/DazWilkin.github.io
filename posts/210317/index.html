@@ -44,7 +44,7 @@
 <meta itemprop="description" content="Using Golang with the Firestore Emulator">
 <meta itemprop="datePublished" content="2021-03-17T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2021-03-17T00:00:00-07:00" />
-<meta itemprop="wordCount" content="833">
+<meta itemprop="wordCount" content="844">
 
 
 
@@ -205,11 +205,11 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 4 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 833 words</span>
+        <span class="f6 mv4 dib tracked"> - 844 words</span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p><img src="/images/210317.firebase.firestore.docs.png" alt="Firestore"></p>
-<p>This works great but it wasn&rsquo;t clearly documented for non-Firebase users. I assume it will work, as well, for any of the Google-supported API client libraries (not just Golang).</p>
+<p>This works great but it wasn&rsquo;t clearly documented for non-Firebase users. I assume it will work, as well, for any of the client libraries (not just Golang).</p>
 <p>Assuming you have some (Golang) code (in this case using the Google Cloud Client Library) that interacts with a Firestore database. Something of the form:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
 
@@ -237,10 +237,11 @@ if (!doNotTrack) {
   <span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>              <span style="color:#e6db74">`firestore:&#34;created&#34;`</span>
 }
 
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewDog</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">age</span> <span style="color:#66d9ef">int</span>) <span style="color:#a6e22e">Dog</span> {
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewDog</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">age</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">human</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">DocumentRef</span>) <span style="color:#a6e22e">Dog</span> {
   <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Dog</span>{
     <span style="color:#a6e22e">Name</span>:    <span style="color:#a6e22e">name</span>,
     <span style="color:#a6e22e">Age</span>:     <span style="color:#a6e22e">age</span>,
+    <span style="color:#a6e22e">Human</span>:   <span style="color:#a6e22e">human</span>,
     <span style="color:#a6e22e">Created</span>: <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>(),
   }
 }
@@ -272,13 +273,17 @@ if (!doNotTrack) {
   }
   <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Close</span>()
 
-  <span style="color:#a6e22e">me</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Human</span>{<span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;me&#34;</span>}
-  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;humans&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#a6e22e">me</span>.<span style="color:#a6e22e">ID</span>()).<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">me</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+  <span style="color:#a6e22e">me</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Human</span>{
+    <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;me&#34;</span>,
+  }
+  <span style="color:#a6e22e">meDocRef</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;humans&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#a6e22e">me</span>.<span style="color:#a6e22e">ID</span>())
+  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">meDocRef</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">me</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
     <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
   }
 
-  <span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewDog</span>(<span style="color:#e6db74">&#34;Freddie&#34;</span>, <span style="color:#ae81ff">2</span>)
-  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;dogs&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">ID</span>()).<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+  <span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewDog</span>(<span style="color:#e6db74">&#34;Freddie&#34;</span>, <span style="color:#ae81ff">2</span>, <span style="color:#a6e22e">meDocRef</span>)
+  <span style="color:#a6e22e">freddieDocRef</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;dogs&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">ID</span>())
+  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">freddieDocRef</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
     <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
   }
 }
