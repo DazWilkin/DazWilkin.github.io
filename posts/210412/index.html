@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  
+  <title>Fly.io | (p)retired</title>
+  <meta name="viewport" content="width=device-width,minimum-scale=1">
+  <meta name="description"
+    content="First look at Fly.io">
+  <meta name="generator" content="Hugo 0.80.0" />
+  
+  
+  <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+  
+
+  
+
+  
+  
+    <link rel="stylesheet" href="/ananke/dist/main.css_5c99d70a7725bacd4c701e995b969fea.css" >
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  <link href="https://us-central1-webmention.cloudfunctions.net/webmention" rel="webmention" />
+
+  <meta property="og:title" content="Fly.io" />
+<meta property="og:description" content="First look at Fly.io" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/210412/" />
+<meta property="article:published_time" content="2021-04-12T00:00:00-07:00" />
+<meta property="article:modified_time" content="2021-04-12T00:00:00-07:00" />
+<meta itemprop="name" content="Fly.io">
+<meta itemprop="description" content="First look at Fly.io">
+<meta itemprop="datePublished" content="2021-04-12T00:00:00-07:00" />
+<meta itemprop="dateModified" content="2021-04-12T00:00:00-07:00" />
+<meta itemprop="wordCount" content="1088">
+
+
+
+<meta itemprop="keywords" content="grpc,fly.io,healthcheck," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Fly.io"/>
+<meta name="twitter:description" content="First look at Fly.io"/>
+
+  
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148669951-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+  
+  
+</head>
+
+<body class="ma0 avenir bg-near-white production">
+
+  
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+<a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+  <svg height="32px" 
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="32px"
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+  <main class="pb7" role="main">
+    
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+  <div id="sharing" class="mt3">
+
+    
+    <a href="https://www.facebook.com/sharer.php?u=https://pretired.dazwilkin.com/posts/210412/" class="facebook no-underline" aria-label="share on Facebook">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M28.765,50.32h6.744V33.998h4.499l0.596-5.624h-5.095  l0.007-2.816c0-1.466,0.14-2.253,2.244-2.253h2.812V17.68h-4.5c-5.405,0-7.307,2.729-7.307,7.317v3.377h-3.369v5.625h3.369V50.32z   M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;"/></svg>
+
+    </a>
+
+    
+    
+    <a href="https://twitter.com/share?url=https://pretired.dazwilkin.com/posts/210412/&amp;text=Fly.io" class="twitter no-underline" aria-label="share on Twitter">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M37.167,22.283c-2.619,0.953-4.274,3.411-4.086,6.101  l0.063,1.038l-1.048-0.127c-3.813-0.487-7.145-2.139-9.974-4.915l-1.383-1.377l-0.356,1.017c-0.754,2.267-0.272,4.661,1.299,6.271  c0.838,0.89,0.649,1.017-0.796,0.487c-0.503-0.169-0.943-0.296-0.985-0.233c-0.146,0.149,0.356,2.076,0.754,2.839  c0.545,1.06,1.655,2.097,2.871,2.712l1.027,0.487l-1.215,0.021c-1.173,0-1.215,0.021-1.089,0.467  c0.419,1.377,2.074,2.839,3.918,3.475l1.299,0.444l-1.131,0.678c-1.676,0.976-3.646,1.526-5.616,1.568  C19.775,43.256,19,43.341,19,43.405c0,0.211,2.557,1.397,4.044,1.864c4.463,1.377,9.765,0.783,13.746-1.568  c2.829-1.673,5.657-5,6.978-8.221c0.713-1.716,1.425-4.851,1.425-6.354c0-0.975,0.063-1.102,1.236-2.267  c0.692-0.678,1.341-1.419,1.467-1.631c0.21-0.403,0.188-0.403-0.88-0.043c-1.781,0.636-2.033,0.551-1.152-0.402  c0.649-0.678,1.425-1.907,1.425-2.267c0-0.063-0.314,0.042-0.671,0.233c-0.377,0.212-1.215,0.53-1.844,0.72l-1.131,0.361l-1.027-0.7  c-0.566-0.381-1.361-0.805-1.781-0.932C39.766,21.902,38.131,21.944,37.167,22.283z M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4  s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/></svg>
+
+    </a>
+
+    
+    <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/210412/&amp;title=Fly.io" class="linkedin no-underline" aria-label="share on LinkedIn">
+      <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+    </a>
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Fly.io</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2021-04-12T00:00:00-07:00">April 12, 2021</time>
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 6 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 1088 words</span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I spent some time over the weekend understanding <a href="https://fly.io">Fly.io</a>. It&rsquo;s always fascinating to me how many smart people are building really neat solutions. Fly.io is subtly different to other platforms that I use (Kubernetes, GCP, DO, Linode) and I&rsquo;ve found the Fly.io team to be highly responsive and helpful to my noob questions.</p>
+<p>One of the team&rsquo;s posts, <a href="https://fly.io/blog/docker-without-docker/">Docker without Docker</a> surfaced in my Feedly feed (<a href="https://news.ycombinator.com/item?id=26746280">hackernews</a>) and it piqued my interest.</p>
+<p>I&rsquo;ve a basic implementation of gRPC healthchecking that I deployed to Fly.io. The documentation is mostly excellent and there&rsquo;s a quickstart <a href="https://fly.io/docs/speedrun/">Speedrun</a> that may serve your purposes. Coming from different platforms, I found some differences in how developers interact with Fly.io that I&rsquo;ll document here.</p>
+<p>I&rsquo;m loathe to install anything on my machine and prefer to use containers or Snaps when possible. Fly.io&rsquo;s CLI is called <code>flyctl</code> and can be run|aliased:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">alias flyctl<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;\
+</span><span style="color:#e6db74">  docker run \
+</span><span style="color:#e6db74">  --interactive --tty --rm \
+</span><span style="color:#e6db74">  --volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.fly:/.fly \
+</span><span style="color:#e6db74">  --volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/fly.toml:/fly.toml \
+</span><span style="color:#e6db74">  flyio/flyctl&#34;</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> The volume mounts are for the CLI&rsquo;s config (located in <code>.fly</code>) and the default app config (<code>fly.toml</code>). Ensure you&rsquo;re running the alias from the directory where you want these files created.</p>
+</blockquote>
+<p>The CLI works great but the app flow is different than I&rsquo;m used to. Rather than be able to spec an app and then deploy it, you&rsquo;ll need to create an app before you can deploy it. This is, in part, in order for the app&rsquo;s unique name to be created on the Fly.io service.</p>
+<blockquote>
+<p><strong>NOTE</strong> Be careful inadvertently overwriting an existing <code>fly.toml</code> with this approach. The CLI will prompt before overwriting but you&rsquo;ll need to overwrite in order to create a new app.</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">APP<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+flyctl app create --app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
+</code></pre></div><p>For simplicity, you can select <code>None</code> for the builder and accept the default port (<code>8080</code>).</p>
+<p>The CLI should report:</p>
+<pre><code class="language-console" data-lang="console">New app created
+  Name         = ${APP}
+  Organization = personal
+  Version      = 0
+  Status       =
+  Hostname     = &lt;empty&gt;
+
+App will initially deploy to [[somewhere]] region
+
+Wrote config file fly.toml
+</code></pre><blockquote>
+<p><strong>NOTE</strong> The service locates the nearest data-center to your host. In my case, Seattle. YMMV.</p>
+</blockquote>
+<p>I&rsquo;ve then manually added config details to the <code>fly.toml</code> file:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#ae81ff">app = &#34;[[YOUR-APP]]&#34;</span>
+
+<span style="color:#ae81ff">kill_signal = &#34;SIGINT&#34;</span>
+<span style="color:#ae81ff">kill_timeout = 5</span>
+
+[<span style="color:#ae81ff">build]</span>
+  <span style="color:#ae81ff">image = &#34;[[YOUR-IMAGE]]&#34;</span>
+
+[<span style="color:#ae81ff">experimental]</span>
+  <span style="color:#ae81ff">exec = [</span>
+    <span style="color:#e6db74">&#34;/server&#34;</span>,
+    <span style="color:#e6db74">&#34;--failure_rate=0.5&#34;</span>,
+    <span style="color:#e6db74">&#34;--changes_rate=15s&#34;</span>,
+    <span style="color:#e6db74">&#34;--grpc_endpoint=:50051&#34;</span>,
+    <span style="color:#e6db74">&#34;--prom_endpoint=:8080&#34;</span>
+  ]
+
+[[<span style="color:#ae81ff">services]]</span>
+  <span style="color:#ae81ff">internal_port = 50051</span>
+  <span style="color:#ae81ff">protocol = &#34;tcp&#34;</span>
+
+  [<span style="color:#ae81ff">services.concurrency]</span>
+    <span style="color:#ae81ff">hard_limit = 25</span>
+    <span style="color:#ae81ff">soft_limit = 20</span>
+
+  [[<span style="color:#ae81ff">services.ports]]</span>
+    <span style="color:#ae81ff">handlers = []</span>
+    <span style="color:#ae81ff">port = &#34;10001&#34;</span>
+
+[[<span style="color:#ae81ff">services]]</span>
+  <span style="color:#ae81ff">internal_port = 8080</span>
+  <span style="color:#ae81ff">protocol = &#34;tcp&#34;</span>
+
+  [[<span style="color:#ae81ff">services.ports]]</span>
+    <span style="color:#ae81ff">handlers = [&#34;http&#34;]</span>
+    <span style="color:#ae81ff">port = &#34;80&#34;</span>
+
+  [[<span style="color:#ae81ff">services.ports]]</span>
+    <span style="color:#ae81ff">handlers = [&#34;http&#34;,&#34;tls&#34;]</span>
+    <span style="color:#ae81ff">port = &#34;443&#34;</span>
+</code></pre></div><p>I&rsquo;m deploying a container <code>IMAGE</code> but the service supports buildpacks, permitting you to provide Golang, Node|Deno, Python and Ruby sources to be built and deployed.</p>
+<p>My image requires runtime flags so I&rsquo;m using <code>[experimental]</code> and <code>exec</code> to define the runtime binary and args|flags.</p>
+<p>My config has 2 <code>[[services]]</code> sections. The first defines the gRPC service. The second defines the Prometheus metrics.</p>
+<p>For gRPC, the <code>[[services]]</code> value for <code>internal_port</code> of <code>50051</code> matches the container image&rsquo;s flag <code>--grpc_endpoint</code>. The service is TCP and it exposes (publicly) one port <code>10001</code> which requires the raw TCP handler (<code>handlers = []</code>).</p>
+<p>For Prometheus, the <code>[[service]]</code> value for <code>internal_port</code> of <code>8080</code> matches the container image&rsquo;s flag <code>--prom_endpoint</code>. The service is TCP and it exposes (publicly) two ports <code>80</code> which is insecure HTTP and a secure port <code>443</code> which is HTTP/S (w/ TLS). In practice, the insecure port <code>80</code> should be inaccessible but it&rsquo;s present for testing.</p>
+<p>Once, the <code>fly.toml</code> is defined, the app can be deployed:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">flyctl deploy --app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
+</code></pre></div><p>Yields:</p>
+<pre><code class="language-console" data-lang="console">Deploying [[MY-APP]]
+==&gt; Validating app configuration
+--&gt; Validating app configuration done
+Services
+TCP 10001 ⇢ 50051
+TCP 80 ⇢ 8080
+Searching for image '[[MY-IMAGE]]' remotely...
+image found: img_6nk3yvl35lvome79
+Image: [[MY-IMAGE]]
+Image size: 6.9 MB
+==&gt; Creating release
+Release v0 created
+
+You can detach the terminal anytime without stopping the deployment
+Monitoring Deployment
+
+1 desired, 1 placed, 1 healthy, 0 unhealthy
+--&gt; v0 deployed successfully
+</code></pre><p>This can be confirmed through the CLI:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">flyctl apps list
+NAME       OWNER    STATUS  LATEST DEPLOY 
+<span style="color:#f92672">[[</span>MY-APP<span style="color:#f92672">]]</span> personal running 1m ago
+</code></pre></div><p>And through the service&rsquo;s console:</p>
+<p><img src="/images/210412.fly.io.console.app.png" alt="Fly.io Console: Apps"></p>
+<p>Which also provides useful (Prometheus-derived) metrics:</p>
+<p><img src="/images/210412.fly.io.console.metrics.png" alt="Fly.io Console: Metrics"></p>
+<p>Unfortunately, the instance and scaling details aren&rsquo;t part of the <code>fly.toml</code> config.</p>
+<p>In order to confirm these values:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">APP<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+
+flyctl scale count <span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
+Count changed to <span style="color:#ae81ff">1</span>
+
+flyctl scale show <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
+VM Resources <span style="color:#66d9ef">for</span> ...
+        VM Size: shared-cpu-1x
+      VM Memory: <span style="color:#ae81ff">256</span> MB
+          Count: <span style="color:#ae81ff">1</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> IIUC these settings will keep my app to a single (<code>1</code>) <code>shared-cpu-1x</code> instance. Per pricing, this instance (unsure about bandwidth costs) should be free.</p>
+</blockquote>
+<p>To grab the app&rsquo;s IPs and <code>fly.dev</code> DNS name:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Get IP v4</span>
+IP4<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>flyctl ips list <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--json <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.[]|select(.Type==&#34;v4&#34;).Address&#39;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>echo <span style="color:#e6db74">${</span>IP4<span style="color:#e6db74">}</span>
+213.188:...
+
+<span style="color:#75715e"># Get IP v6</span>
+IP6<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>flyctl ips list <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--json <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.[]|select(.Type==&#34;v6&#34;).Address&#39;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>echo <span style="color:#e6db74">${</span>IP6<span style="color:#e6db74">}</span>
+2a09:8280:1:...
+
+<span style="color:#75715e"># Get app&#39;s DNS</span>
+ENDPOINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>flyctl apps list <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--json <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#34;.[]|select(.ID==\&#34;</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;).Hostname&#34;</span><span style="color:#66d9ef">)</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>
+<span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>.fly.dev
+</code></pre></div><p>Then, in my case, I can curl the app&rsquo;s Prometheus metrics:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># HTTP</span>
+curl http://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:80/metrics
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.25&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.5&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.75&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds_sum <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds_count <span style="color:#ae81ff">0</span>
+
+<span style="color:#75715e"># HTTP/S (TLS)</span>
+curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:443/metrics
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.25&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.5&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.75&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds_sum <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds_count <span style="color:#ae81ff">0</span>
+</code></pre></div><p>All good!</p>
+<p>And then, for ease, I&rsquo;m using the excellent <a href="https://github.com/fullstorydev/grpcurl"><code>gRPCurl</code></a>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># List service&#39;s methods</span>
+docker run <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/health.proto:/protos/health.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>fullstorydev/grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--proto protos/health.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>GRPC<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>list grpc.health.v1.Health
+grpc.health.v1.Health.Check
+grpc.health.v1.Health.Watch
+
+<span style="color:#75715e"># Invoke Watch</span>
+docker run <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/health.proto:/protos/health.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>fullstorydev/grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--proto protos/health.proto <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:10001 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>grpc.health.v1.Health/Watch
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;SERVING&#34;</span>
+<span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;SERVING&#34;</span>
+<span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;NOT_SERVING&#34;</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><p>Lastly, we can configure our app to use a custom domain. You&rsquo;ll need to add DNS entries to a domain you own. Either a <code>CNAME</code> of the form <code>${APP}</code> &ndash;&gt; <code>${APP}.fly.dev.</code> or, more efficiently using <code>A</code> and <code>AAAA</code> records against the IPv4 and v6 addresses.</p>
+<p>You can confirm your DNS changes with <code>dig</code> or <code>nslookup</code>. In my case, using Google Domains, I can avoid waiting on DNS propagation, with:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--dns-servers 8.8.8.8,8.8.4.4 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>.<span style="color:#f92672">[[</span>MY-DOMAIN<span style="color:#f92672">]]</span>:443/metrics
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.25&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.5&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.75&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds_sum <span style="color:#ae81ff">0</span>
+go_gc_duration_seconds_count <span style="color:#ae81ff">0</span>
+</code></pre></div><p>And eventually:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/health.proto:/protos/health.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>fullstorydev/grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--proto protos/health.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>.<span style="color:#f92672">[[</span>MY-DOMAIN<span style="color:#f92672">]]</span>:10001 grpc.health.v1.Health/Watch
+</code></pre></div><p>When you&rsquo;re done, you can either delete the app (resetting the entire process):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">flyctl apps destroy --app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> I want there to be an <code>undeploy</code> but there isn&rsquo;t.</p>
+</blockquote>
+<p>Or, suspend it (though I&rsquo;m unsure whether you&rsquo;ll still incure costs):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">flyctl suspend --app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
+</code></pre></div><p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/grpc" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">grpc</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/fly.io" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">fly.io</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/healthcheck" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">healthcheck</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/210222/">Dapr</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200717/">Remotely invoking WASM functions using gRPC and waPC</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200429/">Rust implementation of Crate Transparency using Google Trillian</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+  </main>
+  <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2021 
+  </a>
+    <div>
+
+
+<a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+  <svg height="32px" 
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="32px"
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+</div>
+  </div>
+</footer>
+
+</body>
+
+</html>
