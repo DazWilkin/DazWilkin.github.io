@@ -44,7 +44,7 @@
 <meta itemprop="description" content="First look at Fly.io">
 <meta itemprop="datePublished" content="2021-04-12T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2021-04-12T00:00:00-07:00" />
-<meta itemprop="wordCount" content="1088">
+<meta itemprop="wordCount" content="1100">
 
 
 
@@ -205,7 +205,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 6 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 1088 words</span>
+        <span class="f6 mv4 dib tracked"> - 1100 words</span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I spent some time over the weekend understanding <a href="https://fly.io">Fly.io</a>. It&rsquo;s always fascinating to me how many smart people are building really neat solutions. Fly.io is subtly different to other platforms that I use (Kubernetes, GCP, DO, Linode) and I&rsquo;ve found the Fly.io team to be highly responsive and helpful to my noob questions.</p>
@@ -408,12 +408,17 @@ docker run <span style="color:#ae81ff">\
 <span style="color:#f92672">{</span>
   <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;NOT_SERVING&#34;</span>
 <span style="color:#f92672">}</span>
-</code></pre></div><p>Lastly, we can configure our app to use a custom domain. You&rsquo;ll need to add DNS entries to a domain you own. Either a <code>CNAME</code> of the form <code>${APP}</code> &ndash;&gt; <code>${APP}.fly.dev.</code> or, more efficiently using <code>A</code> and <code>AAAA</code> records against the IPv4 and v6 addresses.</p>
+</code></pre></div><p>Lastly, we can configure our app to use a custom domain.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">flyctl certs add <span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>
+
+<span style="color:#75715e"># Check on it</span>
+flyctl certs check <span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>
+</code></pre></div><p>You&rsquo;ll need to add DNS entries to a domain you own. Either a <code>CNAME</code> of the form <code>${APP}</code> &ndash;&gt; <code>${APP}.fly.dev.</code> or, more efficiently using <code>A</code> and <code>AAAA</code> records against the IPv4 and v6 addresses.</p>
 <p>You can confirm your DNS changes with <code>dig</code> or <code>nslookup</code>. In my case, using Google Domains, I can avoid waiting on DNS propagation, with:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--dns-servers 8.8.8.8,8.8.4.4 <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>.<span style="color:#f92672">[[</span>MY-DOMAIN<span style="color:#f92672">]]</span>:443/metrics
+</span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>:443/metrics
 go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
 go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.25&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
 go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.5&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
@@ -427,7 +432,7 @@ go_gc_duration_seconds_count <span style="color:#ae81ff">0</span>
 </span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/health.proto:/protos/health.proto <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>fullstorydev/grpcurl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--proto protos/health.proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>.<span style="color:#f92672">[[</span>MY-DOMAIN<span style="color:#f92672">]]</span>:10001 grpc.health.v1.Health/Watch
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>:10001 grpc.health.v1.Health/Watch
 </code></pre></div><p>When you&rsquo;re done, you can either delete the app (resetting the entire process):</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">flyctl apps destroy --app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
 </code></pre></div><blockquote>
