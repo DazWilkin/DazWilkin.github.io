@@ -44,7 +44,7 @@
 <meta itemprop="name" content="Firestore Golang Timestamps &amp; Merging">
 <meta itemprop="description" content="How to persist timestamps when using Firestore"><meta itemprop="datePublished" content="2021-05-06T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2021-05-06T00:00:00-07:00" />
-<meta itemprop="wordCount" content="1135">
+<meta itemprop="wordCount" content="1158">
 <meta itemprop="keywords" content="google,firestore,golang,timestamp,merge," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Firestore Golang Timestamps &amp; Merging"/>
 <meta name="twitter:description" content="How to persist timestamps when using Firestore"/>
@@ -201,7 +201,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 6 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 1135 words</span>
+        <span class="f6 mv4 dib tracked"> - 1158 words</span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;m using Google&rsquo;s <a href="https://pkg.go.dev/cloud.google.com/go/firestore#DocumentRef">Golang SDK for Firestore</a>. The experience is excellent and I&rsquo;m quikcly becoming a fan of Firestore. However, as a Golang Firestore developer, I&rsquo;m feeling less loved and some of the concepts in the database were causing me a conundrum.</p>
@@ -354,6 +354,9 @@ if (!doNotTrack) {
 </ol>
 <p>The first important detail is that, using <code>Set</code> as above, the document that&rsquo;s written to Firestore <strong>only</strong> includes fields that are included in the Golang struct.</p>
 <p>The second important detail is that, because <code>Created</code> is nil (still) when it&rsquo;s written to Firestore, the service applies <code>serverTimestamp</code> again (!) and effectively updates the Created timestamp. We don&rsquo;t want it to do this!</p>
+<blockquote>
+<p><strong>NOTE</strong> <code>Updated</code> is earlier than <code>Created</code> because we set <code>Updated</code> to <code>time.Now()</code> before persisting the record when the server updates the <code>Created</code> timestamp.</p>
+</blockquote>
 <p>What&rsquo;s the solution?</p>
 <p>If I understand this correctly, the solution is that we <strong>must</strong> include <a href="https://pkg.go.dev/cloud.google.com/go/firestore#SetOption"><code>SetOption</code></a> when using <code>Set</code>.</p>
 <p>The first time a document is created with <code>Set</code>, there&rsquo;s no document in Firestore and so the concept of merging is moot. Firestore doesn&rsquo;t balk at include merge options but, I think they&rsquo;re redundant:</p>
