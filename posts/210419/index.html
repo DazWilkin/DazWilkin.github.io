@@ -44,7 +44,7 @@
 <meta itemprop="name" content="Prometheus Service Discovery w/ Consul for Cloud Run">
 <meta itemprop="description" content="Configuring Prometheus to use service discovery with Consul to find Cloud Run services"><meta itemprop="datePublished" content="2021-04-19T00:00:09-07:00" />
 <meta itemprop="dateModified" content="2021-04-19T00:00:09-07:00" />
-<meta itemprop="wordCount" content="1367">
+<meta itemprop="wordCount" content="1340">
 <meta itemprop="keywords" content="prometheus,consul,coredns,service-discovery,cloud-run," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Prometheus Service Discovery w/ Consul for Cloud Run"/>
 <meta name="twitter:description" content="Configuring Prometheus to use service discovery with Consul to find Cloud Run services"/>
@@ -201,7 +201,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 7 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 1367 words</span>
+        <span class="f6 mv4 dib tracked"> - 1340 words</span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;m working on a project that will programmatically create Google <a href="https://cloud.google.com/run">Cloud Run</a> services and I want to be able to dynamically discover these services using Prometheus.</p>
@@ -301,10 +301,8 @@ if (!doNotTrack) {
     <span style="color:#f92672">consul_sd_configs</span>:
       - <span style="color:#f92672">server</span>: <span style="color:#ae81ff">consul:8500</span>
         <span style="color:#f92672">datacenter</span>: <span style="color:#ae81ff">dc1</span>
-        <span style="color:#f92672">services</span>:
-          - <span style="color:#e6db74">&#34;node-exporter-01&#34;</span>
-          - <span style="color:#e6db74">&#34;node-exporter-02&#34;</span>
-          - <span style="color:#e6db74">&#34;node-exporter-03&#34;</span> <span style="color:#75715e"># !!</span>
+        <span style="color:#f92672">tags</span>:
+        - <span style="color:#ae81ff">foo</span>
 
   <span style="color:#75715e"># Self</span>
   - <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;prometheus-server&#34;</span>
@@ -318,13 +316,13 @@ if (!doNotTrack) {
       - <span style="color:#f92672">targets</span>:
           - <span style="color:#e6db74">&#34;cadvisor:8080&#34;</span>
 </code></pre></div><blockquote>
-<p><strong>NOTES</strong> The only <code>job_name</code> that&rsquo;s required here is <code>consul</code>. In the following, sections, I&rsquo;ve excluded the other two jobs for clarity.<!-- raw HTML omitted -->The <code>server</code> entry <code>consul:8500</code> refers to the <code>docker-compose</code> service called <code>consul</code> that exposes port <code>8500</code>.<!-- raw HTML omitted -->You&rsquo;ll notice that, even though there are two <code>node-exporter</code> services in the <code>docker-compose.yml</code>, there are 3 <code>services</code> defined here. Please read on.</p>
+<p><strong>NOTES</strong> The only <code>job_name</code> that&rsquo;s required here is <code>consul</code>. In the following, sections, I&rsquo;ve excluded the other two jobs for clarity.<!-- raw HTML omitted -->The <code>server</code> entry <code>consul:8500</code> refers to the <code>docker-compose</code> service called <code>consul</code> that exposes port <code>8500</code>.</p>
 </blockquote>
 <p>After running <code>docker-compose up</code>, let&rsquo;s immediately browse to Prometheus' Service Discovery page:</p>
 <p><code>http://localhost:9099/service-discovery</code></p>
 <p><img src="/images/210419.prometheus.sd.empty.png" alt="Prometheus Service Discovery: Empty"></p>
 <p>It&rsquo;s empty :-(</p>
-<p>This is because (hopefully!), there are no services called <code>node-exporteer-XX</code> in Consul. Let&rsquo;s confirm that and then define them:</p>
+<p>This is because (hopefully!), there are no services called <code>node-exporter-XX</code> in Consul. Let&rsquo;s confirm that and then define them:</p>
 <p>Consul includes a clear UI: http://localhost:8500/ui</p>
 <p><img src="/images/210419.consul.services.empty.png" alt="Consul: Services: Empty"></p>
 <p>As you can see, with the exception of the default <code>consul</code> service, there are (as expected) no <code>node-exporter-xx</code> services. Let&rsquo;s add these using Consul&rsquo;s HTTP API:</p>
@@ -343,13 +341,12 @@ if (!doNotTrack) {
 </span><span style="color:#e6db74">  }&#34;</span>
 <span style="color:#66d9ef">done</span>
 </code></pre></div><blockquote>
-<p><strong>NOTE</strong> The service <code>name</code> changes e.g. <code>node-exporter-02</code> but the <code>port</code> and <code>address</code> point to the docker-compose service called <code>node-exporter</code> that exposes metrics on port <code>9100</code>.</p>
+<p><strong>NOTE</strong> The service <code>name</code> changes e.g. <code>node-exporter-02</code> but the <code>port</code> and <code>address</code> point to the docker-compose service called <code>node-exporter</code> that exposes metrics on port <code>9100</code>. Both services are tagged with 2 labels <code>foo</code> and <code>bar</code>.</p>
 </blockquote>
 <p>If we now return to the Consul UI:</p>
 <p><img src="/images/210419.consul.services.node-exporter-xx.png" alt="Consul: Services: Node Exporters"></p>
 <p>And, back to Prometheus' Service Discovery:</p>
 <p><img src="/images/210419.prometheus.sd.node-exporter-xx.png" alt="Prometheus: Service Discovery: Node Exporters"></p>
-<p>We configured Prometheus to include <code>node-exporter-03</code> but this doesn&rsquo;t exist.</p>
 <p>If we switch to Prometheus' Targets, we can confirm this:</p>
 <p><img src="/images/210419.prometheus.targets.node-exporter-xx.png" alt="Prometheus: Targets: Node Exporters"></p>
 <p>And, of course, we&rsquo;re doing this primarily to observe metrics. So, let&rsquo;s switch to Prometheus' Graph UI and visualize some metrics from the Node Exporters:</p>
