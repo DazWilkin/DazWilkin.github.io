@@ -44,7 +44,7 @@
 <meta itemprop="name" content="Multiplexing gRPC and HTTP (Prometheus) endpoints with Cloud Run">
 <meta itemprop="description" content="How to serve gRPC and Prometheus metrics with Cloud Run"><meta itemprop="datePublished" content="2021-05-19T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2021-05-19T00:00:00-07:00" />
-<meta itemprop="wordCount" content="621">
+<meta itemprop="wordCount" content="634">
 <meta itemprop="keywords" content="google,cloud-run,grpc,http,prometheus,metrics," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Multiplexing gRPC and HTTP (Prometheus) endpoints with Cloud Run"/>
 <meta name="twitter:description" content="How to serve gRPC and Prometheus metrics with Cloud Run"/>
@@ -201,7 +201,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 3 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 621 words</span>
+        <span class="f6 mv4 dib tracked"> - 634 words</span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>Google <a href="https://cloud.google.com/run">Cloud Run</a> is useful but, each service is limited to exposing a single port. This caused me problems with a gRPC service that serves (non-gRPC) Prometheus metrics because customarily, you would serve gRPC on one port and the Prometheus metrics on another.</p>
@@ -382,7 +382,7 @@ gcloud run deploy <span style="color:#e6db74">${</span>NAME<span style="color:#e
 </span><span style="color:#ae81ff"></span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ENDPOINT#https://<span style="color:#e6db74">}</span><span style="color:#e6db74">:443&#34;</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>echo <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>
 </code></pre></div><blockquote>
-<p><strong>NOTE</strong> We need to drop the prefixing <code>https://</code> and add the TLS (!) port <code>:443</code> in order to query this service through the Cloud Run proxy</p>
+<p><strong>NOTE</strong> Cloud Run provides a TLS-endpoint proxy for our service but we need to drop the prefixing <code>https://</code> and <strong>add</strong> the TLS (!) port <code>:443</code> in order to interact with it over gRPC.</p>
 </blockquote>
 <p>Then test:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
@@ -392,7 +392,7 @@ gcloud run deploy <span style="color:#e6db74">${</span>NAME<span style="color:#e
 </span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>helloworld.Greeter.SayHello
 </code></pre></div><blockquote>
-<p><strong>NOTE</strong> Cloud Run provides a TLS-endpoint proxy for us so, this time, we replace <code>-plaintext</code> with <code>-insecure</code> and use the Cloud Run service&rsquo;s endpoint (<code>${ENDPOINT}</code>)</p>
+<p><strong>NOTE</strong> Because the service is deployed behind a TLS-endpoint, we need to replace <code>-plaintext</code> with <code>-insecure</code> and use the Cloud Run service&rsquo;s endpoint (<code>${ENDPOINT}</code>)</p>
 </blockquote>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
   <span style="color:#f92672">&#34;message&#34;</span>: <span style="color:#e6db74">&#34;Hello Freddie&#34;</span>
@@ -402,7 +402,7 @@ gcloud run deploy <span style="color:#e6db74">${</span>NAME<span style="color:#e
 </span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/metrics
 </code></pre></div><blockquote>
-<p><strong>NOTE</strong> Because Cloud Run provides a TLS-endpoint, you&rsquo;ll want to return the <code>https://</code> prefix to <code>${ENDPOINT}</code> and add the path <code>/metrics</code></p>
+<p><strong>NOTE</strong> Because the service is deployed behind a TLS-endpoint, we need to add the <code>https://</code> prefix to <code>${ENDPOINT}</code> and add the path <code>/metrics</code> to recreate a valid URL.</p>
 </blockquote>
 <p>Don&rsquo;t forget to delete the Cloud Run service when you&rsquo;re done with it:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud run services delete <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
