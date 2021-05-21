@@ -44,7 +44,7 @@
 <meta itemprop="name" content="Consul discovers Google Cloud Run">
 <meta itemprop="description" content="Enable Consul to discover Google Cloud Run services"><meta itemprop="datePublished" content="2021-05-20T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2021-05-20T00:00:00-07:00" />
-<meta itemprop="wordCount" content="799">
+<meta itemprop="wordCount" content="920">
 <meta itemprop="keywords" content="google,cloud-run,consul,service-discovery,prometheus," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Consul discovers Google Cloud Run"/>
 <meta name="twitter:description" content="Enable Consul to discover Google Cloud Run services"/>
@@ -200,8 +200,8 @@ if (!doNotTrack) {
 
       
       
-        <span class="f6 mv4 dib tracked"> - 4 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 799 words</span>
+        <span class="f6 mv4 dib tracked"> - 5 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 920 words</span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve written a basic <code>discoverer</code> of Google <a href="https://cloud.google.com/run">Cloud Run</a> services. This is for a project and it extends work done in some previous posts to <a href="/posts/210519/">Multiplex gRPC and Prometheus with Cloud Run</a> and to use <a href="/posts/210419/">Consul for Prometheus service discovery</a>.</p>
@@ -370,6 +370,39 @@ discoverer    | 2021/05/21 00:33:04  <span style="color:#e6db74">&#34;caller&#34
 </span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --quiet
 <span style="color:#66d9ef">done</span>
+</code></pre></div><h2 id="notes">Notes</h2>
+<p>If you want to delete a service from Consul, you can <code>PUT</code> a request on the agent&rsquo;s <code>deregister</code> endpoint:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--request PUT <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>localhost:8500/v1/agent/service/deregister/<span style="color:#e6db74">${</span>ID<span style="color:#e6db74">}</span>
+</code></pre></div><p>But you&rsquo;ll need to ID of the service you want to delete. You can grab this from the Consul UI or you can calculate it:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;foo&#34;</span>
+REGION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;us-west1&#34;</span>
+
+<span style="color:#75715e"># Retrieve the Cloud Run service&#39;s URL</span>
+ENDPOINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  gcloud run services describe <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>
+<span style="color:#75715e"># Remove the prefixing https://</span>
+ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ENDPOINT#https://<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+
+<span style="color:#75715e"># Remove the suffixing / (if any)</span>
+ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ENDPOINT%/<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+
+<span style="color:#75715e"># Add the port</span>
+ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span><span style="color:#e6db74">:443&#34;</span>
+
+<span style="color:#75715e"># Calculate SHA224 hash of the result</span>
+ID<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>printf <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span> | sha224sum | head --bytes<span style="color:#f92672">=</span>56<span style="color:#66d9ef">)</span>
+
+<span style="color:#75715e"># Delete the service from Consul</span>
+curl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--request PUT <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>localhost:8500/v1/agent/service/deregister/<span style="color:#e6db74">${</span>ID<span style="color:#e6db74">}</span>
 </code></pre></div><ul class="pa0">
   
    <li class="list">
