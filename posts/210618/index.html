@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  
+  <title>Firebase Authentication, Cloud Endpoints and gRPC (2of2) | (p)retired</title>
+  <meta name="viewport" content="width=device-width,minimum-scale=1">
+  <meta name="description"
+    content="Using Firebase Auth to authorize users of a gRPC service behind Cloud Endpoints">
+  <meta name="generator" content="Hugo 0.83.1" />
+  
+  
+  <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+  
+
+  
+<link rel="stylesheet" href="/ananke/css/main.min.abe0b1c07d5e33565b0f9b998a7b1b5228b709f36af363e2766bc8035f2237b7.css" >
+
+
+
+
+  
+  
+
+  
+
+  
+
+  <link href="https://us-central1-webmention.cloudfunctions.net/webmention" rel="webmention" />
+
+  <meta property="og:title" content="Firebase Authentication, Cloud Endpoints and gRPC (2of2)" />
+<meta property="og:description" content="Using Firebase Auth to authorize users of a gRPC service behind Cloud Endpoints" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/210618/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-06-18T00:00:00-07:00" />
+<meta property="article:modified_time" content="2021-06-18T00:00:00-07:00" />
+
+<meta itemprop="name" content="Firebase Authentication, Cloud Endpoints and gRPC (2of2)">
+<meta itemprop="description" content="Using Firebase Auth to authorize users of a gRPC service behind Cloud Endpoints"><meta itemprop="datePublished" content="2021-06-18T00:00:00-07:00" />
+<meta itemprop="dateModified" content="2021-06-18T00:00:00-07:00" />
+<meta itemprop="wordCount" content="1082">
+<meta itemprop="keywords" content="cloud-endpoints,grpc,firebase,firebase-authentication&#34;," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Firebase Authentication, Cloud Endpoints and gRPC (2of2)"/>
+<meta name="twitter:description" content="Using Firebase Auth to authorize users of a gRPC service behind Cloud Endpoints"/>
+
+  
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-67DZX7M0D1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+  
+  
+</head>
+
+<body class="ma0 avenir bg-near-white production">
+
+  
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+
+
+<a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+  <svg height="32px" 
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="32px"
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+  <main class="pb7" role="main">
+    
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+  <div id="sharing" class="mt3">
+
+    
+    <a href="https://www.facebook.com/sharer.php?u=https://pretired.dazwilkin.com/posts/210618/" class="facebook no-underline" aria-label="share on Facebook">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M28.765,50.32h6.744V33.998h4.499l0.596-5.624h-5.095  l0.007-2.816c0-1.466,0.14-2.253,2.244-2.253h2.812V17.68h-4.5c-5.405,0-7.307,2.729-7.307,7.317v3.377h-3.369v5.625h3.369V50.32z   M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;"/></svg>
+
+    </a>
+
+    
+    
+    <a href="https://twitter.com/share?url=https://pretired.dazwilkin.com/posts/210618/&amp;text=Firebase%20Authentication,%20Cloud%20Endpoints%20and%20gRPC%20%282of2%29" class="twitter no-underline" aria-label="share on Twitter">
+      <svg height="32px"  style="enable-background:new 0 0 67 67;" version="1.1" viewBox="0 0 67 67" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M37.167,22.283c-2.619,0.953-4.274,3.411-4.086,6.101  l0.063,1.038l-1.048-0.127c-3.813-0.487-7.145-2.139-9.974-4.915l-1.383-1.377l-0.356,1.017c-0.754,2.267-0.272,4.661,1.299,6.271  c0.838,0.89,0.649,1.017-0.796,0.487c-0.503-0.169-0.943-0.296-0.985-0.233c-0.146,0.149,0.356,2.076,0.754,2.839  c0.545,1.06,1.655,2.097,2.871,2.712l1.027,0.487l-1.215,0.021c-1.173,0-1.215,0.021-1.089,0.467  c0.419,1.377,2.074,2.839,3.918,3.475l1.299,0.444l-1.131,0.678c-1.676,0.976-3.646,1.526-5.616,1.568  C19.775,43.256,19,43.341,19,43.405c0,0.211,2.557,1.397,4.044,1.864c4.463,1.377,9.765,0.783,13.746-1.568  c2.829-1.673,5.657-5,6.978-8.221c0.713-1.716,1.425-4.851,1.425-6.354c0-0.975,0.063-1.102,1.236-2.267  c0.692-0.678,1.341-1.419,1.467-1.631c0.21-0.403,0.188-0.403-0.88-0.043c-1.781,0.636-2.033,0.551-1.152-0.402  c0.649-0.678,1.425-1.907,1.425-2.267c0-0.063-0.314,0.042-0.671,0.233c-0.377,0.212-1.215,0.53-1.844,0.72l-1.131,0.361l-1.027-0.7  c-0.566-0.381-1.361-0.805-1.781-0.932C39.766,21.902,38.131,21.944,37.167,22.283z M33,64C16.432,64,3,50.569,3,34S16.432,4,33,4  s30,13.431,30,30S49.568,64,33,64z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/></svg>
+
+    </a>
+
+    
+    <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/210618/&amp;title=Firebase%20Authentication,%20Cloud%20Endpoints%20and%20gRPC%20%282of2%29" class="linkedin no-underline" aria-label="share on LinkedIn">
+      <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+    </a>
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Firebase Authentication, Cloud Endpoints and gRPC (2of2)</h1>
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2021-06-18T00:00:00-07:00">June 18, 2021</time>
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 6 minutes read</span>
+        <span class="f6 mv4 dib tracked"> - 1082 words</span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>Earlier this week, I wrote about using <a href="/posts/210614/">Firebase Authentcation, Cloud Endpoints and gRPC (1of2)</a>. Since then, I <a href="https://github.com/GoogleCloudPlatform/esp-v2/issues/542">learned some more</a> and added a gRPC interceptor to implement basic authorization for the service.</p>
+<h2 id="espv2---allow-unauthenticated">ESPv2 <code>--allow-unauthenticated</code></h2>
+<p>The Cloud Enpoints (ESPv2) proxy must be run as <code>--allow-unauthenticated</code> on Cloud Run to ensure that requests make it to the proxy where the request is authenticated and only authenticated requests make it on to the backend service. Thanks Google&rsquo;s <a href="https://github.com/nareddyt">Teju Nareddy</a>!</p>
+<blockquote>
+<p><strong>NOTE</strong> The backend service should be run with <code>--no-allow-authenticated</code> and the proxy&rsquo;s service account (perhaps the default Compute Engine account) must be <code>roles/run.invoker</code> per Google&rsquo;s documentation or:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Get this Project&#39;s (`${PROJECT}`) number</span>
+PROJECT_NUM<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span> gcloud projects describe <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span> --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(projectNumber)&#34;</span><span style="color:#66d9ef">)</span>
+
+<span style="color:#75715e"># Use this Project&#39;s number to identify</span>
+<span style="color:#75715e"># the Compute Engine service account</span>
+EMAIL<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT_NUM<span style="color:#e6db74">}</span>-compute@developer.gserviceaccount.com
+
+<span style="color:#75715e"># Grant the service account `roles/run.invoker`</span>
+gcloud run services add-iam-policy-binding <span style="color:#e6db74">${</span>SRV_NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--member<span style="color:#f92672">=</span>serviceAccount:<span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--role<span style="color:#f92672">=</span>roles/run.invoker <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</code></pre></div></blockquote>
+<h2 id="grpc-backend-service">gRPC backend service</h2>
+<p>The backend service (methods) will be invoked by the Cloud Endpoints proxy and with gRPC over HTTP/2, the contents of the headers frame is surfaced through metadata. Here&rsquo;s a snapshot of the metadata received by the <a href="#interceptor">Interceptor</a>:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>:authority</code></td>
+<td><code>${SRV_NAME}-[[hash]].a.run.app</code></td>
+</tr>
+<tr>
+<td><code>authorization</code></td>
+<td><code>Bearer ${JWT}</code></td>
+</tr>
+<tr>
+<td><code>content-length</code></td>
+<td><code>XX</code></td>
+</tr>
+<tr>
+<td><code>content-type</code></td>
+<td><code>application/grpc</code></td>
+</tr>
+<tr>
+<td><code>forwarded</code></td>
+<td><code>for=${IPv4};proto=https,</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>for=${IPv6};proto=https</code></td>
+</tr>
+<tr>
+<td><code>scheme</code></td>
+<td><code>http</code></td>
+</tr>
+<tr>
+<td><code>traceparent</code></td>
+<td><code>...</code></td>
+</tr>
+<tr>
+<td><code>user-agent</code></td>
+<td><code>grpc-go/1.31.0</code></td>
+</tr>
+<tr>
+<td><code>x-endpoint-api-userinfo</code></td>
+<td><code>${USER_INFO}</code></td>
+</tr>
+<tr>
+<td><code>x-client-data</code></td>
+<td><code>${HASH}</code></td>
+</tr>
+<tr>
+<td><code>x-cloud-trace-context</code></td>
+<td>&hellip;</td>
+</tr>
+<tr>
+<td><code>x-forward-authorization</code></td>
+<td><code>Bearer ${JWT}</code></td>
+</tr>
+<tr>
+<td><code>x-forwarded-for</code></td>
+<td><code>${IPv4},</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>${IPv6}</code></td>
+</tr>
+<tr>
+<td><code>x-forwarded-proto</code></td>
+<td><code>https</code></td>
+</tr>
+<tr>
+<td><code>x-request-id</code></td>
+<td><code>${UUID}</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>NOTE</strong> gRPC metadata returns slices of strings. I&rsquo;ve removed the <code>[&quot;...&quot;]</code> from the above to aid clarity.</p>
+</blockquote>
+<blockquote>
+<p><strong>NOTE</strong> An important item of metadata is <code>X-Endpoint-API-UserInfo</code> which we&rsquo;ll use in the following code.</p>
+</blockquote>
+<p>It&rsquo;s straightforward to interact with the metadata:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">import</span> (
+	<span style="color:#e6db74">&#34;context&#34;</span>
+
+	<span style="color:#e6db74">&#34;google.golang.org/grpc/metadata&#34;</span>
+)
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">SomeMethod</span>(
+    <span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
+    <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">SomeMethodRequest</span>,
+    ) (<span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">SomeMethodResponse</span>, <span style="color:#66d9ef">error</span>) {
+    <span style="color:#a6e22e">md</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">FromIncomingContext</span>(<span style="color:#a6e22e">ctx</span>)
+    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#e6db74">&#34;unable to retrieve gRPC metadata&#34;</span>)
+    }
+
+    <span style="color:#75715e">// Get returns []string
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">value</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">SomeKey</span>)
+    <span style="color:#f92672">...</span>
+}
+</code></pre></div><p>But, in this case, we want to apply authorization (not authentication, that&rsquo;s already done) to users of our service.</p>
+<h2 id="authorization-authz">Authorization (AuthZ)</h2>
+<p>Sometimes, for convenience and to highlight the different authentication is referred to as AuthN and authorization is referred to as AuthZ. Firebase Authentication (AuthN) has enabled us to outsource all the messiness of authentication for users of myriad OAuth providers to Google Firebase which is great.</p>
+<p>But, Firebase does <strong>not</strong> include an authorization (AuthZ) service.</p>
+<blockquote>
+<p><strong>NOTE</strong> Cloud Endpoints also supports <a href="https://cloud.google.com/endpoints/docs/openapi/authenticating-users-auth0">Auth0</a>. Auth0 provides <a href="https://auth0.com/docs/authentication">authentication</a> and <a href="https://auth0.com/docs/authorization">authorization</a> services. It&rsquo;s possible, as my service grows that I&rsquo;ll consider swapping both AuthN and AuthZ to Auth0.</p>
+</blockquote>
+<p>I&rsquo;m considering using Firestore as the backend for authorization but have not yet implemented this. Meantime, I wanted to write a very simple &ndash; the simplest possible? &ndash; authorization service:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#75715e">// Users is a type that represents the system&#39;s list of users
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Users</span> []<span style="color:#a6e22e">User</span>
+
+<span style="color:#75715e">// User is a type that represents one of the system&#39;s users
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">User</span> <span style="color:#66d9ef">struct</span> {
+    <span style="color:#a6e22e">Email</span> <span style="color:#66d9ef">string</span>
+}
+
+<span style="color:#66d9ef">var</span> (
+	<span style="color:#a6e22e">SystemUsers</span> = <span style="color:#a6e22e">Users</span>{
+		{
+			<span style="color:#a6e22e">Email</span>: <span style="color:#e6db74">&#34;my@email.com&#34;</span>,
+		},
+	}
+)
+
+<span style="color:#75715e">// Contains is a method that determines whether a User is in Users
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">uu</span> <span style="color:#a6e22e">Users</span>) <span style="color:#a6e22e">Contains</span>(<span style="color:#a6e22e">u</span> <span style="color:#a6e22e">User</span>) <span style="color:#66d9ef">bool</span> {
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">x</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">uu</span> {
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">x</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">u</span> {
+			<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>
+		}
+	}
+	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
+}
+</code></pre></div><h2 id="grpc-interceptor">gRPC Interceptor</h2>
+<p>See <a href="https://shijuvar.medium.com/writing-grpc-interceptors-in-go-bf3e7671fe48">Writing gRPC Interceptors in Go</a></p>
+<p>Rather than apply authorization piecemeal to each gRPC server method, I&rsquo;ve written a gRPC interceptor. The Interceptor intercepts every gRPC request that&rsquo;s received by the server, checks whether the authenticated user included in its metadata and represented by <code>X-Endpoint-API-UserInfo</code> is authorized and, if they are, then it invokes the gRPC method and returns the method&rsquo;s results. If the user is not authenticated, then the interceptor returns an error without invoking the method. Clean!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">serverInteceptor</span>(
+	<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
+	<span style="color:#a6e22e">rqst</span> <span style="color:#66d9ef">interface</span>{},
+	<span style="color:#a6e22e">info</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryServerInfo</span>,
+	<span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryHandler</span>,
+) (<span style="color:#66d9ef">interface</span>{}, <span style="color:#66d9ef">error</span>) {
+    <span style="color:#f92672">...</span>
+
+	<span style="color:#75715e">// Get metadata
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">md</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">FromIncomingContext</span>(<span style="color:#a6e22e">ctx</span>)
+	<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;...&#34;</span>)
+	}
+
+	<span style="color:#75715e">// Metadata keys are lowercase
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// Avoid md.Get()&#39;s use of strings.ToLower(), use lowercase
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">encUserInfos</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;x-endpoint-api-userinfo&#34;</span>);
+    len(<span style="color:#a6e22e">encUserInfos</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> {
+		<span style="color:#75715e">// Should be none or one
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">encUserInfos</span>) &gt; <span style="color:#ae81ff">1</span> {
+			<span style="color:#f92672">...</span>
+		}
+
+        <span style="color:#75715e">// Decode the header
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">userinfo</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewUserInfo</span>(<span style="color:#a6e22e">encUserInfos</span>[<span style="color:#ae81ff">0</span>])
+        <span style="color:#75715e">// Create a User
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">user</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewUser</span>(<span style="color:#a6e22e">userinfo</span>)
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">Valid</span>() {
+			<span style="color:#75715e">// Authorize the User
+</span><span style="color:#75715e"></span>			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">SystemUsers</span>.<span style="color:#a6e22e">Authorized</span>(<span style="color:#a6e22e">user</span>) {
+				<span style="color:#75715e">// Call the intercepted handler
+</span><span style="color:#75715e"></span>                <span style="color:#75715e">// Returning its results
+</span><span style="color:#75715e"></span>				<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">handler</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
+		}
+	}
+
+	<span style="color:#75715e">// Unauthenticated or Unauthorized
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>,
+        <span style="color:#a6e22e">status</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#a6e22e">codes</span>.<span style="color:#a6e22e">PermissionDenied</span>, <span style="color:#e6db74">&#34;permission denied&#34;</span>)
+}
+</code></pre></div><p>I won&rsquo;t labor the <code>User</code> struct but <code>UserInfo</code> decodes the incoming metadata header:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#f92672">import</span> (
+	<span style="color:#e6db74">&#34;encoding/base64&#34;</span>
+	<span style="color:#e6db74">&#34;encoding/json&#34;</span>
+	<span style="color:#e6db74">&#34;fmt&#34;</span>
+)
+
+<span style="color:#75715e">// UserInfo is a type that represents `X-Endpoint-API-UserToken`
+</span><span style="color:#75715e">// The Firebase field matches the service config auth provider
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">UserInfo</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">Name</span>           <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;name&#34;`</span>
+	<span style="color:#a6e22e">Issuer</span>         <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;iss&#34;`</span>
+	<span style="color:#a6e22e">Audience</span>       <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;aud&#34;`</span>
+	<span style="color:#a6e22e">AuthNTime</span>      <span style="color:#a6e22e">Time</span>     <span style="color:#e6db74">`json:&#34;auth_time&#34;`</span>
+	<span style="color:#a6e22e">UserID</span>         <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;user_id&#34;`</span>
+	<span style="color:#a6e22e">Subject</span>        <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;sub&#34;`</span>
+	<span style="color:#a6e22e">IssuedAt</span>       <span style="color:#a6e22e">Time</span>     <span style="color:#e6db74">`json:&#34;iat&#34;`</span>
+	<span style="color:#a6e22e">ExpirationTime</span> <span style="color:#a6e22e">Time</span>     <span style="color:#e6db74">`json:&#34;exp&#34;`</span>
+	<span style="color:#a6e22e">Email</span>          <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;email&#34;`</span>
+	<span style="color:#a6e22e">EmailVerified</span>  <span style="color:#66d9ef">bool</span>     <span style="color:#e6db74">`json:&#34;email_verified&#34;`</span>
+	<span style="color:#a6e22e">Firebase</span>       <span style="color:#a6e22e">Provider</span> <span style="color:#e6db74">`json:&#34;firebase&#34;`</span>
+}
+
+<span style="color:#75715e">// Provider is a type that represents a service config auth provider
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Provider</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">Identities</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>][]<span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;identities&#34;`</span>
+	<span style="color:#a6e22e">Provider</span>   <span style="color:#66d9ef">string</span>              <span style="color:#e6db74">`json:&#34;sign_in_provider&#34;`</span>
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewUserInfo</span>(<span style="color:#a6e22e">enc</span> <span style="color:#66d9ef">string</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">UserInfo</span>, <span style="color:#66d9ef">error</span>) {
+	<span style="color:#a6e22e">log</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;NewUserInfo&#34;</span>)
+
+	<span style="color:#75715e">// Value is base64url encoded
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// Decode it
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">base64</span>.<span style="color:#a6e22e">RawURLEncoding</span>.<span style="color:#a6e22e">DecodeString</span>(<span style="color:#a6e22e">enc</span>)
+
+	<span style="color:#a6e22e">userinfo</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">UserInfo</span>{}
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">userinfo</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#f92672">...</span>
+	}
+
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">userinfo</span>, <span style="color:#66d9ef">nil</span>
+}
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> <code>Time</code> isn&rsquo;t Golang&rsquo;s <code>time.Time</code> but <a href="https://www.yellowduck.be/posts/handling-unix-timestamps-in-json/">YellowDuck&rsquo;s <code>Time</code></a>; Golang&rsquo;s default JSON unmarshaler doesn&rsquo;t unmarshal UNIX epoch times correctly.</p>
+</blockquote>
+<h2 id="test">Test</h2>
+<p>Now we can deploy and test the Interceptor. Cloud Endpoints will only permit authenticated users so we want an authenticated user (i.e. someone with valid e.g. Google, Microsoft, GitHub credentials) but who isn&rsquo;t authorized to use the service.</p>
+<p>In this case, anyone other than <code>my@email.com</code> is denied:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-v <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>FIREBASE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{...}&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto some.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>SomeService/SomeMethod
+
+Resolved method descriptor:
+rpc SomeMethod <span style="color:#f92672">(</span> .v1alpha1.SomeMethodRequest <span style="color:#f92672">)</span>
+    returns <span style="color:#f92672">(</span> .v1alpha1.SomeMethodResponse <span style="color:#f92672">)</span>;
+
+Request metadata to send:
+authorization: Bearer <span style="color:#f92672">[[</span>JWT<span style="color:#f92672">]]</span>
+
+Response headers received:
+alt-svc: h3<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;:443&#34;</span>; ...
+content-length: <span style="color:#ae81ff">0</span>
+content-type: application/grpc
+date: Thu, <span style="color:#ae81ff">18</span> Jun <span style="color:#ae81ff">2021</span> 00:00:00
+server: Google Frontend
+x-cloud-trace-context: ...
+x-envoy-decorator-operation: ingress SomeMethod
+
+Response trailers received:
+<span style="color:#f92672">(</span>empty<span style="color:#f92672">)</span>
+Sent <span style="color:#ae81ff">1</span> request and received <span style="color:#ae81ff">0</span> responses
+ERROR:
+  Code: PermissionDenied
+  Message: permission denied
+</code></pre></div><p>But, authenticating with Firebase using <code>my@memail.com</code>, and passing the JWT:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-v <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>FIREBASE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{...}&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>-proto some.proto <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>SomeService/SomeMethod
+
+Resolved method descriptor:
+rpc SomeMethod <span style="color:#f92672">(</span> .v1alpha1.SomeMethodRequest <span style="color:#f92672">)</span>
+    returns <span style="color:#f92672">(</span> .v1alpha1.SomeMethodResponse <span style="color:#f92672">)</span>;
+
+Request metadata to send:
+authorization: Bearer <span style="color:#f92672">[[</span>JWT<span style="color:#f92672">]]</span>
+
+Response headers received:
+alt-svc: h3<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;:443&#34;</span>; ...
+content-length: <span style="color:#ae81ff">0</span>
+content-type: application/grpc
+date: Thu, <span style="color:#ae81ff">18</span> Jun <span style="color:#ae81ff">2021</span> 00:00:00
+server: Google Frontend
+x-cloud-trace-context: ...
+x-envoy-decorator-operation: ingress SomeMethod
+
+Response contents:
+<span style="color:#f92672">{</span>
+  ...
+<span style="color:#f92672">}</span>
+
+Response trailers received:
+<span style="color:#f92672">(</span>empty<span style="color:#f92672">)</span>
+Sent <span style="color:#ae81ff">1</span> request and received <span style="color:#ae81ff">1</span> response
+</code></pre></div><ul class="pa0">
+  
+   <li class="list">
+     <a href="/tags/cloud-endpoints" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">cloud-endpoints</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/grpc" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">grpc</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/firebase" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">firebase</a>
+   </li>
+  
+   <li class="list">
+     <a href="/tags/firebase-authentication" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">firebase-authentication&#34;</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+    
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/210614/">Firebase Authentication, Cloud Endpoints and gRPC (1of2)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210608/">Cloud Endpoints combine OpenAPI and gRPC... or not!</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210519/">Multiplexing gRPC and HTTP (Prometheus) endpoints with Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210412/">Fly.io</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210222/">Dapr</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200717/">Remotely invoking WASM functions using gRPC and waPC</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200429/">Rust implementation of Crate Transparency using Google Trillian</a>
+        </li>
+	    
+    </ul>
+</div>
+
+<br/>
+      <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
+        data-name="bmc-button" data-slug="dazwilkin" data-color="#ffdd00" data-emoji="" data-font="Cookie"
+        data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000"
+        data-coffee-color="#ffffff"></script>
+    </aside>
+
+  </article>
+
+  </main>
+  <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2021 
+  </a>
+    <div>
+
+
+<a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+  <svg height="32px" 
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="32px"
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+
+
+<a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="link-transition linkedin link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+<a href="https://github.com/DazWilkin" target="_blank" class="link-transition github link dib z-999 pt3 pt0-l mr1" title="Github link" rel="noopener" aria-label="follow on Github——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+<a href="https://medium.com/@DazWilkin" target="_blank" class="link-transition medium link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+  <svg  height="32px"  style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170" width="32px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000" width="8px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;fill:;"/>
+</svg>
+</span></a>
+
+
+
+
+</div>
+  </div>
+</footer>
+
+</body>
+
+</html>
