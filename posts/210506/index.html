@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="How to persist timestamps when using Firestore">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -203,7 +203,7 @@ if (!doNotTrack) {
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;m using Google&rsquo;s <a href="https://pkg.go.dev/cloud.google.com/go/firestore#DocumentRef">Golang SDK for Firestore</a>. The experience is excellent and I&rsquo;m quikcly becoming a fan of Firestore. However, as a Golang Firestore developer, I&rsquo;m feeling less loved and some of the concepts in the database were causing me a conundrum.</p>
 <p>I&rsquo;m still not entirely certain that I have Timestamps nailed but&hellip; I learned an important lesson on the auto-creation of Timestamps in documents and how to retain these values.</p>
 <p>Here&rsquo;s a simple Golang struct with <code>firestore</code> tags:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Dog</span> <span style="color:#66d9ef">struct</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Dog</span> <span style="color:#66d9ef">struct</span> {
     <span style="color:#a6e22e">Name</span>    <span style="color:#66d9ef">string</span>    <span style="color:#e6db74">`firestore:&#34;name&#34;`</span>
     <span style="color:#a6e22e">Age</span>     <span style="color:#66d9ef">uint8</span>     <span style="color:#e6db74">`firestore:&#34;age&#34;`</span>
     <span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`firestore:&#34;created,serverTimestamp&#34;`</span>
@@ -215,7 +215,7 @@ if (!doNotTrack) {
 <p>This approach provides some Golang syntactic sugar for working with Firestore documents. Conceptually, I think (!?), it&rsquo;s good to consider Firestore documents as JSON documents. This model also helps explain some of what follows.</p>
 <p>The tag <code>serverTimestamp</code> indicates that the Golang field (Firestore document property) should be replaced by the service&rsquo;s timestamp when the document is created.</p>
 <p>Let&rsquo;s test that:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{
     <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;Freddie&#34;</span>,
     <span style="color:#a6e22e">Age</span>:  <span style="color:#ae81ff">2</span>,
 }
@@ -262,7 +262,7 @@ if (!doNotTrack) {
 </blockquote>
 <p>But, great, the <code>Created</code> field is set.</p>
 <p>Let&rsquo;s update the retrieved (!) record, <code>Set</code> then <code>Get</code> it again:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Name</span> = <span style="color:#e6db74">&#34;Frederik Jack&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Name</span> = <span style="color:#e6db74">&#34;Frederik Jack&#34;</span>
 <span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Updated</span> = <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>()
 
 <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
@@ -290,7 +290,7 @@ if (!doNotTrack) {
 </code></pre><p>All good&hellip; The <code>Name</code> and <code>Updated</code> fields were updated.</p>
 <p>BUT, this probably isn&rsquo;t what we&rsquo;d customarily do. In the above code, we retrieve the document, mutate it and then persist it.</p>
 <p>We&rsquo;d probably do this in practice:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{
     <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;Freddie&#34;</span>,
     <span style="color:#a6e22e">Age</span>:  <span style="color:#ae81ff">2</span>,
 }
@@ -356,7 +356,7 @@ if (!doNotTrack) {
 <p>What&rsquo;s the solution?</p>
 <p>If I understand this correctly, the solution is that, unless we&rsquo;re always <code>Set</code>ing every field and we&rsquo;re not using <code>serverTimestamp</code>, we <strong>must</strong> include <a href="https://pkg.go.dev/cloud.google.com/go/firestore#SetOption"><code>SetOption</code></a> when using <code>Set</code>.</p>
 <p>The first time a document is created with <code>Set</code>, there&rsquo;s no document in Firestore and so the concept of merging is moot. Firestore doesn&rsquo;t balk at include merge options but, I think they&rsquo;re redundant at this point:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{
     <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;Freddie&#34;</span>,
     <span style="color:#a6e22e">Age</span>:  <span style="color:#ae81ff">2</span>,
 }
@@ -371,7 +371,7 @@ if (!doNotTrack) {
 <p>Specifically, if we&rsquo;ve a <code>Created</code> field regardless of whether we&rsquo;re using <code>serverTimestamp</code> to set it initally or setting it in our code, we must remember to never overwrite this value and to do so we must <strong>exclude</strong> it from the merge options. This has the effect of leaving it unchanged.</p>
 <p>However, for all the fields that we want to update, we must include these field names in the merge options so as to only overwrite these fields (and leave everything else unchanged).</p>
 <p>This brings me to the final gotcha with the SDK. I was using <code>SetOption</code> incorrectly and was receiving errors. In the following code, note the very specific way in which fields must be represented:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Name</span> = <span style="color:#e6db74">&#34;Frederik Jack&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Name</span> = <span style="color:#e6db74">&#34;Frederik Jack&#34;</span>
 <span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Updated</span> = <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>()
 
 <span style="color:#a6e22e">opt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">Merge</span>(

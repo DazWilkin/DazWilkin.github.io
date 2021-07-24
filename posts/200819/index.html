@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="A summary of ways to minimize WASM binaries">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -202,20 +202,20 @@ if (!doNotTrack) {
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve spent time recently playing around with WebAssembly (WASM) and <a href="https://github.com/wapc">waPC</a>. Rust and WASM were born at Mozilla and there&rsquo;s a natural affinity with writing WASM binaries in Rust. In the WASM examples I&rsquo;ve been using for <a href="https://pretired.dazwilkin.com/posts/200817/">WASM Transparency</a>, <a href="https://pretired.dazwilkin.com/posts/200807/">waPC and MsgPack</a> and <a href="https://pretired.dazwilkin.com/posts/200612/">waPC and Protobufs</a>.</p>
 <p>I&rsquo;ve created 3 WASM binaries: <code>complex.wasm</code>, <code>simplex.wasm</code> and <code>fabcar.wasm</code> and each is about 2.5MB when:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cargo build --target<span style="color:#f92672">=</span>wasm32-unknown-unknown --release
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cargo build --target<span style="color:#f92672">=</span>wasm32-unknown-unknown --release
 </code></pre></div><p>The <a href="https://rustwasm.github.io/docs/book">Rust and WebAssembly</a> book has an excellent section titled <a href="https://rustwasm.github.io/docs/book/reference/code-size.html">Shrinking <code>.wasm.</code> Code Size</a>. So, let&rsquo;s see what help that provides.</p>
 <p>For <code>complex.wasm</code>, the starting file size using the above command is: 2,473,898.</p>
 <p>Adding <code>Link-Time Optimizations</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-TOML" data-lang="TOML">[<span style="color:#a6e22e">profile</span>.<span style="color:#a6e22e">release</span>]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-TOML" data-lang="TOML">[<span style="color:#a6e22e">profile</span>.<span style="color:#a6e22e">release</span>]
 <span style="color:#a6e22e">lto</span> = <span style="color:#66d9ef">true</span>
 </code></pre></div><p>Reduces the file size to: 1,112,965 (~50%)</p>
 <p>Then, aggressively optimizing for size:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-TOML" data-lang="TOML">[<span style="color:#a6e22e">profile</span>.<span style="color:#a6e22e">release</span>]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-TOML" data-lang="TOML">[<span style="color:#a6e22e">profile</span>.<span style="color:#a6e22e">release</span>]
 <span style="color:#a6e22e">lto</span> = <span style="color:#66d9ef">true</span>
 <span style="color:#a6e22e">opt-level</span> = <span style="color:#e6db74">&#39;z&#39;</span>
 </code></pre></div><p>Reduces the file size to: 1,053,485 (~43% of original)</p>
 <p>Let&rsquo;s use <a href="https://github.com/rustwasm/twiggy">twiggy</a> to see what&rsquo;s remaining:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">twiggy top -n <span style="color:#ae81ff">10</span> ./target/wasm32-unknown-unknown/release/complex.wasm
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">twiggy top -n <span style="color:#ae81ff">10</span> ./target/wasm32-unknown-unknown/release/complex.wasm
  Shallow Bytes │ Shallow % │ Item
 ───────────────┼───────────┼────────────────────────────────────────────────────────
         <span style="color:#ae81ff">296065</span> ┊    28.10% ┊ <span style="color:#e6db74">&#34;function names&#34;</span> subsection
@@ -231,12 +231,12 @@ if (!doNotTrack) {
         <span style="color:#ae81ff">425879</span> ┊    40.43% ┊ ... and <span style="color:#ae81ff">2951</span> more.
        <span style="color:#ae81ff">1053485</span> ┊   100.00% ┊ Σ <span style="color:#f92672">[</span><span style="color:#ae81ff">2961</span> Total Rows<span style="color:#f92672">]</span>
 </code></pre></div><p>Now, let&rsquo;s use <a href="https://github.com/WebAssembly/binaryen">binaryren</a>&rsquo;s <code>wasm-opt</code> tool.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wasm-opt <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wasm-opt <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--strip-debug <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-o complex.no_debug.wasm <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>./target/wasm32-unknown-unknown/release/complex.wasm
 </code></pre></div><p>Then:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">twiggy top -n <span style="color:#ae81ff">10</span> complex.nodebug.wasm
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">twiggy top -n <span style="color:#ae81ff">10</span> complex.nodebug.wasm
  Shallow Bytes │ Shallow % │ Item
 ───────────────┼───────────┼─────────────────────
          <span style="color:#ae81ff">75273</span> ┊    16.18% ┊ data<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>
@@ -253,12 +253,12 @@ if (!doNotTrack) {
         <span style="color:#ae81ff">465148</span> ┊   100.00% ┊ Σ <span style="color:#f92672">[</span><span style="color:#ae81ff">2943</span> Total Rows<span style="color:#f92672">]</span>
 </code></pre></div><p>Reduces the fize size to: 465,148 (~20% of original)</p>
 <p>And, lastly, optimized aggressively for size (using <code>wasm-opt</code> this time):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wasm-opt <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wasm-opt <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-Oz <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-o complex.size.wasm <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>complex.no_debug.wasm
 </code></pre></div><p>Then:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">twiggy top -n <span style="color:#ae81ff">10</span> output.wasm
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">twiggy top -n <span style="color:#ae81ff">10</span> output.wasm
  Shallow Bytes │ Shallow % │ Item
 ───────────────┼───────────┼─────────────────────
          <span style="color:#ae81ff">46380</span> ┊    11.90% ┊ data<span style="color:#f92672">[</span>36<span style="color:#f92672">]</span>

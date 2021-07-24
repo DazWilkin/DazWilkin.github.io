@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="A Google Trillian solution that enables WASM binaries to be shipped to and run from a remote gRPC server">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -256,7 +256,7 @@ if (!doNotTrack) {
 <p>Let&rsquo;s walk through these components with some code snippets.</p>
 <h2 id="protobuf-descriptor-sets">Protobuf Descriptor (Sets)</h2>
 <p>There&rsquo;s not (!?) <a href="https://developers.google.com/protocol-buffers/docs/techniques#self-description">much</a> by way of documentation explaining protobuf descriptor (set) files. See the <code>protoc</code> command below which shows how to generate a descriptor file for the protobuf examples used in this solution. Descriptor files are binary equivalents of the human-readable <code>*.proto</code> (protobuf) sources. Google&rsquo;s <a href="https://pkg.go.dev/google.golang.org/protobuf?tab=overview">Golang protobuf APIv2</a> includes various packages that manipulate Descriptors and can create dynamic messages using these, e.g. <a href="https://pkg.go.dev/google.golang.org/protobuf/reflect/protoreflect?tab=doc">protoreflect</a> and <a href="https://pkg.go.dev/google.golang.org/protobuf/types/dynamicpb?tab=doc">dynamicpb</a></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">MODULE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;github.com/DazWilkin/go-wasm-transparency&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">MODULE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;github.com/DazWilkin/go-wasm-transparency&#34;</span>
 protoc <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--proto_path<span style="color:#f92672">=</span>./examples <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--descriptor_set_out<span style="color:#f92672">=</span>./examples/descriptor.pb <span style="color:#ae81ff">\
@@ -301,7 +301,7 @@ protoc <span style="color:#ae81ff">\
 <p><strong>NOTE</strong> in this prototype, the input message is randomly-generated</p>
 </blockquote>
 <p>There are 2 levels of Protobuf serivces|messages here. The primary level is the WASM Transparency Service&rsquo;s protobufs, e.g.:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf"><span style="color:#f92672">package</span> wasm_transparency<span style="color:#f92672">.</span>v1;<span style="color:#960050;background-color:#1e0010">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf"><span style="color:#f92672">package</span> wasm_transparency<span style="color:#f92672">.</span>v1;<span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">service</span> WASMTransparency {<span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#f92672">...</span><span style="color:#960050;background-color:#1e0010">
@@ -321,7 +321,7 @@ protoc <span style="color:#ae81ff">\
 <p><strong>NOTE</strong> Protobuf <code>Any</code> combine a type and a value (<code>[]byte</code>) and conveniently waPC uses <code>[]byte</code> as the data type between hosts and guests.</p>
 </blockquote>
 <p>So, for example <code>complex.proto</code> defines the 4 functions exported by <code>complex.wasm</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf"><span style="color:#f92672">package</span> examples;<span style="color:#960050;background-color:#1e0010">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf"><span style="color:#f92672">package</span> examples;<span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">service</span> ComplexService {<span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">rpc</span> add(ComplexRequest) <span style="color:#66d9ef">returns</span> (ComplexResponse);<span style="color:#960050;background-color:#1e0010">
@@ -348,7 +348,7 @@ protoc <span style="color:#ae81ff">\
 <h2 id="randomly-generated-messages">Randomly-generated Messages</h2>
 <p>By way of explaining how the Client is able to generate messages to be used to invoke the WASM functions, let&rsquo;s detour through <a href="https://github.com/DazWilkin/go-protobuf-extras">go-protobuf-extras</a> because it generates random protobuf messages from Descriptors.</p>
 <p>It does this use a single, straightforward function with an extensive switch statement:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Message</span>(<span style="color:#a6e22e">md</span> <span style="color:#a6e22e">protoreflect</span>.<span style="color:#a6e22e">MessageDescriptor</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">dynamicpb</span>.<span style="color:#a6e22e">Message</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Message</span>(<span style="color:#a6e22e">md</span> <span style="color:#a6e22e">protoreflect</span>.<span style="color:#a6e22e">MessageDescriptor</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">dynamicpb</span>.<span style="color:#a6e22e">Message</span> {
 	<span style="color:#a6e22e">m</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">dynamicpb</span>.<span style="color:#a6e22e">NewMessage</span>(<span style="color:#a6e22e">md</span>)
 	<span style="color:#a6e22e">fds</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Fields</span>()
 	<span style="color:#75715e">// Iterate over *all* fields
@@ -386,7 +386,7 @@ protoc <span style="color:#ae81ff">\
 <p>The function uses the Golang APIv2 <code>dynamicpb</code> package to create an empty protobuf message of the desired type (<code>protoreflect.MessageDescriptor</code>). For each of the <code>Fields</code> in the <code>MessageDescriptor</code> the function simply determines the type and creates a random value of that type. As you&rsquo;ll see, <code>MessageDescriptor</code> is determined by parsing the protobuf Descriptor file.</p>
 <p>The client creates a <code>FileDescriptorSet</code> and unmarshals the Descriptor Set file&rsquo;s contents into it. It then creates a <code>protodesc</code> files registry that enables <code>FindDescriptorByName</code>. In this case, it uses a specific service descriptor i.e. <code>examples.ComplexServer</code> (the full name is scoped by the package name). It then iterates over all the methods (<code>add</code>, <code>sub</code>, <code>mul</code> and <code>div</code>) that are defined within the service. For a specific method e.g. <code>mul</code> defined to be <code>rpc mul(ComplexRequest) returns (ComplexResponse)</code>, it grabs the input (<code>ComplexRequest</code>) message descriptor and creates a new dynamic, random message using it.</p>
 <p>In order to invoke the WASM function on the server, the e.g. <code>ComplexRequest</code> is marshaled into an <code>Any</code> and this is used as the <code>Parameters</code> value in the <code>InvokeRequest</code>. Not shown here is the reverse process given the <code>InvokeResponse</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#75715e">// Load and parse the descriptor file
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#75715e">// Load and parse the descriptor file
 </span><span style="color:#75715e"></span><span style="color:#a6e22e">egDescriptorSet</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">descriptorpb</span>.<span style="color:#a6e22e">FileDescriptorSet</span>{}
 <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">Metadata</span>().<span style="color:#a6e22e">DescriptorFile</span>.<span style="color:#a6e22e">Content</span>, <span style="color:#a6e22e">egDescriptorSet</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
@@ -441,7 +441,7 @@ protoc <span style="color:#ae81ff">\
 <h3 id="golang-wapc-host">Golang waPC Host</h3>
 <p>When a client seeks to invoke a WASM binary&rsquo;s function, the server retrieves the binary from Trillian and then creates a waPC host instance of it. In order to expedite invocations, if the server&rsquo;s waPC host has previously invoked a function on the binary, there&rsquo;s no need to retrieve the binary from Trillian again. Instead the server reuses an existing copy of the instance.</p>
 <p>The client submitted the request parameters enveloped within the <code>InvokeRequest</code> as part of the <code>FunctionRequest</code>. This parameters are already marshaled into <code>Any</code> (<code>[]byte</code>).</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf">syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf">syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#f92672">package</span> wasm_transparency<span style="color:#f92672">.</span>v1;<span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010">
@@ -454,7 +454,7 @@ protoc <span style="color:#ae81ff">\
 </span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">string</span> error <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;<span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
 </span></code></pre></div><p>And so the actual <code>Invoke</code> function is straightforward, given the <code>Any</code> parameters, invoke the specific operation (e.g. <code>mul</code>) exported by the WASM function and return the result to the client:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#a6e22e">Function</span>) <span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">any</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>, <span style="color:#66d9ef">error</span>) {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#a6e22e">Function</span>) <span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">any</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>, <span style="color:#66d9ef">error</span>) {
 	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[wapc:Function:Invoke] Entered&#34;</span>)
 	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
 	<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">i</span>.<span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">op</span>, <span style="color:#a6e22e">any</span>.<span style="color:#a6e22e">GetValue</span>())
@@ -470,7 +470,7 @@ protoc <span style="color:#ae81ff">\
 <p><strong>NOTE</strong> even though <code>Any</code> requires <code>TypeURL</code> to uniquely identify these, they&rsquo;re unused in this solution because the Client has the protobuf Descriptor and knows what to expect.</p>
 </blockquote>
 <p>waPC uses a string to identify functions exported by a WASM binary. The convention in this solution is that the protobuf method name (e.g. <code>mul</code>) matches the waPC operation name that corresponds to the exported function. Here&rsquo;s where this matching of <code>mul</code> to an actual (Rust) function is defined in the source of the WASM binary:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">handle_wapc</span>(operation: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">handle_wapc</span>(operation: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
     <span style="color:#66d9ef">match</span> operation {
         <span style="color:#e6db74">&#34;add&#34;</span> <span style="color:#f92672">=&gt;</span> complex::export::add(msg),
         <span style="color:#e6db74">&#34;sub&#34;</span> <span style="color:#f92672">=&gt;</span> complex::export::sub(msg),
@@ -482,7 +482,7 @@ protoc <span style="color:#ae81ff">\
 </code></pre></div><h3 id="rust-wapc-guest">Rust waPC Guest</h3>
 <p>The waPC SDK provides example host and guest code. The implementation is straightforward. There is expected to be a <code>handle_wapc</code> function that, given an <code>operation</code> and a <code>msg</code> (a reference to a slice of bytes which should sound familiar!), matches on the operation name e.g. <code>mul</code> and invokes e.g. <code>complex::export::mul(msg)</code>. This structure is user-defined but I wanted to show how these functions reflect the marshaling to protobuf.</p>
 <p>So, <code>export::mul</code> takes the borrowed slice of bytes and creates a <code>protobuf::well_known_types::Any</code> from it:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">mul</span>(msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">mul</span>(msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
     <span style="color:#75715e">// From bytes --&gt; Any
 </span><span style="color:#75715e"></span>    <span style="color:#75715e">// We must know the Type because it&#39;s lost in the transfer
 </span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> rqst <span style="color:#f92672">=</span> Any {
@@ -498,7 +498,7 @@ protoc <span style="color:#ae81ff">\
     Ok(v)
 }
 </code></pre></div><p>And then invokes <code>any::mul</code> which <code>unpack</code>s the <code>Any</code> into <code>ComplexRequest</code> as defined by the protobuf. This function then calls <code>rpc::mul</code> which does the multiplication and returns a <code>ComplexResponse</code> and this bubbles back up|down the functions to be returned to the waPC host.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">mul</span>(any: <span style="color:#a6e22e">Any</span>) -&gt; Result<span style="color:#f92672">&lt;</span>Any, ProtobufError<span style="color:#f92672">&gt;</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">mul</span>(any: <span style="color:#a6e22e">Any</span>) -&gt; Result<span style="color:#f92672">&lt;</span>Any, ProtobufError<span style="color:#f92672">&gt;</span> {
     <span style="color:#75715e">// From Any --&gt; ComplexRequest
 </span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> rqst <span style="color:#f92672">=</span> unpack(any);
     <span style="color:#75715e">// Call the RPC
@@ -507,7 +507,7 @@ protoc <span style="color:#ae81ff">\
 </span><span style="color:#75715e"></span>    Any::pack(<span style="color:#f92672">&amp;</span>resp)
 }
 </code></pre></div><p>Lastly we implement the multiplication using Rust&rsquo;s <code>num_complex</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">mul</span>(rqst: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">ComplexRequest</span>) -&gt; <span style="color:#a6e22e">ComplexResponse</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">mul</span>(rqst: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">ComplexRequest</span>) -&gt; <span style="color:#a6e22e">ComplexResponse</span> {
     <span style="color:#66d9ef">let</span> (a, b) <span style="color:#f92672">=</span> complex(rqst);
     <span style="color:#66d9ef">let</span> result <span style="color:#f92672">=</span> a <span style="color:#f92672">*</span> b;
     ComplexResponse {
@@ -520,7 +520,7 @@ protoc <span style="color:#ae81ff">\
     }
 }
 </code></pre></div><p>We must build the Rust WASM binary using:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cargo build --release --target wasm32-unknown-unknown
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cargo build --release --target wasm32-unknown-unknown
 </code></pre></div><p>And this will generate e.g. <code>complex.wasm</code> in <code>./target/wasm32-unknown-unknown/release</code>. This binary <code>complex.wasm</code> is what must be <code>Add</code> by the Client (along with the metadata) to the solution.</p>
 <ul class="pa0">
   

@@ -10,7 +10,7 @@
   <meta name="description"
     content="Tweaked yesterday&rsquo;s solution so that it will randomly select one from several hosts with which it&rsquo;s configured.
 package proxy import ( &#34;log&#34; &#34;math/rand&#34; &#34;net/http&#34; &#34;net/url&#34; &#34;os&#34; &#34;strings&#34; &#34;time&#34; ) func robin() { hostsList := os.Getenv(&#34;PROXY_HOST&#34;) if hostsList == &#34;&#34; { log.Fatal(&#34;&#39;PROXY_HOST&#39; environment variable should contain comma-separated list of hosts&#34;) } // Comma-separated lists of hosts  hosts := strings.Split(hostsList, &#34;,&#34;) urls := make([]*url.URL, len(hosts)) for i, host := range hosts { var origin = Endpoint{ Host: host, Port: os.">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -205,7 +205,7 @@ if (!doNotTrack) {
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>Tweaked yesterday&rsquo;s solution so that it will randomly select one from several hosts with which it&rsquo;s configured.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">proxy</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">proxy</span>
 
 <span style="color:#f92672">import</span> (
 	<span style="color:#e6db74">&#34;log&#34;</span>
@@ -250,7 +250,7 @@ if (!doNotTrack) {
 	}
 }
 </code></pre></div><p>This requires a minor tweak to the deployment to escape the commas within the <code>PROXY_HOST</code> string to disambiguate these for <code>gcloud</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FUNCTION<span style="color:#f92672">=</span>multi
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FUNCTION<span style="color:#f92672">=</span>multi
 gcloud functions deploy <span style="color:#e6db74">${</span>FUNCTION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--entry-point<span style="color:#f92672">=</span>Handler <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--runtime<span style="color:#f92672">=</span>go111 <span style="color:#ae81ff">\
@@ -259,7 +259,7 @@ gcloud functions deploy <span style="color:#e6db74">${</span>FUNCTION<span style
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </code></pre></div><p><strong>NB</strong> The <code>--set-env-vars</code> flag is followed by <code>^:^</code> to denote the command uses <code>:</code> instead of <code>,</code> because the value of <code>${HOSTS}</code> contains commas</p>
 <p>How to get the list of hosts? Assuming</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">SERVICE<span style="color:#f92672">=</span>nginx
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">SERVICE<span style="color:#f92672">=</span>nginx
 NODEPORT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  kubectl get service/<span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.ports[0].nodePort}&#34;</span><span style="color:#66d9ef">)</span>
@@ -289,7 +289,7 @@ NODEHOSTS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</spa
 </span><span style="color:#ae81ff"></span><span style="color:#f92672">&amp;&amp;</span> echo $HOSTS
 </code></pre></div><p><strong>NB</strong> This is hacky because it picks a tag randomly from the project&rsquo;s instances' tags</p>
 <p>Once deployed:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ENDPOINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ENDPOINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  gcloud functions describe <span style="color:#e6db74">${</span>FUNCTION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span>$PROJECT <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(httpsTrigger.url)&#34;</span><span style="color:#66d9ef">)</span>
@@ -299,7 +299,7 @@ NODEHOSTS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</spa
 </span><span style="color:#ae81ff"></span>  --output /dev/null <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>
 </code></pre></div><p>Attempting to determine how efficient the process is:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud logging read <span style="color:#e6db74">&#34;resource.type=\&#34;cloud_function\&#34; resource.labels.function_name=\&#34;</span><span style="color:#e6db74">${</span>FUNCTION<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;&#34;</span> <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud logging read <span style="color:#e6db74">&#34;resource.type=\&#34;cloud_function\&#34; resource.labels.function_name=\&#34;</span><span style="color:#e6db74">${</span>FUNCTION<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;&#34;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span>$PROJECT <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--freshness<span style="color:#f92672">=</span>1d <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\

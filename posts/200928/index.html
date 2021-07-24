@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="A Rube Goldberg machine for Google Cloud Build that solves quadratic equations">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -216,17 +216,17 @@ if (!doNotTrack) {
 <p>This calculation could be performed very simply but there would be no fun in that. We&rsquo;re not trying to find the simplest solution, remember.</p>
 <p>For convenience &ndash; I&rsquo;ll explain more about this below &ndash; we will use 3 files (<code>a</code>,<code>b</code>,<code>c</code>) to hold the values from the formula.</p>
 <p>E.g. for <code>8x²-10x+3=0</code>, we&rsquo;ll use:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#34;8&#34;</span> &gt; a
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#34;8&#34;</span> &gt; a
 echo <span style="color:#e6db74">&#34;-10&#34;</span> &gt; b
 echo <span style="color:#e6db74">&#34;3&#34;</span> &gt; c
 </code></pre></div><p>We can output the equation using:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#34;Quadratic: </span><span style="color:#66d9ef">$(</span>cat a<span style="color:#66d9ef">)</span><span style="color:#e6db74">x²+</span><span style="color:#66d9ef">$(</span>cat b<span style="color:#66d9ef">)</span><span style="color:#e6db74">x+</span><span style="color:#66d9ef">$(</span>cat c<span style="color:#66d9ef">)</span><span style="color:#e6db74">s=0&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#34;Quadratic: </span><span style="color:#66d9ef">$(</span>cat a<span style="color:#66d9ef">)</span><span style="color:#e6db74">x²+</span><span style="color:#66d9ef">$(</span>cat b<span style="color:#66d9ef">)</span><span style="color:#e6db74">x+</span><span style="color:#66d9ef">$(</span>cat c<span style="color:#66d9ef">)</span><span style="color:#e6db74">s=0&#34;</span>
 </code></pre></div><blockquote>
 <p><strong>NOTE</strong> bonus point if you wish to replace the static <code>+</code> with <code>-</code> for negative values of <code>b</code> and <code>c</code></p>
 </blockquote>
 <p>There are other ways to achieve this result in bash that may be more elegant or efficient but, for simplicity and consistency, we&rsquo;ll use <code>echo</code> throughout</p>
 <p>Then, rather than calculate the roots in a single step, we&rsquo;ll perform each constituent calculation in its own step, outputting these, intermediate results to a file:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#!/usr/bin/env bash
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#!/usr/bin/env bash
 </span><span style="color:#75715e"></span>
 echo <span style="color:#e6db74">&#34;Quadratic: </span><span style="color:#66d9ef">$(</span>cat a<span style="color:#66d9ef">)</span><span style="color:#e6db74">x²+</span><span style="color:#66d9ef">$(</span>cat b<span style="color:#66d9ef">)</span><span style="color:#e6db74">x+</span><span style="color:#66d9ef">$(</span>cat c<span style="color:#66d9ef">)</span><span style="color:#e6db74">s=0&#34;</span>
 
@@ -263,7 +263,7 @@ rm root1 root2
 <p>Behind the scenes, Cloud Build creates a VM for our job and it runs the containers (per the configuration file) in this VM. But, from where does it get data that it requires? The data may come from anywhere that a container image can acquire the data. A container could do an HTTP get, it could query a SQL database, another cloud service &hellip;. anything.</p>
 <p>But, there&rsquo;s a unique location for data in Cloud Build that corresponds to the VM&rsquo;s filing system and a unique location in that filing system called <code>/workspace</code>. The <code>/workspace</code> directory receives source files that you designate when you trigger a build with <code>gcloud builds submit ..</code> (or equivalent) <strong>and</strong> by default, each step mounts <code>/workspace</code> as the container&rsquo;s working directory.</p>
 <p>The latter is similar to assuming that every step does something of the form:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span>/workspace:/workspace some-image <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>...
@@ -272,7 +272,7 @@ rm root1 root2
 <p>You may read and write data to arbitrary out-of-process locations e.g. via an API, SQL database etc.</p>
 <p>What does this mean for our Rube Goldberg calculator? It means that we will recreate our inputs (<code>a</code>,<code>b</code> and <code>c</code>) automatically in Cloud Build when we perform the <code>gcloud builds submit ...</code> by including <code>${PWD}</code> or (more succinctly) <code>.</code>, i.e. <code>gcloud builds submit ${PWD} ...</code> and it means we can create files corresponding to the intermediate steps as a way to persist these values through the steps of the calculation.</p>
 <p>Let&rsquo;s create a local (not Cloud Build) bash script that uses Docker images for each of our steps:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#!/usr/bin/env bash
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e">#!/usr/bin/env bash
 </span><span style="color:#75715e"></span>
 docker run <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
@@ -376,7 +376,7 @@ docker run <span style="color:#ae81ff">\
 <p>The only other addition is the use of <code>--workdir=/workspace</code> and <code>--volume=${PWD}:/workspace</code>. The volume flag mounts the current directory (<code>{PWD}</code>) into each container&rsquo;s <code>/workspace</code> directory. The workdir flag makes <code>/workspace</code> the working directory for the containers. Effectively, these 2 flags resemble the behavior of steps in the Cloud Build service.</p>
 <p>OK, we&rsquo;re now ready to try our calculator on Cloud Build. You should (!) be able to run the following commands <strong>without</strong> incurring a bill along as you use less than 120-minutes of Cloud Build per day (<a href="https://cloud.google.com/cloud-build/pricing">link</a>). This is because Cloud Build is included as part of Google&rsquo;s <a href="https://cloud.google.com/free">Free Tier</a>.</p>
 <p>First we&rsquo;ll create a project, enable billing (required), and enable Cloud Build:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=[[</span>YOUR-PROJECT<span style="color:#f92672">]]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=[[</span>YOUR-PROJECT<span style="color:#f92672">]]</span>
 BILLING<span style="color:#f92672">=[[</span>YOUR-BILLING<span style="color:#f92672">]]</span>
 
 gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
@@ -390,7 +390,7 @@ gcloud services enable cloudbuild.googleapis.com <span style="color:#ae81ff">\
 <p><strong>NOTE</strong> To get your billing account, you can <code>BILLING=$(gcloud alpha billing accounts list --format=&quot;value(name)&quot;)</code></p>
 </blockquote>
 <p>Then we can create our <code>cloudbuild.yaml</code> file:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">steps</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">steps</span>:
   - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">busybox</span>
     <span style="color:#f92672">args</span>:
       - <span style="color:#ae81ff">ash</span>
@@ -473,7 +473,7 @@ gcloud services enable cloudbuild.googleapis.com <span style="color:#ae81ff">\
       - <span style="color:#e6db74">&#34;rm root1 root2&#34;</span>
 </code></pre></div><p>And then we can submit the calculation.</p>
 <p>Don&rsquo;t forget to create <code>a</code>, <code>b</code> and <code>c</code> in your hosts current working directory:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud builds submit <span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud builds submit <span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--config<span style="color:#f92672">=</span>./cloudbuild.yaml <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </code></pre></div><p>For me, this yields:</p>
@@ -542,10 +542,10 @@ DONE
 </blockquote>
 <p>If, for some crazy reason, you wish to persist the results, then we can add artifacts to the configuration.</p>
 <p>Create a Cloud Storage bucket:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">BUCKET<span style="color:#f92672">=[</span>YOUR-BUCKET<span style="color:#f92672">]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">BUCKET<span style="color:#f92672">=[</span>YOUR-BUCKET<span style="color:#f92672">]</span>
 gsutil mb -p <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> gs://<span style="color:#e6db74">${</span>BUCKET<span style="color:#e6db74">}</span>
 </code></pre></div><p>And then revise the Cloud Build configuration, removing the step that deletes <code>root1</code> and <code>root2</code>, and replacing it with an <code>artifacts</code> configuration that references the files and the GCS bucket:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">  <span style="color:#75715e"># - name: busybox</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">  <span style="color:#75715e"># - name: busybox</span>
   <span style="color:#75715e">#   args:</span>
   <span style="color:#75715e">#     - ash</span>
   <span style="color:#75715e">#     - -c</span>
@@ -557,13 +557,13 @@ gsutil mb -p <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6d
       - <span style="color:#e6db74">&#34;root1&#34;</span>
       - <span style="color:#e6db74">&#34;root2&#34;</span>
 </code></pre></div><p>and then:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gsutil ls gs://<span style="color:#e6db74">${</span>BUCKET<span style="color:#e6db74">}</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gsutil ls gs://<span style="color:#e6db74">${</span>BUCKET<span style="color:#e6db74">}</span>
 gs://<span style="color:#f92672">[</span>YOUR-PROJECT<span style="color:#f92672">]</span>/artifacts-ef3b...f98e.json
 gs://<span style="color:#f92672">[</span>YOUR-PROJECT<span style="color:#f92672">]</span>/root1
 gs://<span style="color:#f92672">[</span>YOUR-PROJECT<span style="color:#f92672">]</span>/root2
 </code></pre></div><p>As you expect, the <code>root?</code> files contain the roots.</p>
 <p>The <code>artifacts-*.json</code> file contains (in this case):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
     <span style="color:#f92672">&#34;location&#34;</span>:<span style="color:#e6db74">&#34;gs://[[YOUR-BUCKET]]/root1#1601321178905090&#34;</span>,
     <span style="color:#f92672">&#34;file_hash&#34;</span>:[{
         <span style="color:#f92672">&#34;file_hash&#34;</span>:[{
@@ -585,7 +585,7 @@ gs://<span style="color:#f92672">[</span>YOUR-PROJECT<span style="color:#f92672"
 <p><strong>NOTE</strong> the structure of this artifacts file is explained <a href="https://cloud.google.com/cloud-build/docs/building/store-build-artifacts#store-artifact-storage">here</a></p>
 </blockquote>
 <p>We can have <code>gsutil</code> (re)compute files' hashes:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gsutil gs://<span style="color:#f92672">[[</span>YOUR-BUCKET<span style="color:#f92672">]]</span>/root1
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gsutil gs://<span style="color:#f92672">[[</span>YOUR-BUCKET<span style="color:#f92672">]]</span>/root1
 Hashes <span style="color:#f92672">[</span>base64<span style="color:#f92672">]</span> <span style="color:#66d9ef">for</span> root1:
     Hash <span style="color:#f92672">(</span>md5<span style="color:#f92672">)</span>:        uUm4DK1+rjVWdjkIQxj8qQ<span style="color:#f92672">==</span>
     Hash <span style="color:#f92672">(</span>crc32c<span style="color:#f92672">)</span>:     oR1wYQ<span style="color:#f92672">==</span>
@@ -593,7 +593,7 @@ Hashes <span style="color:#f92672">[</span>base64<span style="color:#f92672">]</
 <p><strong>NOTE</strong> the md5 hash value</p>
 </blockquote>
 <p>And:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gsutil cat gs://<span style="color:#f92672">[[</span>YOUR-BUCKET<span style="color:#f92672">]]</span>/root1 <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gsutil cat gs://<span style="color:#f92672">[[</span>YOUR-BUCKET<span style="color:#f92672">]]</span>/root1 <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>| md5sum <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>| head --bytes<span style="color:#f92672">=</span><span style="color:#ae81ff">32</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>| xxd -revert -plain <span style="color:#ae81ff">\
@@ -604,7 +604,7 @@ uUm4DK1+rjVWdjkIQxj8qQ<span style="color:#f92672">==</span>
 </blockquote>
 <p>Hopefully, the above overly-complex Cloud Build example has helped explain the very general-purpose utility of Cloud Build.</p>
 <p>To tidy up, you may simple delete everything:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud projects delete <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud projects delete <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
 </code></pre></div><ul class="pa0">
   
    <li class="list">

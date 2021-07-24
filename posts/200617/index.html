@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="Running WASM binaries on Google Cloud Functions">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -203,7 +203,7 @@ if (!doNotTrack) {
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>Following on from <a href="/posts/200612/">waPC &amp; Protobufs</a> and a question on Stack Overflow about Cloud Functions, I was compelled to try running WASM on Cloud Functions no JavaScript.</p>
 <p>I wanted to reuse the WASM waPC functions that I&rsquo;d written in Rust as described in the other post. Cloud Functions does not (yet!?) provide a Rust runtime and so I&rsquo;m using the <a href="https://github.com/wapc/wapc-go">waPC Host for Go</a> in this example.</p>
 <p>It works!</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PARAMS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>printf <span style="color:#e6db74">&#39;{&#34;a&#34;:{&#34;real&#34;:39,&#34;imag&#34;:3},&#34;b&#34;:{&#34;real&#34;:39,&#34;imag&#34;:3}}&#39;</span> | base64<span style="color:#66d9ef">)</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PARAMS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>printf <span style="color:#e6db74">&#39;{&#34;a&#34;:{&#34;real&#34;:39,&#34;imag&#34;:3},&#34;b&#34;:{&#34;real&#34;:39,&#34;imag&#34;:3}}&#39;</span> | base64<span style="color:#66d9ef">)</span>
 TOKEN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud auth print-identity-token<span style="color:#66d9ef">)</span>
 
 echo <span style="color:#e6db74">&#34;{
@@ -219,7 +219,7 @@ echo <span style="color:#e6db74">&#34;{
 </span><span style="color:#ae81ff"></span>--data @- <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>.cloudfunctions.net/invoker
 </code></pre></div><p>yields (correctly):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
   <span style="color:#f92672">&#34;result&#34;</span>: {
     <span style="color:#f92672">&#34;real&#34;</span>: <span style="color:#ae81ff">1512</span>,
     <span style="color:#f92672">&#34;imag&#34;</span>: <span style="color:#ae81ff">234</span>
@@ -228,7 +228,7 @@ echo <span style="color:#e6db74">&#34;{
 </code></pre></div><p>Let me explain&hellip;</p>
 <h2 id="protobufs--json">Protobufs &amp; JSON</h2>
 <p>I&rsquo;m using a WASM binary unchanged from the work described in the <a href="/posts/200612/">other</a> post. I&rsquo;d added another proto (<code>complex.proto</code>) to that project and implemented it using waPC and Rust. The result is <code>complex.wasm</code>. The proto is:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf">syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf">syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#f92672">package</span> examples;<span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010">
@@ -258,19 +258,19 @@ echo <span style="color:#e6db74">&#34;{
 </span></code></pre></div><p>The implementation expects protobuf (!) requests and responses. The implementation uses the protobuf well-known type, Any, as a way to transfer bytes across the host:guest boundary.</p>
 <p>I didn&rsquo;t want to change this implementation for Cloud Functions (though if you&rsquo;re only using Cloud Functions, it would be more straightforward to use JSON throughout). I recalled that protobufs supports <a href="https://developers.google.com/protocol-buffers/docs/proto3#json_mapping">JSON mapping</a> and so I&rsquo;m using that.</p>
 <p>As with the waPC implementation, the WASM function parameters and result are enveloped but, for the Cloud Function, using JSON. Here&rsquo;s the Golang struct:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Message</span> <span style="color:#66d9ef">struct</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Message</span> <span style="color:#66d9ef">struct</span> {
 	<span style="color:#a6e22e">Filename</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;filename&#34;`</span>
 	<span style="color:#a6e22e">Function</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;function&#34;`</span>
 	<span style="color:#a6e22e">Params</span>   []<span style="color:#66d9ef">byte</span> <span style="color:#e6db74">`json:&#34;params&#34;`</span>
 }
 </code></pre></div><p>Returning to the example at the top of this post, it should be clear that the request data maps to this Golang struct.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
 	<span style="color:#f92672">&#34;filename&#34;</span>: <span style="color:#e6db74">&#34;complex.wasm&#34;</span>,
 	<span style="color:#f92672">&#34;function&#34;</span>: <span style="color:#e6db74">&#34;c:mul&#34;</span>,
 	<span style="color:#f92672">&#34;params&#34;</span>: <span style="color:#e6db74">&#34;${PARAMS}&#34;</span>
 }
 </code></pre></div><p>But what about <code>${PARAMS}</code>? Well, that&rsquo;s base64-encoded to envelope it but, the source data is:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">
 	<span style="color:#e6db74">&#34;a&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> {
 		<span style="color:#f92672">&#34;real&#34;</span>: <span style="color:#ae81ff">39</span>,
 		<span style="color:#f92672">&#34;imag&#34;</span>: <span style="color:#ae81ff">3</span>
@@ -281,7 +281,7 @@ echo <span style="color:#e6db74">&#34;{
 	}
 <span style="color:#960050;background-color:#1e0010">}</span>
 </code></pre></div><p>And this corresponds to a <code>ComplexRequest</code> type as defined in the protobuf message. When protoc compiles this file, the Golang types it produces are:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ComplexRequest</span> <span style="color:#66d9ef">struct</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ComplexRequest</span> <span style="color:#66d9ef">struct</span> {
 	<span style="color:#a6e22e">state</span>         <span style="color:#a6e22e">protoimpl</span>.<span style="color:#a6e22e">MessageState</span>
 	<span style="color:#a6e22e">sizeCache</span>     <span style="color:#a6e22e">protoimpl</span>.<span style="color:#a6e22e">SizeCache</span>
 	<span style="color:#a6e22e">unknownFields</span> <span style="color:#a6e22e">protoimpl</span>.<span style="color:#a6e22e">UnknownFields</span>
@@ -303,11 +303,11 @@ echo <span style="color:#e6db74">&#34;{
 <p>Hopefully, it&rsquo;s clear that <code>${PARAMS}</code> represents a <code>ComplexRequest</code></p>
 <p>Then we just need to parse the JSON <code>Message</code>, extract a filename (representing <code>complex.wasm</code>) and a function (<code>c:mul</code> corresponds to the multiplication function) with extracted params.</p>
 <p>Extracting the params  is straightforward using Golang&rsquo;s new SDK (<code>google.golang.org/protobuf</code>) <code>protojson</code> package:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">ComplexRequest</span>{}
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">ComplexRequest</span>{}
 <span style="color:#a6e22e">protojson</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">msg</span>.<span style="color:#a6e22e">Params</span>, <span style="color:#a6e22e">rqst</span>)
 <span style="color:#a6e22e">params</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">rqst</span>)
 </code></pre></div><p>And, similarly to convert the function&rsquo;s result (bytes) through <code>ComplexResult</code> and into JSON to return:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">ComplexResponse</span>{}
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">ComplexResponse</span>{}
 <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">resp</span>)
 <span style="color:#a6e22e">j</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">protojson</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">resp</span>)
 </code></pre></div><blockquote>
@@ -315,7 +315,7 @@ echo <span style="color:#e6db74">&#34;{
 </blockquote>
 <h2 id="handler">Handler</h2>
 <p>Cloud Functions (re)uses Golang&rsquo;s <code>net/http</code> package&rsquo;s handlers:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Invoker</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) { <span style="color:#f92672">...</span> }
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Invoker</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) { <span style="color:#f92672">...</span> }
 </code></pre></div><p>We can follow Google&rsquo;s Golang <a href="https://cloud.google.com/functions/docs/writing/http#writing_http_helloworld-go">HTTP Functions</a> example to build the bones of the function and extract values from the <code>Message</code> struct defined above.</p>
 <p>We must then load and instantiate the WASM (waPC) function using <a href="https://github.com/wapc/wapc-go">waPC Host for Go</a>. The code is straighforward and mirrors the example in that repo.</p>
 <p>One optimisation may be to load and instantiate WASM binaries once per instance rather than once per invocation using global variables. Loading per invocation is slow; <code>complex.wasm</code> is 17MB (!?).</p>
@@ -337,18 +337,18 @@ echo <span style="color:#e6db74">&#34;{
 <li>Vendoring, it&rsquo;s <code>src/[[PACKAGE]]</code></li>
 </ul>
 <p>Lastly, we can deploy the Function:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud functions deploy invoker <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud functions deploy invoker <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--entry-point<span style="color:#f92672">=</span>Invoker <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--runtime<span style="color:#f92672">=</span>go113 <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--trigger-http <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </code></pre></div><p>And then you may invoke the function, either the <code>gcloud</code>-way:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PARAMS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>printf <span style="color:#e6db74">&#39;{&#34;a&#34;:{&#34;real&#34;:39,&#34;imag&#34;:3},&#34;b&#34;:{&#34;real&#34;:39,&#34;imag&#34;:3}}&#39;</span> | base64<span style="color:#66d9ef">)</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PARAMS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>printf <span style="color:#e6db74">&#39;{&#34;a&#34;:{&#34;real&#34;:39,&#34;imag&#34;:3},&#34;b&#34;:{&#34;real&#34;:39,&#34;imag&#34;:3}}&#39;</span> | base64<span style="color:#66d9ef">)</span>
 gcloud functions call invoker <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--data<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{\&#34;filename\&#34;:\&#34;complex.wasm\&#34;,\&#34;function\&#34;:\&#34;c:mul\&#34;,\&#34;params\&#34;:\&#34;</span><span style="color:#e6db74">${</span>PARAMS<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;}&#34;</span>
 </code></pre></div><p>Or the curl-way:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PARAMS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>printf <span style="color:#e6db74">&#39;{&#34;a&#34;:{&#34;real&#34;:39,&#34;imag&#34;:3},&#34;b&#34;:{&#34;real&#34;:39,&#34;imag&#34;:3}}&#39;</span> | base64<span style="color:#66d9ef">)</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PARAMS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>printf <span style="color:#e6db74">&#39;{&#34;a&#34;:{&#34;real&#34;:39,&#34;imag&#34;:3},&#34;b&#34;:{&#34;real&#34;:39,&#34;imag&#34;:3}}&#39;</span> | base64<span style="color:#66d9ef">)</span>
 TOKEN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud auth print-identity-token<span style="color:#66d9ef">)</span>
 
 echo <span style="color:#e6db74">&#34;{\&#34;filename\&#34;:\&#34;complex.wasm\&#34;,\&#34;function\&#34;:\&#34;c:mul\&#34;,\&#34;params\&#34;:\&#34;</span><span style="color:#e6db74">${</span>PARAMS<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;}&#34;</span> |<span style="color:#ae81ff">\
@@ -364,7 +364,7 @@ echo <span style="color:#e6db74">&#34;{\&#34;filename\&#34;:\&#34;complex.wasm\&
 </code></pre><h2 id="conclusion">Conclusion</h2>
 <p>WASM is very interesting. Cloud Functions really should provide a WASI-compliant runtime but, until this happens, it&rsquo;s straightforward to use one of the existing runtimes (e.g. Golang) and create a WASI-compliant host from it. This sample could be extended several ways to make it more general-purpose including supporting uploading WASM binaries (and persisting them to e.g. Cloud Storage) and retaining (warm) instantiations of WASM binaries to save reloading.</p>
 <h2 id="source">Source</h2>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> [[<span style="color:#a6e22e">PACKAGE</span>]]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> [[<span style="color:#a6e22e">PACKAGE</span>]]
 
 <span style="color:#f92672">import</span> (
 	<span style="color:#e6db74">&#34;context&#34;</span>

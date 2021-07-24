@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="ESPHome, MQTT, Prometheus and an MQTT Gateway for Prometheus">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -208,7 +208,7 @@ if (!doNotTrack) {
 <h1 id="develop">Develop</h1>
 <h2 id="esphome">ESPHome</h2>
 <p>Install:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">WORK<span style="color:#f92672">=[[</span>YOUR-PROJECT-DIR<span style="color:#f92672">]]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">WORK<span style="color:#f92672">=[[</span>YOUR-PROJECT-DIR<span style="color:#f92672">]]</span>
 cd <span style="color:#e6db74">${</span>WORK<span style="color:#e6db74">}</span>
 python3 -m venv venv
 source venv/bin/activate
@@ -218,7 +218,7 @@ pip install platformio
 <h3 id="sensors">Sensors</h3>
 <p>Absent any actual sensors and wanting to get started, I <a href="https://github.com/esphome/feature-requests/issues/617">pinged</a> the ESPHome GitHub repo for guidance on a test (random number) generating sensor. There isn&rsquo;t one in the &lsquo;package&rsquo; but it&rsquo;s trivial to write one. <a href="https://github.com/glmnet">gimnet</a> kindly provided code for &ldquo;Template Sensor&rdquo; (see below) too.</p>
 <p>Here&rsquo;s  my random number (0..100) generator that updates every 60 seconds:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">sensor</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">sensor</span>:
   - <span style="color:#f92672">platform</span>: <span style="color:#ae81ff">template</span>
     <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;Random Numbers&#34;</span>
     <span style="color:#f92672">id</span>: <span style="color:#ae81ff">random_sensor</span>
@@ -227,7 +227,7 @@ pip install platformio
 </span><span style="color:#e6db74">      </span>      <span style="color:#ae81ff">return rand() % 100;</span>
     <span style="color:#f92672">update_interval</span>: <span style="color:#ae81ff">60s</span>
 </code></pre></div><p>Here&rsquo;s <a href="https://github.com/glmnet">gimnet</a>&rsquo;s &ldquo;Template Sensor&rdquo; that I renamed to &ldquo;Counter Sensor&rdquo;:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">sensor</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">sensor</span>:
 - <span style="color:#f92672">platform</span>: <span style="color:#ae81ff">template</span>
     <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;Counter Sensor&#34;</span>
     <span style="color:#f92672">id</span>: <span style="color:#ae81ff">counter_sensor</span>
@@ -242,7 +242,7 @@ pip install platformio
 <p>I&rsquo;ll describe below my work on attempting to communicate with Google Cloud Platform&rsquo;s MQTT service that&rsquo;s part of <a href="https://cloud.google.com/iot-core">Cloud IoT</a>. As I mentioned, I believe (!) it&rsquo;s not currently possible to publish to a TLS-based MQTT broker. I may be wrong. I&rsquo;ll document what I did below.</p>
 <p>Absent that, I decided to create a local MQTT broker and Eclipse&rsquo;s <a href="https://mosquitto.org">Mosquitto</a> is the exemplar implementation.</p>
 <p>I&rsquo;m going to bundle MQTT, a gateway (!), Prometheus and cAdvisor in a Docker Compose file. Here&rsquo;s the service entry for Mosquitto:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">services</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">services</span>:
   <span style="color:#f92672">mqtt</span>:
     <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">mqtt</span>
     <span style="color:#f92672">image</span>: <span style="color:#ae81ff">eclipse-mosquitto:1.6.8</span>
@@ -257,7 +257,7 @@ pip install platformio
 </code></pre></div><p><strong>NB</strong> If you wish to tweak the Mosquitto broker config, uncomment the <code>volumes</code> and define a <code>mosquitto.conf</code> file</p>
 <p>I&rsquo;m exposing <code>1883</code> because we&rsquo;ll be accessing the broker from remote ESPs.</p>
 <p>Assuming, I have a broker running on <code>${IP}</code> and <code>${PORT}</code> (default: 1883), here&rsquo;s the ESPHome config. This is all well-documented <a href="https://esphome.io/components/mqtt.html">MQTT Client Component</a></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">mqtt</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">mqtt</span>:
   <span style="color:#f92672">broker</span>: <span style="color:#ae81ff">${IP}</span>
   <span style="color:#f92672">port</span>: <span style="color:#ae81ff">${PORT}</span>
 </code></pre></div><h2 id="mqtt-gateway">MQTT Gateway</h2>
@@ -265,7 +265,7 @@ pip install platformio
 <p>See: <a href="https://github.com/inuits/mqttgateway">https://github.com/inuits/mqttgateway</a></p>
 <p>This is analogous to the Prometheus Push Gateway. It listens to MQTT topics and renders MQTT message (values) as Prometheus metrics (using Prometheus' exposition format).</p>
 <p>For example, if we use the Mosquitto (container image) <code>mosquitto_pub</code> client to publish a message (<code>42</code>) to MQTT topic <code>prometheus/job/test/instance/test/test</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--interactive --tty <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--net<span style="color:#f92672">=</span>host <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>eclipse-mosquitto:1.6.8 mosquitto_pub <span style="color:#ae81ff">\
@@ -274,7 +274,7 @@ pip install platformio
 </span><span style="color:#ae81ff"></span>  -m <span style="color:#ae81ff">42</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  -t prometheus/job/test/instance/test/test
 </code></pre></div><p>And then curl the MQTT Gateway&rsquo;s metrics endpoint:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -s http://localhost:9337/metrics | grep test
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -s http://localhost:9337/metrics | grep test
 </code></pre></div><p>You can see 3 metrics are generated: <code>mqtt_test_last_pushed_timestamp</code>, <code>mqtt_test_push_total</code> and <code>test</code></p>
 <p><code>test</code> matches <code>prometheus/job/test/instance/test/test</code> while the other 2 metrics are derived from it.</p>
 <p><code>test</code> is labeled <code>instance=&quot;test&quot;</code> and <code>job=&quot;test&quot;</code> which are derived from the MQTT topic path.</p>
@@ -289,7 +289,7 @@ mqtt_test_push_total{instance=&quot;test&quot;,job=&quot;test&quot;} 3
 # TYPE test gauge
 test{instance=&quot;test&quot;,job=&quot;test&quot;} 42
 </code></pre><p>We can manifest this in the ESPHome configuration as:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">interval</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">interval</span>:
   - <span style="color:#f92672">interval</span>: <span style="color:#ae81ff">60s</span>
     <span style="color:#f92672">then</span>:
       - <span style="color:#f92672">mqtt.publish</span>:
@@ -300,7 +300,7 @@ test{instance=&quot;test&quot;,job=&quot;test&quot;} 42
 <p>The GitHub repo does not appear to provide a Docker container image for the code. I tweaked it slightly, migrated the code to Go Modules and then published it as:</p>
 <p><a href="https://hub.docker.com/repository/docker/dazwilkin/mqttgateway">https://hub.docker.com/repository/docker/dazwilkin/mqttgateway</a></p>
 <p>I did this so as to be able to combine the gateway into the Docker Compose file. Here&rsquo;s its service:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">services</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">services</span>:
   <span style="color:#f92672">mqttgateway</span>:
     <span style="color:#f92672">depends_on</span>:
       - <span style="color:#ae81ff">mqtt</span>
@@ -323,7 +323,7 @@ test{instance=&quot;test&quot;,job=&quot;test&quot;} 42
 <p>The broker&rsquo;s address corresponds to the Compose service name for the broker, i.e. <code>mqtt</code>.</p>
 <h2 id="prometheus--cadvisor">Prometheus | cAdvisor</h2>
 <p>The Prometheus configuration is straightforward. It scrapes the MQTT Gateway on <code>mqttgateway:9337</code> and <code>/metrics</code>, itself (the Prometheus server) and cAdvisor:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">services</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">services</span>:
   <span style="color:#f92672">prometheus</span>:
     <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
     <span style="color:#f92672">depends_on</span>:
@@ -357,7 +357,7 @@ test{instance=&quot;test&quot;,job=&quot;test&quot;} 42
 <p>Once you&rsquo;ve deployed ESPHome code to an ESP, you may monitor device(s), using the Dashboard. Here are my (imaginatively) named devices:</p>
 <p><img src="/images/200227.esphome.dashboard.png" alt="ESPHome Dashboard"></p>
 <p>You can view logs using the dashboard, or the command-line:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">esphome config/esp01.yaml logs
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">esphome config/esp01.yaml logs
 
 INFO Reading configuration config/esp01.yaml...
 INFO Starting log output from 192.168.1.201 using esphome API
@@ -419,7 +419,7 @@ INFO Successfully connected to 192.168.1.201
 <p><strong>NB</strong> The Compose file publishes the <code>mqttgateway</code> port <code>9337</code> (as same) on the host.</p>
 <p><img src="/images/200227.mqttgateway.metrics.png" alt="MQTT Gateway metrics"></p>
 <p>That includes many metrics. As you saw before, you can curl the endpoint and grep what you&rsquo;re interested in too:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -s http://localhost:9337/metrics | grep temperature
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -s http://localhost:9337/metrics | grep temperature
 
 <span style="color:#75715e"># HELP mqtt_temperature_last_pushed_timestamp Last time temperature was pushed via MQTT</span>
 <span style="color:#75715e"># TYPE mqtt_temperature_last_pushed_timestamp gauge</span>
@@ -446,7 +446,7 @@ temperature<span style="color:#f92672">{</span>job<span style="color:#f92672">=<
 <p><!-- raw HTML omitted -->This didn&rsquo;t work<!-- raw HTML omitted --></p>
 <p>I think the issue is with using TLS from the ESPHome MQTT client; I&rsquo;ll update when I learn more</p>
 <p>Here&rsquo;s a script that creates a GCP Project, enables IoT and Pub/Sub, creates IoT registry, devices, keys and Pub/Sub topics:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Environment</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Environment</span>
 PROJECT<span style="color:#f92672">=</span>
 REGION<span style="color:#f92672">=</span>us-central1
 REGISTRY<span style="color:#f92672">=</span>esphome
@@ -502,7 +502,7 @@ gcloud pubsub topics create <span style="color:#e6db74">${</span>EVENT_TOPIC<spa
 </span><span style="color:#ae81ff"></span>  --public-key<span style="color:#f92672">=</span>path<span style="color:#f92672">=</span>./keys/<span style="color:#e6db74">${</span>DEVICE<span style="color:#e6db74">}</span>.public.pem,type<span style="color:#f92672">=</span>es256-pem
 <span style="color:#66d9ef">done</span>
 </code></pre></div><p>I tweaked Google&rsquo;s JWT sample code <a href="https://cloud.google.com/iot/docs/how-tos/credentials/jwts#iot-core-jwt-go">link</a> in order to generate JWTs from the private keys:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#66d9ef">for</span> DEVICE in <span style="color:#e6db74">&#34;esp01&#34;</span> <span style="color:#e6db74">&#34;esp02&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#66d9ef">for</span> DEVICE in <span style="color:#e6db74">&#34;esp01&#34;</span> <span style="color:#e6db74">&#34;esp02&#34;</span>
 <span style="color:#66d9ef">do</span>
   go run github.com/DazWilkin/JWT <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
@@ -512,7 +512,7 @@ gcloud pubsub topics create <span style="color:#e6db74">${</span>EVENT_TOPIC<spa
 <p><strong>NB</strong> The JWTs are configured with a relatively near expiry (I used 48 hours) and so will need to recreated</p>
 <p>We also need the fingerprint (!) for Google&rsquo;s CA root certificates (here: <a href="https://pki.google.com/roots.pem)">https://pki.google.com/roots.pem)</a>.</p>
 <p>I was unable to use <code>esphome mqtt-fingerprint</code> for this and used instead:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FINGERPRINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FINGERPRINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>    openssl x509 <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>      -in roots.pem <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>      -noout <span style="color:#ae81ff">\
@@ -528,7 +528,7 @@ d1eb23a46d17d68fd92564c2f1f1601764d8e349
 <li><a href="https://esphome.io/components/mqtt.html#">https://esphome.io/components/mqtt.html#</a></li>
 <li><a href="https://cloud.google.com/iot/docs/how-tos/mqtt-bridge">https://cloud.google.com/iot/docs/how-tos/mqtt-bridge</a></li>
 </ul>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">mqtt</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">mqtt</span>:
   <span style="color:#f92672">broker</span>: <span style="color:#ae81ff">mqtt.googleapis.com</span>
   <span style="color:#f92672">ssl_fingerprints</span>:
     - <span style="color:#ae81ff">${FINGERPRINT}</span>

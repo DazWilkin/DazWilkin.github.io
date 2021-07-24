@@ -11,7 +11,7 @@
     content="The FBI Portland published an interesting advisory with several, sensible recommendations including firewalling IoT devices from other devices on a home network. I decided to deploy a redundant Trendnet TEW-812DRU version 2.0 for this purpose.
 Caveat Developer: Before I go further, I don&rsquo;t recommend installing DD-WRT on a Trendnet TEW-812DRU unless you&rsquo;re willing to brick the device irrecoverably.
 I read the DD-WRT instructions several times (&ldquo;peacock thread&rdquo;,router database &ndash; do not use v3.">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -225,17 +225,17 @@ if (!doNotTrack) {
 <h2 id="prometheus--node-exporter">Prometheus | Node Exporter</h2>
 <p>Daniele described using SNMP and a <a href="https://github.com/jschornick/openwrt_exporter">Lua script</a> that generates (&ldquo;exports&rdquo;) Prometheus metrics. I was unable to find SNMP running on my device (neither in the GUI nor as a running process) and assume that this is an optional extra that&rsquo;s included in builds for devices with more accessible RAM. My device did not have lua installed either.</p>
 <p>I decided to try <a href="https://github.com/prometheus/node_exporter">Node Exporter</a>. The learning here and a tweak is that &ndash; IIUC &ndash; the ARM processor on the TEW-812DRU (or the build I&rsquo;m using) does not support floating-point math. After compiling Node Exporter for <code>GOARM=7</code> (per the output from <code>/proc/cpuinfo</code>), I received errors. I learned that ARMv5 contains a software implementation for floating-point math. Building Node Export with <code>GOARM=5</code> works. I built Node Exporter on my workstation:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">CGO_ENABLED<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">CGO_ENABLED<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>GOOS<span style="color:#f92672">=</span>linux <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>GOARCH<span style="color:#f92672">=</span>arm GOARM<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>go build -a -tags netgo -ldflags <span style="color:#e6db74">&#39;-w -extldflags &#34;-static&#34;&#39;</span> *.go
 </code></pre></div><p>And then SCP&rsquo;d it to the router:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">scp -i ~/.ssh/my_private_key root@192.168.1.1
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">scp -i ~/.ssh/my_private_key root@192.168.1.1
 </code></pre></div><p><strong>NB</strong> Node Exporter is <strong>not</strong> persisted across router reboots</p>
 <p>And then, from the router:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ssh -i ~/.ssh/my_private_key root@192.168.1.1
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ssh -i ~/.ssh/my_private_key root@192.168.1.1
 </code></pre></div><p>And</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./node_exporter <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./node_exporter <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--no-collector.infiniband <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--no-collector.mdadm <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--no-collector.meminfo <span style="color:#ae81ff">\
@@ -246,7 +246,7 @@ if (!doNotTrack) {
 </code></pre></div><p><strong>NB</strong> I&rsquo;m excluding various collectors with metrics that appear (!?) unavailable|inaccessible on the router</p>
 <p>The exporter uses the default port (<code>:9100</code>) specified (implicitly in my case) by <code>--web.listen-address=&quot;:9100&quot;</code></p>
 <p>Back on my workstation, I can then reference the DD-WRT device (and the Prometheus server itself) from prometheus.yml:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">global</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">global</span>:
   <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">1m</span>
   <span style="color:#f92672">evaluation_interval</span>: <span style="color:#ae81ff">1m</span>
 
@@ -264,7 +264,7 @@ if (!doNotTrack) {
       - <span style="color:#f92672">targets</span>:
           - <span style="color:#e6db74">&#34;192.168.1.1:9100&#34;</span>
 </code></pre></div><p>And then run the server:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span>9090:9090 <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/prometheus.yml:/etc/prometheus/prometheus.yml <span style="color:#ae81ff">\

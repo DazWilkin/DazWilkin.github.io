@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="Running Google Trillian on Google Cloud Run">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -206,7 +206,7 @@ if (!doNotTrack) {
 <p>At the end of the post, I&rsquo;ve summarized creating a Cloud SQL instance to host the Trillian data(base).</p>
 <p>You&rsquo;ll need a GCP project, billing established (!?) and Cloud Run enabled</p>
 <h3 id="project">Project</h3>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">BILLING<span style="color:#f92672">=[[</span>YOUR-BILLING<span style="color:#f92672">]]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">BILLING<span style="color:#f92672">=[[</span>YOUR-BILLING<span style="color:#f92672">]]</span>
 PROJECT<span style="color:#f92672">=[[</span>YOUR-PROJECT<span style="color:#f92672">]]</span>
 REGION<span style="color:#f92672">=[[</span>YOUR-REGION<span style="color:#f92672">]]</span> <span style="color:#75715e"># Perhaps &#34;us-west1&#34;</span>
 
@@ -219,7 +219,7 @@ gcloud services enable run.googleapis.com <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </code></pre></div><h3 id="cloud-run">Cloud Run</h3>
 <p>OK, using Trillian&rsquo;s public container images, let&rsquo;s deploy a Log Server and a Log Signer configured to use our Cloud SQL instance:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Endpoint for Cloud Run services must be port 8080</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Endpoint for Cloud Run services must be port 8080</span>
 ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.0.0.0:8080&#34;</span>
 
 <span style="color:#75715e"># Cloud SQL Instance details</span>
@@ -271,7 +271,7 @@ gcloud run deploy trillian-log-signer <span style="color:#ae81ff">\
 <p><strong>NB</strong> We must <strong>triple</strong> reference the database (a) <code>--msql_url=</code>; (b) <code>--add-cloudsql-instance</code>; (c) <code>--set-env-vars=INSTANCE_CONNECTION</code></p>
 </blockquote>
 <p>Cloud Run injects a proxy (sidecar) into deployments and (among other things?) provides a TLS endpoint. In order to connect to the Trillian Log Server, we must (a) get the service&rsquo;s endpoint; (b) grab the server&rsquo;s TLS certificate; (c) create a Trillian Log using the Log Server (on the Cloud SQL database):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Grab the Log Server&#39;s (Cloud Run) address</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Grab the Log Server&#39;s (Cloud Run) address</span>
 TRILLIAN_LOG_SERVER<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  gcloud run services describe trillian-log-server <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
@@ -294,7 +294,7 @@ LOGID<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><s
 </span><span style="color:#ae81ff"></span>  --admin_server<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>TRILLIAN_LOG_SERVER<span style="color:#e6db74">}</span>:443<span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>LOGID<span style="color:#e6db74">}</span>
 </code></pre></div><p>You&rsquo;ll need a Trillian personality for the next step.</p>
 <p>I&rsquo;m using one that I created earlier but I recommend you deploy your own and use my personality as a guide:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Determine personality current commit</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Determine personality current commit</span>
 TAG<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>git rev-parse HEAD<span style="color:#66d9ef">)</span>
 
 <span style="color:#75715e"># NB Cloud Run sidecars the container with a(n Envoy proxied?) TLS endpoint on port 443</span>
@@ -315,7 +315,7 @@ gcloud run deploy pypi-transparency-server <span style="color:#ae81ff">\
 <blockquote>
 <p><strong>NB</strong> The personality also uses a log created in the previous step (<code>${LOGID}</code>)</p>
 </blockquote>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Grab the PyPi Transparency Server&#39;s (Cloud Run) address</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Grab the PyPi Transparency Server&#39;s (Cloud Run) address</span>
 PYPI_SERVER<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  gcloud run services describe pypi-transparency-server <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
@@ -325,7 +325,7 @@ PYPI_SERVER<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</s
 <span style="color:#75715e"># Ditch the prefixing &#34;https://&#34;</span>
 PYPI_SERVER<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PYPI_SERVER#https://<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>PYPI_SERVER<span style="color:#e6db74">}</span>
 </code></pre></div><p>This is where my personality deployment (I think the Trillian services work correctly) falls short. I should be able to now <code>gprcurl</code> the endpoint but this fails:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#39;{ &#34;package&#34;: {&#34;name&#34;: &#34;protobuf&#34;, &#34;version&#34;: &#34;3.11.3&#34;, &#34;filename&#34;: &#34;protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34;, &#34;url&#34;: &#34;https://files.pythonhosted.org/packages/9a/71/5cdb5ed762a537eac39097ae6ecf8785e276b5044efe99b8e53cb3addd7f/protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34; }}&#39;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-proto protos/pypi_transparency.proto <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-proto protos/package.proto <span style="color:#ae81ff">\
@@ -334,7 +334,7 @@ ERROR:
   Code: Unavailable
   Message: connection closed
 </code></pre></div><p>Example: <a href="https://pypi.org/project/protobuf/3.11.3/#description">PyPi: protobuf 3.11.3</a></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
 	<span style="color:#f92672">&#34;Package&#34;</span>: {
 		<span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;protobuf&#34;</span>,
 		<span style="color:#f92672">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;3.11.3&#34;</span>,
@@ -344,7 +344,7 @@ ERROR:
 }
 </code></pre></div><p>I&rsquo;ll update this post when I understand my mistake :-)</p>
 <p>Aha! My mistake was that the <code>pypi-transparency-server</code> was failing when making an insecure connection to the <code>trillian-log-server</code> (because this is how I role during development). I revised the <code>pypi-transparency-server</code> so that it uses the system certificate pool to make the connection and now the <code>grpcurl</code> works as expected:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">systemCertPool</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">x509</span>.<span style="color:#a6e22e">SystemCertPool</span>()
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">systemCertPool</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">x509</span>.<span style="color:#a6e22e">SystemCertPool</span>()
 <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#e6db74">&#34;failed to load system root CA cert pool&#34;</span>)
 }
@@ -363,7 +363,7 @@ ERROR:
 }
 <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">conn</span>.<span style="color:#a6e22e">Close</span>()
 </code></pre></div><p>and:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># AddPackage</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># AddPackage</span>
 grpcurl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#39;{ &#34;package&#34;: {&#34;name&#34;: &#34;protobuf&#34;, &#34;version&#34;: &#34;3.11.3&#34;, &#34;filename&#34;: &#34;protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34;, &#34;url&#34;: &#34;https://files.pythonhosted.org/packages/9a/71/5cdb5ed762a537eac39097ae6ecf8785e276b5044efe99b8e53cb3addd7f/protobuf-3.11.3-cp38-cp38-manylinux1_x86_64.whl&#34; }}&#39;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-proto protos/pypi_transparency.proto <span style="color:#ae81ff">\
@@ -406,7 +406,7 @@ grpcurl <span style="color:#ae81ff">\
 pypitransparency.v1.PyPiTransparency.GetPackage is a method:
 rpc GetPackage <span style="color:#f92672">(</span> .pypitransparency.v1.GetPackageRequest <span style="color:#f92672">)</span> returns <span style="color:#f92672">(</span> .pypitransparency.v1.GetPackageResponse <span style="color:#f92672">)</span>;
 </code></pre></div><h3 id="cloud-sql">Cloud SQL</h3>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">INST<span style="color:#f92672">=[[</span>YOUR-INST<span style="color:#f92672">]]</span> <span style="color:#75715e"># Perhaps &#34;db&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">INST<span style="color:#f92672">=[[</span>YOUR-INST<span style="color:#f92672">]]</span> <span style="color:#75715e"># Perhaps &#34;db&#34;</span>
 ROOT<span style="color:#f92672">=[[</span>YOUR-ROOT<span style="color:#f92672">]]</span> <span style="color:#75715e"># Something unique to this database instance</span>
 gcloud sql instances create <span style="color:#e6db74">${</span>INST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--tier<span style="color:#f92672">=</span>db-f1-micro <span style="color:#ae81ff">\
@@ -419,7 +419,7 @@ gcloud sql instances create <span style="color:#e6db74">${</span>INST<span style
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </code></pre></div><p>We&rsquo;ll need to create a database on the instance and populate it with Trillian&rsquo;s schema.</p>
 <p>In one shell:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">CONN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">CONN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  gcloud sql instances describe <span style="color:#e6db74">${</span>INST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(connectionName)&#34;</span><span style="color:#66d9ef">)</span>
@@ -432,7 +432,7 @@ gcloud sql instances create <span style="color:#e6db74">${</span>INST<span style
 <p><strong>NB</strong> Once the proxy is running, it proxies traffic sent to it (<code>localhost</code>) to the remote instance (<code>${DB}</code>)</p>
 </blockquote>
 <p>Then, in another shell, get a client to the database:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">VERSION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;10.4.12&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">VERSION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;10.4.12&#34;</span>
 docker run <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--interactive --tty <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--net<span style="color:#f92672">=</span>host <span style="color:#ae81ff">\
@@ -444,7 +444,7 @@ create database test;
 create user if not exists test@'%' identified by 'zaphod';
 grant all on test.* to test@'%';
 </code></pre><p>Then quit it and then:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">USER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;test&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">USER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;test&#34;</span>
 PASS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;zaphod&#34;</span>
 
 docker run <span style="color:#ae81ff">\
@@ -458,9 +458,9 @@ docker run <span style="color:#ae81ff">\
 </blockquote>
 <h3 id="tidy">Tidy</h3>
 <p>If you&rsquo;re <strong>absolutely</strong> certain you don&rsquo;t need the project, you can delete everything by deleting the project:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud projects delete <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud projects delete <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
 </code></pre></div><p>Otherwise, you can delete the pieces:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#66d9ef">for</span> SERVICE in <span style="color:#e6db74">&#34;trillian-log-server&#34;</span> <span style="color:#e6db74">&#34;trillian-log-signer&#34;</span> <span style="color:#e6db74">&#34;pypi-transparency-server&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#66d9ef">for</span> SERVICE in <span style="color:#e6db74">&#34;trillian-log-server&#34;</span> <span style="color:#e6db74">&#34;trillian-log-signer&#34;</span> <span style="color:#e6db74">&#34;pypi-transparency-server&#34;</span>
 <span style="color:#66d9ef">do</span>
   gcloud run services delete <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
@@ -469,7 +469,7 @@ docker run <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --quiet
 <span style="color:#66d9ef">done</span>
 </code></pre></div><p>and the Cloud SQL instance:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud sql instances delete <span style="color:#e6db74">${</span>INST<span style="color:#e6db74">}</span> --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud sql instances delete <span style="color:#e6db74">${</span>INST<span style="color:#e6db74">}</span> --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 
 
 Done.

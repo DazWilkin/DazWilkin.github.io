@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="How to use Hugo to generate a static site and deploy the result to Google Cloud Storage (GCS)">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -215,25 +215,25 @@ if (!doNotTrack) {
 </ul>
 <h2 id="environment">Environment</h2>
 <p>For convenience, I&rsquo;m going to define here some constants that we&rsquo;ll be using in the remainder of this tutorial:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">BILLING<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-BILLING]&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">BILLING<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-BILLING]&#34;</span>
 PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-PROJECT]&#34;</span>
 WEBSITE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;www.[[YOUR-DOMAIN]&#34;</span>
 </code></pre></div><h2 id="create-hugo-site">Create Hugo site</h2>
 <p>The following commands create a directory <code>${WEBSITE}</code> in the working directory and prepopulates it with Hugo&rsquo;s basic site content, then changes to this directory.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">hugo new site <span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">hugo new site <span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
 cd <span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
 </code></pre></div><p>If you wish, you may run a debugging server:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">hugo server -D
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">hugo server -D
 </code></pre></div><p>And may browse your site on http://localhost:1313</p>
 <h2 id="create-gcp-project-and-enable-billing">Create GCP Project and Enable Billing</h2>
 <p>If you have an existing GCP Project in which you want to create a Google Cloud Storage (GCS) bucket, then skip this step. Otherwise, a GCP Project must be created to hold the GCS bucket. You will need to have a billing account linked to the project in order to continue.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 
 gcloud beta billing projects link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
 </code></pre></div><h2 id="create-cloud-storage-bucket">Create Cloud Storage Bucket</h2>
 <p>Now, we may create a bucket in a project. The bucket must be named to reflect your domain name, i.e. for <code>example.org</code>, the bucket name would be <code>www.example.org</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gsutil mb <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gsutil mb <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-b on <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-p <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>gs://<span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
@@ -246,11 +246,11 @@ gcloud beta billing projects link <span style="color:#e6db74">${</span>PROJECT<s
 <h2 id="configure-access-and-define-indexhtml-and-404html">Configure access and define <code>index.html</code> and <code>404.html</code></h2>
 <p>We want to make the bucket&rsquo;s contents world-viewable and we achieve this by making everyone object viewers (<code>allUsers:objectViewer</code>).</p>
 <p>We will also configure the site to default to <code>./index.html</code> and, on errors, <code>./404.html</code>. We&rsquo;ve not yet created either of these files but will do so in a subsequent step.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gsutil iam ch allUsers:objectViewer gs://<span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gsutil iam ch allUsers:objectViewer gs://<span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
 gsutil web set -m index.html -e 404.html gs://<span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
 </code></pre></div><h2 id="service-account">Service Account</h2>
 <p>For convenience and security, we&rsquo;re going to create a serivce account that will be used (only) by Hugo to deploy our site (copy the content of the <code>./public</code> directory) to the GCS bucket. The following commands create a service account called <code>${ACCOUNT}</code> in our project (<code>${PROJECT}</code>), generate a key for it (called <code>./${ACCOUNT}.json</code>) that is stored within the site&rsquo;s local directory and grants the service account permission to deploy content to the bucket <code>${BUCKET}</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ACCOUNT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;hugo-deployer&#34;</span> <span style="color:#75715e"># Or your preference</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ACCOUNT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;hugo-deployer&#34;</span> <span style="color:#75715e"># Or your preference</span>
 
 gcloud iam service-accounts create <span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
@@ -271,14 +271,14 @@ gsutil iam ch <span style="color:#e6db74">${</span>BINDING<span style="color:#e6
 </blockquote>
 <h2 id="create-github-repo">Create GitHub repo</h2>
 <p>Create an empty, private GitHub repo and follow GitHub&rsquo;s instructions to initialize the local clone:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git init
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git init
 git remote add origin https://github.com/...
 </code></pre></div><blockquote>
 <p><strong>NOTE</strong> Even though we copying the site&rsquo;s <code>./public</code> directory content to the GCS bucket, we will commit our source files to the GitHub repo that we created previously.</p>
 </blockquote>
 <h2 id="add-ananke-gohugo-theme">Add Ananke Gohugo theme</h2>
 <p>The <a href="https://themes.gohugo.io/gohugo-theme-ananke/">Ananke Gohugo theme</a> is one of <a href="https://themes.gohugo.io/">many</a> but, it&rsquo;s an exemplar. It is recommended to add it as a submodule and we must then revise the site&rsquo;s configuration file (<code>./config.toml</code>) to reflect it:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git submodule add https://github.com/budparr/gohugo-theme-ananke.git themes/ananke
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">git submodule add https://github.com/budparr/gohugo-theme-ananke.git themes/ananke
 echo <span style="color:#e6db74">&#39;theme = &#34;ananke&#34;&#39;</span> &gt;&gt; ./config.toml
 </code></pre></div><h2 id="configure-site">Configure site</h2>
 <p>The following configuration should be sufficient.</p>
@@ -289,7 +289,7 @@ echo <span style="color:#e6db74">&#39;theme = &#34;ananke&#34;&#39;</span> &gt;&
 <li>add configuration for static content so that this is gzipped and cached (for one year)</li>
 </ul>
 <p>Edit <code>${PWD}/config.toml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-TOML" data-lang="TOML"><span style="color:#a6e22e">baseURL</span> = <span style="color:#e6db74">&#34;http://[[WEBSITE]]/&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-TOML" data-lang="TOML"><span style="color:#a6e22e">baseURL</span> = <span style="color:#e6db74">&#34;http://[[WEBSITE]]/&#34;</span>
 <span style="color:#a6e22e">languageCode</span> = <span style="color:#e6db74">&#34;en-us&#34;</span>
 <span style="color:#a6e22e">title</span> = <span style="color:#e6db74">&#34;Your Title Here&#34;</span>
 <span style="color:#a6e22e">theme</span> = <span style="color:#e6db74">&#34;ananke&#34;</span>
@@ -343,7 +343,7 @@ echo <span style="color:#e6db74">&#39;theme = &#34;ananke&#34;&#39;</span> &gt;&
 <p>This is a 2-step process.</p>
 <p>We must first generate the site (<code>hugo</code>). This creates (if necessary) and regenerates the content of <code>./public</code> directory.</p>
 <p>Second, we push the generated site (i.e. <code>./public</code>) to the GCS bucket. To do this step requires 2 pieces of data. A reference to the service account key that we created previously (passed in the environment using <code>GOOGLE_APPLICATION_CREDENTIALS</code>) and a deployment target. When we edited <code>./config.toml</code>, we created a deployment target called <code>gcs</code> (in the value of <code>deployment.targets.name</code>)</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">hugo deploy <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">hugo deploy <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>GOOGLE_APPLICATION_CREDENTIALS<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>hugo deploy <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--target<span style="color:#f92672">=</span>gcs
@@ -367,7 +367,7 @@ hugo-deployer.json
 public/
 </code></pre><h2 id="google-analytics">Google Analytics</h2>
 <p>If you use <a href="https://analytics.google.com/analytics">Google Analytics</a>, you may add your site&rsquo;s Tracking ID to the top most section of <code>./config.toml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-TOML" data-lang="TOML"><span style="color:#a6e22e">googleAnalytics</span> = <span style="color:#e6db74">&#34;UA-123456789-1&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-TOML" data-lang="TOML"><span style="color:#a6e22e">googleAnalytics</span> = <span style="color:#e6db74">&#34;UA-123456789-1&#34;</span>
 </code></pre></div><h2 id="search-engines">Search Engines</h2>
 <p>You will need to perform the following steps to add that your website to Google&rsquo;s and Bing&rsquo;s search index to ensure it appears in these engines' search results.</p>
 <ul>

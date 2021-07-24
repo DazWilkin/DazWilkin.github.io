@@ -11,7 +11,7 @@
     content="I think (!?) this interesting learning experience started with Envoy Go Extensions.
 IIUC, Cilium contributed this mechanism (Envoy Go Extensions) by which it&rsquo;s possible to extend Envoy using Golang. The documentation references BPF. Cilium and BNF were both unfamiliar technologies to me and so began my learning. This part of the journey concludes with Weave Scope.
 I learned that Cilium is a CNI implementation that may be used with Kubernetes. GKE defaults (but is not limited to) to Google&rsquo;s own CNI implementation (link).">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -214,7 +214,7 @@ if (!doNotTrack) {
 <p>One of Cilium&rsquo;s differentiators is that it uses BNF. <a href="https://docs.cilium.io/en/v1.6/intro/">&ldquo;What is Cilium?&quot;</a> provides an interesting <a href="https://cilium.io/blog/2018/04/17/why-is-the-kernel-community-replacing-iptables/">explanation</a> of the limitations of iptables programming with references to some further explanation of <a href="https://lwn.net/Articles/747551/">BPF</a>.</p>
 <p>So, munged from the above, BPF is an in-(Linux)-kernel virtual machine that runs (guaranteed to be) safe bytecode. BPF &ndash; as the name suggests &ndash; was born to facilitate packet filtering but its utility is broader e.g. <a href="https://www.kernel.org/doc/html/v4.16/userspace-api/seccomp_filter.html">seccomp</a> uses it too. Google, FACEBOOK (!?), <a href="https://blog.cloudflare.com/cloudflare-architecture-and-how-bpf-eats-the-world/">Cloudflare</a> and others use it. Developers write solutions in higher-level languages (often C) that can be compiled (using LLVM and GCC) into bytecode that runs in the VM but makes data accessible (via maps?) to userspace code. An excellent source of material for BPF is <a href="https://iovisor.org">The IO Visor Project</a>.</p>
 <p>I tried to work through the <a href="https://github.com/iovisor/bcc">BPF Compiler Collection (BCC)</a> hoping to use the Golang to write BPF programs (<a href="https://github.com/iovisor/gobpf">gopbf</a>) but, unfortunately, the Ubuntu (19.10 and 18.04) packages aren&rsquo;t working correctly and I was reluctant to install and build everything to use it. If you know of a working OS|package configuration, please let me know so that I may explore <code>gobpf</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">go test -tags integration -v ./...
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">go test -tags integration -v ./...
 <span style="color:#75715e"># github.com/iovisor/gobpf/bcc</span>
 bcc/module.go:32:10: fatal error: bcc/bcc_common.h: No such file or directory
    <span style="color:#ae81ff">32</span> | <span style="color:#75715e">#include &lt;bcc/bcc_common.h&gt;</span>
@@ -223,7 +223,7 @@ compilation terminated.
 </code></pre></div><p>I then stumbled upon <a href="https://www.weave.works/oss/scope/">Weave Scope</a> perhaps through this post <a href="https://www.weave.works/blog/improving-performance-reliability-weave-scope-ebpf/">&ldquo;Improving performance and reliability in Weave Scope with eBPF&rdquo;</a>. I&rsquo;d not used Weave Scope and find it rather excellent. I&rsquo;ve used <a href="https://github.com/google/cadvisor">cAdvisor</a> for somewhat similar goals but will now use both. The rest of this post is about playing around with Weave Scope.</p>
 <p>Running it on my local machine:</p>
 <p>Docker Compose is easiest. The following runs Weave Scope and 2 plugins: <a href="https://github.com/weaveworks-plugins/scope-iowait">iowait</a> and <a href="https://github.com/weaveworks-plugins/scope-traffic-control">traffic-control</a>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#34;3&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#34;3&#34;</span>
 
 <span style="color:#f92672">services</span>:
   <span style="color:#f92672">scope</span>:
@@ -260,7 +260,7 @@ compilation terminated.
     <span style="color:#f92672">command</span>:
     - <span style="color:#e6db74">&#34;--name=weaveworksplugins-scope-traffic-control&#34;</span>
 </code></pre></div><p>But, if you&rsquo;d prefer to run the containers separately, then:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--rm --interactive --tty <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--net<span style="color:#f92672">=</span>host <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--pid<span style="color:#f92672">=</span>host <span style="color:#ae81ff">\
@@ -285,7 +285,7 @@ compilation terminated.
 </code></pre><p><strong>NB</strong> Because I don&rsquo;t have BCC installed (correctly) on my local machine, Weave Scope is unable to use eBPF and reverts to parsing <code>/proc</code></p>
 <p><strong>NB</strong> Remove <code>--interactive --tty</code> is you wish to run both containers from the same shell</p>
 <p>and:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--rm --interactive --tty <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--net<span style="color:#f92672">=</span>host <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span>/var/run/scope/plugins/iowait:/var/run/scope/plugins/iowait <span style="color:#ae81ff">\
@@ -299,7 +299,7 @@ compilation terminated.
 2019/12/30 22:16:21 /report?api_version=1&amp;probe_id=2619977d3df6c5d8
 2019/12/30 22:16:22 /report?api_version=1&amp;probe_id=2619977d3df6c5d8
 </code></pre><p>and:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--rm --interactive --tty <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--net<span style="color:#f92672">=</span>host <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span>/var/run/docker.sock:/var/run/docker.sock <span style="color:#ae81ff">\
@@ -318,14 +318,14 @@ INFO[0000] Listening...
 <p>Switching from &ldquo;Containers&rdquo; to &ldquo;Hosts&rdquo;, I&rsquo;m also able to view the results of <code>iowait</code>:</p>
 <p><img src="/images/191230.weave-scope.iostat.png" alt=""></p>
 <p>Each of the plugins is scraped by Weave Scope using an API exposed on the UNIX socket. In the case of <code>scope-iowait</code>, this can be checked with:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo curl <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo curl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--unix-socket /var/run/scope/plugins/iowait/iowait.sock <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>http://localhost/report <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>| jq .
 </code></pre></div><p>and returns:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
   <span style="color:#f92672">&#34;Host&#34;</span>: {
     <span style="color:#f92672">&#34;nodes&#34;</span>: {
       <span style="color:#f92672">&#34;hades-canyon;&lt;host&gt;&#34;</span>: {
@@ -397,14 +397,14 @@ INFO[0000] Listening...
 <p><code>Hosts.nodes.hades-canyon.metrics.idle</code> provides metric data.</p>
 <p>This data is rendered into the UI thanks to the (matching) definition in <code>metric_templates.idle</code></p>
 <p>Similarly, for <code>traffic-control</code> you may:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo curl <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sudo curl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--unix /var/run/scope/plugins/traffic-control/traffic-control.sock <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>http://localhost/report <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>| jq .
 </code></pre></div><p>The output for this is edited for clarity as it is more lengthy:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">{
   <span style="color:#f92672">&#34;Container&#34;: </span>{
     <span style="color:#f92672">&#34;nodes&#34;: </span>{
       <span style="color:#f92672">&#34;26b59de3ea355da095623112b25d57d9dca9e07d365a1d2cdd66f03e79b95169;&lt;container&gt;&#34;: </span>{

@@ -11,7 +11,7 @@
     content="Well, this became more of an adventure that I&rsquo;d originally wanted but, after learning some BLE and, with the help of others (Thanks Jonatha, JsBergbau), I&rsquo;ve sample code that connects to 4 Xiaomi 2nd gen. Thermometers, subscribes to readings and publishes the data to MQTT. From there, I&rsquo;m scraping it using Inuits MQTTGateway into Prometheus.
 Repo: https://github.com/DazWilkin/gomijia2
 Thanks|Credit:  Jonathan McDowell for gomijia and help JsBergbau for help  Background I&rsquo;ve been playing around with ESPHome and blogged around my very positive experience ESPHome, MQTT, Prometheus and almost Cloud IoT.">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -278,14 +278,14 @@ Done
 <h3 id="golang">Golang</h3>
 <p>The code uses <a href="https://github.com/currantlabs">currantlabs</a> <a href="https://github.com/currantlabs/ble">ble</a>. Jonathan&rsquo;s code uses a fork of this repo. I do not know what currantlabs is but the repo works. I found it to be challenging to understand the code particularly in enumerating devices, services, characteristics etc. I will focus the rest of this discussion on my (!?) understanding of how the code works. I&rsquo;d value feedback on my misunderstandings.</p>
 <p>First step is to create a Linux (BLE) Device (host) and then use this to connect to BLE devices:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">host</span>,<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">linux</span>.<span style="color:#a6e22e">NewDevice</span>()
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">host</span>,<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">linux</span>.<span style="color:#a6e22e">NewDevice</span>()
 <span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">WithSigHandler</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">WithTimeout</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#ae81ff">1</span><span style="color:#f92672">*</span><span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Minute</span>))
 <span style="color:#a6e22e">device</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">host</span>.<span style="color:#a6e22e">Dial</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">NewAddr</span>(<span style="color:#e6db74">&#34;a4:c1:38:00:00:00&#34;</span>))
 </code></pre></div><blockquote>
 <p><strong>TODO</strong>: I&rsquo;ve been meaning to run each device in its own Goroutine. When I tried this previously, I think I experienced concurrency problems. Will retry.</p>
 </blockquote>
 <p>The next step is the magical step that writes a magical value <code>0x1000</code> to the magical handler <code>0x0038</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">c</span><span style="color:#f92672">:=</span><span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">MustParse</span>(<span style="color:#e6db74">&#34;00002902-0000-1000-8000-00805f9b34fb&#34;</span>)
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">c</span><span style="color:#f92672">:=</span><span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">MustParse</span>(<span style="color:#e6db74">&#34;00002902-0000-1000-8000-00805f9b34fb&#34;</span>)
 <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">p</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">bleClient</span>.<span style="color:#a6e22e">DiscoverProfile</span>(<span style="color:#66d9ef">true</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">u</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">Find</span>(<span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">NewCharacteristic</span>(<span style="color:#a6e22e">c</span>)); <span style="color:#a6e22e">u</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">bleClient</span>.<span style="color:#a6e22e">WriteCharacteristic</span>(<span style="color:#a6e22e">u</span>.(<span style="color:#f92672">*</span><span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">Characteristic</span>), []<span style="color:#66d9ef">byte</span>{<span style="color:#ae81ff">0x10</span>,<span style="color:#ae81ff">0x00</span>}, <span style="color:#66d9ef">false</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
@@ -305,7 +305,7 @@ Done
 <p>This involves (currently but see <code>TODO</code> above) iterating over services that match the filter for the service (<code>ebe0ccb07a0a4b0c8a1a6ff2997da3a6</code>) shown in the GATT above that includes the characteristic (<code>ebe0ccc17a0a4b0c8a1a6ff2997da3a6</code>) that corresponds to <code>&quot;Temperature and Humidi[ty]&quot;</code>.</p>
 <p>Again, It appears a requirement to iterate over all the characteristics Descriptors even though I don&rsquo;t reference these!</p>
 <p>The key section is:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Property</span> <span style="color:#f92672">&amp;</span> <span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">CharNotify</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Property</span> <span style="color:#f92672">&amp;</span> <span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">CharNotify</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> {
 	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">CCCD</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
 		<span style="color:#66d9ef">continue</span>
 	}
@@ -321,7 +321,7 @@ Done
 <p>The initial <code>if</code> checks whether this characteristic supports notifications (<code>ble.CharNotify</code>)</p>
 <p>If this characteristic is the one corresponding to <code>0x0036</code> (i.e. <code>ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6</code>) then we add a handler to its notifications.</p>
 <p>The handler is trivial:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">req</span> []<span style="color:#66d9ef">byte</span>) {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">req</span> []<span style="color:#66d9ef">byte</span>) {
     <span style="color:#a6e22e">s</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">hex</span>.<span style="color:#a6e22e">EncodeToString</span>(<span style="color:#a6e22e">req</span>)
     <span style="color:#a6e22e">r</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Unmarshall</span>(<span style="color:#a6e22e">req</span>)
     <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
@@ -331,7 +331,7 @@ Done
 	}
 }
 </code></pre></div><p>The Unmarshall step is also a black box to me. I don&rsquo;t know where this is duplicated but I used Fabien&rsquo;s bash <a href="http://www.d0wn.com/using-bash-and-gatttool-to-get-readings-from-xiaomi-mijia-lywsd03mmc-temperature-humidity-sensor/">script</a> as a guide:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Reading</span> <span style="color:#66d9ef">struct</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Reading</span> <span style="color:#66d9ef">struct</span> {
 	<span style="color:#a6e22e">Temperature</span> <span style="color:#66d9ef">float64</span>
 	<span style="color:#a6e22e">Humidity</span>    <span style="color:#66d9ef">float64</span>
 }

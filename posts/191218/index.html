@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="Prometheus Exporter for Linode services">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -215,26 +215,26 @@ if (!doNotTrack) {
 <h2 id="api-statistics">API statistics</h2>
 <p>Several API methods provide statistics, e.g. <a href="https://developers.linode.com/api/v4/linode-instances-linode-id-stats">Linode Statistics</a></p>
 <p>Given a Linode Instance ID and a Linode API token, it&rsquo;s trivial to explore these:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>LINODE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> https://api.linode.com/v4/linode/instances/<span style="color:#e6db74">${</span>LINODE_INSTANCE_ID<span style="color:#e6db74">}</span>/stats
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>LINODE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> https://api.linode.com/v4/linode/instances/<span style="color:#e6db74">${</span>LINODE_INSTANCE_ID<span style="color:#e6db74">}</span>/stats
 </code></pre></div><p>The documentation is scarce but statistics are <code>[][]float64</code> (a slice of slices of float64). The first dimension corresponds to each &lsquo;tick&rsquo; of this time-series and is often 64 units long. The second dimension is (always!?) 2 units. The first of these (e.g. <code>stat[X][0]</code>) is, I believe, the epoch is milliseconds. The second (e.g. <code>stats[X][1]</code>) is the value. I added a simple <a href="https://github.com/DazWilkin/linode-exporter/blob/master/collector/timeseries.go"><code>TimeSeries</code></a> type that iterates over each of these series and calculates the minimum, maximum and (2 types of) average value. The simple average is the total of the values divided by the number of values. The more accurate (!?) average is the total of the areas represented by the values (the length of time multipled by the value) divided by the overall time. The latter calculation assumes that the epochs are ordered.</p>
 <h2 id="api-missing-functionality">API missing functionality</h2>
 <p>Several API methods are not implemented by the SDK. I mentioned the new LKE service previously. <a href="https://developers.linode.com/api/v4/nodebalancers-node-balancer-id-stats">NodeBalancer Statistics</a> were also not implemented. I&rsquo;ve submitted a <a href="https://github.com/linode/linodego/pull/111">PR</a> for this method. I used <a href="https://developers.linode.com/api/v4/linode-instances-linode-id-stats">Linode Statistics</a> as my template. Thanks to the Linode team for providing more definitive guidance. There&rsquo;s <a href="https://github.com/linode/linodego/blob/master/template.go">template.go</a> that better explains how to do this. The code was trivial. I was able to leverage the existing NodeBalance tests. The bulk of the code is configuring the method&rsquo;s name, path etc.</p>
 <p>I struggled with the tests but was helped by the Linode team. I realized subsequently this is also somewhat <a href="https://github.com/linode/linodego/blob/master/template.go">documented</a>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export LINODE_TOKEN<span style="color:#f92672">=[[</span>YOUR-LINODE-TOKEN<span style="color:#f92672">]]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export LINODE_TOKEN<span style="color:#f92672">=[[</span>YOUR-LINODE-TOKEN<span style="color:#f92672">]]</span>
 make test
 </code></pre></div><p>results:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">go vet ./...
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">go vet ./...
 golangci-lint run
 go build ./...
 2019/12/18 09:51:51 <span style="color:#f92672">[</span>INFO<span style="color:#f92672">]</span> LINODE_FIXTURE_MODE play will be used <span style="color:#66d9ef">for</span> tests
 ...
 </code></pre></div><p>It&rsquo;s possible to run the tests under Visual Studio Code too but you must add a <code>LINODE_TOKEN</code> to the settings:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON"><span style="color:#e6db74">&#34;go.toolsEnvVars&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON"><span style="color:#e6db74">&#34;go.toolsEnvVars&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> {
     <span style="color:#f92672">&#34;LINODE_TOKEN&#34;</span>: <span style="color:#e6db74">&#34;[[YOUR-LINODE-TOKEN]]&#34;</span>
 }
 </code></pre></div><p>For my addition, I created a new type <code>NodeBalancerStats</code> with a single method <code>GetNodeBalancerStats</code> corresponding to the <a href="https://developers.linode.com/api/v4/nodebalancers-node-balancer-id-stats">API</a>.</p>
 <p>To be able to test this specific type, I am able to run:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">make ARGS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;-run ^.*NodeBalancerStats&#34;</span> fixtures
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">make ARGS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;-run ^.*NodeBalancerStats&#34;</span> fixtures
 </code></pre></div><p>and success is:</p>
 <pre><code>* Running fixtures
 2019/12/18 09:54:20 [INFO] LINODE_FIXTURE_MODE record will be used for tests
@@ -244,7 +244,7 @@ ok  	github.com/linode/linodego	11.390s
 </code></pre><p>I&rsquo;m not entirely clear on what&rsquo;s going on here but, what I do understand is that this test records the API calls that are made in <code>fixtures/TestGetNodeBalancerStats.yaml</code>.</p>
 <p><strong>NB</strong> The filename corresponds to the method name.</p>
 <p>This file contains (summarized):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">---
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">---
 <span style="color:#f92672">version</span>: <span style="color:#ae81ff">1</span>
 <span style="color:#f92672">interactions</span>:
 - <span style="color:#f92672">request</span>:

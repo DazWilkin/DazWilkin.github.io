@@ -10,7 +10,7 @@
   <meta name="description"
     content="I&rsquo;ve written a couple of deployment options (Google Compute Engine; Kubernetes) for an open-source project. The Kubernetes deployment provides NodePort and (TCP) LoadBalancer options and I&rsquo;ve been trying (unsuccessfully) to add HTTPS Load-balancing.
 I should (!) try to deploy to Google Kubernetes Engine (GKE) but I&rsquo;ve been using microk8s, Digital Ocean Managed Kubernetes and the Linode LKE Beta. Each of these requires an implementation of Ingress controller. For GKE, GCP&rsquo;s HTTP/S Load-balancer (GCLB) is used.">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -208,7 +208,7 @@ if (!doNotTrack) {
 <p>I should (!) try to deploy to <a href="https://cloud.google.com/kubernetes-engine/">Google Kubernetes Engine (GKE)</a> but I&rsquo;ve been using <a href="https://microk8s.io">microk8s</a>, Digital Ocean <a href="https://www.digitalocean.com/products/kubernetes/">Managed Kubernetes</a> and the Linode <a href="https://www.linode.com/products/kubernetes/">LKE</a> Beta. Each of these requires an implementation of Ingress controller. For GKE, GCP&rsquo;s HTTP/S Load-balancer (GCLB) is used. But, for the other services, NGINX Ingress is a good option and so I&rsquo;ve been exploring NGINX Ingress (Controller) <a href="https://kubernetes.github.io/ingress-nginx/">link</a>. This Ingress appears to work except that I&rsquo;ve been unable to get it to work with mutual TLS between the (NGINX) proxy and my backend services.</p>
 <p><a href="https://github.com/kubernetes/ingress-nginx/issues/3511">This</a> may be related to my problem.</p>
 <p>For microk8s, a TCP Load-balancer is required too. <a href="https://metallb.universe.tf/">MetalLB</a> just works.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>https://raw.githubusercontent.com/google/metallb/v0.8.3/manifests/metallb.yaml
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>https://raw.githubusercontent.com/google/metallb/v0.8.3/manifests/metallb.yaml
 
 echo <span style="color:#e6db74">&#34;apiVersion: v1
 </span><span style="color:#e6db74">kind: ConfigMap
@@ -229,22 +229,22 @@ kubectl apply --filename<span style="color:#f92672">=</span>https://raw.githubus
 microk8s.enable ingress
 </code></pre></div><p><strong>NB</strong> In the above, I&rsquo;m allocating <code>192.168.1.240-192.168.1.250</code> to MetalLB to use in creating Load-balancers.</p>
 <p>To test:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl run kuard --image<span style="color:#f92672">=</span>gcr.io/kuar-demo/kuard-amd64:blue --port<span style="color:#f92672">=</span><span style="color:#ae81ff">8080</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl run kuard --image<span style="color:#f92672">=</span>gcr.io/kuar-demo/kuard-amd64:blue --port<span style="color:#f92672">=</span><span style="color:#ae81ff">8080</span>
 kubectl expose deployment/bigmachine-<span style="color:#e6db74">${</span>ID<span style="color:#e6db74">}</span> --type<span style="color:#f92672">=</span>LoadBalancer --port<span style="color:#f92672">=</span><span style="color:#ae81ff">8080</span>
 </code></pre></div><p>Then browse: <code>http://$(kubectl get service/kuard --output=jsonpath=&quot;{.status.loadBalancer.ingress[0].ip}&quot;):8080</code></p>
 <p>To tidy-up:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl delete deployment/kuard
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl delete deployment/kuard
 kubectl delete service/kuard
 </code></pre></div><h2 id="mutual-tls">Mutual TLS</h2>
 <p>I then used openssl to generate &lsquo;CA&rsquo; cert|key and server cert|key PEM files. I combined the <code>.crt</code> and <code>.key</code> files into singular <code>.pem</code> files too.</p>
 <p>files: <a href="https://gist.github.com/DazWilkin/ac6ca02a9bee44e5d5621aabe233eb1b">https://gist.github.com/DazWilkin/ac6ca02a9bee44e5d5621aabe233eb1b</a></p>
 <p>Lastly &ndash; and where I&rsquo;ve been spending my time &ndash; the Kubernetes spec to create secrets, Deployments|Services and an Ingress. The file is at the end of this document.</p>
 <p>In my file, there are 3 distinct Deployments|Services and path specs but, for conciseness, I&rsquo;ve collapsed that to a single Deployment|Service and 3 path specs.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>test.yaml
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>test.yaml
 </code></pre></div><p>All being well:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get services --namespace<span style="color:#f92672">=</span>test
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get services --namespace<span style="color:#f92672">=</span>test
 </code></pre></div><p>And:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NODEPORT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NODEPORT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  kubectl get services/something-00 <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span>test <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.ports[0].nodePort}&#34;</span><span style="color:#66d9ef">)</span>
@@ -272,7 +272,7 @@ gQygJvBJ0TvECJkQdYduRgXCi950aE42YtKdisA<span style="color:#f92672">=</span>
 -----END CERTIFICATE-----
 </code></pre></div><p>Which matches the content of my ca.crt file.</p>
 <p>However (!), if I try to route this request through the proxy, no joy :-(</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl --insecure --cert /path/to/ca.pem https://localhost:443/something-00/healthz
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl --insecure --cert /path/to/ca.pem https://localhost:443/something-00/healthz
 &lt;html&gt;
 &lt;head&gt;&lt;title&gt;502 Bad Gateway&lt;/title&gt;&lt;/head&gt;
 &lt;body&gt;
@@ -291,7 +291,7 @@ curl --insecure --cert /path/to/ca.pem https://localhost:443/something-00/certs
 &lt;/html&gt;
 
 </code></pre></div><p>If I look at the Pods' logs:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NAMESPACE<span style="color:#f92672">=</span>test
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NAMESPACE<span style="color:#f92672">=</span>test
 PODS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  kubectl get pods <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
@@ -314,7 +314,7 @@ PODS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><sp
 </span><span style="color:#e6db74">2019/12/12 00:51:29 http: TLS handshake error from 10.1.1.1:50168: tls: client didn&#39;</span>t provide a certificate
 </code></pre></div><p>I tried restarting the Ingress using the command-line flag <code>--enable-ssl-passthrough</code> and swapping the annotations as outlined below, but this makes no difference. I achieved this by pulling the YAML for the NGINX Ingress controller, editing the YAML to include that arg and then reapplying the YAML.</p>
 <p>The Ingress' logs show nothing obvious:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">POD<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\ </span>                                                                                        
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">POD<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\ </span>                                                                                        
   kubectl get pods <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --selector<span style="color:#f92672">=</span>app.kubernetes.io/name<span style="color:#f92672">=</span>ingress-nginx <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span>ingress-nginx <span style="color:#ae81ff">\
@@ -353,7 +353,7 @@ I1212 00:56:37.251642       6 leaderelection.go:251] successfully acquired lease
 I1212 00:56:37.258543       6 status.go:274] updating Ingress test/something status from [{127.0.0.1 }] to [{10.152.183.75 }]
 I1212 00:56:37.263063       6 event.go:255] Event(v1.ObjectReference{Kind:&quot;Ingress&quot;, Namespace:&quot;test&quot;, Name:&quot;something&quot;, UID:&quot;4205269b-0be4-4841-aa10-d9c5a7f09b48&quot;, APIVersion:&quot;networking.k8s.io/v1beta1&quot;, ResourceVersion:&quot;4304427&quot;, FieldPath:&quot;&quot;}): type: 'Normal' reason: 'UPDATE' Ingress test/something
 </code></pre><p>Unfortunately, I&rsquo;m insufficiently well-versed in NGINX configs to make much sense of the result of:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">POD<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">POD<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  kubectl get pods <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --selector<span style="color:#f92672">=</span>app.kubernetes.io/name<span style="color:#f92672">=</span>ingress-nginx <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span>ingress-nginx <span style="color:#ae81ff">\
@@ -366,7 +366,7 @@ kubectl exec --stdin --tty <span style="color:#e6db74">${</span>POD<span style="
 </ul>
 <h2 id="spec">Spec</h2>
 <p>Kubernetes Secret, Deployment|Service and Ingress spec:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">---
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">---
 <span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
 <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Namespace</span>
 <span style="color:#f92672">metadata</span>:
@@ -487,7 +487,7 @@ kubectl exec --stdin --tty <span style="color:#e6db74">${</span>POD<span style="
     - <span style="color:#f92672">secretName</span>: <span style="color:#ae81ff">server</span>
 </code></pre></div><p><strong>NB</strong> crt|key PEMs bundled into Kubernetes Secrets using <code>base64 --wrap=0 ./${FILE}</code> and <code>tls.crt</code> and <code>tls.key</code> filenames respectively.</p>
 <p>When trying to use SSL passthrough, I changed the paths to be:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">spec</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">spec</span>:
    <span style="color:#f92672">rules</span>:
     - <span style="color:#f92672">http</span>:
       <span style="color:#f92672">paths</span>:

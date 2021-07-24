@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="Using Firebase Auth to authorize users of a gRPC service behind Cloud Endpoints">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -205,7 +205,7 @@ if (!doNotTrack) {
 <p>The Cloud Enpoints (ESPv2) proxy must be run as <code>--allow-unauthenticated</code> on Cloud Run to ensure that requests make it to the proxy where the request is authenticated and only authenticated requests make it on to the backend service. Thanks Google&rsquo;s <a href="https://github.com/nareddyt">Teju Nareddy</a>!</p>
 <blockquote>
 <p><strong>NOTE</strong> The backend service should be run with <code>--no-allow-authenticated</code> and the proxy&rsquo;s service account (perhaps the default Compute Engine account) must be <code>roles/run.invoker</code> per Google&rsquo;s documentation or:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Get this Project&#39;s (`${PROJECT}`) number</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Get this Project&#39;s (`${PROJECT}`) number</span>
 PROJECT_NUM<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span> gcloud projects describe <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span> --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(projectNumber)&#34;</span><span style="color:#66d9ef">)</span>
@@ -309,7 +309,7 @@ gcloud run services add-iam-policy-binding <span style="color:#e6db74">${</span>
 <p><strong>NOTE</strong> An important item of metadata is <code>X-Endpoint-API-UserInfo</code> which we&rsquo;ll use in the following code.</p>
 </blockquote>
 <p>It&rsquo;s straightforward to interact with the metadata:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">import</span> (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">import</span> (
 	<span style="color:#e6db74">&#34;context&#34;</span>
 
 	<span style="color:#e6db74">&#34;google.golang.org/grpc/metadata&#34;</span>
@@ -336,7 +336,7 @@ gcloud run services add-iam-policy-binding <span style="color:#e6db74">${</span>
 <p><strong>NOTE</strong> Cloud Endpoints also supports <a href="https://cloud.google.com/endpoints/docs/openapi/authenticating-users-auth0">Auth0</a>. Auth0 provides <a href="https://auth0.com/docs/authentication">authentication</a> and <a href="https://auth0.com/docs/authorization">authorization</a> services. It&rsquo;s possible, as my service grows that I&rsquo;ll consider swapping both AuthN and AuthZ to Auth0.</p>
 </blockquote>
 <p>I&rsquo;m considering using Firestore as the backend for authorization but have not yet implemented this. Meantime, I wanted to write a very simple &ndash; the simplest possible? &ndash; authorization service:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#75715e">// Users is a type that represents the system&#39;s list of users
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#75715e">// Users is a type that represents the system&#39;s list of users
 </span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Users</span> []<span style="color:#a6e22e">User</span>
 
 <span style="color:#75715e">// User is a type that represents one of the system&#39;s users
@@ -364,7 +364,7 @@ gcloud run services add-iam-policy-binding <span style="color:#e6db74">${</span>
 </code></pre></div><h2 id="grpc-interceptor">gRPC Interceptor</h2>
 <p>See <a href="https://shijuvar.medium.com/writing-grpc-interceptors-in-go-bf3e7671fe48">Writing gRPC Interceptors in Go</a></p>
 <p>Rather than apply authorization piecemeal to each gRPC server method, I&rsquo;ve written a gRPC interceptor. The Interceptor intercepts every gRPC request that&rsquo;s received by the server, checks whether the authenticated user included in its metadata and represented by <code>X-Endpoint-API-UserInfo</code> is authorized and, if they are, then it invokes the gRPC method and returns the method&rsquo;s results. If the user is not authenticated, then the interceptor returns an error without invoking the method. Clean!</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">serverInteceptor</span>(
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">serverInteceptor</span>(
 	<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
 	<span style="color:#a6e22e">rqst</span> <span style="color:#66d9ef">interface</span>{},
 	<span style="color:#a6e22e">info</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryServerInfo</span>,
@@ -405,7 +405,7 @@ gcloud run services add-iam-policy-binding <span style="color:#e6db74">${</span>
         <span style="color:#a6e22e">status</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#a6e22e">codes</span>.<span style="color:#a6e22e">PermissionDenied</span>, <span style="color:#e6db74">&#34;permission denied&#34;</span>)
 }
 </code></pre></div><p>I won&rsquo;t labor the <code>User</code> struct but <code>UserInfo</code> decodes the incoming metadata header:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#f92672">import</span> (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#f92672">import</span> (
 	<span style="color:#e6db74">&#34;encoding/base64&#34;</span>
 	<span style="color:#e6db74">&#34;encoding/json&#34;</span>
 	<span style="color:#e6db74">&#34;fmt&#34;</span>
@@ -453,7 +453,7 @@ gcloud run services add-iam-policy-binding <span style="color:#e6db74">${</span>
 <h2 id="test">Test</h2>
 <p>Now we can deploy and test the Interceptor. Cloud Endpoints will only permit authenticated users so we want an authenticated user (i.e. someone with valid e.g. Google, Microsoft, GitHub credentials) but who isn&rsquo;t authorized to use the service.</p>
 <p>In this case, anyone other than <code>my@email.com</code> is denied:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-v <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>FIREBASE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{...}&#34;</span> <span style="color:#ae81ff">\
@@ -484,7 +484,7 @@ ERROR:
   Code: PermissionDenied
   Message: permission denied
 </code></pre></div><p>But, authenticating with Firebase using <code>my@memail.com</code>, and passing the JWT:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-v <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>FIREBASE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{...}&#34;</span> <span style="color:#ae81ff">\

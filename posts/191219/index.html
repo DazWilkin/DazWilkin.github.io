@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="Using Prometheus AlertManager with a Linode (services) Exporter">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -214,7 +214,7 @@ if (!doNotTrack) {
 </ul>
 <h3 id="configure-prometheus">Configure Prometheus</h3>
 <p>Added the following to <code>prometheus.yml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">rule_files</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">rule_files</span>:
 - <span style="color:#e6db74">&#34;/etc/alertmanager/rules/linode.yml&#34;</span>
 
 <span style="color:#f92672">alerting</span>:
@@ -226,7 +226,7 @@ if (!doNotTrack) {
 </code></pre></div><p>Rules must be defined in separate rules files. See below for the content for <code>linode.yml</code> and an explanation.</p>
 <p>The <code>alerting</code> section specifies that an AlertManager will be accessible on <code>alertmanager:9093</code>. <code>9093</code> is the default port and the <code>alertmanager</code> hostname will come courtesy of Docker Compose.</p>
 <p><code>linode.yaml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">groups</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">groups</span>:
 - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">linode</span>
   <span style="color:#f92672">rules</span>:
   - <span style="color:#f92672">alert</span>: <span style="color:#ae81ff">LinodeInstances</span>
@@ -251,7 +251,7 @@ if (!doNotTrack) {
 <p>The magic happens with the <code>expr</code> statements. I&rsquo;m not familiar with PromQL but e.g. <code>linode_instance_count</code> is the name of a metric exposed by the exporter and this alert will be true when that numbers exceeds 0, i.e. I have at least one instance running. The alert will fire when this holds true for an hour (60 minutes) or more. You can see the pattern here. As more metrics are surfaced by the exporter, e.g. Linode Kubernetes Engine, these can be quickly represented with alerts.</p>
 <h3 id="configure-alertmanager">Configure AlertManager</h3>
 <p>I&rsquo;m using Docker Compose and already have the Prometheus container image. Unsurprisingly, there&rsquo;s an image for <a href="https://hub.docker.com/r/prom/alertmanager/">AlertManager</a> too. As with Prometheus, this expects a configuration YAML. Unoriginally, I called this <code>alertmanager.yaml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">route</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">route</span>:
   <span style="color:#f92672">group_by</span>: [<span style="color:#e6db74">&#34;...&#34;</span>]
   <span style="color:#f92672">receiver</span>: <span style="color:#ae81ff">email-me</span>
 
@@ -268,7 +268,7 @@ if (!doNotTrack) {
 <p>I&rsquo;m unfamiliar with the <code>route</code> mechanism but &ndash; IIUC &ndash; this sents every alerts (<code>[&quot;...&quot;]</code>) to <code>email-me</code>.</p>
 <h3 id="revise-docker-compose">Revise Docker Compose</h3>
 <p>Everything is in place and we can now run the comnbined services by adding <code>prom/alertmanager</code> to the mix:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">prometheus</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">prometheus</span>:
   <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
   <span style="color:#f92672">depends_on</span>:
   - <span style="color:#ae81ff">linode-exporter</span>
@@ -298,7 +298,7 @@ if (!doNotTrack) {
 <p><strong>NB</strong> <code>9093</code> is the default AlertManager port for receiving alerts (from Prometheus) and for presenting the UI</p>
 <h2 id="run">Run</h2>
 <p>All being well, <code>docker-compose up</code> then <code>docker-compose ps</code> should get us:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">     Name                    Command                  State               Ports         
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">     Name                    Command                  State               Ports         
 ----------------------------------------------------------------------------------------
 alertmanager      /bin/alertmanager --config ...   Up             0.0.0.0:9093-&gt;9093/tcp
 cadvisor          /usr/bin/cadvisor -logtostderr   Up <span style="color:#f92672">(</span>healthy<span style="color:#f92672">)</span>   0.0.0.0:8085-&gt;8080/tcp

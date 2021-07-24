@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="How to serve gRPC and Prometheus metrics with Cloud Run">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -204,11 +204,11 @@ if (!doNotTrack) {
 <p>Fortunately, <a href="https://github.com/soheilhy/cmux">cmux</a> provides a solution by providing a mechanism that multiplexes both services (gRPC and HTTP) on a single port!</p>
 <blockquote>
 <p><strong>TL;DR</strong> See the cmux <a href="https://github.com/soheilhy/cmux#limitations">Limitations</a> and use:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">grpcl</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">MatchWithWriters</span>(
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">grpcl</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">MatchWithWriters</span>(
    <span style="color:#a6e22e">cmux</span>.<span style="color:#a6e22e">HTTP2MatchHeaderFieldSendSettings</span>(<span style="color:#e6db74">&#34;content-type&#34;</span>, <span style="color:#e6db74">&#34;application/grpc&#34;</span>))
 </code></pre></div></blockquote>
 <p>Extending the <a href="https://github.com/soheilhy/cmux#how-to">example</a> from the cmux repo:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
 
 <span style="color:#f92672">import</span> (
 	<span style="color:#e6db74">&#34;context&#34;</span>
@@ -265,7 +265,7 @@ if (!doNotTrack) {
 	}, <span style="color:#66d9ef">nil</span>
 }
 </code></pre></div><p>Run this, grab the <a href="https://raw.githubusercontent.com/grpc/grpc-go/master/examples/helloworld/helloworld/helloworld.proto"><code>helloworld.proto</code></a> and the <a href="https://github.com/fullstorydev/grpcurl">gRPCurl</a> the service&rsquo;s <code>SayHello</code> method to test:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;localhost:23456&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;localhost:23456&#34;</span>
 
 grpcurl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
@@ -277,11 +277,11 @@ grpcurl <span style="color:#ae81ff">\
 <p><strong>NOTE</strong> We use <code>-plaintext</code> here as there&rsquo;s no TLS</p>
 </blockquote>
 <p>Should yield:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
   <span style="color:#f92672">&#34;message&#34;</span>: <span style="color:#e6db74">&#34;Hello Freddie&#34;</span>
 }
 </code></pre></div><p>And, test the Prometheus metrics too:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/metrics
 </code></pre></div><p>Should yield:</p>
@@ -296,7 +296,7 @@ go_gc_duration_seconds_sum 0
 go_gc_duration_seconds_count 0
 ...
 </code></pre><p>Assuming a Dockerfile of the form:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Dockerfile" data-lang="Dockerfile"><span style="color:#66d9ef">ARG</span> GOLANG_VERSION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1.16.4&#34;</span><span style="color:#960050;background-color:#1e0010">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Dockerfile" data-lang="Dockerfile"><span style="color:#66d9ef">ARG</span> GOLANG_VERSION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1.16.4&#34;</span><span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">FROM</span><span style="color:#e6db74"> golang:${GOLANG_VERSION} as build</span><span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010">
@@ -322,7 +322,7 @@ go_gc_duration_seconds_count 0
 </span><span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ENTRYPOINT</span> [<span style="color:#e6db74">&#34;/server&#34;</span>]<span style="color:#960050;background-color:#1e0010">
 </span></code></pre></div><p>The next section assumes you&rsquo;ve a Google Cloud Project (<code>[[YOUR-PROJECT]]</code>) where you can publish the container image and deploy the Cloud Run service. You&rsquo;ll need to enable Google Container Registry (GCR) and Cloud Run:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=[[</span>YOUR-PROJECT<span style="color:#f92672">]]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=[[</span>YOUR-PROJECT<span style="color:#f92672">]]</span>
 
 <span style="color:#66d9ef">for</span> SERVICE in <span style="color:#e6db74">&#34;containerregistry&#34;</span> <span style="color:#e6db74">&#34;run&#34;</span>
 <span style="color:#66d9ef">do</span>
@@ -330,7 +330,7 @@ go_gc_duration_seconds_count 0
 </span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 <span style="color:#66d9ef">done</span>
 </code></pre></div><p>Build the container image:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=[[</span>YOUR-PROJECT<span style="color:#f92672">]]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=[[</span>YOUR-PROJECT<span style="color:#f92672">]]</span>
 
 docker build <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--tag<span style="color:#f92672">=</span>us.gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/helloworld:v0.0.1 <span style="color:#ae81ff">\
@@ -340,7 +340,7 @@ docker build <span style="color:#ae81ff">\
 <p><strong>NOTE</strong> I&rsquo;m assume you&rsquo;re in the United States, if not, you&rsquo;ll need to revise the GCR prefix <code>us.gcr.io</code></p>
 </blockquote>
 <p>Run the container image locally to test it:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;23456&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;23456&#34;</span>
 
 docker run <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
@@ -350,9 +350,9 @@ docker run <span style="color:#ae81ff">\
 <p><strong>NOTE</strong> You may use the same tests as before since the container expose the same port (<code>23456</code>).</p>
 </blockquote>
 <p>Push the image to GCR so that Cloud Run can access it:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker push us.gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/helloworld:v0.0.1
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker push us.gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/helloworld:v0.0.1
 </code></pre></div><p>Then deploy it to Cloud Run:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=[[</span>YOUR-PROJECT<span style="color:#f92672">]]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=[[</span>YOUR-PROJECT<span style="color:#f92672">]]</span>
 REGION<span style="color:#f92672">=[[</span>YOUR-REGION<span style="color:#f92672">]]</span>
 
 NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;helloworld&#34;</span>
@@ -369,7 +369,7 @@ gcloud run deploy <span style="color:#e6db74">${</span>NAME<span style="color:#e
 </span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </code></pre></div><p>Grab the service&rsquo;s endpoint:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ENDPOINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ENDPOINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  gcloud run services describe <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
@@ -381,7 +381,7 @@ gcloud run deploy <span style="color:#e6db74">${</span>NAME<span style="color:#e
 <p><strong>NOTE</strong> Cloud Run provides a TLS-endpoint proxy for our service but we need to drop the prefixing <code>https://</code> and <strong>add</strong> the TLS (!) port <code>:443</code> in order to interact with it over gRPC.</p>
 </blockquote>
 <p>Then test:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-insecure <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--proto<span style="color:#f92672">=</span>./helloworld.proto <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#39;{&#34;name&#34;:&#34;Freddie&#34;}&#39;</span> <span style="color:#ae81ff">\
@@ -390,18 +390,18 @@ gcloud run deploy <span style="color:#e6db74">${</span>NAME<span style="color:#e
 </code></pre></div><blockquote>
 <p><strong>NOTE</strong> Because the service is deployed behind a TLS-endpoint, we need to replace <code>-plaintext</code> with <code>-insecure</code> and use the Cloud Run service&rsquo;s endpoint (<code>${ENDPOINT}</code>)</p>
 </blockquote>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
   <span style="color:#f92672">&#34;message&#34;</span>: <span style="color:#e6db74">&#34;Hello Freddie&#34;</span>
 }
 </code></pre></div><p>And:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/metrics
 </code></pre></div><blockquote>
 <p><strong>NOTE</strong> Because the service is deployed behind a TLS-endpoint, we need to add the <code>https://</code> prefix to <code>${ENDPOINT}</code> and add the path <code>/metrics</code> to recreate a valid URL.</p>
 </blockquote>
 <p>Don&rsquo;t forget to delete the Cloud Run service when you&rsquo;re done with it:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud run services delete <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud run services delete <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>

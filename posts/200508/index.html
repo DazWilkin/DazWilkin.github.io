@@ -12,7 +12,7 @@
 I&rsquo;m working on documenting how to run Krustlet(s) alongside GKE. I&rsquo;ve been running a Krustlet with MicroK8s.
 The Krustlet demos reference WASM assemblines stored in Azure Container Registry as OCI containers. Google Container Registry supports OCI format and so I tried (successfully) using GCR instead of AZR.
 There may be an easier approach but this is how I got this working.">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -217,7 +217,7 @@ if (!doNotTrack) {
 <p>The Krustlet demos reference WASM assemblines stored in Azure Container Registry as OCI containers. <a href="https://cloud.google.com/container-registry">Google Container Registry</a> supports <a href="https://cloud.google.com/container-registry/docs/image-formats#oci_format">OCI format</a> and so I tried (successfully) using GCR instead of AZR.</p>
 <p>There may be an easier approach but this is how I got this working.</p>
 <p>Krustlet uses <a href="https://github.com/engineerd/wasm-to-oci"><code>wasm-to-oci</code></a>. I was challenged by <code>wasm-to-oci</code> authentication. <code>wasm-to-oci</code> uses <a href="https://github.com/deislabs/oras"><code>ORAS</code></a>. It turns out that, after authenticating using ORAS, I&rsquo;m able to use <code>wasm-to-oci</code> to authenticate to a GCR registry!</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=[</span>YOUR-PROJECT<span style="color:#f92672">]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=[</span>YOUR-PROJECT<span style="color:#f92672">]</span>
 BILLING<span style="color:#f92672">=[</span>YOUR-BILLING<span style="color:#f92672">]</span>
 
 gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
@@ -228,13 +228,13 @@ gcloud alpha billing projects link <span style="color:#e6db74">${</span>PROJECT<
 gcloud services enable containerregistry.googleapis.com <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </code></pre></div><p>Then, using ORAS (!) login using a <code>gcloud</code> access token:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud auth print-access-token |<span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud auth print-access-token |<span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>oras login <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  -u oauth2accesstoken <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --password-stdin <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  https://gcr.io
 </code></pre></div><p>IIUC this configures Docker authentication. This can be shown with:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">more <span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span>/.docker/config.json
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">more <span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span>/.docker/config.json
 <span style="color:#f92672">{</span>
   <span style="color:#e6db74">&#34;auths&#34;</span>: <span style="color:#f92672">{</span>
     <span style="color:#e6db74">&#34;https://gcr.io&#34;</span>: <span style="color:#f92672">{</span>
@@ -243,20 +243,20 @@ gcloud services enable containerregistry.googleapis.com <span style="color:#ae81
   <span style="color:#f92672">}</span>
 <span style="color:#f92672">}</span>
 </code></pre></div><p>Unfortunately, this isn&rsquo;t trivial for me to test but I suspect, you should be able to do the following for the same result:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud auth print-access-token |<span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud auth print-access-token |<span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>docker login <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-u oauth2accesstoken <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--password-stdin <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>https://gcr.io
 </code></pre></div><p>Optionally, test <code>push</code> and <code>pull</code> using <code>oras</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#34;Hello Freddie!&#34;</span> &gt; artifact.txt
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#34;Hello Freddie!&#34;</span> &gt; artifact.txt
 oras push gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/hello-freddie:v1 ./artifact.txt
 </code></pre></div><p>Should yield something similar to:</p>
 <pre><code>Uploading 0060e7e892de artifact.txt
 Pushed gcr.io/${PROJECT}/hello-freddie:v1
 Digest: sha256:c330be5cf8bbc34f87db380aaba72e774d7ee1064085b3e2ec2b071be292e2a2
 </code></pre><p>And:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">oras pull gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/hello-artifact:v1
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">oras pull gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/hello-artifact:v1
 Downloaded 0060e7e892de artifact.txt
 Pulled gcr.io/dazwilkin-200504-krustlet/hello-artifact:v1
 Digest: sha256:c330be5cf8bbc34f87db380aaba72e774d7ee1064085b3e2ec2b071be292e2a2
@@ -264,7 +264,7 @@ Digest: sha256:c330be5cf8bbc34f87db380aaba72e774d7ee1064085b3e2ec2b071be292e2a2
 cat ./artifact.txt 
 Hello Freddie!
 </code></pre></div><p>Then, assuming you have a signed WASM lying around&hellip; I had a run-through on <a href="https://wascc.dev/tutorials/first-actor/">this</a> waSCC tutorial and <code>hello_signed.wasm</code> available.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wasm-to-oci push hello_signed.wasm gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/hello-freddie:v2
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wasm-to-oci push hello_signed.wasm gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/hello-freddie:v2
 </code></pre></div><p>which yielded:</p>
 <pre><code>INFO[0008] Pushed: gcr.io/${PROJECT}/hello-freddie:v2
 INFO[0008] Size: 7216465
@@ -279,7 +279,7 @@ DIGEST        TAGS    TIMESTAMP
 ded794404cc9  v2      2020-05-08T12:00:00
 c330be5cf8bb  v1      2020-05-08T12:00:00
 </code></pre><p>Then:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wasm-to-oci pull gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/hello-freddie:v2
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wasm-to-oci pull gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/hello-freddie:v2
 INFO<span style="color:#f92672">[</span>0001<span style="color:#f92672">]</span> Pulled: gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/hello-freddie:v2
 INFO<span style="color:#f92672">[</span>0001<span style="color:#f92672">]</span> Size: <span style="color:#ae81ff">7216465</span>
 INFO<span style="color:#f92672">[</span>0001<span style="color:#f92672">]</span> Digest: sha256:f5974be7d9d8eee1ed009dd1cbcf25d275740ae2c3645fd8e30adf711a4035ef

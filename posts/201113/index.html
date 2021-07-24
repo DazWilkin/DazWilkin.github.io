@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="[Microsoft&#39;s] Deislab&#39;s Akri: embracing IoT devices with Kubernetes">
-  <meta name="generator" content="Hugo 0.85.0" />
+  <meta name="generator" content="Hugo 0.86.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -207,10 +207,10 @@ if (!doNotTrack) {
 <p>When I initially read the Akri documentation, I considered an MQTT protocol implementation. This is the approach used by <a href="https://kubeedge.io/en/">KubeEdge</a> and, it makes sense because MQTT and IoT are well-suited. However, I&rsquo;m uncertain whether MQTT is a good fit with Akri, see below.</p>
 <p>After using Nessie and the IP camera examples, I wondered what the simplest IoT device solution would look like, an exemplar. And, while HTTP is not well-suited to every IoT device scenario, HTTP is widely-used, is easy to test (using e.g. <code>curl</code>) and provides a trivial way to simulate IoT devices.</p>
 <p>So, for the purposes of what follows, the IoT devices being accessed by Akri are simply very basic HTTP servers that, generate a random float on their root endpoint:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl http://device-X:8080
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl http://device-X:8080
 0.4091323204249145
 </code></pre></div><p>It is probable that a solution employs a myriad such devices and so, in the example, 9 devices exist and are named <code>device-X</code> where <code>X</code> is <code>1:9</code>. Devices come and go and so, rather than a static list of devices, the solution uses a basic discovery service. This is also an HTTP server and, it enumerates known devices on its root endpoint:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl discovery:9999
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl discovery:9999
 http://device-1:8080
 http://device-2:8080
 http://device-3:8080
@@ -226,7 +226,7 @@ http://device-9:8080
 <p>I think there are many types of IoT device in which the device&rsquo;s API is not presented as a simple HTTP API, may also require an unconventional authentication and authorization and would very likely not be addressable over a conventional TCP network.</p>
 <p>This bring us to the first benefit of Akri. Akri&rsquo;s discovery mechanism provides an abstraction over the mechanism by which IoT devices are discovered. Even on a home TCP-based WiFi network, finding devices, is non-trivial. But, finding proprietary devices running a proprietary API over a proprietary network protocol is even more challenging.</p>
 <p>For the HTTP example, discovery is straightforward:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">device_list
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">device_list
     .lines()
     .map(<span style="color:#f92672">|</span>endpoint<span style="color:#f92672">|</span> {
         <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> props <span style="color:#f92672">=</span> HashMap::new();
@@ -236,7 +236,7 @@ http://device-9:8080
     })
     .collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>DR<span style="color:#f92672">&gt;&gt;</span>();
 </code></pre></div><p>The result of the HTTP GET show above is a list of device URLs. The discovery handler iterates over the list and, for each line (corresponding to a device), it adds 2 items to a <code>HashMap</code> that correponds to properties of Akri&rsquo;s twin of the device: <code>BROKER_NAME</code> and <code>DEVICE_ENDPOINT</code>. The <code>DEVICE_ENDPOINT</code> is the device&rsquo;s URL and this value becomes an environment variable in the broker that Akri creates in response to discovering this device.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">let</span> device_url <span style="color:#f92672">=</span> env::var(DEVICE_ENDPOINT)<span style="color:#f92672">?</span>;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">let</span> device_url <span style="color:#f92672">=</span> env::var(DEVICE_ENDPOINT)<span style="color:#f92672">?</span>;
 </code></pre></div><p>This is part of the extension of the Akri Agent to support this HTTP example. The Agent creates a Kubernetes Pod (and possibly the Akri Controller creates a corresponding Service) for each device. What&rsquo;s the simplest way (and <a href="https://12factor.net">Twelve-Factor App</a> recommended way) to pass state into a container? Through its <a href="https://12factor.net/config">environment</a>. And so, as a result of discovery, a device &ldquo;twin&rdquo; is created and it is given metadata about the device that it represents by Akri through user-defined environment variables. This list would likely be more expansive in a realistic scenario.</p>
 <p>The discovery functionality could entail using some unconventional transport, authentication etc. The result is simply a list of <code>DiscoveryResult</code> with a protocol specific list of configuration data.</p>
 <p>Both discovery and the Broker&rsquo;s &ldquo;twin&rdquo; main loop require interaction with a device. This involves use of the device&rsquo;s network protocol (Akri cites bluetooth, LoRaWAN as possibilities) and I think this becomes a good signal of when to use Akri: If there is a specific network protocol that&rsquo;s needed and from which the developer would benefit from being insulated.</p>
@@ -244,9 +244,9 @@ http://device-9:8080
 <p>So, another benefit of Akri is that the Agent creates twins and the twins may expose some API that exposes the underlying device functionality to other services in the cluster.</p>
 <p>In the HTTP example, the basic (standalone) Broker has a timed <code>main</code> loop that GETs its device&rsquo;s endpoint (<code>/</code>) every 10 seconds. In the standalone case, the Broker does not expose device functionality beyond the Broker.</p>
 <p>After deploying a configuration describing a standalone HTTP Broker to the Akri Agent:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>./http.yaml
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>./http.yaml
 </code></pre></div><p>Because the Discovery endpoint that the Agent is given lists 9 devices, the HTTP-specific configuration given to the Akri Agent (that is defined in <code>http.yaml</code>) results in the creation of 9 &ldquo;twins&rdquo; in Kubernetes using the HTTP Broker image:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get pods --selector<span style="color:#f92672">=</span>akri.sh/configuration<span style="color:#f92672">=</span>http
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get pods --selector<span style="color:#f92672">=</span>akri.sh/configuration<span style="color:#f92672">=</span>http
 NAME                   READY   STATUS    RESTARTS   AGE
 akri-http-231bfa-pod   1/1     Running   <span style="color:#ae81ff">0</span>          2m32s
 akri-http-38a57c-pod   1/1     Running   <span style="color:#ae81ff">0</span>          2m32s
@@ -258,7 +258,7 @@ akri-http-8f52a9-pod   1/1     Running   <span style="color:#ae81ff">0</span>   
 akri-http-ccb080-pod   1/1     Running   <span style="color:#ae81ff">0</span>          2m31s
 akri-http-d62266-pod   1/1     Running   <span style="color:#ae81ff">0</span>          2m32s
 </code></pre></div><p>Picking one of these at random:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs pod/akri-http-8bb408-pod
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs pod/akri-http-8bb408-pod
 <span style="color:#f92672">[</span>http:main<span style="color:#f92672">]</span> Entered
 <span style="color:#f92672">[</span>http:main<span style="color:#f92672">]</span> Device: http://device-4:8080
 <span style="color:#f92672">[</span>http:main:loop<span style="color:#f92672">]</span> Sleep
@@ -268,14 +268,14 @@ akri-http-d62266-pod   1/1     Running   <span style="color:#ae81ff">0</span>   
 <span style="color:#f92672">[</span>main:read_sensor<span style="color:#f92672">]</span> Response body: Ok<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;0.21385530533042224&#34;</span><span style="color:#f92672">)</span>
 <span style="color:#f92672">[</span>http:main:loop<span style="color:#f92672">]</span> Sleep
 </code></pre></div><p>From the twin&rsquo;s logs we can see that it corresponds to <code>device-4:8080</code> and we can query the device as well (because in this case, it&rsquo;s not an IoT device but a Kubernetes Service exposing a shared Pod):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs service/device-4
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs service/device-4
 2020/11/13 18:51:01 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Paths: <span style="color:#ae81ff">1</span>
 2020/11/13 18:51:01 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Creating handler: /
 2020/11/13 18:51:01 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Starting Device: <span style="color:#f92672">[</span>:8080<span style="color:#f92672">]</span>
 2020/11/13 19:43:27 <span style="color:#f92672">[</span>main:handler<span style="color:#f92672">]</span> Handler entered: /
 </code></pre></div><p>This is somewhat interesting but less useful than we&rsquo;d like. A goal with Akri is to make these arbitrary IoT devices accessible to application developers.</p>
 <p>In the HTTP example, this is achieved by exposing the device&rsquo;s twin (!) as a gRPC service. In this case, the Broker is extended and implements a simple protobuf that includes a (gRPC) service:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf">syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf">syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#f92672">package</span> http;<span style="color:#960050;background-color:#1e0010">
 </span><span style="color:#960050;background-color:#1e0010">
@@ -290,9 +290,9 @@ akri-http-d62266-pod   1/1     Running   <span style="color:#ae81ff">0</span>   
 </span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
 </span></code></pre></div><p>Instead of querying the device&rsquo;s URL and logging the result, the Broker now returns the value when a client that implements the service calls <code>ReadSensor</code>.</p>
 <p>Let&rsquo;s deploy a configuration to the Akri Agent representing the gRPC-based HTTP Broker:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>./grpc.broker
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>./grpc.broker
 </code></pre></div><p>There are still 9 devices and so, once again, 9 &ldquo;twins&rdquo; are created:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get pods --selector<span style="color:#f92672">=</span>akri.sh/configuration<span style="color:#f92672">=</span>http
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get pods --selector<span style="color:#f92672">=</span>akri.sh/configuration<span style="color:#f92672">=</span>http
 NAME                   READY   STATUS    RESTARTS   AGE
 akri-http-231bfa-pod   1/1     Running   <span style="color:#ae81ff">0</span>          35s
 akri-http-38a57c-pod   1/1     Running   <span style="color:#ae81ff">0</span>          35s
@@ -304,14 +304,14 @@ akri-http-8f52a9-pod   1/1     Running   <span style="color:#ae81ff">0</span>   
 akri-http-ccb080-pod   1/1     Running   <span style="color:#ae81ff">0</span>          35s
 akri-http-d62266-pod   1/1     Running   <span style="color:#ae81ff">0</span>          35s
 </code></pre></div><p>But, if we check a twin&rsquo;s log this time:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs pod/akri-http-8c07de-pod
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs pod/akri-http-8c07de-pod
 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Entered
 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> gRPC service endpoint: 0.0.0.0:50051
 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> gRPC service proxying: http://device-7:8080
 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> gRPC service starting
 </code></pre></div><p>We see that a gRPC service is created to proxy a device (<code>device-7</code>).</p>
 <p>And, because Pods that expose ports are more effectively consumed using Services, this configuration also instructs the Akri Controller to generate Kubernetes services:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get services
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get services
 NAME              TYPE        CLUSTER-IP       EXTERNAL-IP   PORT<span style="color:#f92672">(</span>S<span style="color:#f92672">)</span>              AGE
 http-231bfa-svc   ClusterIP   10.152.183.82    &lt;none&gt;        50051/TCP,9456/TCP   2m40s
 http-38a57c-svc   ClusterIP   10.152.183.192   &lt;none&gt;        50051/TCP,9456/TCP   2m41s
@@ -326,7 +326,7 @@ http-svc          ClusterIP   10.152.183.168   &lt;none&gt;        50051/TCP,945
 </code></pre></div><p>This list is edited for convenience. You&rsquo;ll note there&rsquo;s a service for each Pod (for each device) and another service called <code>http-svc</code>. This is a generic Service over all the Pods. We&rsquo;re going to use that instead of picking a specific service.</p>
 <p>Remember that it represents the gRPC-based Broker. The service is running on <code>50051</code> and, for simplicity, this is the port that used by the Pod and the Service.</p>
 <p>We can use <a href="https://github.com/fullstorydev/grpcurl/releases"><code>grpcurl</code></a> and our protobuf to check the endpoint:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./grpcurl <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./grpcurl <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--plaintext <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>-proto <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>./http.proto <span style="color:#66d9ef">$(</span>kubectl get service/http-svc --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.clusterIP}&#34;</span><span style="color:#66d9ef">)</span>:50051 <span style="color:#ae81ff">\
