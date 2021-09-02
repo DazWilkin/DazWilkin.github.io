@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="A walk-through waPC and Message Pack aka MsgPack">
-  <meta name="generator" content="Hugo 0.87.0" />
+  <meta name="generator" content="Hugo 0.88.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -268,7 +268,7 @@ wapc_handler<span style="color:#f92672">!</span>(handle_wapc);
     }
 }
 </code></pre></div><p>Compile this with e.g. <code>cargo build --target=wasm32-unknown-unknown --release</code> to yield:</p>
-<pre><code class="language-console" data-lang="console">ls -la target/wasm32-unknown-unknown/release
+<pre tabindex="0"><code class="language-console" data-lang="console">ls -la target/wasm32-unknown-unknown/release
 total 1644
     4096 Aug  7 11:04 .
     4096 Aug  7 10:57 ..
@@ -314,7 +314,7 @@ total 1644
 <span style="color:#a6e22e">msgp</span>.<span style="color:#a6e22e">CopyToJSON</span>(<span style="color:#a6e22e">buf</span>, <span style="color:#a6e22e">bytes</span>.<span style="color:#a6e22e">NewReader</span>(<span style="color:#a6e22e">msg</span>))
 <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;JSON: %s&#34;</span>, <span style="color:#a6e22e">buf</span>.<span style="color:#a6e22e">String</span>())
 </code></pre></div><p>This will yield:</p>
-<pre><code class="language-console" data-lang="console">Encoded: 82a161d703421c000040400000a162d703421c000040400000
+<pre tabindex="0"><code class="language-console" data-lang="console">Encoded: 82a161d703421c000040400000a162d703421c000040400000
 Encoded: [130 161 97 215 3 66 28 0 0 64 64 0 0 161 98 215 3 66 28 0 0 64 64 0 0]
 JSON: {&quot;a&quot;:{&quot;type:&quot;3,&quot;data&quot;:&quot;QhwAAEBAAAA=&quot;},&quot;b&quot;:{&quot;type:&quot;3,&quot;data&quot;:&quot;QhwAAEBAAAA=&quot;}}
 </code></pre><blockquote>
@@ -328,12 +328,12 @@ JSON: {&quot;a&quot;:{&quot;type:&quot;3,&quot;data&quot;:&quot;QhwAAEBAAAA=&quo
 </code></pre></div><p>This is because the library is using an in-built <a href="https://github.com/tinylib/msgp/wiki/Using-Extensions#extensiontype">Extension</a> for <code>complex64</code> associated with type 3.</p>
 <p>If we take the value of <code>&quot;data&quot;</code>, base64 decode it and output it as decimal (<code>printf &quot;QhwAAEBAAAA=&quot; | base64 --decode | od -t u1</code>), we get: <code>66 280 0 0 64 64 0 0</code> (see below)</p>
 <p>Having also written a Rust version of the waPC host, I know that the Rust-Rust implementation ships the following msgpack message for the above-valued <code>ComplexRequest</code>:</p>
-<pre><code class="language-console" data-lang="console">Encoded: [146 146 202 66 28 0 0 202 64 64 0 0 146 202 66 28 0 0 202 64 64 0 0]
+<pre tabindex="0"><code class="language-console" data-lang="console">Encoded: [146 146 202 66 28 0 0 202 64 64 0 0 146 202 66 28 0 0 202 64 64 0 0]
 </code></pre><blockquote>
 <p><strong>NOTE</strong> <code>146</code> (a preamble?) then <code>146</code> then <code>202</code> then <code>66 28 00</code> then <code>202</code> then <code>64 64 0 0</code>. Clearly this matches the expected encoding.</p>
 </blockquote>
 <p>Plugging this in to the Golang code as the value for <code>msg</code>, we get:</p>
-<pre><code class="language-console" data-lang="console">JSON: [[39,3],[39,3]]
+<pre tabindex="0"><code class="language-console" data-lang="console">JSON: [[39,3],[39,3]]
 </code></pre><p>The above is encoded as arrays (or tuples).</p>
 <p>It just so happens that the Golang msgpack SDK supports generating tuples too. But, we need to do this, not only for <code>ComplexRequest</code> but for the complex numbers it represents too.</p>
 <p>This could be achieved by tweaking the above struct and providing a new Extension implementation for (an alias of?) <code>complex64</code> but, for simplicity, I went with the following:</p>
@@ -358,7 +358,7 @@ JSON: {&quot;a&quot;:{&quot;type:&quot;3,&quot;data&quot;:&quot;QhwAAEBAAAA=&quo
 	}
 }
 </code></pre></div><p>The annotations <code>//msgp:tuple [[Type]]</code> tell <code>msgp</code> to encode the structs as tuple (array) types. After re-running <code>go generate</code> and retrying the code, we will now get:</p>
-<pre><code class="language-console" data-lang="console">Encoded: 9292ca421c0000ca4040000092ca421c0000ca40400000
+<pre tabindex="0"><code class="language-console" data-lang="console">Encoded: 9292ca421c0000ca4040000092ca421c0000ca40400000
 Encoded: [146 146 202 66 28 0 0 202 64 64 0 0 146 202 66 28 0 0 202 64 64 0 0]
 JSON: [[39,3],[39,3]]
 </code></pre><p>Great! That matches what the Rust waPC guest implementation expects.</p>
@@ -380,7 +380,7 @@ JSON: [[39,3],[39,3]]
 <p><strong>NOTE</strong> the value of <code>operation</code> in the <code>Invoke</code> method matches one of the operation strings (<code>&quot;add&quot;</code>, <code>&quot;sub&quot;</code>, <code>&quot;mul&quot;</code>, <code>&quot;div&quot;</code>) defined in the <code>handle_wapc</code> function in the Rust <code>lib.rs</code> above.</p>
 </blockquote>
 <p>Running this yields:</p>
-<pre><code class="language-console" data-lang="console">[callback] binding: binding operation: add payload: ComplexRequest: [a: 39+3i, b: 39+3i]
+<pre tabindex="0"><code class="language-console" data-lang="console">[callback] binding: binding operation: add payload: ComplexRequest: [a: 39+3i, b: 39+3i]
 [callback] binding: binding operation: add payload: 78+6i
 Result: [146 202 66 156 0 0 202 64 192 0 0]
 </code></pre><blockquote>
@@ -399,7 +399,7 @@ Result: [146 202 66 156 0 0 202 64 192 0 0]
 <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">UnmarshalMsg</span>(<span style="color:#a6e22e">result</span>)
 <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[main] Response: %+v\n&#34;</span>, <span style="color:#a6e22e">resp</span>)
 </code></pre></div><p>yields:</p>
-<pre><code class="language-console" data-lang="console">Response: {Re:78 Im:6}
+<pre tabindex="0"><code class="language-console" data-lang="console">Response: {Re:78 Im:6}
 </code></pre><p>A quick tour of msgp using Rust, Golang, WASM and waPC.</p>
 <ul class="pa0">
   

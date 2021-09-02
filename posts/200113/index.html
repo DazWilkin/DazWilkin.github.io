@@ -11,7 +11,7 @@
     content="The FBI Portland published an interesting advisory with several, sensible recommendations including firewalling IoT devices from other devices on a home network. I decided to deploy a redundant Trendnet TEW-812DRU version 2.0 for this purpose.
 Caveat Developer: Before I go further, I don&rsquo;t recommend installing DD-WRT on a Trendnet TEW-812DRU unless you&rsquo;re willing to brick the device irrecoverably.
 I read the DD-WRT instructions several times (&ldquo;peacock thread&rdquo;,router database &ndash; do not use v3.">
-  <meta name="generator" content="Hugo 0.87.0" />
+  <meta name="generator" content="Hugo 0.88.0" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -276,32 +276,32 @@ if (!doNotTrack) {
 <p><strong>NB</strong> The <code>=~</code> for specify a regex and then <code>eth0|eth1</code> which is equivalent to <code>eth[0|1]</code></p>
 <p>There are many metrics available but <code>node_network_transmit_packets_total</code> and <code>node_network_receive_packets_total</code> look useful:</p>
 <p>Because these are both counters:</p>
-<pre><code># HELP node_network_transmit_bytes_total Network device statistic transmit_bytes.
+<pre tabindex="0"><code># HELP node_network_transmit_bytes_total Network device statistic transmit_bytes.
 # TYPE node_network_transmit_bytes_total counter
 </code></pre><p>Let&rsquo;s use PromQL to convert them into (per-second!) rates over 5-minutes: rate(${METRIC}[5m])</p>
 <p>i.e.</p>
-<pre><code>rate(node_network_transmit_packets_total{device=~&quot;eth0|eth1&quot;}[5m])
+<pre tabindex="0"><code>rate(node_network_transmit_packets_total{device=~&quot;eth0|eth1&quot;}[5m])
 rate(node_network_receive_packets_total{device=~&quot;eth0|eth1&quot;}[5m])
 </code></pre><p>Yields:</p>
 <p><img src="/images/200113.graphs.png" alt="Prometheus Metrics Graph"></p>
 <h2 id="nvram"><code>nvram</code></h2>
 <p>See: <a href="https://forum.dd-wrt.com/wiki/index.php/Hardware">https://forum.dd-wrt.com/wiki/index.php/Hardware</a></p>
 <p>Using Omega Onions, I was acquainted with <code>uci</code> and tried this on DD-WRT without success. The functional equivalent appears to be using <code>nvram</code> to read|write configuration data. After disabling <code>traff</code>, there&rsquo;s a recommendation to delete data it may have captured too, using:</p>
-<pre><code>for i in `nvram show | grep traff- | cut -f1 -d=&quot;&quot;`
+<pre tabindex="0"><code>for i in `nvram show | grep traff- | cut -f1 -d=&quot;&quot;`
 do
   echo ${i}
   nvram unset ${i}
 done
 </code></pre><p>Noodling around, I found:</p>
-<pre><code>nvram show | grep snmp
+<pre tabindex="0"><code>nvram show | grep snmp
 block_snmp=1
 </code></pre><p>I assume this means that <code>SNMP</code> is blocked</p>
-<pre><code class="language-nvram" data-lang="nvram">telnet_wanport=23
+<pre tabindex="0"><code class="language-nvram" data-lang="nvram">telnet_wanport=23
 telnetd_enable=0
 remote_mgt_telnet=0
 limit_telnet=0
 </code></pre><p>I&rsquo;ve disabled <code>telnetd</code> (I&rsquo;m using ssh &ndash; see below)</p>
-<pre><code class="language-nvram" data-lang="nvram">sshd_forwarding=0
+<pre tabindex="0"><code class="language-nvram" data-lang="nvram">sshd_forwarding=0
 sshd_port=22
 sshd_passwd_auth=1
 sshd_enable=1
