@@ -40,7 +40,7 @@
 <meta itemprop="name" content="Golang Structured Logging w/ Google Cloud Logging">
 <meta itemprop="description" content="Emitting structured logs from Golang containers for Google Cloud Logging"><meta itemprop="datePublished" content="2021-09-28T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2021-09-28T00:00:00-07:00" />
-<meta itemprop="wordCount" content="726">
+<meta itemprop="wordCount" content="780">
 <meta itemprop="keywords" content="golang,cloud-logging,logr,zerolog," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Golang Structured Logging w/ Google Cloud Logging"/>
 <meta name="twitter:description" content="Emitting structured logs from Golang containers for Google Cloud Logging"/>
@@ -197,7 +197,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 4 minutes read</span>
-        <span class="f6 mv4 dib tracked"> - 726 words</span>
+        <span class="f6 mv4 dib tracked"> - 780 words</span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve multiple components in an app and these are deployed across multiple Google Cloud Platform (GCP) services: Kubernetes Engine, Cloud Functions, Cloud Run, etc. Almost everything is written in Golang and I started the project using <a href="https://github.com/go-logr/logr"><code>go-logr</code></a>.</p>
@@ -303,7 +303,10 @@ if (!doNotTrack) {
     <span style="color:#f92672">&#34;k2&#34;</span>:<span style="color:#e6db74">&#34;v2&#34;</span>,
     <span style="color:#f92672">&#34;message&#34;</span>:<span style="color:#e6db74">&#34;something&#34;</span>
 }
-</code></pre></div><p>This would trigger the Cloud Logging agent and Cloud Logging to consume the log entries as JSON, use <code>jsonPayload</code> rather than <code>textPayload</code> but, most importantly, surface our user-defined log entry keys as values by which we can query logs. Before we try that, let&rsquo;s apply the <a href="https://cloud.google.com/logging/docs/structured-logging#special-payload-fields">special fields</a>.</p>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> One downside of <code>zerologr</code> is that it has dropped the <code>caller</code> (<code>file</code>, <code>line</code>) values that were included in the <code>stdr</code> entries.</p>
+</blockquote>
+<p>This would trigger the Cloud Logging agent and Cloud Logging to consume the log entries as JSON, use <code>jsonPayload</code> rather than <code>textPayload</code> but, most importantly, surface our user-defined log entry keys as values by which we can query logs. Before we try that, let&rsquo;s apply the <a href="https://cloud.google.com/logging/docs/structured-logging#special-payload-fields">special fields</a>.</p>
 <p>We&rsquo;re going to use <a href="https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#FIELDS.labels">logging.googleapis.com/labels</a> which is a simple map of key:value pairs and <a href="https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogEntrySourceLocation">logging.googleapis.com/sourceLocation</a> which is a simple struct:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
 
@@ -345,7 +348,11 @@ if (!doNotTrack) {
 		<span style="color:#e6db74">&#34;k2&#34;</span>, <span style="color:#e6db74">&#34;v2&#34;</span>,
 	)
 }
-</code></pre></div><p>projects/ackal-210928/</p>
+</code></pre></div><p>See: <a href="https://play.golang.org/p/xTyYwP0DumS">https://play.golang.org/p/xTyYwP0DumS</a></p>
+<blockquote>
+<p><strong>NOTE</strong> I&rsquo;m manually (and artificially) effectively recreating the values of <code>stdr</code>&rsquo;s <code>caller</code> structure here as I&rsquo;ve been unable to determine how better to recreate it.</p>
+</blockquote>
+<p>Outputs (formatted for ease of viewing):</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
     <span style="color:#f92672">&#34;v&#34;</span>:<span style="color:#ae81ff">0</span>,
     <span style="color:#f92672">&#34;logger&#34;</span>:<span style="color:#e6db74">&#34;MyName&#34;</span>,
