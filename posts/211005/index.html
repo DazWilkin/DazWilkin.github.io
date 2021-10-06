@@ -40,7 +40,7 @@
 <meta itemprop="name" content="Scraping metrics exposed by Google Cloud Run services that require authentication">
 <meta itemprop="description" content="Scraping metrics exposed by Google Cloud Run services that require authentication"><meta itemprop="datePublished" content="2021-10-05T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2021-10-05T00:00:00-07:00" />
-<meta itemprop="wordCount" content="708">
+<meta itemprop="wordCount" content="879">
 <meta itemprop="keywords" content="cloud-run,oidc,token,oauth,oauth2,prometheus," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Scraping metrics exposed by Google Cloud Run services that require authentication"/>
 <meta name="twitter:description" content="Scraping metrics exposed by Google Cloud Run services that require authentication"/>
@@ -198,8 +198,8 @@ if (!doNotTrack) {
 
       
       
-        <span class="f6 mv4 dib tracked"> - 4 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 708 words </span>
+        <span class="f6 mv4 dib tracked"> - 5 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 879 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve written a solution (<a href="https://github.com/DazWilkin/gcp-oidc-token-proxy"><code>gcp-oidc-token-proxy</code></a>) that can be used in conjunction with Prometheus [OAuth] to authenticate requests so that Prometheus can scrape metrics exposed by e.g. Cloud Run services that require authentication. The solution resulted from my <a href="https://stackoverflow.com/questions/69411584/is-there-a-way-to-configure-prometheus-to-use-a-google-service-account-to-auth">question</a> on Stack overflow.</p>
@@ -260,30 +260,43 @@ export GOOGLE_APPLICATION_CREDENTIALS<span style="color:#f92672">=</span>/path/t
 ./proxy <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--port<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--target_url<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>
-</code></pre></div><p>The Application Default Credentials (provided with <code>GOOGLE_APPLICATION_CREDNETIALS</code>) is used by the proxy to create a new token source using the Cloud Run service&rsquo;s URL (<code>target_url</code> == <code>*targetURL</code>) as the <code>audience</code> value. The identity token that is minted is specific to the Cloud Run service</p>
-<blockquote>
-<p><strong>NOTE</strong> One limitation of this solution is that, because identity token are minted for a specific Cloud Run service URL, if there are multiple Cloud Run services to be scraped, each much have its own Prometheus <code>job_name</code> section.</p>
+</code></pre></div><p>The Prometheus OAuth2 configuration utilizes <code>endpoint_params</code> to provide an additional property in the request for <code>audience</code>. This is necessary because identity tokens provided by Google require an <code>audience</code> value and the Cloud Run service authenticates identity tokens that include an <code>audience</code> that matches the service&rsquo;s URL. Here&rsquo;s an example Prometheus OAuth2 configuration for the proxy:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#75715e"># Cloud Run service</span>
+- <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;cloudrun-service&#34;</span>
+  <span style="color:#f92672">scheme</span>: <span style="color:#ae81ff">https</span>
+  <span style="color:#f92672">oauth2</span>:
+    <span style="color:#f92672">client_id</span>: <span style="color:#e6db74">&#34;anything&#34;</span>
+    <span style="color:#f92672">client_secret</span>: <span style="color:#e6db74">&#34;anything&#34;</span>
+    <span style="color:#f92672">token_url</span>: <span style="color:#e6db74">&#34;http://localhost:7777&#34;</span>
+    <span style="color:#f92672">endpoint_params</span>:
+      <span style="color:#f92672">audience</span>: <span style="color:#e6db74">&#34;https://some-service-xxxxxxxxxx-xx.a.run.app&#34;</span>
+  <span style="color:#f92672">static_configs</span>:
+  - <span style="color:#f92672">targets</span>:
+    - <span style="color:#e6db74">&#34;some-service-xxxxxxxxxx-xx.a.run.app:443&#34;</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong></p>
+<ul>
+<li><code>scheme</code> must be <code>https</code> as Cloud Run service&rsquo;s require TLS</li>
+<li><code>client_id</code> and <code>client_secret</code> must be present and be anything other than <code>&quot;&quot;</code></li>
+<li><code>token_url</code> is the proxy&rsquo;s URL</li>
+<li><code>endpoint_params</code> includes <code>audience</code> and this must be the Cloud Run service URL including <code>https://</code></li>
+<li><code>targets</code> used with the proxy can only include a single value of the Cloud Run service URL excluding the scheme (<code>https</code>) as this is defined previous.</li>
+</ul>
 </blockquote>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">ts</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">idtoken</span>.<span style="color:#a6e22e">NewTokenSource</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#f92672">*</span><span style="color:#a6e22e">targetURL</span>)
+<p>The Application Default Credentials (provided through the environment variable <code>GOOGLE_APPLICATION_CREDNETIALS</code>) is used by the proxy along with the <code>audience</code> value to create a new Token Source. The Token Source can then be used to mint an identity token that will be Cloud Run service-specific.</p>
+<p>Because the proxy may be shared across multiple Prometheus <code>scrape_targets</code> and each of these may define a distinct endpoint, the proxy caches Token Sources by <code>audience</code> and it caches identity tokens that are issued by <code>audience</code>. Becaude identity tokens generally expire after 3600 seconds (one hour), the proxy can be more efficient by using tokens until they near expiry at which time a new identity token is minted.</p>
+<blockquote>
+<p><strong>NOTE</strong> One limitation of this solution is that, because identity token are minted for a specific Cloud Run service URL provided as the <code>audience</code> value in the request, if there are multiple Cloud Run services to be scraped, each much have its own Prometheus <code>scrape_targets</code> section.</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">ts</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">idtoken</span>.<span style="color:#a6e22e">NewTokenSource</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">audience</span>)
 <span style="color:#a6e22e">tok</span>, <span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">Token</span>()
-</code></pre></div><p>I&rsquo;m unclear on whether the entirety of this structure is needed but I map the identity token into an OAuth response:</p>
+</code></pre></div><p>The proxy simply maps the identity token (!) into a response as the value of <code>access_token</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">struct</span> {
     <span style="color:#a6e22e">AccessToken</span>  <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;access_token&#34;`</span>
-    <span style="color:#a6e22e">ExpiresIn</span>    <span style="color:#66d9ef">int</span>    <span style="color:#e6db74">`json:&#34;expires_in&#34;`</span>
-    <span style="color:#a6e22e">RefreshToken</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;refresh_token&#34;`</span>
-    <span style="color:#a6e22e">Scope</span>        <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;scope&#34;`</span>
-    <span style="color:#a6e22e">TokenType</span>    <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;token_type&#34;`</span>
 }{
     <span style="color:#a6e22e">AccessToken</span>:  <span style="color:#a6e22e">tok</span>.<span style="color:#a6e22e">AccessToken</span>,
-    <span style="color:#a6e22e">ExpiresIn</span>:    int(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Until</span>(<span style="color:#a6e22e">tok</span>.<span style="color:#a6e22e">Expiry</span>).<span style="color:#a6e22e">Seconds</span>()),
-    <span style="color:#a6e22e">RefreshToken</span>: <span style="color:#a6e22e">tok</span>.<span style="color:#a6e22e">AccessToken</span>,
-    <span style="color:#a6e22e">TokenType</span>:    <span style="color:#e6db74">&#34;bearer&#34;</span>,
-    <span style="color:#a6e22e">Scope</span>:        <span style="color:#e6db74">&#34;https://www.googleapis.com/auth/cloud-platform&#34;</span>,
 }
-</code></pre></div><p>I&rsquo;m setting <code>refresh_token</code> even though these don&rsquo;t exist with Service Accounts.</p>
-<p>I&rsquo;m creating <code>expires_in</code> from the identity token&rsquo;s <code>expiry</code> time too.</p>
-<p>Either of these may be redundant.</p>
-<p>The response (<code>resp</code>) is then marshaled into a string and returned to Prometheus which uses the identity token as a header <code>Authorization: Bearer ${TOKEN}</code> to authenticate the request against the Cloud Run service&rsquo;s metrics endpoints.</p>
+</code></pre></div><p>The response (<code>resp</code>) is then marshaled into a string and returned to Prometheus which uses the identity token as a header <code>Authorization: Bearer ${TOKEN}</code> to authenticate the request against the Cloud Run service&rsquo;s metrics endpoints.</p>
 <blockquote>
 <p><strong>NOTE</strong> The Prometheus server&rsquo;s incoming request object is ignored. The <code>client_id</code> and <code>client_secret</code> values are expected (cannot be nil or <code>&quot;&quot;</code>) but may be anything else.</p>
 </blockquote>
