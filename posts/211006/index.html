@@ -49,7 +49,7 @@ I decided to install it and use it in this week&rsquo;s project.
 Here&rsquo;s a working Podman deployment for gcp-oidc-token-proxy
 ACCOUNT=&#34;...&#34; ENDPOINT=&#34;...&#34; # Can&#39;t match container name i."><meta itemprop="datePublished" content="2021-10-06T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2021-10-06T00:00:00-07:00" />
-<meta itemprop="wordCount" content="333">
+<meta itemprop="wordCount" content="1115">
 <meta itemprop="keywords" content="podman," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Podman"/>
 <meta name="twitter:description" content="I&rsquo;ve read about Podman and been intrigued by it but never taken the time to install it and play around. This morning, walking with my dog, I listened to the almost-always-interesting Kubernetes Podcast and two of the principals behind Podman were on the show to discuss it.
@@ -210,8 +210,8 @@ if (!doNotTrack) {
 
       
       
-        <span class="f6 mv4 dib tracked"> - 2 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 333 words </span>
+        <span class="f6 mv4 dib tracked"> - 6 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 1115 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve read about <a href="https://podman.io/">Podman</a> and been intrigued by it but never taken the time to install it and play around. This morning, walking with my dog, I listened to the almost-always-interesting <a href="https://kubernetespodcast.com">Kubernetes Podcast</a> and two of the principals behind Podman were on the show to <a href="https://kubernetespodcast.com/episode/164-podman/">discuss</a> it.</p>
@@ -229,8 +229,8 @@ podman secret create <span style="color:#e6db74">${</span>SECRET<span style="col
 <span style="color:#75715e"># Pod publishes pod-port:container-port</span>
 podman pod create <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--name<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span>9090:9090 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span>7777:7777
+</span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span>9091:9090 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span>7776:7777
 
 PROMETHEUS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>mktemp<span style="color:#66d9ef">)</span>
 
@@ -261,19 +261,54 @@ podman run <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--name<span style="color:#f92672">=</span>gcp-oidc-token-proxy <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--secret<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>SECRET<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--env<span style="color:#f92672">=</span>GOOGLE_APPLICATION_CREDENTIALS<span style="color:#f92672">=</span>/run/secrets/<span style="color:#e6db74">${</span>SECRET<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>ghcr.io/dazwilkin/gcp-oidc-token-proxy:b20b198eb43e86b904cf9e65c937c5269f69aded <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>ghcr.io/dazwilkin/gcp-oidc-token-proxy:ec8fa9d9ab1b7fa47448ff32e34daa0c3d211a8d <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  --port<span style="color:#f92672">=</span><span style="color:#ae81ff">7777</span>
-</code></pre></div><h2 id="understand">Understand</h2>
+</code></pre></div><p>The <code>prometheus</code> container includes a <code>volume</code> mount.</p>
+<p>When the container is created, a volume is generated:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman volume ls
+
+DRIVER      VOLUME NAME
+local       6ddf9599d09d43359d9636c7a44f57d691df86f0e55bdc6d5af61bdbe6afe325
+</code></pre></div><p>And if we query the container&rsquo;s <code>Mounts</code>, we can see these match:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman container inspect prometheus <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.[].Mounts[]|select(.Type==&#34;volume&#34;).Name&#39;</span>
+6ddf9599d09d43359d9636c7a44f57d691df86f0e55bdc6d5af61bdbe6afe325
+</code></pre></div><p>And:</p>
+<p><img src="/images/211006.targets.png" alt="Prometheus: Targets"></p>
+<p><img src="/images/211006.metrics.png" alt="Proxy: metrics"></p>
+<h2 id="explore">Explore</h2>
+<p>Let&rsquo;s explore more of what&rsquo;s been created for us.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman container ls <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;pod=</span><span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{{.ID}} {{.Image}}&#34;</span>
-</code></pre></div><p>Yields:</p>
-<pre tabindex="0"><code class="language-console" data-lang="console">701f0f9ec469 k8s.gcr.io/pause:3.5
-d5b73b5def12 docker.io/prom/prometheus:v2.30.2
-85417e0e7ef2 ghcr.io/dazwilkin/gcp-oidc-token-proxy:b20b198eb43e86b904cf9e65c937c5269f69aded
 
-</code></pre><h2 id="export-and-import">Export (and Import?)</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman generate kube <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span>
+701f0f9ec469 k8s.gcr.io/pause:3.5
+d5b73b5def12 docker.io/prom/prometheus:v2.30.2
+85417e0e7ef2 ghcr.io/dazwilkin/gcp-oidc-token-proxy:ec8fa9d9ab1b7fa47448ff32e34daa0c3d211a8d
+</code></pre></div><p>And importantly, the Pod&rsquo;s <code>publish</code> ports are applied to each container in the Pod:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman container ls <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--filter<span style="color:#f92672">=</span>pod<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{{.Ports}}\t{{.Names}}&#34;</span>
+
+0.0.0.0:7776-&gt;7777/tcp, 0.0.0.0:9091-&gt;9090/tcp  4396f02f6b1c-infra
+0.0.0.0:7776-&gt;7777/tcp, 0.0.0.0:9091-&gt;9090/tcp  gcp-oidc-token-proxy
+0.0.0.0:7776-&gt;7777/tcp, 0.0.0.0:9091-&gt;9090/tcp  prometheus
+</code></pre></div><p>This makes sense because, the Pod publishes these ports but there&rsquo;s no mapping between a Pod&rsquo;s container port and the Pod&rsquo;s port. However, this break when using <code>generate kube</code> (see below).</p>
+<p>One (!?) way to enumerate the containers belonging to a Pod is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman container ls --filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;pod=</span><span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</code></pre></div><p>And, of course:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman container logs prometheus
+</code></pre></div><p>And interestingly:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman pod logs <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span>
+</code></pre></div><p>And slightly weirdly (since container names presumably are unique):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman pod logs --container<span style="color:#f92672">=</span>prometheus <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span>
+</code></pre></div><blockquote>
+<p><strong>Want</strong> I feel as though there should a way to create a pod with its containers and more specific port mappings with a single command.</p>
+</blockquote>
+<h2 id="export-and-import">Export (and Import?)</h2>
+<p>This doesn&rsquo;t work although I expected it to do so.</p>
+<p>I can export a Podman Pod a la Kubernetes Pod spec:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman generate kube <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span> &gt; <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span>.<span style="color:#66d9ef">$(</span>date +%y%m%d<span style="color:#66d9ef">)</span>.yml
 </code></pre></div><p>Yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
 <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Pod</span>
@@ -283,21 +318,8 @@ d5b73b5def12 docker.io/prom/prometheus:v2.30.2
   <span style="color:#f92672">name</span>: <span style="color:#ae81ff">foo</span>
 <span style="color:#f92672">spec</span>:
   <span style="color:#f92672">containers</span>:
-  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">prometheus</span>
-    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">docker.io/prom/prometheus:v2.30.2</span>
-    <span style="color:#f92672">command</span>:
-    - <span style="color:#ae81ff">/bin/prometheus</span>
-    <span style="color:#f92672">args</span>:
-    - --<span style="color:#ae81ff">config.file=/etc/prometheus/prometheus.yml</span>
-    - --<span style="color:#ae81ff">web.enable-lifecycle</span>
-    <span style="color:#f92672">volumeMounts</span>:
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">tmp-tmp.c9VcopjBj0-host-0</span>
-      <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/etc/prometheus/prometheus.yml</span>
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">f90872b67f21ed21f932fa0942e7f0f4ff5183c0d8609bbf0f149f196e6daba8-pvc</span>
-      <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/prometheus</span>
-    <span style="color:#f92672">workingDir</span>: <span style="color:#ae81ff">/prometheus</span>
-  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">gcp-oidc-token-proxy</span>
-    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">ghcr.io/dazwilkin/gcp-oidc-token-proxy:39571df7fe06a8514f482b9a720db1df6075296d</span>
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">gcp-oidc-token-proxy  </span>
+    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">ghcr.io/dazwilkin/gcp-oidc-token-proxy:ec8fa9d9ab1b7fa47448ff32e34daa0c3d211a8d</span>
     <span style="color:#f92672">command</span>:
     - <span style="color:#ae81ff">/proxy</span>
     <span style="color:#f92672">args</span>:
@@ -307,21 +329,122 @@ d5b73b5def12 docker.io/prom/prometheus:v2.30.2
       <span style="color:#f92672">value</span>: <span style="color:#ae81ff">/run/secrets/oidc-token-proxy</span>
     <span style="color:#f92672">ports</span>:
     - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">9090</span>
-      <span style="color:#f92672">hostPort</span>: <span style="color:#ae81ff">9999</span>
+      <span style="color:#f92672">hostPort</span>: <span style="color:#ae81ff">9091</span>
       <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
     - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">7777</span>
-      <span style="color:#f92672">hostPort</span>: <span style="color:#ae81ff">6666</span>
+      <span style="color:#f92672">hostPort</span>: <span style="color:#ae81ff">7776</span>
       <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">prometheus</span>
+    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">docker.io/prom/prometheus:v2.30.2</span>
+    <span style="color:#f92672">command</span>:
+    - <span style="color:#ae81ff">/bin/prometheus</span>
+    <span style="color:#f92672">args</span>:
+    - --<span style="color:#ae81ff">config.file=/etc/prometheus/prometheus.yml</span>
+    - --<span style="color:#ae81ff">web.enable-lifecycle    </span>
+    <span style="color:#f92672">tty</span>: <span style="color:#66d9ef">true</span>
+    <span style="color:#f92672">volumeMounts</span>:
+    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">home-dazwilkin-Projects-gcp-oidc-token-proxy-prometheus.2110110850.tmp-host-0</span>
+      <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/etc/prometheus/prometheus.yml</span>
+    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">6ddf9599d09d43359d9636c7a44f57d691df86f0e55bdc6d5af61bdbe6afe325-pvc</span>
+      <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/prometheus</span>
   <span style="color:#f92672">volumes</span>:
-  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">tmp-tmp.c9VcopjBj0-host-0</span>
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">home-dazwilkin-Projects-gcp-oidc-token-proxy-prometheus.2110110850.tmp-host-0</span>
     <span style="color:#f92672">hostPath</span>:
-      <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/tmp/tmp.c9VcopjBj0</span>
+      <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/path/to/prometheus.tmp</span>
       <span style="color:#f92672">type</span>: <span style="color:#ae81ff">File</span>
-  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">f90872b67f21ed21f932fa0942e7f0f4ff5183c0d8609bbf0f149f196e6daba8-pvc</span>
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">6ddf9599d09d43359d9636c7a44f57d691df86f0e55bdc6d5af61bdbe6afe325-pvc</span>
     <span style="color:#f92672">persistentVolumeClaim</span>:
-      <span style="color:#f92672">claimName</span>: <span style="color:#ae81ff">f90872b67f21ed21f932fa0942e7f0f4ff5183c0d8609bbf0f149f196e6daba8</span>
-<span style="color:#f92672">status</span>: {}
-</code></pre></div><h2 id="debug">Debug</h2>
+      <span style="color:#f92672">claimName</span>: <span style="color:#ae81ff">6ddf9599d09d43359d9636c7a44f57d691df86f0e55bdc6d5af61bdbe6afe325</span>
+</code></pre></div><p>I&rsquo;ve tidied this to more reflect how I write Podspec&rsquo;s <code>name</code> is the key and I like to start lists with it particularly when collapsing.</p>
+<p>I&rsquo;ve removed some default values too (that I think aren&rsquo;t required).</p>
+<p><strong>Curiosities</strong></p>
+<ol>
+<li>The Pod has a Metadata name <code>${POD}</code> and label <code>app: ${POD}</code></li>
+<li>The Secret, referenced by the <code>gcp-oidc-token-proxy</code> appears to be unreferenced in the Pod config.</li>
+<li>The <code>ports</code> section (defined with <code>podman pod create</code>) appears only once and under (in this case) <code>gcp-oidc-token-proxy</code>.</li>
+<li>The Pod container for <code>prometheus</code> has 2 <code>volumeMounts</code> instead of the one that was defined</li>
+</ol>
+<p>Let&rsquo;s delete the existing Pod and recreate it using the Pod spec:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Reset</span>
+podman pod stop <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>podman pod rm <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span>
+
+podman play kube <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span>.<span style="color:#66d9ef">$(</span>date +%y%m%d<span style="color:#66d9ef">)</span>.yml
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> The Volume is deleted when the Pod is stopped.</p>
+</blockquote>
+<p>Yields:</p>
+<pre tabindex="0"><code class="language-console" data-lang="console">Pod:
+36a26ee79df25af2931425eefd6e8f51e9f4302710982684c8170769fddc8281
+Containers:
+321bcd5a3fb68c70352e2ebe5befda9fb253767cd47e5913cb11e8618c119367
+4914e79214491f1f1ee3bf3d27a2254feaf9cab433605d47df0089d6952d53ff
+</code></pre><p>Interestingly, the Metadata name <code>${POD}</code> is now prefixed to the container&rsquo;s name:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman container ls <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;pod=</span><span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{{.Names}}&#34;</span>
+
+1487f78f3a54-infra
+foo-prometheus
+foo-gcp-oidc-token-proxy
+</code></pre></div><p>So we must ensure we update references to <code>prometheus</code> to <code>foo-prometheus</code> and <code>gcp-oidc-token-proxy</code> to <code>foo-gcp-oidc-token-proxy</code>. I assume this is to provide an additional aggregation of the containers to the Pod but it feels redundant and is a side-effect of the import when one appears unnecessary.</p>
+<p>And:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman container ls <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;pod=</span><span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{{.Image}}\t{{.Ports}}&#34;</span>
+k8s.gcr.io/pause                          0.0.0.0:7776-&gt;7777/tcp, 0.0.0.0:9091-&gt;9090/tcp
+ghcr.io/dazwilkin/gcp-oidc-token-proxy    0.0.0.0:7776-&gt;7777/tcp, 0.0.0.0:9091-&gt;9090/tcp
+docker.io/prom/prometheus                 0.0.0.0:7776-&gt;7777/tcp, 0.0.0.0:9091-&gt;9090/tcp
+</code></pre></div><p>Which is good (because it represents the original configuration) but it&rsquo;s not what the configuration file described. In the following snippet, the <code>ports</code> are <em>only</em> defined for the container <code>gcp-oidc-token-proxy</code>. There are no <code>ports</code> under <code>prometheus</code> and yet the configuration <code>play</code>&rsquo;s correctly.</p>
+<p>I assume this is because, with <code>podman</code> there can only be one <code>hostPort</code> valued <code>9091</code>. The host only has a single <code>9091</code> port. The <code>podman create --publish</code> provides insufficient information for the ports to be correctly smeared across containers and so, <code>podman</code> must aggregate the ports (as defined by the <code>pod create</code>) and then apply these to every container in the Pod.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Pod</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">containers</span>:
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">gcp-oidc-token-proxy  </span>
+    <span style="color:#f92672">ports</span>:
+    - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">9090</span>
+      <span style="color:#f92672">hostPort</span>: <span style="color:#ae81ff">9091</span>
+      <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
+    - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">7777</span>
+      <span style="color:#f92672">hostPort</span>: <span style="color:#ae81ff">7776</span>
+      <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">prometheus</span>
+</code></pre></div><p>There is no obvious reference to the Secret that is associated with <code>gcp-oidc-token-proxy</code>. When <code>play</code>&rsquo;d, it fails because the value for <code>GOOGLE_APPLICATION_CREDENTIALS</code> is expected to be mounted from the Secret (and there is none):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman container logs foo-gcp-oidc-token-proxy
+2021/10/11 17:00:08 handler: <span style="color:#e6db74">&#34;caller&#34;</span><span style="color:#f92672">={</span><span style="color:#e6db74">&#34;file&#34;</span>:<span style="color:#e6db74">&#34;main.go&#34;</span>,<span style="color:#e6db74">&#34;line&#34;</span>:116<span style="color:#f92672">}</span> <span style="color:#e6db74">&#34;error&#34;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;google: error getting credentials using GOOGLE_APPLICATION_CREDENTIALS environment variable: open /run/secrets/oidc-token-proxy: no such file or directory&#34;</span>
+</code></pre></div><p>So that&rsquo;s a problem!</p>
+<p>The <code>volumeMounts</code> which mount <code>volumes</code> are correctly defined as part of the <code>prometheus</code> container. However, there are 2 <code>volumeMounts</code> entries when only one volume was added to the original container:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Pod</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">containers</span>:
+  - <span style="color:#f92672">name</span>: []
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">prometheus</span>
+    <span style="color:#f92672">volumeMounts</span>:
+    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">path-to-prometheus.tmp-host-0</span>
+      <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/etc/prometheus/prometheus.yml</span>
+    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">6ddf9599d09d43359d9636c7a44f57d691df86f0e55bdc6d5af61bdbe6afe325-pvc</span>
+      <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/prometheus</span>
+  <span style="color:#f92672">volumes</span>:
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">path-to-prometheus.tmp-host-0</span>
+    <span style="color:#f92672">hostPath</span>:
+      <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/path/to/prometheus.tmp</span>
+      <span style="color:#f92672">type</span>: <span style="color:#ae81ff">File</span>
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">6ddf9599d09d43359d9636c7a44f57d691df86f0e55bdc6d5af61bdbe6afe325-pvc</span>
+    <span style="color:#f92672">persistentVolumeClaim</span>:
+      <span style="color:#f92672">claimName</span>: <span style="color:#ae81ff">6ddf9599d09d43359d9636c7a44f57d691df86f0e55bdc6d5af61bdbe6afe325</span>
+</code></pre></div><p>And:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman volume ls
+DRIVER      VOLUME NAME
+local       6ddf9599d09d43359d9636c7a44f57d691df86f0e55bdc6d5af61bdbe6afe325
+</code></pre></div><p>I don&rsquo;t understand why 2 <code>volume[Mount]s</code> are required. Let&rsquo;s try deleting the Pod again and recreating <em>without</em> the <code>persistentVolumeClaim</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman container logs foo-prometheus
+...
+level<span style="color:#f92672">=</span>info ts<span style="color:#f92672">=</span>2021-10-11T16:59:35.999Z caller<span style="color:#f92672">=</span>main.go:794 msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Server is ready to receive web requests.&#34;</span>
+</code></pre></div><p>Hmmm, it appears to work without the <code>persistentVolumeClaim</code>. This is understandable since the remaining <code>volume[Mount]</code> appear to correctly define a volume for <code>prometheus.yml</code> and then mount it into the container.</p>
+<p>Unfortunately <code>play</code>&lsquo;ing this Pod config is unsuccessful and I&rsquo;m unsure whether it could be corrected to work for this app.</p>
+<h2 id="debug">Debug</h2>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">podman run <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--name<span style="color:#f92672">=</span>busybox <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--detach --rm <span style="color:#ae81ff">\
