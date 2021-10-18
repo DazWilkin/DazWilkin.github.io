@@ -40,7 +40,7 @@
 <meta itemprop="name" content="Golang Structured Logging w/ Google Cloud Logging (2)">
 <meta itemprop="description" content="Emitting structured logs from Golang containers for Google Cloud Logging"><meta itemprop="datePublished" content="2021-10-18T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2021-10-18T00:00:00-07:00" />
-<meta itemprop="wordCount" content="836">
+<meta itemprop="wordCount" content="845">
 <meta itemprop="keywords" content="golang,cloud-logging,logr,go-logr," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Golang Structured Logging w/ Google Cloud Logging (2)"/>
 <meta name="twitter:description" content="Emitting structured logs from Golang containers for Google Cloud Logging"/>
@@ -199,7 +199,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 4 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 836 words </span>
+        <span class="f6 mv4 dib tracked"> - 845 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>Recently, I <a href="https://pretired.dazwilkin.com/posts/210928/">described</a> how to configure Golang logging so that user-defined key-values applied to the logs are parsed when ingested by <a href="https://cloud.google.com/logging">Google Cloud Logging</a>.</p>
@@ -226,13 +226,13 @@ if (!doNotTrack) {
     <span style="color:#f92672">service_name</span>: <span style="color:#ae81ff">structured-logging</span>
   <span style="color:#f92672">type</span>: <span style="color:#ae81ff">cloud_run_revision</span>
 <span style="color:#f92672">timestamp</span>: <span style="color:#e6db74">&#39;2021-10-18T00:00:00.000000Z&#39;</span>
-</code></pre></div><p>Since then (see this <a href="https://github.com/go-logr/logr/issues/97">issue</a>), the helpful developers of <a href="(https://github.com/go-logr/logr)"><code>go-logr</code></a> have revised <code>funcr</code>&rsquo;s implementation (see [release: <a href="https://github.com/go-logr/logr/releases/tag/v1.2.0-rc1">v1.2.0-rc1</a>) so that it both supports:</p>
+</code></pre></div><p>Since then (see this <a href="https://github.com/go-logr/logr/issues/97">issue</a>), the helpful developers of <a href="(https://github.com/go-logr/logr)"><code>go-logr</code></a> have revised <code>funcr</code>&rsquo;s implementation (see release: <a href="https://github.com/go-logr/logr/releases/tag/v1.2.0-rc1">v1.2.0-rc1</a>) so that it both supports:</p>
 <ul>
 <li>outputting logs as JSON; and</li>
-<li>enables the use of hooks to configure the logs so that these support e.g. the Cloud Logging agent&rsquo;s special fields (e.g.<code>logging.googleapis.com/labels</code>). This is advantageous because it enables us to support the Cloud Logging agent&rsquo;s requirements through configuration rather than changing log statements.</li>
+<li>enables the use of hooks to configure the logs so that these support e.g. the Cloud Logging agent&rsquo;s <a href="https://cloud.google.com/logging/docs/structured-logging#special-payload-fields">special fields</a> (e.g.<code>logging.googleapis.com/labels</code>). This is advantageous because it enables us to support the Cloud Logging agent&rsquo;s requirements through configuration rather than changing log statements.</li>
 </ul>
 <p>The motivation for all of these solution is that they enable (JSON) structured (rather than raw text string) logs to be ingested by Cloud Logging.</p>
-<p>With structured logging, logs can then be filtered (queries) using user-defined metadata. Without structured logs, the majority of a log statement is stored as a text string which, not only requires on-the-fly parsing, but is less-precise.</p>
+<p>With structured logging, logs can then be filtered (queried) using user-defined metadata. Without structured logs, the majority of a log statement is stored as a text string which, not only requires on-the-fly parsing, but is less-precise.</p>
 <p>In the previous post, <a href="https://github.com/go-logr/logr"><code>go-logr</code></a> and its LogSink <a href="https://github.com/go-logr/zerologr"><code>zerologr</code></a> were used to ouput logs (mostly<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>) correctly formatted for the <a href="https://cloud.google.com/logging/docs/structured-logging#special-payload-fields">Cloud Logging agent</a> to parse on ingestion.</p>
 <p>Because it&rsquo;s a standalone module, we needed to import <code>zerologr</code>. In order to use Cloud Logging&rsquo;s <a href="https://cloud.google.com/logging/docs/structured-logging#special-payload-fields">special fields</a>, we must use these special fields in log statements directly, e.g.:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
@@ -285,6 +285,20 @@ if (!doNotTrack) {
 )
 
 <span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+	<span style="color:#a6e22e">renderSourceLocation</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">kvList</span> []<span style="color:#66d9ef">interface</span>{}) []<span style="color:#66d9ef">interface</span>{} {
+		<span style="color:#75715e">// Range over keys
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; len(<span style="color:#a6e22e">kvList</span>); <span style="color:#a6e22e">i</span> <span style="color:#f92672">+=</span> <span style="color:#ae81ff">2</span> {
+			<span style="color:#a6e22e">k</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">kvList</span>[<span style="color:#a6e22e">i</span>].(<span style="color:#66d9ef">string</span>)
+			<span style="color:#75715e">// Rename struct
+</span><span style="color:#75715e"></span>			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">k</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;caller&#34;</span> {
+				<span style="color:#a6e22e">kvList</span>[<span style="color:#a6e22e">i</span>] = <span style="color:#a6e22e">loggingSourceLocation</span>
+			}
+		}
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">kvList</span>
+	}
+	<span style="color:#a6e22e">renderLabels</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">kvList</span> []<span style="color:#66d9ef">interface</span>{}) []<span style="color:#66d9ef">interface</span>{} {
+		<span style="color:#66d9ef">return</span> []<span style="color:#66d9ef">interface</span>{}{<span style="color:#a6e22e">loggingLabels</span>, <span style="color:#a6e22e">funcr</span>.<span style="color:#a6e22e">PseudoStruct</span>(<span style="color:#a6e22e">kvList</span>)}
+	}
 
     <span style="color:#a6e22e">log</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">funcr</span>.<span style="color:#a6e22e">NewJSON</span>(
 		<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">obj</span> <span style="color:#66d9ef">string</span>) {
@@ -294,18 +308,8 @@ if (!doNotTrack) {
 			<span style="color:#a6e22e">LogCaller</span>:     <span style="color:#a6e22e">funcr</span>.<span style="color:#a6e22e">All</span>,
 			<span style="color:#a6e22e">LogCallerFunc</span>: <span style="color:#66d9ef">true</span>,
 			<span style="color:#a6e22e">LogTimestamp</span>:  <span style="color:#66d9ef">true</span>,
-			<span style="color:#a6e22e">RenderBuiltinsHook</span>: <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">kvList</span> []<span style="color:#66d9ef">interface</span>{}) []<span style="color:#66d9ef">interface</span>{} {
-				<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; len(<span style="color:#a6e22e">kvList</span>); <span style="color:#a6e22e">i</span> <span style="color:#f92672">+=</span> <span style="color:#ae81ff">2</span> {
-					<span style="color:#a6e22e">k</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">kvList</span>[<span style="color:#a6e22e">i</span>].(<span style="color:#66d9ef">string</span>)
-					<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">k</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;caller&#34;</span> {
-						<span style="color:#a6e22e">kvList</span>[<span style="color:#a6e22e">i</span>] = <span style="color:#a6e22e">loggingSourceLocation</span>
-					}
-				}
-				<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">kvList</span>
-			},
-			<span style="color:#a6e22e">RenderValuesHook</span>: <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">kvList</span> []<span style="color:#66d9ef">interface</span>{}) []<span style="color:#66d9ef">interface</span>{} {
-				<span style="color:#66d9ef">return</span> []<span style="color:#66d9ef">interface</span>{}{<span style="color:#a6e22e">loggingLabels</span>, <span style="color:#a6e22e">funcr</span>.<span style="color:#a6e22e">PseudoStruct</span>(<span style="color:#a6e22e">kvList</span>)}
-			},
+			<span style="color:#a6e22e">RenderBuiltinsHook</span>: <span style="color:#a6e22e">renderSourceLocation</span>,
+			<span style="color:#a6e22e">RenderValuesHook</span>: <span style="color:#a6e22e">renderLabels</span>,
 		})
 
 	<span style="color:#a6e22e">log</span> = <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;MyName&#34;</span>)
@@ -320,19 +324,22 @@ if (!doNotTrack) {
         <span style="color:#e6db74">&#34;k2&#34;</span>, <span style="color:#e6db74">&#34;v2&#34;</span>,
     )
 }
-</code></pre></div><p>I&rsquo;ll describe <code>funcr.NewJSON</code> below but, see how log statements no longer need to reflect the Cloud Logging specific fields. To create Cloud Logging <code>labels</code>, we need only <code>log.WithValues()</code> and the structure called <code>caller</code> (that results from including <code>LogCaller</code>) is renamed to emit a Cloud Logging <code>sourceLocation</code> struct.</p>
+</code></pre></div><p>See how log statements no longer need to reflect the Cloud Logging specific fields. To create Cloud Logging <code>labels</code>, we need only <code>log.WithValues()</code> and the structure called <code>caller</code> (that results from including <code>LogCaller</code>) is renamed to emit a Cloud Logging <code>sourceLocation</code> struct.</p>
 <p>To achieve this using <code>funcr</code>, we need only define 3 things:</p>
 <ol>
 <li>A <code>fn</code> that takes JSON strings (<code>obj</code>) and outputs them. In this case, we can just <code>fmt.Println</code> the <code>obj</code>&rsquo;s as-is</li>
 <li>A <code>RenderValuesHook</code> that takes any key-value pairs applied using <code>WithValues()</code> and puts them in a struct called <code>logging.googleapis.com/labels</code>. This satisfies the Cloud Logging agent&rsquo;s <a href="https://cloud.google.com/logging/docs/structured-logging#special-payload-fields">special fields</a> requirement for Labels. Using <code>WithValues()</code> to represent labels is an implementation choice. We could have used <code>RenderArgsHook</code> instead. See <a href="https://pkg.go.dev/github.com/go-logr/logr@v1.2.0-rc1/funcr#Options"><code>Options</code></a> for more details.</li>
 <li>A <code>RenderBuiltinsHook</code> that renames the <code>caller</code> structure to <code>logging.googleapis.com/sourceLocation</code> to satisfy the Cloud Logging agents&rsquo;s special fields for <code>sourceLocation</code>. Conveniently <code>go-logr</code>&rsquo;s <code>caller</code> struct&rsquo;s fields match those needed for <code>sourceLocation</code> so a simple rename is all that&rsquo;s required. An <a href="https://pkg.go.dev/github.com/go-logr/logr@v1.2.0-rc1/funcr#example-Options-RenderHooks">example</a> is included in the package docs.</li>
 </ol>
-<p>This time, I deployed the sample to Cloud Run. Because Cloud Run expects an HTTP server running on <code>:8080</code>, I added, but don&rsquo;t show in the code above, a noop server to satisfy this Cloud Run requirement.</p>
+<p>This time, I deployed the sample to Cloud Run.</p>
+<blockquote>
+<p><strong>NOTE</strong> Because Cloud Run expects an HTTP server running on <code>:8080</code>, I added, but don&rsquo;t show in the code above, a noop server to satisfy this Cloud Run requirement.</p>
+</blockquote>
 <p>Once the service is deployed, we can query its logs:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&#34;</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;resource.type=\&#34;cloud_run_revision\&#34; &#34;</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;resource.labels.service_name=\&#34;structured-logging\&#34; &#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;labels.dog=\&#34;Freddie\&#34; &#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;labels.dog=\&#34;freddie\&#34; &#34;</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;sourceLocation.line=\&#34;76\&#34; &#34;</span><span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;jsonPayload.logger=\&#34;MyName\&#34;&#34;</span>
 
@@ -342,7 +349,7 @@ gcloud logging read <span style="color:#e6db74">&#34;</span><span style="color:#
 </code></pre></div><p>The <code>resource.type</code> and <code>resource.labels</code> are standard Cloud Logging metadata.</p>
 <p>But we can now also filter logs by our user-defined key-value pairs that were produced by <code>funcr</code>, i.e.:</p>
 <ul>
-<li><code>labels.dog=&quot;Freddie&quot;</code> which result from the <code>log.WithValues</code> key-value pairs we provided and were remapped onto the special fields that Cloud Logging expects for labels.</li>
+<li><code>labels.dog=&quot;freddie&quot;</code> which result from the <code>log.WithValues</code> key-value pairs we provided and were remapped onto the special fields that Cloud Logging expects for labels.</li>
 <li><code>sourceLocation</code> is the remapped <code>caller</code>.</li>
 <li><code>jsonPayload</code> represents everything else that was provided as key-value (now JSON) pairs and, because this JSON has been parsed too, any of its fields e.g. <code>logger</code> are accessible for filtering.</li>
 </ul>
