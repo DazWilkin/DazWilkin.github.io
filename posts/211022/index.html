@@ -46,7 +46,7 @@ If you use Google Cloud Platform (GCP) CLI, gcloud, this powerful tool includes 
 printf &#34;[1,2,3]&#34; | jq .[1:] [ 2, 3 ] And here
 If you use Google Cloud Platform (GCP) CLI, gcloud, this powerful tool includes JSON output formatting of results (--format=json) and YAML (--format=yaml) etc. and includes a set of so-called projections that you can use to format the returned data."><meta itemprop="datePublished" content="2021-10-22T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2021-10-22T00:00:00-07:00" />
-<meta itemprop="wordCount" content="1204">
+<meta itemprop="wordCount" content="1212">
 <meta itemprop="keywords" content="gcloud," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Using `gcloud ... --format` with arbitrary returned data"/>
 <meta name="twitter:description" content="If you use jq, you&rsquo;ll know that, its documentation uses examples that you can try locally or using the excellent jqplay:
@@ -207,7 +207,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 6 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 1204 words </span>
+        <span class="f6 mv4 dib tracked"> - 1212 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links nested-img mid-gray pr4-l w-two-thirds-l"><p>If you use <a href="https://stedolan.github.io/jq/"><code>jq</code></a>, you&rsquo;ll know that, its <a href="https://stedolan.github.io/jq/manual/">documentation</a> uses examples that you can try locally or using the excellent <a href="https://jqplay.org"><code>jqplay</code></a>:</p>
@@ -501,10 +501,12 @@ socketserver<span style="color:#f92672">.</span>TCPServer(
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Matches the arbitrarily named config provided by our server</span>
 NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;foo&#34;</span>
 
+FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;config.monitoring.consumerDestinations[0].metrics&#34;</span>
+
 gcloud services list <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;config.name=</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;json(config.monitoring.consumerDestinations[0].metrics)&#34;</span> 
+</span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;json(</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">)&#34;</span> 
 </code></pre></div><p>Yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">[
   {
@@ -524,10 +526,13 @@ gcloud services list <span style="color:#ae81ff">\
   }
 ]
 </code></pre></div><p>And:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud services list <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;config.monitoring.consumerDestinations[0]&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;.metrics.slice(1:).len()&#34;</span>
+
+gcloud services list <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;config.name=</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;json(config.monitoring.consumerDestinations[0].metrics.slice(1:).len())&#34;</span>
+</span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;json(</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">)&#34;</span>
 </code></pre></div><p>Yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">[
   {
@@ -544,11 +549,14 @@ gcloud services list <span style="color:#ae81ff">\
 ]
 </code></pre></div><p>You can, of course, just <code>--format=json | jq .</code> and then you get to use <code>jq</code> instead of <code>--format=json</code> and Google&rsquo;s way. The advantage to knowing Google&rsquo;s projections is <code>one less tool</code>. The advantage of use <code>jq</code> is the UNIX ethos of the &ldquo;do one thing well&rdquo;.</p>
 <p>Let&rsquo;s conclude with the original <code>jq</code> example applied to <code>gcloud services list</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud services list
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;.[0]&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;|.config.monitoring.consumerDestinations[0].metrics&#34;</span>
+
+gcloud services list
 --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;config.name=</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;json&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#34;.[0]|.config.monitoring.consumerDestinations[0].metrics&#34;</span>
+</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 </code></pre></div><p>Yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">[
   <span style="color:#e6db74">&#34;a&#34;</span>,
@@ -556,11 +564,13 @@ gcloud services list <span style="color:#ae81ff">\
   <span style="color:#e6db74">&#34;c&#34;</span>
 ]
 </code></pre></div><p>And:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud services list
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;.[0]&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;|.config.monitoring.consumerDestinations[0].metrics[1:]&#34;</span>
+gcloud services list
 --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;config.name=</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;json&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#34;.[0]|.config.monitoring.consumerDestinations[0].metrics[1:]&#34;</span>
+</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 <span style="color:#f92672">[</span>
   <span style="color:#e6db74">&#34;b&#34;</span>,
   <span style="color:#e6db74">&#34;c&#34;</span>
@@ -569,9 +579,10 @@ gcloud services list <span style="color:#ae81ff">\
 <p><strong>NOTE</strong> <code>jq</code> receives an array of one item from <code>gcloud</code> so we start by grabbing its (<code>.[0]</code>) content. The command is otherwise equivalent but gives us access to all jq`s methods.</p>
 </blockquote>
 <p><code>jq</code> (I&rsquo;m unsure whether <code>gcloud format</code>) permits filtering arrays by an object&rsquo;s properties:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;.[]|select(.config.name=\&#34;foo\&#34;)&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;|.config.monitoring.consumerDestinations[]|&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;select(.monitoredResource=\&#34;baz\&#34;)|.metrics[1:]&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;.[]&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;|select(.config.name=\&#34;foo\&#34;)&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;|.config.monitoring.consumerDestinations[]&#34;</span><span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;|select(.monitoredResource=\&#34;baz\&#34;)|.metrics[1:]&#34;</span>
 
 gcloud services list
 --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
