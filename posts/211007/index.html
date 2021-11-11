@@ -12,7 +12,7 @@
 This morning while walking with my dog, I listened to Google&rsquo;s Dan Lorenc explain Sigstore (blog](https://blog.sigstore.dev/)) on The Kubelist Podcast1
 The plan today is to try to sign the gcp-oidc-token-proxy container images in GitHub Container Registry.
  NOTE I decided against trying the hardware key approach. I have a Google Titan key and only Yubikeys are well-tested by go-piv">
-  <meta name="generator" content="Hugo 0.88.1" />
+  <meta name="generator" content="Hugo 0.89.2" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -240,23 +240,23 @@ if (!doNotTrack) {
 <p>The <code>oidc-issuer</code> is evident in the output below as it is the endpoint through which the user authenticates with Sigstore.</p>
 <p>The <code>fulcio-url</code> points to an instance of <a href="https://github.com/sigstore/fulcio">Fulcio</a> which is a root CA and issues certs that can be used to sign software artifacts.</p>
 <p>The command outputs:</p>
-<pre tabindex="0"><code class="language-console" data-lang="console">Generating ephemeral keys...
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">Generating ephemeral keys...
 Retrieving signed certificate...
 Your browser will now be opened to:
 https://oauth2.sigstore.dev/auth/auth?access_type=online&amp;client_id=sigstore...
-</code></pre><p>Which prompts:</p>
+</code></pre></div><p>Which prompts:</p>
 <p><img src="/images/211007.login.png" alt="Log in to sigstore"></p>
 <p>And, when you do:</p>
-<pre tabindex="0"><code class="language-console" data-lang="console">Successfully verified SCT...
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">Successfully verified SCT...
 tlog entry created with index: 756105
 Pushing signature to: ghcr.io/dazwilkin/gcp-oidc-token-proxy:sha256-c26f799823766c54155653cb709df811b7ae73a68ba504a4da2e57153bcf4c40.sig
-</code></pre><blockquote>
+</code></pre></div><blockquote>
 <p><strong>NOTE</strong> The signature follows the image reference but its tag is <code>sha256-${HASH}.sig</code> where <code>HASH</code> is the underlying image&rsquo;s SHA-256 hash.</p>
 </blockquote>
 <blockquote>
 <p><strong>NOTE</strong> Initially, I had errors when <code>cosign</code> tried to push to GHCR (<code>ghcr.io</code>):</p>
-<pre tabindex="0"><code class="language-console" data-lang="console">POST https://ghcr.io/v2/dazwilkin/gcp-oidc-token-proxy/blobs/uploads/: DENIED: unauthenticated: User cannot be authenticated with the token provided.
-</code></pre><p>. Experience has taught me that this is because I&rsquo;m running Docker as a(n Ubuntu) Snap and the Snap stores the Docker config in the non-default location. <code>cosign</code> expects Docker to be installed and, more specifically, expects <code>${HOME}/.docker/config.json</code> to contain an <code>auths</code> key for (in this case) <code>ghcr.io</code> as it uses the token value to authenticate. I copied (but could probably have <code>ln -s</code>) <code>${HOME}/snap/docker/current/.docker/config.json</code> to the default location to resolve the issue.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">POST https://ghcr.io/v2/dazwilkin/gcp-oidc-token-proxy/blobs/uploads/: DENIED: unauthenticated: User cannot be authenticated with the token provided.
+</code></pre></div><p>. Experience has taught me that this is because I&rsquo;m running Docker as a(n Ubuntu) Snap and the Snap stores the Docker config in the non-default location. <code>cosign</code> expects Docker to be installed and, more specifically, expects <code>${HOME}/.docker/config.json</code> to contain an <code>auths</code> key for (in this case) <code>ghcr.io</code> as it uses the token value to authenticate. I copied (but could probably have <code>ln -s</code>) <code>${HOME}/snap/docker/current/.docker/config.json</code> to the default location to resolve the issue.</p>
 </blockquote>
 <p>This is still slightly confusing to me but, a new artifact (a Sigstore signature artifact) has indeed been <code>POST</code>ed to the repositry (in this case <code>ghcr.io/dazwilkin/gcp-oidc-token-proxy</code>)</p>
 <h2 id="github-container-registry">GitHub Container Registry</h2>
@@ -317,16 +317,16 @@ Pushing signature to: ghcr.io/dazwilkin/gcp-oidc-token-proxy:sha256-c26f79982376
 </span><span style="color:#ae81ff"></span>cosign verify  <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
 </code></pre></div><p>Yielding:</p>
-<pre tabindex="0"><code class="language-console" data-lang="console">No TUF root installed, using embedded CA certificate.
-
-No TUF root installed, using embedded rekor key
-
-Verification for ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c --
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">No TUF root installed, using embedded CA certificate.
+<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>No TUF root installed, using embedded rekor key
+<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>Verification for ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c --
 The following checks were performed on each of these signatures:
   - The cosign claims were validated
   - Existence of the claims in the transparency log was verified offline
   - Any certificates were verified against the Fulcio roots.
-</code></pre><p>And:</p>
+</code></pre></div><p>And:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">[
     {<span style="color:#f92672">&#34;critical&#34;: </span>{
         <span style="color:#f92672">&#34;identity&#34;: </span>{

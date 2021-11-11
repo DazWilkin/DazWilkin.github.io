@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="Remotely invoking WASM functions using gRPC and waPC">
-  <meta name="generator" content="Hugo 0.88.1" />
+  <meta name="generator" content="Hugo 0.89.2" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -208,7 +208,7 @@ if (!doNotTrack) {
 <p>The <code>complex.proto</code> protobuf was described in the previous post but should be self-explanatory. For the <code>mul</code> (multiplication) method, we need 2 complex numbers (protobuf <code>ComplexRequest</code> includes fields <code>a</code> and <code>b</code> which are both <code>Complex</code>). The client generates random messages corresponding to <code>ComplexRequest</code> (itself comprising <code>Complex</code>). This explains why the log shows <code>random:New</code> for 2 messages each of which contains 2 <code>float32</code>s.</p>
 <p>The client marshals the generated <code>dynamicpb.Message</code> (corresponding to the <code>ComplexRequest</code>) into <code>anypb.Any</code> (effectively bytes) as a way to envelope arbitrary message types, and ships this off to the server.</p>
 <p>I should add better logging to output the randomly generated message but, the result of the multiplication is a <code>ComplexResponse</code> (<code>{real:-0.22... imag:0.26..}</code>).</p>
-<pre tabindex="0"><code class="language-console" data-lang="console">[main:loop:dynamic-invoke] Method: mul
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">[main:loop:dynamic-invoke] Method: mul
 [random:New] Message
 [random:New] Float32
 [random:New] Float32
@@ -217,13 +217,13 @@ if (!doNotTrack) {
 [random:New] Float32
 [Client:Invoke] Metadata: complex.wasm
 [main:loop:dynamic-invoke] Success: result:{real:-0.22081086  imag:0.26051167}
-</code></pre><blockquote>
+</code></pre></div><blockquote>
 <p><strong>NOTE</strong> a partial implementation for generating random protobuf message is in <a href="https://github.com/DazWilkin/go-protobuf-extras">go-protobuf-extras</a></p>
 </blockquote>
 <p>Server:</p>
 <p>A client must have previously added <code>complex.wasm</code> to the server along with a protobuf descriptor defining the input (parameters) and output (result). When the server receives the invoke request, it determines which WASM binary (in this case <code>complex.wasm</code>) is required and it loads it from storage if it has not already cached an instance of it. It then uses waPC to invoke the <code>mul</code> function on the binary passing it the request bytes returning a result. The server ships the bytes back to the client.</p>
 <p>Because the server associates protobuf descriptors with the WASM binaries, it could deal with the request|response bytes as concrete messages but this would require the client to have concrete implementations of these types too. This may be useful in practice but, for testing, a generic client is able to invoke arbitrary WASM functions because it can use <code>dynamicpb</code> to create arbitrary messages using the descriptors.</p>
-<pre tabindex="0"><code class="language-console" data-lang="console">[Server:Invoke] Metadata: complex.wasm
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">[Server:Invoke] Metadata: complex.wasm
 [File:Open] Module: complex.wasm
 [File:Filename] /wasm-cache/complex.wasm
 [hash:Tee] Entered
@@ -235,7 +235,7 @@ if (!doNotTrack) {
 [wapc:callback] binding: b namespace: complex::any operation: mul payload: 0.13414463+0.58088475i, 0.3424287+0.45920613i
 [wapc:callback] binding: b namespace: complex::any operation: mul payload: -0.22081086+0.26051167i
 [wapc:callback] binding: b namespace: complex::any operation: mul payload: -0.22081086+0.26051167i
-</code></pre><h2 id="motivation">Motivation</h2>
+</code></pre></div><h2 id="motivation">Motivation</h2>
 <p>I&rsquo;m exploring a solution in which arbitrary (gRPC-based) clients can ship WASM binaries and then remotely invoke functions in the binaries. The concept is similar to a simple chaincode. In order to define the input (parameters) and output (results) of the WASM functions, these are defined using protobufs.</p>
 <h2 id="implementation">Implementation</h2>
 <p>I&rsquo;m using Rust and waPC to implement the WASM functions. waPC provides a mechanism by which arbitrary binary blobs may be transferred between the host runtime and the guest (WASM) runtime. When testing these implementations, I&rsquo;ve been using Rust and waPC for the host runtime too. But, for this implementation, I&rsquo;ve been using Go(lang) as the waPC host runtime. This is partly because of the well-documented Golang Protobuf APIv2 that I wrote about <a href="/posts/200630/">recently</a>. The waPC Host for Go repo is <a href="https://github.com/wapc/wapc-go">here</a>. The API is straightforward and, I&rsquo;ve implemented this as an implementation of 3 interfaces in my solution:</p>

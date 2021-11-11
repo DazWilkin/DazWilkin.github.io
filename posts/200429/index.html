@@ -10,7 +10,7 @@
   <meta name="description"
     content="I&rsquo;ve been hacking on a Rust-based transparent application for Google Trillian. As appears to be my fixation, this personality is for another package manager. This time, Rust&rsquo;s Crates often found in crates.io which is Rust&rsquo;s Package Registry. I discussed this project earlier this month Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian and and earlier approach for Python&rsquo;s packages with pypi-transparency.
 This time, of course, I&rsquo;m using Rust. And, by way of a first for me, for the gRPC server implementation (aka &ldquo;personality&rdquo;).">
-  <meta name="generator" content="Hugo 0.88.1" />
+  <meta name="generator" content="Hugo 0.89.2" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -456,7 +456,7 @@ cZZPNP1RzwSILXrjMl+geU1MrWagPQAD842K5PY7oSY<span style="color:#f92672">=</span>
             <span style="color:#e6db74">&#34;protos/package.proto&#34;</span>,
         ],
         rust_protobuf: <span style="color:#a6e22e">true</span>,
-        ..Default::default()
+        <span style="color:#f92672">..</span>Default::default()
     })
     .expect(<span style="color:#e6db74">&#34;protoc-rust-grpc&#34;</span>);
 }
@@ -519,18 +519,18 @@ cZZPNP1RzwSILXrjMl+geU1MrWagPQAD842K5PY7oSY<span style="color:#f92672">=</span>
 <span style="color:#66d9ef">let</span> leaf <span style="color:#f92672">=</span> LogLeaf {
     leaf_value: <span style="color:#a6e22e">leaf_value</span>,
     leaf_identity_hash: <span style="color:#a6e22e">leaf_identity_hash</span>,
-    ..Default::default()
+    <span style="color:#f92672">..</span>Default::default()
 };
 
 <span style="color:#66d9ef">let</span> r <span style="color:#f92672">=</span> QueueLeafRequest {
     log_id: <span style="color:#a6e22e">self</span>.log_id,
     leaf: ::protobuf::SingularPtrField::some(leaf),
-    ..Default::default()
+    <span style="color:#f92672">..</span>Default::default()
 };
 
 <span style="color:#66d9ef">let</span> rsp <span style="color:#f92672">=</span> self.client.queue_leaf(
     ::grpc::RequestOptions {
-        ..Default::default()
+        <span style="color:#f92672">..</span>Default::default()
     },
     r,
 );
@@ -540,7 +540,7 @@ rsp.wait();
 <p>However, there are two wrinkles here:</p>
 <p>First, Trillian uses <a href="https://tools.ietf.org/html/rfc6962">RFC6962: Certificate Transparency</a>. This includes a tweaked mechanism to hash values. The mechanism is based on SHA-256 but, for our purposes, we must prefix the <code>Vec&lt;u8&gt;</code> corresponding to the <code>leaf_value</code> with <code>0x00</code>.</p>
 <p>Second, <code>leaf_hash</code> is of type <a href="https://github.com/google/trillian/blob/125ecc094811d2649f879e810b97e776bdd7ab21/trillian_log_api.proto#L391"><code>repeated bytes</code></a> and so we must take the <code>Vec&lt;u8&gt;</code> representing the hashed <code>leaf_value</code> and put this in another vector (<code>Vec&lt;Vec&lt;u8&gt;&gt;</code>).</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> v: Vec<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">u8</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[<span style="color:#ae81ff">0x00</span>];
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> v: Vec<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">u8</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> vec![<span style="color:#ae81ff">0x00</span>];
 v.append(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> leaf_value);
 
 <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> hasher <span style="color:#f92672">=</span> Sha256::new();
@@ -548,7 +548,7 @@ hasher.input(v);
 <span style="color:#66d9ef">let</span> d <span style="color:#f92672">=</span> hasher.result();
 
 <span style="color:#66d9ef">let</span> v <span style="color:#f92672">=</span> d.to_vec();
-<span style="color:#66d9ef">let</span> vv <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[v];
+<span style="color:#66d9ef">let</span> vv <span style="color:#f92672">=</span> vec![v];
 <span style="color:#66d9ef">let</span> leaf_hash <span style="color:#f92672">=</span> protobuf::RepeatedField::from_vec(vv);
 </code></pre></div><blockquote>
 <p><strong>NB</strong> As with the Golang (SDK), this method should be refactored into something permitting: <code>hasher = RFC6962::new()</code>.</p>

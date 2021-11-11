@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1">
   <meta name="description"
     content="Programmatically deploying Cloud Run services (Golang|Python)">
-  <meta name="generator" content="Hugo 0.88.1" />
+  <meta name="generator" content="Hugo 0.89.2" />
   
   
   <META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
@@ -217,24 +217,24 @@ if (!doNotTrack) {
 <p><strong>TRICK</strong> <a href="https://cloud.google.com/sdk/gcloud/reference#--log-http"><code>--log-http</code></a> is your friend</p>
 </blockquote>
 <p>I&rsquo;ll document this here as it&rsquo;s generally applicable but, as I struggled to emulate the <code>gcloud run deploy</code> command in code, I used <code>--log-http</code> to see how Cloud SDK achieves this. Running the above command with <code>--log-http</code> yields:</p>
-<pre tabindex="0"><code class="language-console" data-lang="console">uri: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT}/services/${NAME}
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">uri: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT}/services/${NAME}
 method: GET
 ...
 uri: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT}/services
 method: POST
 == body start ==
 {
-    &quot;apiVersion&quot;: &quot;serving.knative.dev/v1&quot;,
-    &quot;kind&quot;: &quot;Service&quot;,
-    &quot;metadata&quot;: {
-        &quot;annotations&quot;: {...},
-        &quot;labels&quot;: {},
-        &quot;name&quot;: &quot;${NAME}&quot;,
-        &quot;namespace&quot;: &quot;${PROJECT}&quot;
+    &#34;apiVersion&#34;: &#34;serving.knative.dev/v1&#34;,
+    &#34;kind&#34;: &#34;Service&#34;,
+    &#34;metadata&#34;: {
+        &#34;annotations&#34;: {...},
+        &#34;labels&#34;: {},
+        &#34;name&#34;: &#34;${NAME}&#34;,
+        &#34;namespace&#34;: &#34;${PROJECT}&#34;
     },
-    &quot;spec&quot;: {...}
+    &#34;spec&#34;: {...}
     ...
-</code></pre><p>I draw your attention to:</p>
+</code></pre></div><p>I draw your attention to:</p>
 <ol>
 <li>The endpoint is <code>https://${REGION}-run.googleapis.com</code>. This is documented <a href="https://cloud.google.com/run/docs/reference/rest/#service-endpoint">Service Endpoint</a>. It&rsquo;s possible to GET (lists) on <code>https://run.googleapis.com</code> but to create, edit, delete etc. you must use <code>https://${REGION}-run.googleapis.com</code>.</li>
 <li>The path includes <code>namespaces/${PROJECT}</code>. The <a href="https://cloud.google.com/run/docs/reference/rest/v1/namespaces.services/create">documentation</a> explains that this value may be either the Project ID or the Project number. Because the service is a Kubernetes API, Namespaces are employed.</li>
