@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Prometheus HTTP Service Discovery of Cloud Run services | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="How to use Prometheus HTTP Service Discovery with Google Cloud Run">
+    <meta name="generator" content="Hugo 0.92.2" />
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.78fa45e151ad028724c4129633b098540d51a57e07e08de90c38dc135b9d3c25.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+    
+    <meta property="og:title" content="Prometheus HTTP Service Discovery of Cloud Run services" />
+<meta property="og:description" content="How to use Prometheus HTTP Service Discovery with Google Cloud Run" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/220225/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-02-25T00:00:00-08:00" />
+<meta property="article:modified_time" content="2022-02-25T00:00:00-08:00" />
+
+<meta itemprop="name" content="Prometheus HTTP Service Discovery of Cloud Run services">
+<meta itemprop="description" content="How to use Prometheus HTTP Service Discovery with Google Cloud Run"><meta itemprop="datePublished" content="2022-02-25T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2022-02-25T00:00:00-08:00" />
+<meta itemprop="wordCount" content="1305">
+<meta itemprop="keywords" content="prometheus,http-service-discovery,cloud-run," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Prometheus HTTP Service Discovery of Cloud Run services"/>
+<meta name="twitter:description" content="How to use Prometheus HTTP Service Discovery with Google Cloud Run"/>
+
+      
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-67DZX7M0D1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    <a href="https://github.com/DazWilkin" target="_blank" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" rel="noopener" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://medium.com/@DazWilkin" target="_blank" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+
+
+
+
+
+
+  <div id="sharing" class="mt3 ananke-socials">
+    
+      
+      <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/220225/&amp;title=Prometheus%20HTTP%20Service%20Discovery%20of%20Cloud%20Run%20services" class="ananke-social-link linkedin no-underline" aria-label="share on LinkedIn">
+        
+        <span class="icon"> <svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+        
+      </a>
+    
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Prometheus HTTP Service Discovery of Cloud Run services</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2022-02-25T00:00:00-08:00">February 25, 2022</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 7 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 1305 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>Some time ago, I wrote about using <a href="https://pretired.dazwilkin.com/posts/210419/">Prometheus Service Discovery w/ Consul for Cloud Run</a> and also <a href="https://pretired.dazwilkin.com/posts/211005/">Scraping metrics exposed by Google Cloud Run services that require authentication</a>. Both solutions remain viable but they didn&rsquo;t address another use case for Prometheus and Cloud Run services that I have with a &ldquo;thing&rdquo; that I&rsquo;ve been building.</p>
+<p>In this scenario, I want to:</p>
+<ol>
+<li>Configure Prometheus to scrape Cloud Run service metrics</li>
+<li>Discover Cloud Run services dynamically</li>
+<li>Authenticate to Cloud Run using Firebase Auth ID tokens</li>
+</ol>
+<p>These requirements and &ndash; one other &ndash; present several challenges:</p>
+<ol>
+<li>Prometheus Service Discovery alternatives (e.g. <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#file_sd_config"><code>file</code></a> and the new <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#http_sd_config"><code>http</code></a>) are statically configured</li>
+<li>The Service Discovery endpoint <strong>and</strong> the services discovered require authentication</li>
+<li>ID token expire and need to be refreshed (deterministically)</li>
+<li>My &ldquo;thing&rdquo; expects users to uniquely identify requests</li>
+</ol>
+<p>I&rsquo;ll explore how I solved these challenges in detail below but, for those who are impatient, the solution is:</p>
+<ol>
+<li>Configure Prometheus to use <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#http_sd_config">HTTP-based Service Discovery</a> using a proxy</li>
+<li>The proxy adds dynamically-generated headers to the proxied requests including <code>Authorization</code></li>
+<li>A Cloud Run service that authenticats, enumerates a user&rsquo;s Cloud Run services and returns Prometheus targets</li>
+<li>Cloud Run services that authenticate and serve Prometheus metrics</li>
+</ol>
+<p>Let&rsquo;s work from the end-user&rsquo;s perspective forwards:</p>
+<p><img src="/images/220225.prometheus.targets.png" alt="Prometheus: Targets"></p>
+<p>It doesn&rsquo;t look very interesting but the two endpoints <code>node-exporter-XX</code> are Cloud Run services (for testing, they&rsquo;re both <a href="https://github.com/prometheus/node_exporter">Node Exporter</a>s) that are published as <code>allow unauthenticated</code> but (in production) are services that authenticate requests for valid Firebase ID tokens.</p>
+<p><img src="/images/220225.cloudrun.png" alt="Cloud Run services"></p>
+<p>The service <code>listr</code> uses Google&rsquo;s Cloud Run SDK to enumerate Cloud Run services. It also expects and validates a Firebase ID token provided with an <code>Authorization</code> header.</p>
+<h2 id="prometheus">Prometheus</h2>
+<p>The Prometheus configuration is straightforward:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">global</span>:
+  <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">1m</span>
+  <span style="color:#f92672">evaluation_interval</span>: <span style="color:#ae81ff">1m</span>
+
+<span style="color:#f92672">scrape_configs</span>:
+  - <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;cloudrun&#34;</span>
+    <span style="color:#f92672">scheme</span>: <span style="color:#ae81ff">https</span>
+    <span style="color:#f92672">http_sd_configs</span>:
+    - <span style="color:#f92672">url</span>: <span style="color:#ae81ff">https://test-listr-plsm3l32oa-uw.a.run.app</span>
+      <span style="color:#f92672">proxy_url</span>: <span style="color:#ae81ff">https://0.0.0.0:5555</span>
+      <span style="color:#f92672">tls_config</span>:
+        <span style="color:#f92672">insecure_skip_verify</span>: <span style="color:#66d9ef">true</span>
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> Although this uses TLS from Prometheus to Cloud Run, the proxy can be run using self-signed certs and &ndash; importantly &ndash; though the proxy technically is <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">MITM</a>, it&rsquo;s not terminating the TLS connection but using HTTP <code>CONNECT</code> and simply relaying the outgoing (request) and incoming (response) streams over TCP to the intended (Cloud Run service) target.</p>
+</blockquote>
+<blockquote>
+<p><strong>NOTE</strong> <code>insecure_skip_verify</code> is because the proxy is not verifying the Prometheus server&rsquo;s client credentials. This can be changed to mTLS if Prometheus is configured with certs too.</p>
+</blockquote>
+<h2 id="proxy">Proxy</h2>
+<p>I&rsquo;m using Elazar Leibovich&rsquo;s <a href="https://github.com/elazarl/goproxy">goproxy</a>. I&rsquo;d not written a proxy for HTTPS and had a learning curve but <code>goproxy</code> works, appears production-ready and is popular.</p>
+<p>I&rsquo;ve omitted the preamble in the following code but it shows a working configuration of <code>goproxy</code> using TLS, receiving an HTTPS request (<code>CONNECT</code>) implemented by <code>HandleConnectFunc</code> to augment the request headers. In my case, I leverage an existing CLI client to provide a Firebase ID token (refreshing it beforehand if necessary) and a client-specific header both of which are required by the Cloud Run services.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+	<span style="color:#a6e22e">proxy</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">goproxy</span>.<span style="color:#a6e22e">NewProxyHttpServer</span>()
+	<span style="color:#a6e22e">proxy</span>.<span style="color:#a6e22e">Verbose</span> = <span style="color:#66d9ef">true</span>
+
+	<span style="color:#75715e">// For HTTPS requests (which is always true for Prometheus) the proxy will receive an HTTP CONNECT
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">proxy</span>.<span style="color:#a6e22e">OnRequest</span>().<span style="color:#a6e22e">HandleConnectFunc</span>(
+		<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">host</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">ctx</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">goproxy</span>.<span style="color:#a6e22e">ProxyCtx</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">goproxy</span>.<span style="color:#a6e22e">ConnectAction</span>, <span style="color:#66d9ef">string</span>) {
+
+            <span style="color:#a6e22e">key</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;...&#34;</span>
+            <span style="color:#a6e22e">val</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;...&#34;</span>
+            <span style="color:#a6e22e">ctx</span>.<span style="color:#a6e22e">Req</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">val</span>)
+
+			<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">goproxy</span>.<span style="color:#a6e22e">OkConnect</span>, <span style="color:#a6e22e">host</span>
+		},
+	)
+
+	<span style="color:#75715e">// Setting TLSNextProto to a non-nil map disables HTTP/2
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// HTTP/2 can be problematic to proxy
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">srv</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Server</span>{
+		<span style="color:#a6e22e">Addr</span>:         <span style="color:#a6e22e">endpoint</span>,
+		<span style="color:#a6e22e">Handler</span>:      <span style="color:#a6e22e">proxy</span>,
+		<span style="color:#a6e22e">TLSConfig</span>:    <span style="color:#a6e22e">tlsConfig</span>,
+		<span style="color:#a6e22e">TLSNextProto</span>: make(<span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">func</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Server</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Conn</span>, <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Handler</span>)),
+	}
+
+	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">ListenAndServeTLS</span>(<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>))
+}
+</code></pre></div><p>The proxy provides the mechanism by which the static config shown in the Prometheus configuration above is dynamically revised to include necessary headers used to authenticate requests.</p>
+<h2 id="cloud-run-services">Cloud Run services</h2>
+<h3 id="authentication">Authentication</h3>
+<p>Authentication (and authoriation) are handled by the Cloud Run services using an interceptor that&rsquo;s applied to all incoming requests that&rsquo;s implemented as any other <code>http.Handler</code>. For this reason, the services must allow unauthenticated traffic (because the service itself is performing the authentication and authorization).</p>
+<p>I&rsquo;ve removed extraneous code and error-handling to focus on the intent <code>VerifyIDToken</code> and act upon the result:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
+    <span style="color:#75715e">// Gets first if any Authorization header
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">authValue</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;Authorization&#34;</span>)
+
+    <span style="color:#75715e">// Extracts TOKEN from &#34;Bearer TOKEN&#34;
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">splitValues</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Split</span>(<span style="color:#a6e22e">authValue</span>, <span style="color:#e6db74">&#34;Bearer &#34;</span>)
+
+    <span style="color:#75715e">// ID token
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">idToken</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">splitValues</span>[<span style="color:#ae81ff">1</span>]
+
+    <span style="color:#a6e22e">token</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">authClient</span>.<span style="color:#a6e22e">VerifyIDToken</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">idToken</span>)
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+        <span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusUnauthorized</span>)
+        <span style="color:#66d9ef">return</span>
+    }
+
+    <span style="color:#75715e">// Invoke next handler
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">next</span>.<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">req</span>)
+}
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> In my app, once a user has been authenticated (see above), there&rsquo;s another interceptor that determines whether the user is authorized.</p>
+</blockquote>
+<h3 id="prometheus-service-discovery-targets">Prometheus Service Discovery targets</h3>
+<p>The Prometheus documentation covers HTTP-based Service Discovery in two places:</p>
+<ul>
+<li><a href="https://prometheus.io/docs/prometheus/latest/http_sd/">Writing HTTP Service Discovery</a></li>
+<li><a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#http_sd_config"><code>&lt;http_sd_config&gt;</code></a></li>
+</ul>
+<p>Prometheus expects to receive JSON-formatted (static config) targets in response to its request to the handler:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">[
+  {
+    <span style="color:#f92672">&#34;targets&#34;</span>: [ <span style="color:#e6db74">&#34;&lt;host&gt;&#34;</span>, <span style="color:#960050;background-color:#1e0010">...</span> ],
+    <span style="color:#f92672">&#34;labels&#34;</span>: {
+      <span style="color:#f92672">&#34;&lt;labelname&gt;&#34;</span>: <span style="color:#e6db74">&#34;&lt;labelvalue&gt;&#34;</span>, <span style="color:#960050;background-color:#1e0010">...</span>
+    }
+  },
+  <span style="color:#960050;background-color:#1e0010">...</span>
+]
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> <code>targets</code> is a list (of hosts) while <code>labels</code> is a map (of key:value pairs). There&rsquo;s freedom to associate a set of targets with the same set of labels.</p>
+</blockquote>
+<p>This can be modeled:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#75715e">// StaticConfigs is a type that represents file format of Prometheus File|HTTP Service Dicovery config
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">StaticConfigs</span> []<span style="color:#a6e22e">StaticConfig</span>
+
+<span style="color:#75715e">// NewStaticConfigs is a function that returns a new Configs
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewStaticConfigs</span>() <span style="color:#a6e22e">StaticConfigs</span> {
+	<span style="color:#66d9ef">return</span> []<span style="color:#a6e22e">StaticConfig</span>{}
+}
+
+<span style="color:#75715e">// Add is a method that adds a StaticConfig to StaticConfig
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">StaticConfigs</span>) <span style="color:#a6e22e">Add</span>(<span style="color:#a6e22e">x</span> <span style="color:#a6e22e">StaticConfig</span>) {
+	<span style="color:#f92672">*</span><span style="color:#a6e22e">c</span> = append(<span style="color:#f92672">*</span><span style="color:#a6e22e">c</span>, <span style="color:#a6e22e">x</span>)
+}
+
+<span style="color:#75715e">// JSON is a method that converts Configs to JSON
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">StaticConfigs</span>) <span style="color:#a6e22e">JSON</span>() ([]<span style="color:#66d9ef">byte</span>, <span style="color:#66d9ef">error</span>) {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">c</span>)
+}
+
+<span style="color:#75715e">// StaticConfig is a type that represents a single entry within the Prometheus File Service discovery config
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">StaticConfig</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">Targets</span> []<span style="color:#66d9ef">string</span>          <span style="color:#e6db74">`json:&#34;targets&#34; yaml:&#34;targets&#34;`</span>
+	<span style="color:#a6e22e">Labels</span>  <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;labels&#34; yaml:&#34;labels&#34;`</span>
+}
+</code></pre></div><blockquote>
+<p><strong>NOTE</strong> These types (and methods) must be available as part of Prometheus too and it may be better to import them from Prometheus rather than recreate them here.</p>
+</blockquote>
+<p>One noteworthy fact is that the Cloud Run service has region-specific endpoints. Generally to interact with Cloud Run services through the SDKs, it&rsquo;s necessary to first determine which region the service is in. See <a href="https://cloud.google.com/run/docs/reference/rest#service-endpoint">Service endpoint</a>.</p>
+<p>However (!) there is an undocumented method <code>projects.locations.services.list</code> that can be used to enumerate all the services within a project. This <code>list</code> method is used by <code>gcloud</code> and it achieves the enumeration across all regions using <code>-</code> as a wildcard for the <code>locations</code>  components of the method&rsquo;s <code>parent</code> string value (<code>projects/{ProjectID}/locations/-</code>).</p>
+<p>This is the method that I&rsquo;m using to retrieve the list of <code>targets</code> that are then converted to <code>StaticConfig</code>&rsquo;s and <code>Add</code>&lsquo;ed to <code>StaticConfigs</code> per above before converting these to JSON to be returned by the HTTP handler:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#75715e">// List is a method that lists Cloud Run services that match the labelSelector
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">List</span>(<span style="color:#a6e22e">labelSelector</span> <span style="color:#66d9ef">string</span>) ([]<span style="color:#f92672">*</span><span style="color:#a6e22e">run</span>.<span style="color:#a6e22e">Service</span>, <span style="color:#66d9ef">error</span>) {
+	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Service</span>.<span style="color:#a6e22e">Projects</span>.<span style="color:#a6e22e">Locations</span>.<span style="color:#a6e22e">Services</span>.<span style="color:#a6e22e">List</span>(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Parent</span>()).<span style="color:#a6e22e">LabelSelector</span>(<span style="color:#a6e22e">labelSelector</span>)
+	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Do</span>()
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
+	}
+
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Items</span>, <span style="color:#66d9ef">nil</span>
+}
+
+<span style="color:#75715e">// Parent is a method that returns a wildcarded (!) parent
+</span><span style="color:#75715e">// gcloud uses an undocumented list method that uses &#34;-&#34; to represent all locations
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">Parent</span>() <span style="color:#66d9ef">string</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;projects/%s/locations/-&#34;</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Project</span>)
+}
+</code></pre></div><h3 id="prometheus-metrics">Prometheus metrics</h3>
+<p>Finally, the designated (<code>labelSelector</code>) services are returned by the discovery service to Prometheus where they are scraped and available for querying|graphing etc.</p>
+<p>Calls to these metrics endpoint services are authenticated using the handler described previously.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>Prometheus&rsquo; <a href="https://prometheus.io/docs/prometheus/latest/http_sd/">HTTP Service Discovery</a> mechanism is a useful and general-purpose way to generate scrape targets dynamically for Prometheus. In addition to HTTP Service Discovery, I implemented <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#file_sd_config">File-based Service Discovery</a> with the addition of a <code>Save</code> method to <code>StaticConfigs</code>.</p>
+<p>If I had no need to include authentciation and other headers, I could have avoided using the proxy. But Prometheus' generic (i.e. File, HTTP) service discovery mechanisms don&rsquo;t provide any mechanism for extending their functionality to achieve this, I am using a proxy. The proxy runs in the client&rsquo;s environment and is able to access a user&rsquo;s credentials and construct the additional headers that are added to the Prometheus service discovery requests.</p>
+<p>The result is that users are able to securely (authenticated and authorized) use metrics from their Cloud Run services.</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/prometheus" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">prometheus</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/http-service-discovery" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">http-service-discovery</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/cloud-run" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">cloud-run</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+    
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/211005/">Scraping metrics exposed by Google Cloud Run services that require authentication</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210520/">Consul discovers Google Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210519/">Multiplexing gRPC and HTTP (Prometheus) endpoints with Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210419/">Prometheus Service Discovery w/ Consul for Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/211026/">Firebase Auth authorized domains</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210907/">`gcloud beta run services replace`</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210608/">Cloud Endpoints combine OpenAPI and gRPC... or not!</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210316/">Programmatically deploying Cloud Run services (Golang|Python)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210305/">Prometheus VPA Recommendations</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201008/">Deploying a Rust HTTP server to DigitalOcean App Platform</a>
+        </li>
+	    
+    </ul>
+</div>
+
+<br/>
+      <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
+        data-name="bmc-button" data-slug="dazwilkin" data-color="#ffdd00" data-emoji="" data-font="Cookie"
+        data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000"
+        data-coffee-color="#ffffff"></script>
+    </aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2022 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    <a href="https://github.com/DazWilkin" target="_blank" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" rel="noopener" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://medium.com/@DazWilkin" target="_blank" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div></div>
+  </div>
+</footer>
+
+  </body>
+</html>
