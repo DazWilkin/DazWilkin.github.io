@@ -9,7 +9,7 @@
     <meta name="description" content="The FBI Portland published an interesting advisory with several, sensible recommendations including firewalling IoT devices from other devices on a home network. I decided to deploy a redundant Trendnet TEW-812DRU version 2.0 for this purpose.
 Caveat Developer: Before I go further, I don&rsquo;t recommend installing DD-WRT on a Trendnet TEW-812DRU unless you&rsquo;re willing to brick the device irrecoverably.
 I read the DD-WRT instructions several times (&ldquo;peacock thread&rdquo;,router database &ndash; do not use v3.">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -218,51 +218,51 @@ if (!doNotTrack) {
 <h2 id="prometheus--node-exporter">Prometheus | Node Exporter</h2>
 <p>Daniele described using SNMP and a <a href="https://github.com/jschornick/openwrt_exporter">Lua script</a> that generates (&ldquo;exports&rdquo;) Prometheus metrics. I was unable to find SNMP running on my device (neither in the GUI nor as a running process) and assume that this is an optional extra that&rsquo;s included in builds for devices with more accessible RAM. My device did not have lua installed either.</p>
 <p>I decided to try <a href="https://github.com/prometheus/node_exporter">Node Exporter</a>. The learning here and a tweak is that &ndash; IIUC &ndash; the ARM processor on the TEW-812DRU (or the build I&rsquo;m using) does not support floating-point math. After compiling Node Exporter for <code>GOARM=7</code> (per the output from <code>/proc/cpuinfo</code>), I received errors. I learned that ARMv5 contains a software implementation for floating-point math. Building Node Export with <code>GOARM=5</code> works. I built Node Exporter on my workstation:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">CGO_ENABLED<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>GOOS<span style="color:#f92672">=</span>linux <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>GOARCH<span style="color:#f92672">=</span>arm GOARM<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>go build -a -tags netgo -ldflags <span style="color:#e6db74">&#39;-w -extldflags &#34;-static&#34;&#39;</span> *.go
-</code></pre></div><p>And then SCP&rsquo;d it to the router:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">scp -i ~/.ssh/my_private_key root@192.168.1.1
-</code></pre></div><p><strong>NB</strong> Node Exporter is <strong>not</strong> persisted across router reboots</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>CGO_ENABLED<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>GOOS<span style="color:#f92672">=</span>linux <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>GOARCH<span style="color:#f92672">=</span>arm GOARM<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>go build -a -tags netgo -ldflags <span style="color:#e6db74">&#39;-w -extldflags &#34;-static&#34;&#39;</span> *.go
+</span></span></code></pre></div><p>And then SCP&rsquo;d it to the router:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>scp -i ~/.ssh/my_private_key root@192.168.1.1
+</span></span></code></pre></div><p><strong>NB</strong> Node Exporter is <strong>not</strong> persisted across router reboots</p>
 <p>And then, from the router:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ssh -i ~/.ssh/my_private_key root@192.168.1.1
-</code></pre></div><p>And</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">./node_exporter <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--no-collector.infiniband <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--no-collector.mdadm <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--no-collector.meminfo <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--no-collector.netstat <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--no-collector.powersupplyclass <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--no-collector.schedstat <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--no-collector.softnet
-</code></pre></div><p><strong>NB</strong> I&rsquo;m excluding various collectors with metrics that appear (!?) unavailable|inaccessible on the router</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ssh -i ~/.ssh/my_private_key root@192.168.1.1
+</span></span></code></pre></div><p>And</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>./node_exporter <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--no-collector.infiniband <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--no-collector.mdadm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--no-collector.meminfo <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--no-collector.netstat <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--no-collector.powersupplyclass <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--no-collector.schedstat <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--no-collector.softnet
+</span></span></code></pre></div><p><strong>NB</strong> I&rsquo;m excluding various collectors with metrics that appear (!?) unavailable|inaccessible on the router</p>
 <p>The exporter uses the default port (<code>:9100</code>) specified (implicitly in my case) by <code>--web.listen-address=&quot;:9100&quot;</code></p>
 <p>Back on my workstation, I can then reference the DD-WRT device (and the Prometheus server itself) from prometheus.yml:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">global</span>:
-  <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">1m</span>
-  <span style="color:#f92672">evaluation_interval</span>: <span style="color:#ae81ff">1m</span>
-
-<span style="color:#f92672">scrape_configs</span>:
-  <span style="color:#75715e"># Self</span>
-  - <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;prometheus-server&#34;</span>
-    <span style="color:#f92672">static_configs</span>:
-      - <span style="color:#f92672">targets</span>:
-          - <span style="color:#e6db74">&#34;localhost:9090&#34;</span>
-
-  <span style="color:#75715e"># DD-WRT</span>
-  - <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;dd-wrt&#34;</span>
-    <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">1m</span>
-    <span style="color:#f92672">static_configs</span>:
-      - <span style="color:#f92672">targets</span>:
-          - <span style="color:#e6db74">&#34;192.168.1.1:9100&#34;</span>
-</code></pre></div><p>And then run the server:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span>9090:9090 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/prometheus.yml:/etc/prometheus/prometheus.yml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>prom/prometheus@sha256:35c52c0c2b76433bbfc44a5a7abc294c2f032ed80250be02b441db5dd91b203a
-</code></pre></div><p><strong>NB</strong> <a href="https://hub.docker.com/layers/prom/prometheus/v2.15.2/images/sha256-35c52c0c2b76433bbfc44a5a7abc294c2f032ed80250be02b441db5dd91b203a">prom/promtheus:v2.15.2</a></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">global</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">1m</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">evaluation_interval</span>: <span style="color:#ae81ff">1m</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">scrape_configs</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Self</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;prometheus-server&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">static_configs</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">targets</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#e6db74">&#34;localhost:9090&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># DD-WRT</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;dd-wrt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">1m</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">static_configs</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">targets</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#e6db74">&#34;192.168.1.1:9100&#34;</span>
+</span></span></code></pre></div><p>And then run the server:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span>9090:9090 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/prometheus.yml:/etc/prometheus/prometheus.yml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>prom/prometheus@sha256:35c52c0c2b76433bbfc44a5a7abc294c2f032ed80250be02b441db5dd91b203a
+</span></span></code></pre></div><p><strong>NB</strong> <a href="https://hub.docker.com/layers/prom/prometheus/v2.15.2/images/sha256-35c52c0c2b76433bbfc44a5a7abc294c2f032ed80250be02b441db5dd91b203a">prom/promtheus:v2.15.2</a></p>
 <p>Here showing the targets (responding correctly) on <code>http://localhost:9090/targets</code>:</p>
 <p><img src="/images/200113.targets.png" alt="Prometheus Targets: DD-WRT|Self"></p>
 <p>I&rsquo;ve 2 wireless devices (<code>eth0</code> and <code>eth1</code>) and so can select only these using <code>{device=~&quot;eth0|eth1&quot;}</code></p>
@@ -273,14 +273,14 @@ if (!doNotTrack) {
 # TYPE node_network_transmit_bytes_total counter
 </code></pre><p>Let&rsquo;s use PromQL to convert them into (per-second!) rates over 5-minutes: rate(${METRIC}[5m])</p>
 <p>i.e.</p>
-<pre tabindex="0"><code>rate(node_network_transmit_packets_total{device=~&quot;eth0|eth1&quot;}[5m])
-rate(node_network_receive_packets_total{device=~&quot;eth0|eth1&quot;}[5m])
+<pre tabindex="0"><code>rate(node_network_transmit_packets_total{device=~&#34;eth0|eth1&#34;}[5m])
+rate(node_network_receive_packets_total{device=~&#34;eth0|eth1&#34;}[5m])
 </code></pre><p>Yields:</p>
 <p><img src="/images/200113.graphs.png" alt="Prometheus Metrics Graph"></p>
 <h2 id="nvram"><code>nvram</code></h2>
 <p>See: <a href="https://forum.dd-wrt.com/wiki/index.php/Hardware">https://forum.dd-wrt.com/wiki/index.php/Hardware</a></p>
 <p>Using Omega Onions, I was acquainted with <code>uci</code> and tried this on DD-WRT without success. The functional equivalent appears to be using <code>nvram</code> to read|write configuration data. After disabling <code>traff</code>, there&rsquo;s a recommendation to delete data it may have captured too, using:</p>
-<pre tabindex="0"><code>for i in `nvram show | grep traff- | cut -f1 -d=&quot;&quot;`
+<pre tabindex="0"><code>for i in `nvram show | grep traff- | cut -f1 -d=&#34;&#34;`
 do
   echo ${i}
   nvram unset ${i}

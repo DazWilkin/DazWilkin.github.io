@@ -7,7 +7,7 @@
     <title>Struggling with Golang structs | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Struggling with Golang structs">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -196,105 +196,105 @@ if (!doNotTrack) {
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>Julia&rsquo;s post <a href="https://jvns.ca/blog/2021/05/24/blog-about-what-you-ve-struggled-with/">Blog about what you&rsquo;ve struggled with</a> resonates because I&rsquo;ve been struggling with Golang structs in a project. Not the definitions of structs but seemingly needing to reproduce them across the project. I realize that each instance of these resources differs from the others but I&rsquo;m particularly concerned by having to duplicate method implementations on them.</p>
 <p>I&rsquo;m kinda hoping that I see the solution to my problem by writing it out. If you&rsquo;re reading this, I didn&rsquo;t :-(</p>
 <p>The original Customer type that I wrote for the Kubernetes Operator is definitive:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerSpec</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">Shard</span>   <span style="color:#66d9ef">uint8</span>       <span style="color:#e6db74">`json:&#34;shard&#34; description:&#34;used to partition customers across namespaces&#34;`</span>
-	<span style="color:#a6e22e">Name</span>    <span style="color:#66d9ef">string</span>      <span style="color:#e6db74">`json:&#34;name&#34; description:&#34;uniquely identifying name&#34;`</span>
-	<span style="color:#a6e22e">Domain</span>  <span style="color:#66d9ef">string</span>      <span style="color:#e6db74">`json:&#34;domain&#34; description:&#34;primary domain&#34;`</span>
-	<span style="color:#a6e22e">Enabled</span> <span style="color:#66d9ef">bool</span>        <span style="color:#e6db74">`json:&#34;enabled&#34; description:&#34;Whether Customer is enabled for use&#34;`</span>
-	<span style="color:#a6e22e">Billing</span> <span style="color:#66d9ef">bool</span>        <span style="color:#e6db74">`json:&#34;billing&#34; description:&#34;Whether Customer is enabled for billing&#34;`</span>
-	<span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`json:&#34;created&#34; description:&#34;created time&#34;`</span>
-	<span style="color:#a6e22e">Updated</span> <span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`json:&#34;updated,omitempty&#34; description:&#34;updated time&#34;`</span>
-}
-
-<span style="color:#75715e">// ID is a method
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">CustomerSpec</span>) <span style="color:#a6e22e">ID</span>() <span style="color:#66d9ef">string</span> {
-	<span style="color:#a6e22e">x</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sha256</span>.<span style="color:#a6e22e">Sum224</span>([]byte(<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Domain</span>))
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%x&#34;</span>, <span style="color:#a6e22e">x</span>[:])
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerSpec</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Shard</span>   <span style="color:#66d9ef">uint8</span>       <span style="color:#e6db74">`json:&#34;shard&#34; description:&#34;used to partition customers across namespaces&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Name</span>    <span style="color:#66d9ef">string</span>      <span style="color:#e6db74">`json:&#34;name&#34; description:&#34;uniquely identifying name&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Domain</span>  <span style="color:#66d9ef">string</span>      <span style="color:#e6db74">`json:&#34;domain&#34; description:&#34;primary domain&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Enabled</span> <span style="color:#66d9ef">bool</span>        <span style="color:#e6db74">`json:&#34;enabled&#34; description:&#34;Whether Customer is enabled for use&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Billing</span> <span style="color:#66d9ef">bool</span>        <span style="color:#e6db74">`json:&#34;billing&#34; description:&#34;Whether Customer is enabled for billing&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`json:&#34;created&#34; description:&#34;created time&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Updated</span> <span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`json:&#34;updated,omitempty&#34; description:&#34;updated time&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// ID is a method
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">CustomerSpec</span>) <span style="color:#a6e22e">ID</span>() <span style="color:#66d9ef">string</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">x</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sha256</span>.<span style="color:#a6e22e">Sum224</span>([]byte(<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Domain</span>))
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%x&#34;</span>, <span style="color:#a6e22e">x</span>[:])
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> A minor point that <code>Created</code> and <code>Updated</code> must be <code>metav1.Time</code> but they&rsquo;re <code>time.Time</code> with Firestore.</p>
 </blockquote>
 <p>I need to be able to represent this object in Firestore too:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Customer</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">Shard</span>   <span style="color:#66d9ef">uint8</span>                  <span style="color:#e6db74">`firestore:&#34;shard&#34;`</span>
-	<span style="color:#a6e22e">Name</span>    <span style="color:#66d9ef">string</span>                 <span style="color:#e6db74">`firestore:&#34;name&#34; description:&#34;Customer name&#34;`</span>
-	<span style="color:#a6e22e">Domain</span>  <span style="color:#f92672">*</span><span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">DocumentRef</span> <span style="color:#e6db74">`firestore:&#34;domain&#34; description:&#34;Customer primary domain name&#34;`</span>
-	<span style="color:#a6e22e">Enabled</span> <span style="color:#66d9ef">bool</span>                   <span style="color:#e6db74">`firestore:&#34;enabled&#34; description:&#34;Is Customer enabled?&#34;`</span>
-	<span style="color:#a6e22e">Billing</span> <span style="color:#66d9ef">bool</span>                   <span style="color:#e6db74">`firestore:&#34;billing&#34; description:&#34;Is Customer&#39;s billing enabled?&#34;`</span>
-	<span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>              <span style="color:#e6db74">`firestore:&#34;created,serverTimestamp&#34; description:&#34;Datetime when the Customer was created&#34;`</span>
-	<span style="color:#a6e22e">Updated</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>              <span style="color:#e6db74">`firestore:&#34;updated,omitempty&#34; description:&#34;Datetime when the Customer was updated&#34;`</span>
-}
-
-<span style="color:#75715e">// ID is a function
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Customer</span>) <span style="color:#a6e22e">ID</span>(<span style="color:#a6e22e">domain</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">string</span> {
-	<span style="color:#a6e22e">x</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sha256</span>.<span style="color:#a6e22e">Sum224</span>([]byte(<span style="color:#a6e22e">domain</span>))
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%x&#34;</span>, <span style="color:#a6e22e">x</span>[:])
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Customer</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Shard</span>   <span style="color:#66d9ef">uint8</span>                  <span style="color:#e6db74">`firestore:&#34;shard&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Name</span>    <span style="color:#66d9ef">string</span>                 <span style="color:#e6db74">`firestore:&#34;name&#34; description:&#34;Customer name&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Domain</span>  <span style="color:#f92672">*</span><span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">DocumentRef</span> <span style="color:#e6db74">`firestore:&#34;domain&#34; description:&#34;Customer primary domain name&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Enabled</span> <span style="color:#66d9ef">bool</span>                   <span style="color:#e6db74">`firestore:&#34;enabled&#34; description:&#34;Is Customer enabled?&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Billing</span> <span style="color:#66d9ef">bool</span>                   <span style="color:#e6db74">`firestore:&#34;billing&#34; description:&#34;Is Customer&#39;s billing enabled?&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>              <span style="color:#e6db74">`firestore:&#34;created,serverTimestamp&#34; description:&#34;Datetime when the Customer was created&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Updated</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>              <span style="color:#e6db74">`firestore:&#34;updated,omitempty&#34; description:&#34;Datetime when the Customer was updated&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// ID is a function
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Customer</span>) <span style="color:#a6e22e">ID</span>(<span style="color:#a6e22e">domain</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">string</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">x</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sha256</span>.<span style="color:#a6e22e">Sum224</span>([]byte(<span style="color:#a6e22e">domain</span>))
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%x&#34;</span>, <span style="color:#a6e22e">x</span>[:])
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> In this case, ID is a function not a method and requires the domain (name) string.</p>
 </blockquote>
 <p>The Domain field is a Firestore DocumentRef this time because I want to capture the fact that a domain name is unique and owned uniquely. In Firestore, it is represented by a reference to another Firestore document (record) and this record&rsquo;s unique identifier is the SHA224 hash of the name.</p>
 <p>When a Customer is added to Firestore, I need to be able to trigger the creation of the Kubernetes object as defined in the Operator. But, the Cloud Functions trigger needs a very distinct type:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerFields</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">Shard</span> <span style="color:#66d9ef">struct</span> {
-		<span style="color:#a6e22e">IntegerValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;integerValue&#34;`</span>
-	} <span style="color:#e6db74">`json:&#34;shard&#34;`</span>
-	<span style="color:#a6e22e">Name</span> <span style="color:#66d9ef">struct</span> {
-		<span style="color:#a6e22e">StringValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;stringValue&#34;`</span>
-	} <span style="color:#e6db74">`json:&#34;name&#34;`</span>
-	<span style="color:#a6e22e">Domain</span> <span style="color:#66d9ef">struct</span> {
-		<span style="color:#a6e22e">ReferenceValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;referenceValue&#34;`</span>
-	} <span style="color:#e6db74">`json:&#34;domain&#34;`</span>
-	<span style="color:#a6e22e">Enabled</span> <span style="color:#66d9ef">struct</span> {
-		<span style="color:#a6e22e">BooleanValue</span> <span style="color:#66d9ef">bool</span> <span style="color:#e6db74">`json:&#34;booleanValue&#34;`</span>
-	} <span style="color:#e6db74">`json:&#34;enabled&#34;`</span>
-	<span style="color:#a6e22e">Billing</span> <span style="color:#66d9ef">struct</span> {
-		<span style="color:#a6e22e">BooleanValue</span> <span style="color:#66d9ef">bool</span> <span style="color:#e6db74">`json:&#34;booleanValue&#34;`</span>
-	} <span style="color:#e6db74">`json:&#34;billing&#34;`</span>
-	<span style="color:#a6e22e">Created</span> <span style="color:#66d9ef">struct</span> {
-		<span style="color:#a6e22e">TimestampValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;timestampValue&#34;`</span>
-	} <span style="color:#e6db74">`json:&#34;created&#34;`</span>
-	<span style="color:#a6e22e">Updated</span> <span style="color:#66d9ef">struct</span> {
-		<span style="color:#a6e22e">TimestampValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;timestampValue,omitempty&#34;`</span>
-	} <span style="color:#e6db74">`json:&#34;updated&#34;`</span>
-}
-</code></pre></div><p>In the trigger code, once I&rsquo;ve created a variable of type <code>CustomerFields</code>, I&rsquo;ve a method <code>func (f *CustomerFields) Customer(*operator.Customer)</code> to convert it back into the (definitive) Operator type.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerFields</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Shard</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">IntegerValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;integerValue&#34;`</span>
+</span></span><span style="display:flex;"><span>	} <span style="color:#e6db74">`json:&#34;shard&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Name</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">StringValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;stringValue&#34;`</span>
+</span></span><span style="display:flex;"><span>	} <span style="color:#e6db74">`json:&#34;name&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Domain</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">ReferenceValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;referenceValue&#34;`</span>
+</span></span><span style="display:flex;"><span>	} <span style="color:#e6db74">`json:&#34;domain&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Enabled</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">BooleanValue</span> <span style="color:#66d9ef">bool</span> <span style="color:#e6db74">`json:&#34;booleanValue&#34;`</span>
+</span></span><span style="display:flex;"><span>	} <span style="color:#e6db74">`json:&#34;enabled&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Billing</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">BooleanValue</span> <span style="color:#66d9ef">bool</span> <span style="color:#e6db74">`json:&#34;booleanValue&#34;`</span>
+</span></span><span style="display:flex;"><span>	} <span style="color:#e6db74">`json:&#34;billing&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Created</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">TimestampValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;timestampValue&#34;`</span>
+</span></span><span style="display:flex;"><span>	} <span style="color:#e6db74">`json:&#34;created&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Updated</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">TimestampValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;timestampValue,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>	} <span style="color:#e6db74">`json:&#34;updated&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>In the trigger code, once I&rsquo;ve created a variable of type <code>CustomerFields</code>, I&rsquo;ve a method <code>func (f *CustomerFields) Customer(*operator.Customer)</code> to convert it back into the (definitive) Operator type.</p>
 <p>Communication between the customer (CLI) and the services uses gRPC:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-protobuf" data-lang="protobuf"><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">Customer</span> {<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">string</span> Name <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">string</span> DomainName <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">bool</span> Enabled <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>;<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">bool</span> Billing <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>;<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
-</span></code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-protobuf" data-lang="protobuf"><span style="display:flex;"><span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">Customer</span> {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">string</span> Name <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">string</span> DomainName <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">bool</span> Enabled <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>;<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">bool</span> Billing <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>;<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The Protobuf encouraged me to think more clearly about names and, here <code>DomainName</code> is used to disambiguate from <code>Domain</code> which is a message representing domains. I should have used <code>DomainName</code> consistently.</p>
 </blockquote>
 <p>Generating:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Customer</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">state</span>         <span style="color:#a6e22e">protoimpl</span>.<span style="color:#a6e22e">MessageState</span>
-	<span style="color:#a6e22e">sizeCache</span>     <span style="color:#a6e22e">protoimpl</span>.<span style="color:#a6e22e">SizeCache</span>
-	<span style="color:#a6e22e">unknownFields</span> <span style="color:#a6e22e">protoimpl</span>.<span style="color:#a6e22e">UnknownFields</span>
-
-	<span style="color:#a6e22e">Name</span>       <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`protobuf:&#34;bytes,1,opt,name=Name,proto3&#34; json:&#34;Name,omitempty&#34;`</span>
-	<span style="color:#a6e22e">DomainName</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`protobuf:&#34;bytes,2,opt,name=DomainName,proto3&#34; json:&#34;DomainName,omitempty&#34;`</span>
-	<span style="color:#a6e22e">Enabled</span>    <span style="color:#66d9ef">bool</span>   <span style="color:#e6db74">`protobuf:&#34;varint,3,opt,name=Enabled,proto3&#34; json:&#34;Enabled,omitempty&#34;`</span>
-	<span style="color:#a6e22e">Billing</span>    <span style="color:#66d9ef">bool</span>   <span style="color:#e6db74">`protobuf:&#34;varint,4,opt,name=Billing,proto3&#34; json:&#34;Billing,omitempty&#34;`</span>
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Customer</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">state</span>         <span style="color:#a6e22e">protoimpl</span>.<span style="color:#a6e22e">MessageState</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">sizeCache</span>     <span style="color:#a6e22e">protoimpl</span>.<span style="color:#a6e22e">SizeCache</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">unknownFields</span> <span style="color:#a6e22e">protoimpl</span>.<span style="color:#a6e22e">UnknownFields</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Name</span>       <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`protobuf:&#34;bytes,1,opt,name=Name,proto3&#34; json:&#34;Name,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">DomainName</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`protobuf:&#34;bytes,2,opt,name=DomainName,proto3&#34; json:&#34;DomainName,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Enabled</span>    <span style="color:#66d9ef">bool</span>   <span style="color:#e6db74">`protobuf:&#34;varint,3,opt,name=Enabled,proto3&#34; json:&#34;Enabled,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Billing</span>    <span style="color:#66d9ef">bool</span>   <span style="color:#e6db74">`protobuf:&#34;varint,4,opt,name=Billing,proto3&#34; json:&#34;Billing,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The Protobuf is not generating <code>snake_case</code> names. There is possibly an flag that I can set on <code>protoc</code> to change this. I&rsquo;m not currently using the generated code for JSON objects. <a href="https://developers.google.com/protocol-buffers/docs/proto3#json">Protobuf: JSON Mapping</a></p>
 </blockquote>
 <p>In the CLI, I want to be able to limit the customer&rsquo;s exposure to the underlying type:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Customer</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">Name</span>       <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;name&#34; yaml:&#34;name&#34; description:&#34;Customer name&#34;`</span>
-	<span style="color:#a6e22e">DomainName</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;domain_name&#34; yaml:&#34;domain_name&#34; description:&#34;Customer primary domain name&#34;`</span>
-	<span style="color:#a6e22e">Enabled</span>    <span style="color:#66d9ef">bool</span>   <span style="color:#e6db74">`json:&#34;enabled&#34; yaml:&#34;enabled&#34; description:&#34;Is Customer enabled?&#34;`</span>
-}
-
-<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Customer</span>) <span style="color:#a6e22e">ID</span>() <span style="color:#66d9ef">string</span> {
-	<span style="color:#a6e22e">x</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sha256</span>.<span style="color:#a6e22e">Sum224</span>([]byte(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">DomainName</span>))
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%x&#34;</span>, <span style="color:#a6e22e">x</span>[:])
-}
-</code></pre></div><p>So, the flow becomes:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Customer</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Name</span>       <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;name&#34; yaml:&#34;name&#34; description:&#34;Customer name&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">DomainName</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;domain_name&#34; yaml:&#34;domain_name&#34; description:&#34;Customer primary domain name&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Enabled</span>    <span style="color:#66d9ef">bool</span>   <span style="color:#e6db74">`json:&#34;enabled&#34; yaml:&#34;enabled&#34; description:&#34;Is Customer enabled?&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Customer</span>) <span style="color:#a6e22e">ID</span>() <span style="color:#66d9ef">string</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">x</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sha256</span>.<span style="color:#a6e22e">Sum224</span>([]byte(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">DomainName</span>))
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%x&#34;</span>, <span style="color:#a6e22e">x</span>[:])
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>So, the flow becomes:</p>
 <ol>
 <li>Customer issues a command-line representation of the Customer</li>
 <li>A CLI Customer type is created</li>
@@ -312,34 +312,34 @@ if (!doNotTrack) {
 <p>It is possible, as is shown in the generated protobuf code, to have multiple attributes (e.g. <code>json</code>, <code>protobuf</code>, <code>firestore</code>) in a field&rsquo;s tag</p>
 <p>So I&rsquo;m wondering whether what I should do is start with the minimal Customer (CLI) and embed my way back up?</p>
 <p>But, will each of the technologies I&rsquo;m using accommodate this?</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ExternalCustomer</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">Name</span>       <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`firestore:&#34;name&#34; json:&#34;name&#34; yaml:&#34;name&#34; description:&#34;Customer name&#34;`</span>
-	<span style="color:#a6e22e">DomainName</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`firestore:&#34;domain_name&#34; json:&#34;domain_name&#34; yaml:&#34;domain_name&#34; description:&#34;Customer primary domain name&#34;`</span>
-	<span style="color:#a6e22e">Enabled</span>    <span style="color:#66d9ef">bool</span>   <span style="color:#e6db74">`firestore: &#34;enabled&#34; json:&#34;enabled&#34; yaml:&#34;enabled&#34; description:&#34;Is Customer enabled?&#34;`</span>
-}
-
-<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">InternalCustomer</span> <span style="color:#66d9ef">struct</span> {
-    <span style="color:#a6e22e">ExternalCustomer</span>
-
-	<span style="color:#a6e22e">Shard</span>   <span style="color:#66d9ef">uint8</span> <span style="color:#e6db74">`firestore:&#34;shard&#34; json:&#34;shard&#34;`</span>
-	<span style="color:#a6e22e">Billing</span> <span style="color:#66d9ef">bool</span>  <span style="color:#e6db74">`firestore:&#34;billing&#34; json:&#34;billing&#34; description:&#34;Is Customer&#39;s billing enabled?&#34;`</span>
-}
-
-<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">FirestoreCustomer</span> <span style="color:#66d9ef">struct</span> {
-    <span style="color:#a6e22e">InternalCustomer</span>
-
-	<span style="color:#a6e22e">DomainRef</span>  <span style="color:#f92672">*</span><span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">DocumentRef</span> <span style="color:#e6db74">`firestore:&#34;domain&#34; json:&#34;domain&#34; description:&#34;Customer primary domain name&#34;`</span>
-	<span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>                 <span style="color:#e6db74">`firestore:&#34;created,serverTimestamp&#34; json:&#34;created,omitempty&#34; description:&#34;Datetime when the Customer was created&#34;`</span>
-	<span style="color:#a6e22e">Updated</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>                 <span style="color:#e6db74">`firestore:&#34;updated,omitempty&#34; json:&#34;updated,omitempty&#34; description:&#34;Datetime when the Customer was updated&#34;`</span>
-}
-
-<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerSpec</span> <span style="color:#66d9ef">struct</span> {
-    <span style="color:#a6e22e">InternalCustomer</span> 
-
-	<span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`json:&#34;created&#34; description:&#34;created time&#34;`</span>
-	<span style="color:#a6e22e">Updated</span> <span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`json:&#34;updated,omitempty&#34; description:&#34;updated time&#34;`</span>
-}
-</code></pre></div><p>Are there best practices for this?</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ExternalCustomer</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Name</span>       <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`firestore:&#34;name&#34; json:&#34;name&#34; yaml:&#34;name&#34; description:&#34;Customer name&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">DomainName</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`firestore:&#34;domain_name&#34; json:&#34;domain_name&#34; yaml:&#34;domain_name&#34; description:&#34;Customer primary domain name&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Enabled</span>    <span style="color:#66d9ef">bool</span>   <span style="color:#e6db74">`firestore: &#34;enabled&#34; json:&#34;enabled&#34; yaml:&#34;enabled&#34; description:&#34;Is Customer enabled?&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">InternalCustomer</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ExternalCustomer</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Shard</span>   <span style="color:#66d9ef">uint8</span> <span style="color:#e6db74">`firestore:&#34;shard&#34; json:&#34;shard&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Billing</span> <span style="color:#66d9ef">bool</span>  <span style="color:#e6db74">`firestore:&#34;billing&#34; json:&#34;billing&#34; description:&#34;Is Customer&#39;s billing enabled?&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">FirestoreCustomer</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">InternalCustomer</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">DomainRef</span>  <span style="color:#f92672">*</span><span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">DocumentRef</span> <span style="color:#e6db74">`firestore:&#34;domain&#34; json:&#34;domain&#34; description:&#34;Customer primary domain name&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>                 <span style="color:#e6db74">`firestore:&#34;created,serverTimestamp&#34; json:&#34;created,omitempty&#34; description:&#34;Datetime when the Customer was created&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Updated</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>                 <span style="color:#e6db74">`firestore:&#34;updated,omitempty&#34; json:&#34;updated,omitempty&#34; description:&#34;Datetime when the Customer was updated&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerSpec</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">InternalCustomer</span> 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`json:&#34;created&#34; description:&#34;created time&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Updated</span> <span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`json:&#34;updated,omitempty&#34; description:&#34;updated time&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Are there best practices for this?</p>
 <ul class="pa0">
   
    <li class="list di">

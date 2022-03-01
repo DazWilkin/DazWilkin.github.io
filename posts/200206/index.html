@@ -7,7 +7,7 @@
     <title>Cloud Build wishlist: Mountable Golang Modules Proxy | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Sharing Golang Modules across multiple steps when using Google Cloud Build">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -202,90 +202,90 @@ if (!doNotTrack) {
 <p>In the following Cloud Build configuration, I have a (not uncommon) build of multiple Golang binaries. This is contrived because the build could be combined into a single step but, for the sake of the argument, let&rsquo;s assume, I need multiple steps. I&rsquo;m using a recent Golang runtime (<code>1.14-rc-buster</code>) in which Go Modules are enabled by default.</p>
 <p><strong>NB</strong> If you&rsquo;re using an earlier (&lt;1.13?) version of Go, you may enable Modules using <code>GO111MODULE=on</code> and <code>GOPROXY=https://proxy.golang.org</code>.</p>
 <p>When invoked on the following configuration, Cloud Build will pull dependencies twice; first to build the server and then again to build the client.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">substitutions</span>:
-  <span style="color:#f92672">_GOLANG_VERSION</span>: <span style="color:#e6db74">&#34;1.14-rc-buster&#34;</span>
-
-<span style="color:#f92672">steps</span>:
-  <span style="color:#75715e"># Build Server</span>
-  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">golang:${_GOLANG_VERSION}</span>
-    <span style="color:#f92672">env</span>:
-      - <span style="color:#ae81ff">CGO_ENABLED=0</span>
-      - <span style="color:#ae81ff">GOOS=linux</span>
-    <span style="color:#f92672">args</span>:
-      - <span style="color:#ae81ff">go</span>
-      - <span style="color:#ae81ff">build</span>
-      - -<span style="color:#ae81ff">a</span>
-      - -<span style="color:#ae81ff">installsuffix</span>
-      - <span style="color:#ae81ff">cgo</span>
-      - -<span style="color:#ae81ff">o</span>
-      - <span style="color:#ae81ff">./bin/server</span>
-      - <span style="color:#ae81ff">github.com/DazWilkin/some-project/server</span>
-
-  <span style="color:#75715e"># Build Client</span>
-  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">golang:${_GOLANG_VERSION}</span>
-    <span style="color:#f92672">env</span>:
-      - <span style="color:#ae81ff">CGO_ENABLED=0</span>
-      - <span style="color:#ae81ff">GOOS=linux</span>
-    <span style="color:#f92672">args</span>:
-      - <span style="color:#ae81ff">go</span>
-      - <span style="color:#ae81ff">build</span>
-      - -<span style="color:#ae81ff">a</span>
-      - -<span style="color:#ae81ff">installsuffix</span>
-      - <span style="color:#ae81ff">cgo</span>
-      - -<span style="color:#ae81ff">o</span>
-      - <span style="color:#ae81ff">./bin/client</span>
-      - <span style="color:#ae81ff">github.com/DazWilkin/some-project/client</span>
-</code></pre></div><p>However, one promise (commitment?) with Go Modules is that a given package@version will never change; once I&rsquo;ve pulled a package@version once, I need (should) never pull it again. It won&rsquo;t change. While it&rsquo;s non-trivial to enforce this across distinct invocations of Cloud Build, it&rsquo;s possible to implement it within a build using volumes.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">substitutions</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">_GOLANG_VERSION</span>: <span style="color:#e6db74">&#34;1.14-rc-buster&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">steps</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Build Server</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">golang:${_GOLANG_VERSION}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">CGO_ENABLED=0</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">GOOS=linux</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">args</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">go</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">build</span>
+</span></span><span style="display:flex;"><span>      - -<span style="color:#ae81ff">a</span>
+</span></span><span style="display:flex;"><span>      - -<span style="color:#ae81ff">installsuffix</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">cgo</span>
+</span></span><span style="display:flex;"><span>      - -<span style="color:#ae81ff">o</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">./bin/server</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">github.com/DazWilkin/some-project/server</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Build Client</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">golang:${_GOLANG_VERSION}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">CGO_ENABLED=0</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">GOOS=linux</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">args</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">go</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">build</span>
+</span></span><span style="display:flex;"><span>      - -<span style="color:#ae81ff">a</span>
+</span></span><span style="display:flex;"><span>      - -<span style="color:#ae81ff">installsuffix</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">cgo</span>
+</span></span><span style="display:flex;"><span>      - -<span style="color:#ae81ff">o</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">./bin/client</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">github.com/DazWilkin/some-project/client</span>
+</span></span></code></pre></div><p>However, one promise (commitment?) with Go Modules is that a given package@version will never change; once I&rsquo;ve pulled a package@version once, I need (should) never pull it again. It won&rsquo;t change. While it&rsquo;s non-trivial to enforce this across distinct invocations of Cloud Build, it&rsquo;s possible to implement it within a build using volumes.</p>
 <p>In the following configuration, the Golang build steps share (!) a volume called <code>go-modules</code>. This volume is mounted as <code>/go</code>. This has the benefit of sharing <code>/go/bin</code>, <code>/go/src</code> and, of course <code>/go/pkg</code>. <code>/go/pkg</code> is used by Go Modules to persist package versions. Using this mechanism, once a package@version is pulled by an earlier step, it is available to be used by subsequent steps.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#75715e"># options:</span>
-<span style="color:#75715e">#   env:</span>
-<span style="color:#75715e">#   - GOPATH=/go</span>
-<span style="color:#75715e">#   - GO111MODULE=on</span>
-<span style="color:#75715e">#   - GOPROXY=https://proxy.golang.org</span>
-<span style="color:#75715e">#   volumes:</span>
-<span style="color:#75715e">#   - name: go-modules</span>
-<span style="color:#75715e">#     path: /go</span>
-
-<span style="color:#f92672">substitutions</span>:
-  <span style="color:#f92672">_GOLANG_VERSION</span>: <span style="color:#e6db74">&#34;1.14-rc-buster&#34;</span>
-
-<span style="color:#f92672">steps</span>:
-  <span style="color:#75715e"># Build Server</span>
-  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">golang:${_GOLANG_VERSION}</span>
-    <span style="color:#f92672">env</span>:
-      - <span style="color:#ae81ff">CGO_ENABLED=0</span>
-      - <span style="color:#ae81ff">GOOS=linux</span>
-    <span style="color:#f92672">args</span>:
-      - <span style="color:#ae81ff">go</span>
-      - <span style="color:#ae81ff">build</span>
-      - -<span style="color:#ae81ff">a</span>
-      - -<span style="color:#ae81ff">installsuffix</span>
-      - <span style="color:#ae81ff">cgo</span>
-      - -<span style="color:#ae81ff">o</span>
-      - <span style="color:#ae81ff">./bin/server</span>
-      - <span style="color:#ae81ff">github.com/DazWilkin/some-project/server</span>
-    <span style="color:#f92672">volumes</span>:
-      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">go-modules</span>
-        <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/go</span>
-
-  <span style="color:#75715e"># Build Client</span>
-  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">golang:${_GOLANG_VERSION}</span>
-    <span style="color:#f92672">env</span>:
-      - <span style="color:#ae81ff">CGO_ENABLED=0</span>
-      - <span style="color:#ae81ff">GOOS=linux</span>
-    <span style="color:#f92672">args</span>:
-      - <span style="color:#ae81ff">go</span>
-      - <span style="color:#ae81ff">build</span>
-      - -<span style="color:#ae81ff">a</span>
-      - -<span style="color:#ae81ff">installsuffix</span>
-      - <span style="color:#ae81ff">cgo</span>
-      - -<span style="color:#ae81ff">o</span>
-      - <span style="color:#ae81ff">./bin/client</span>
-      - <span style="color:#ae81ff">github.com/DazWilkin/some-project/client</span>
-    <span style="color:#f92672">volumes</span>:
-      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">go-modules</span>
-        <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/go</span>
-</code></pre></div><p><strong>NB</strong> The <code>options</code> section is commented but provides a way to set global (for all step) properties including environment (e.g. <code>GOPROXY</code>) and volumes (e.g. <code>go-modules</code>).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#75715e"># options:</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#   env:</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#   - GOPATH=/go</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#   - GO111MODULE=on</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#   - GOPROXY=https://proxy.golang.org</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#   volumes:</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#   - name: go-modules</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#     path: /go</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">substitutions</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">_GOLANG_VERSION</span>: <span style="color:#e6db74">&#34;1.14-rc-buster&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">steps</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Build Server</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">golang:${_GOLANG_VERSION}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">CGO_ENABLED=0</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">GOOS=linux</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">args</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">go</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">build</span>
+</span></span><span style="display:flex;"><span>      - -<span style="color:#ae81ff">a</span>
+</span></span><span style="display:flex;"><span>      - -<span style="color:#ae81ff">installsuffix</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">cgo</span>
+</span></span><span style="display:flex;"><span>      - -<span style="color:#ae81ff">o</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">./bin/server</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">github.com/DazWilkin/some-project/server</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">go-modules</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/go</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Build Client</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">golang:${_GOLANG_VERSION}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">CGO_ENABLED=0</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">GOOS=linux</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">args</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">go</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">build</span>
+</span></span><span style="display:flex;"><span>      - -<span style="color:#ae81ff">a</span>
+</span></span><span style="display:flex;"><span>      - -<span style="color:#ae81ff">installsuffix</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">cgo</span>
+</span></span><span style="display:flex;"><span>      - -<span style="color:#ae81ff">o</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">./bin/client</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">github.com/DazWilkin/some-project/client</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">go-modules</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/go</span>
+</span></span></code></pre></div><p><strong>NB</strong> The <code>options</code> section is commented but provides a way to set global (for all step) properties including environment (e.g. <code>GOPROXY</code>) and volumes (e.g. <code>go-modules</code>).</p>
 <p><strong>NB</strong> It would be possible to replace the repeated <code>volumes</code> sections in each <code>golang</code> step with the global <code>volumes</code> definition defined in <code>options</code>.</p>
 <ul class="pa0">
   

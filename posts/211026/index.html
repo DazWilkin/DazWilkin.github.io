@@ -9,7 +9,7 @@
     <meta name="description" content="I&rsquo;m using Firebase Authentication in a project to authenticate users of various OAuth2 identity systems. Firebase Authentication requires a set of Authorized Domains.
 The (web) app that interacts with Firebase Authentication is deployed to Cloud Run. The Authorized Domains list must include the app&rsquo;s Cloud Run service URL.
 Cloud Run service URLs vary by Project (ID). They are a combination of the service name, a hash (?) of the Project (ID) and .">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -213,55 +213,55 @@ if (!doNotTrack) {
 <li>add the Cloud Run service URL and then <a href="https://cloud.google.com/identity-platform/docs/reference/rest/v2/projects/updateConfig">updateConfig</a></li>
 <li>field masking the <a href="https://cloud.google.com/identity-platform/docs/reference/rest/v2/Config"><code>Config</code></a> body so that I need only provide <code>authorizedDomains</code>:</li>
 </ul>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Firebase Authentication project ID</span>
-
-URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://identitytoolkit.googleapis.com/v2/projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-
-MASK<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;authorizedDomains&#34;</span>
-FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;.</span><span style="color:#e6db74">${</span>MASK<span style="color:#e6db74">}</span><span style="color:#e6db74"> | . += [\&#34;</span><span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;] | { \&#34;</span><span style="color:#e6db74">${</span>MASK<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;: . }&#34;</span>
-
-DATA<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --request GET <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --header <span style="color:#e6db74">&#34;Accept: application/json&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --silent <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --compressed <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">${</span>URL<span style="color:#e6db74">}</span>/config <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span>
-</code></pre></div><p>So the <a href="https://stedolan.github.io/jq/"><code>jq</code></a> <code>FILTER</code> is very likely sub-optimal, but it works.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Firebase Authentication project ID</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://identitytoolkit.googleapis.com/v2/projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>MASK<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;authorizedDomains&#34;</span>
+</span></span><span style="display:flex;"><span>FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;.</span><span style="color:#e6db74">${</span>MASK<span style="color:#e6db74">}</span><span style="color:#e6db74"> | . += [\&#34;</span><span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;] | { \&#34;</span><span style="color:#e6db74">${</span>MASK<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;: . }&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>DATA<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --request GET <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --header <span style="color:#e6db74">&#34;Accept: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --compressed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">${</span>URL<span style="color:#e6db74">}</span>/config <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span>
+</span></span></code></pre></div><p>So the <a href="https://stedolan.github.io/jq/"><code>jq</code></a> <code>FILTER</code> is very likely sub-optimal, but it works.</p>
 <p>Assuming <code>Config</code> contains <code>authorizedDomains</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
-  <span style="color:#f92672">&#34;authorizedDomnains&#34;</span>: [
-    <span style="color:#e6db74">&#34;foo&#34;</span>,
-    <span style="color:#e6db74">&#34;bar&#34;</span>,
-  ]
-}
-</code></pre></div><p>We grab the array (<code>[...]</code>) and add an array (!) to it containing the URL (<code>${HOST}</code>) of a Cloud Run Service.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;authorizedDomnains&#34;</span>: [
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;foo&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;bar&#34;</span>,
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>We grab the array (<code>[...]</code>) and add an array (!) to it containing the URL (<code>${HOST}</code>) of a Cloud Run Service.</p>
 <blockquote>
 <p><strong>NOTE</strong> This is one way to grab the service URL, given the service name and project is. This returns only the fully-qualified host (i.e. <code>some-service-xxxxxxxxxx-xx.a.run.app</code>) from the URL:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">HOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud run services describe <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>HOST<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>HOST#https://<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>echo <span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>
-</code></pre></div></blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>HOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud run services describe <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>HOST<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>HOST#https://<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>echo <span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>
+</span></span></code></pre></div></blockquote>
 <p>Then &ndash; and there&rsquo;s very likely a way to do this without extracting <code>authorizedDomains</code> from the JSON only to put it back &ndash; is to take the result of list append and return:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
-  <span style="color:#f92672">&#34;authorizedDomains&#34;</span>: [<span style="color:#960050;background-color:#1e0010">...</span>]
-}
-</code></pre></div><p>This is all that&rsquo;s needed for the <code>Config</code> we give to <code>updateConfig</code> because we can use a field mask to tell the service we&rsquo;re only updating <code>authorizedDomains</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--request PATCH <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Accept: application/json&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>DATA<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--compressed <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>URL<span style="color:#e6db74">}</span>/config?updateMask<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>MASK<span style="color:#e6db74">}</span>
-</code></pre></div><p>That should work!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;authorizedDomains&#34;</span>: [<span style="color:#960050;background-color:#1e0010">...</span>]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This is all that&rsquo;s needed for the <code>Config</code> we give to <code>updateConfig</code> because we can use a field mask to tell the service we&rsquo;re only updating <code>authorizedDomains</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request PATCH <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Accept: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>DATA<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--compressed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>URL<span style="color:#e6db74">}</span>/config?updateMask<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>MASK<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>That should work!</p>
 <p>One important consideration is that you won&rsquo;t be able to perform this using your regular human credentials obtained using <code>gcloud auth print-access-token</code>. This is because the project that backs <code>gcloud</code> does not have the Identity Platform service enabled.</p>
 <p>You&rsquo;ll want to:</p>
 <ul>
@@ -271,51 +271,51 @@ DATA<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>cur
 <li>Generate an access token using it</li>
 </ul>
 <p>Something along the lines of:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Firebase Auth project ID</span>
-
-<span style="color:#75715e"># Enable the Identity Platform service</span>
-SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;identitytoolkit&#34;</span>
-gcloud services enable <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.googleapis.com <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-
-ACCOUNT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Your preference</span>
-
-EMAIL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span><span style="color:#e6db74">@</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">.iam.gserviceaccount.com&#34;</span>
-
-<span style="color:#75715e"># Create Service Account in Firebase Auth project</span>
-gcloud iam service-accounts create <span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-
-<span style="color:#75715e"># Grant it sufficient permissions</span>
-<span style="color:#75715e"># Unclear whether firebaseauth.admin is correct</span>
-<span style="color:#75715e"># https://cloud.google.com/identity-platform/docs/access-control</span>
-gcloud projects add-iam-policy-binding <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--member<span style="color:#f92672">=</span>serviceAccount:<span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--role<span style="color:#f92672">=</span>roles/firebaseauth.admin
-
-<span style="color:#75715e"># Create a key</span>
-gcloud iam service-accounts keys create <span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--iam-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> 
-
-<span style="color:#75715e"># Retain current active account</span>
-DEFAULT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>gcloud config get-value account<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
-
-<span style="color:#75715e"># Activate Service Account</span>
-gcloud auth activate-service-account <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--key-file<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json
-
-<span style="color:#75715e"># Revert to previously active account</span>
-gcloud config set account <span style="color:#e6db74">${</span>DEFAULT<span style="color:#e6db74">}</span>
-
-<span style="color:#75715e"># Generate access token using the Service Account</span>
-TOKEN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud auth print-access-token <span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span><span style="color:#66d9ef">)</span>
-</code></pre></div><p>When you&rsquo;re done, you may want to revoke the credentials of the Service Account and delete it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud auth revoke <span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span>
-
-gcloud iam service-accounts delete <span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-</code></pre></div><h2 id="sdks-or-not">SDKs&hellip; or not</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Firebase Auth project ID</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Enable the Identity Platform service</span>
+</span></span><span style="display:flex;"><span>SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;identitytoolkit&#34;</span>
+</span></span><span style="display:flex;"><span>gcloud services enable <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.googleapis.com <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ACCOUNT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Your preference</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>EMAIL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span><span style="color:#e6db74">@</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">.iam.gserviceaccount.com&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create Service Account in Firebase Auth project</span>
+</span></span><span style="display:flex;"><span>gcloud iam service-accounts create <span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Grant it sufficient permissions</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Unclear whether firebaseauth.admin is correct</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># https://cloud.google.com/identity-platform/docs/access-control</span>
+</span></span><span style="display:flex;"><span>gcloud projects add-iam-policy-binding <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--member<span style="color:#f92672">=</span>serviceAccount:<span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--role<span style="color:#f92672">=</span>roles/firebaseauth.admin
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create a key</span>
+</span></span><span style="display:flex;"><span>gcloud iam service-accounts keys create <span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--iam-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Retain current active account</span>
+</span></span><span style="display:flex;"><span>DEFAULT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>gcloud config get-value account<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Activate Service Account</span>
+</span></span><span style="display:flex;"><span>gcloud auth activate-service-account <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--key-file<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Revert to previously active account</span>
+</span></span><span style="display:flex;"><span>gcloud config set account <span style="color:#e6db74">${</span>DEFAULT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Generate access token using the Service Account</span>
+</span></span><span style="display:flex;"><span>TOKEN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud auth print-access-token <span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span><span style="color:#66d9ef">)</span>
+</span></span></code></pre></div><p>When you&rsquo;re done, you may want to revoke the credentials of the Service Account and delete it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud auth revoke <span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud iam service-accounts delete <span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><h2 id="sdks-or-not">SDKs&hellip; or not</h2>
 <p>I&rsquo;m familiar with Google&rsquo;s myriad language SDKs but I had problems with Identity Toolkit|Platform v2|v3.</p>
 <p>I&rsquo;m confident there aren&rsquo;t Cloud Client Libraries for it for Golang or Python.</p>
 <p>There should (!) be API Client Libraries because these are machine|auto-generated.</p>
@@ -335,134 +335,132 @@ gcloud iam service-accounts delete <span style="color:#e6db74">${</span>EMAIL<sp
 <li><a href="https://pkg.go.dev/google.golang.org/api@v0.59.0/identitytoolkit/v3#RelyingpartyService.SetProjectConfig">SetProjectConfig</a></li>
 </ul>
 <p>Which certainly appear to match <code>getConfig</code> and <code>updateConfig</code> and indeed:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
-
-<span style="color:#f92672">import</span> (
-	<span style="color:#e6db74">&#34;context&#34;</span>
-	<span style="color:#e6db74">&#34;log&#34;</span>
-
-	<span style="color:#e6db74">&#34;google.golang.org/api/identitytoolkit/v3&#34;</span>
-	<span style="color:#e6db74">&#34;google.golang.org/api/option&#34;</span>
-)
-
-<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Client</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">svc</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">identitytoolkit</span>.<span style="color:#a6e22e">Service</span>
-}
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewClient</span>() (<span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>, <span style="color:#66d9ef">error</span>) {
-	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
-
-	<span style="color:#a6e22e">opts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">option</span>.<span style="color:#a6e22e">ClientOption</span>{
-		<span style="color:#a6e22e">option</span>.<span style="color:#a6e22e">WithScopes</span>(<span style="color:#e6db74">&#34;https://www.googleapis.com/auth/cloud-platform&#34;</span>),
-	}
-	<span style="color:#a6e22e">svc</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">identitytoolkit</span>.<span style="color:#a6e22e">NewService</span>(
-		<span style="color:#a6e22e">ctx</span>,
-		<span style="color:#a6e22e">opts</span><span style="color:#f92672">...</span>,
-	)
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Client</span>{}, <span style="color:#a6e22e">err</span>
-	}
-
-	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Client</span>{
-		<span style="color:#a6e22e">svc</span>: <span style="color:#a6e22e">svc</span>,
-	}, <span style="color:#66d9ef">nil</span>
-}
-
-<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">GetDomains</span>() ([]<span style="color:#66d9ef">string</span>, <span style="color:#66d9ef">error</span>) {
-	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">svc</span>.<span style="color:#a6e22e">Relyingparty</span>.<span style="color:#a6e22e">GetProjectConfig</span>().<span style="color:#a6e22e">Fields</span>(<span style="color:#e6db74">&#34;authorizedDomains&#34;</span>).<span style="color:#a6e22e">Do</span>()
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">AuthorizedDomains</span>, <span style="color:#a6e22e">err</span>
-}
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-	<span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewClient</span>()
-
-	<span style="color:#a6e22e">authorizedDomains</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">GetDomains</span>()
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-	}
-
-	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">authorizedDomains</span>)
-}
-
-</code></pre></div><p>As expected logs something of the form:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">2021/10/26 13:22:10 [
-    localhost
-    ${PROJECT}.firebaseapp.com
-    ${PROJECT}.web.app
-]
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/api/identitytoolkit/v3&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/api/option&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Client</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">svc</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">identitytoolkit</span>.<span style="color:#a6e22e">Service</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewClient</span>() (<span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">opts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">option</span>.<span style="color:#a6e22e">ClientOption</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">option</span>.<span style="color:#a6e22e">WithScopes</span>(<span style="color:#e6db74">&#34;https://www.googleapis.com/auth/cloud-platform&#34;</span>),
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">svc</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">identitytoolkit</span>.<span style="color:#a6e22e">NewService</span>(
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">ctx</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">opts</span><span style="color:#f92672">...</span>,
+</span></span><span style="display:flex;"><span>	)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Client</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Client</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">svc</span>: <span style="color:#a6e22e">svc</span>,
+</span></span><span style="display:flex;"><span>	}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">GetDomains</span>() ([]<span style="color:#66d9ef">string</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">svc</span>.<span style="color:#a6e22e">Relyingparty</span>.<span style="color:#a6e22e">GetProjectConfig</span>().<span style="color:#a6e22e">Fields</span>(<span style="color:#e6db74">&#34;authorizedDomains&#34;</span>).<span style="color:#a6e22e">Do</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">AuthorizedDomains</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewClient</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">authorizedDomains</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">GetDomains</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">authorizedDomains</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>As expected logs something of the form:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>2021/10/26 13:22:10 [
+</span></span><span style="display:flex;"><span>    localhost
+</span></span><span style="display:flex;"><span>    ${PROJECT}.firebaseapp.com
+</span></span><span style="display:flex;"><span>    ${PROJECT}.web.app
+</span></span><span style="display:flex;"><span>]
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> <code>*.firebaseapp.com</code> and <code>*.web.app</code> are default authorized domains.</p>
 </blockquote>
 <p>But, I&rsquo;m unable to get <code>SetProjectConfig</code> to work:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
-
-<span style="color:#f92672">import</span> (
-	<span style="color:#e6db74">&#34;context&#34;</span>
-	<span style="color:#e6db74">&#34;log&#34;</span>
-
-	<span style="color:#e6db74">&#34;google.golang.org/api/identitytoolkit/v3&#34;</span>
-	<span style="color:#e6db74">&#34;google.golang.org/api/option&#34;</span>
-)
-
-<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Client</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">svc</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">identitytoolkit</span>.<span style="color:#a6e22e">Service</span>
-}
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewClient</span>() (<span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>, <span style="color:#66d9ef">error</span>) {
-	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
-
-	<span style="color:#a6e22e">opts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">option</span>.<span style="color:#a6e22e">ClientOption</span>{
-		<span style="color:#a6e22e">option</span>.<span style="color:#a6e22e">WithScopes</span>(<span style="color:#e6db74">&#34;https://www.googleapis.com/auth/cloud-platform&#34;</span>),
-	}
-	<span style="color:#a6e22e">svc</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">identitytoolkit</span>.<span style="color:#a6e22e">NewService</span>(
-		<span style="color:#a6e22e">ctx</span>,
-		<span style="color:#a6e22e">opts</span><span style="color:#f92672">...</span>,
-	)
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Client</span>{}, <span style="color:#a6e22e">err</span>
-	}
-
-	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Client</span>{
-		<span style="color:#a6e22e">svc</span>: <span style="color:#a6e22e">svc</span>,
-	}, <span style="color:#66d9ef">nil</span>
-}
-<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">GetDomains</span>() ([]<span style="color:#66d9ef">string</span>, <span style="color:#66d9ef">error</span>) {
-	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">svc</span>.<span style="color:#a6e22e">Relyingparty</span>.<span style="color:#a6e22e">GetProjectConfig</span>().<span style="color:#a6e22e">Fields</span>(<span style="color:#e6db74">&#34;authorizedDomains&#34;</span>).<span style="color:#a6e22e">Do</span>()
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">AuthorizedDomains</span>, <span style="color:#a6e22e">err</span>
-}
-<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">AddDomain</span>(<span style="color:#a6e22e">domain</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">error</span> {
-	<span style="color:#a6e22e">domains</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">GetDomains</span>()
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
-	}
-
-	<span style="color:#a6e22e">domains</span> = append(<span style="color:#a6e22e">domains</span>, <span style="color:#a6e22e">domain</span>)
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">SetDomains</span>(<span style="color:#a6e22e">domains</span>)
-}
-<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">SetDomains</span>(<span style="color:#a6e22e">domains</span> []<span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">error</span> {
-	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">identitytoolkit</span>.<span style="color:#a6e22e">IdentitytoolkitRelyingpartySetProjectConfigRequest</span>{}
-	<span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">AuthorizedDomains</span> = <span style="color:#a6e22e">domains</span>
-	<span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">svc</span>.<span style="color:#a6e22e">Relyingparty</span>.<span style="color:#a6e22e">SetProjectConfig</span>(<span style="color:#a6e22e">rqst</span>).<span style="color:#a6e22e">Fields</span>(<span style="color:#e6db74">&#34;authorizedDomains&#34;</span>).<span style="color:#a6e22e">Do</span>()
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
-}
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-    <span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewClient</span>()
-
-	<span style="color:#a6e22e">authorizedDomains</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">GetDomains</span>()
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-	}
-
-	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">authorizedDomains</span>)
-
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">AddDomain</span>(<span style="color:#e6db74">&#34;xxx.com&#34;</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-	}
-}
-
-</code></pre></div><p>Instead I receive:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">The requested URL &lt;code&gt;/identitytoolkit/v3/relyingparty/setProjectConfig?alt=json&amp;amp;fields=authorizedDomains&amp;amp;prettyPrint=false&lt;/code&gt; was not found on this server.
-</code></pre></div><h3 id="python">Python</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/api/identitytoolkit/v3&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/api/option&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Client</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">svc</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">identitytoolkit</span>.<span style="color:#a6e22e">Service</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewClient</span>() (<span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">opts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">option</span>.<span style="color:#a6e22e">ClientOption</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">option</span>.<span style="color:#a6e22e">WithScopes</span>(<span style="color:#e6db74">&#34;https://www.googleapis.com/auth/cloud-platform&#34;</span>),
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">svc</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">identitytoolkit</span>.<span style="color:#a6e22e">NewService</span>(
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">ctx</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">opts</span><span style="color:#f92672">...</span>,
+</span></span><span style="display:flex;"><span>	)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Client</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Client</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">svc</span>: <span style="color:#a6e22e">svc</span>,
+</span></span><span style="display:flex;"><span>	}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">GetDomains</span>() ([]<span style="color:#66d9ef">string</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">svc</span>.<span style="color:#a6e22e">Relyingparty</span>.<span style="color:#a6e22e">GetProjectConfig</span>().<span style="color:#a6e22e">Fields</span>(<span style="color:#e6db74">&#34;authorizedDomains&#34;</span>).<span style="color:#a6e22e">Do</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">AuthorizedDomains</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">AddDomain</span>(<span style="color:#a6e22e">domain</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">domains</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">GetDomains</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">domains</span> = append(<span style="color:#a6e22e">domains</span>, <span style="color:#a6e22e">domain</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">SetDomains</span>(<span style="color:#a6e22e">domains</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">SetDomains</span>(<span style="color:#a6e22e">domains</span> []<span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">identitytoolkit</span>.<span style="color:#a6e22e">IdentitytoolkitRelyingpartySetProjectConfigRequest</span>{}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">AuthorizedDomains</span> = <span style="color:#a6e22e">domains</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">svc</span>.<span style="color:#a6e22e">Relyingparty</span>.<span style="color:#a6e22e">SetProjectConfig</span>(<span style="color:#a6e22e">rqst</span>).<span style="color:#a6e22e">Fields</span>(<span style="color:#e6db74">&#34;authorizedDomains&#34;</span>).<span style="color:#a6e22e">Do</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewClient</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">authorizedDomains</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">GetDomains</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">authorizedDomains</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">AddDomain</span>(<span style="color:#e6db74">&#34;xxx.com&#34;</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Instead I receive:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>The requested URL &lt;code&gt;/identitytoolkit/v3/relyingparty/setProjectConfig?alt=json&amp;amp;fields=authorizedDomains&amp;amp;prettyPrint=false&lt;/code&gt; was not found on this server.
+</span></span></code></pre></div><h3 id="python">Python</h3>
 <p>It appears &ndash; though I&rsquo;ve yet not tried this &ndash; that Python&rsquo;s SDK is the same:</p>
 <p>The documentation is:</p>
 <p><a href="https://googleapis.github.io/google-api-python-client/docs/dyn/identitytoolkit_v3.html">https://googleapis.github.io/google-api-python-client/docs/dyn/identitytoolkit_v3.html</a></p>
@@ -471,63 +469,63 @@ gcloud iam service-accounts delete <span style="color:#e6db74">${</span>EMAIL<sp
 <li><a href="https://googleapis.github.io/google-api-python-client/docs/dyn/identitytoolkit_v3.relyingparty.html#getProjectConfig">getProjectConfig</a></li>
 <li><a href="https://googleapis.github.io/google-api-python-client/docs/dyn/identitytoolkit_v3.relyingparty.html#setProjectConfig">setProjectConfig</a></li>
 </ul>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python"><span style="color:#f92672">from</span> googleapiclient.discovery <span style="color:#f92672">import</span> build
-<span style="color:#f92672">from</span> googleapiclient.errors <span style="color:#f92672">import</span> HttpError
-
-<span style="color:#f92672">import</span> google.auth
-
-
-SCOPES <span style="color:#f92672">=</span> [
-    <span style="color:#e6db74">&#39;https://www.googleapis.com/auth/cloud-platform&#39;</span>
-]
-
-<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Client</span>:
-
-    <span style="color:#66d9ef">def</span> __init__(self,creds):
-        self<span style="color:#f92672">.</span>svc <span style="color:#f92672">=</span> build(<span style="color:#e6db74">&#34;identitytoolkit&#34;</span>,<span style="color:#e6db74">&#34;v3&#34;</span>,credentials<span style="color:#f92672">=</span>creds)
-
-    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_domains</span>(self):
-        rqst <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>svc<span style="color:#f92672">.</span>relyingparty()<span style="color:#f92672">.</span>getProjectConfig()
-        <span style="color:#66d9ef">try</span>:
-            resp <span style="color:#f92672">=</span> rqst<span style="color:#f92672">.</span>execute()
-            <span style="color:#66d9ef">return</span> resp[<span style="color:#e6db74">&#34;authorizedDomains&#34;</span>]
-        <span style="color:#66d9ef">except</span> HttpError <span style="color:#66d9ef">as</span> e:
-            print(<span style="color:#e6db74">&#34;[</span><span style="color:#e6db74">{code}</span><span style="color:#e6db74">] </span><span style="color:#e6db74">{message}</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">.</span>format(code<span style="color:#f92672">=</span>e<span style="color:#f92672">.</span>resp<span style="color:#f92672">.</span>status,message<span style="color:#f92672">=</span>e<span style="color:#f92672">.</span>resp<span style="color:#f92672">.</span>reason))
-          
-    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">add_domain</span>(self,domain):
-        domains<span style="color:#f92672">=</span>self<span style="color:#f92672">.</span>get_domains()
-        domains<span style="color:#f92672">.</span>append(domain)
-        <span style="color:#66d9ef">try</span>:
-            self<span style="color:#f92672">.</span>set_domains(domains)
-        <span style="color:#66d9ef">except</span> HttpError <span style="color:#66d9ef">as</span> e:
-            print(<span style="color:#e6db74">&#34;[</span><span style="color:#e6db74">{code}</span><span style="color:#e6db74">] </span><span style="color:#e6db74">{message}</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">.</span>format(code<span style="color:#f92672">=</span>e<span style="color:#f92672">.</span>resp<span style="color:#f92672">.</span>status,message<span style="color:#f92672">=</span>e<span style="color:#f92672">.</span>resp<span style="color:#f92672">.</span>reason))
-
-    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">set_domains</span>(self,domains):
-        rqst <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>svc<span style="color:#f92672">.</span>relyingparty()<span style="color:#f92672">.</span>setProjectConfig()
-        <span style="color:#66d9ef">try</span>:
-            resp<span style="color:#f92672">=</span>rqst<span style="color:#f92672">.</span>execute()
-        <span style="color:#66d9ef">except</span> HttpError <span style="color:#66d9ef">as</span> e:
-            print(<span style="color:#e6db74">&#34;[</span><span style="color:#e6db74">{code}</span><span style="color:#e6db74">] </span><span style="color:#e6db74">{message}</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">.</span>format(code<span style="color:#f92672">=</span>e<span style="color:#f92672">.</span>resp<span style="color:#f92672">.</span>status,message<span style="color:#f92672">=</span>e<span style="color:#f92672">.</span>resp<span style="color:#f92672">.</span>reason))
-
-
-
-<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">main</span>():
-    creds, project_id <span style="color:#f92672">=</span> google<span style="color:#f92672">.</span>auth<span style="color:#f92672">.</span>default(scopes<span style="color:#f92672">=</span>SCOPES)
-
-    client <span style="color:#f92672">=</span> Client(creds)
-    domains<span style="color:#f92672">=</span>client<span style="color:#f92672">.</span>get_domains()
-    print(domains)
-
-    client<span style="color:#f92672">.</span>add_domain(<span style="color:#e6db74">&#34;baz&#34;</span>)
-    domains<span style="color:#f92672">=</span>client<span style="color:#f92672">.</span>get_domains()
-    print(domains)
-
-
-<span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;__main__&#34;</span>:
-    main()
-</code></pre></div><p>It&rsquo;s noteworthy that Python&rsquo;s error includes the URL:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">&lt;HttpError 404 when requesting https://www.googleapis.com/identitytoolkit/v3/relyingparty/setProjectConfig?alt=json returned &#34;Not Found&#34;
-</code></pre></div><h3 id="discovery">Discovery</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Python" data-lang="Python"><span style="display:flex;"><span><span style="color:#f92672">from</span> googleapiclient.discovery <span style="color:#f92672">import</span> build
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> googleapiclient.errors <span style="color:#f92672">import</span> HttpError
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> google.auth
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>SCOPES <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;https://www.googleapis.com/auth/cloud-platform&#39;</span>
+</span></span><span style="display:flex;"><span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Client</span>:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self,creds):
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>svc <span style="color:#f92672">=</span> build(<span style="color:#e6db74">&#34;identitytoolkit&#34;</span>,<span style="color:#e6db74">&#34;v3&#34;</span>,credentials<span style="color:#f92672">=</span>creds)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_domains</span>(self):
+</span></span><span style="display:flex;"><span>        rqst <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>svc<span style="color:#f92672">.</span>relyingparty()<span style="color:#f92672">.</span>getProjectConfig()
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>            resp <span style="color:#f92672">=</span> rqst<span style="color:#f92672">.</span>execute()
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> resp[<span style="color:#e6db74">&#34;authorizedDomains&#34;</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">except</span> HttpError <span style="color:#66d9ef">as</span> e:
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">&#34;[</span><span style="color:#e6db74">{code}</span><span style="color:#e6db74">] </span><span style="color:#e6db74">{message}</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">.</span>format(code<span style="color:#f92672">=</span>e<span style="color:#f92672">.</span>resp<span style="color:#f92672">.</span>status,message<span style="color:#f92672">=</span>e<span style="color:#f92672">.</span>resp<span style="color:#f92672">.</span>reason))
+</span></span><span style="display:flex;"><span>          
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">add_domain</span>(self,domain):
+</span></span><span style="display:flex;"><span>        domains<span style="color:#f92672">=</span>self<span style="color:#f92672">.</span>get_domains()
+</span></span><span style="display:flex;"><span>        domains<span style="color:#f92672">.</span>append(domain)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>            self<span style="color:#f92672">.</span>set_domains(domains)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">except</span> HttpError <span style="color:#66d9ef">as</span> e:
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">&#34;[</span><span style="color:#e6db74">{code}</span><span style="color:#e6db74">] </span><span style="color:#e6db74">{message}</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">.</span>format(code<span style="color:#f92672">=</span>e<span style="color:#f92672">.</span>resp<span style="color:#f92672">.</span>status,message<span style="color:#f92672">=</span>e<span style="color:#f92672">.</span>resp<span style="color:#f92672">.</span>reason))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">set_domains</span>(self,domains):
+</span></span><span style="display:flex;"><span>        rqst <span style="color:#f92672">=</span> self<span style="color:#f92672">.</span>svc<span style="color:#f92672">.</span>relyingparty()<span style="color:#f92672">.</span>setProjectConfig()
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>            resp<span style="color:#f92672">=</span>rqst<span style="color:#f92672">.</span>execute()
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">except</span> HttpError <span style="color:#66d9ef">as</span> e:
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">&#34;[</span><span style="color:#e6db74">{code}</span><span style="color:#e6db74">] </span><span style="color:#e6db74">{message}</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">.</span>format(code<span style="color:#f92672">=</span>e<span style="color:#f92672">.</span>resp<span style="color:#f92672">.</span>status,message<span style="color:#f92672">=</span>e<span style="color:#f92672">.</span>resp<span style="color:#f92672">.</span>reason))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">main</span>():
+</span></span><span style="display:flex;"><span>    creds, project_id <span style="color:#f92672">=</span> google<span style="color:#f92672">.</span>auth<span style="color:#f92672">.</span>default(scopes<span style="color:#f92672">=</span>SCOPES)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    client <span style="color:#f92672">=</span> Client(creds)
+</span></span><span style="display:flex;"><span>    domains<span style="color:#f92672">=</span>client<span style="color:#f92672">.</span>get_domains()
+</span></span><span style="display:flex;"><span>    print(domains)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    client<span style="color:#f92672">.</span>add_domain(<span style="color:#e6db74">&#34;baz&#34;</span>)
+</span></span><span style="display:flex;"><span>    domains<span style="color:#f92672">=</span>client<span style="color:#f92672">.</span>get_domains()
+</span></span><span style="display:flex;"><span>    print(domains)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;__main__&#34;</span>:
+</span></span><span style="display:flex;"><span>    main()
+</span></span></code></pre></div><p>It&rsquo;s noteworthy that Python&rsquo;s error includes the URL:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>&lt;HttpError 404 when requesting https://www.googleapis.com/identitytoolkit/v3/relyingparty/setProjectConfig?alt=json returned &#34;Not Found&#34;
+</span></span></code></pre></div><h3 id="discovery">Discovery</h3>
 <p>The Discovery <a href="https://identitytoolkit.googleapis.com/$discovery/rest?version=v2">document</a> for &ldquo;v2&rdquo; includes <code>getConfig</code> and <code>updateConfig</code> but I&rsquo;ve been unable to generate a client from the document for this version to try it out.</p>
 <ul class="pa0">
   

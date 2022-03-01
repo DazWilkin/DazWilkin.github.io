@@ -7,7 +7,7 @@
     <title>pest: parsing in Rust | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Writing Parsers with Rust&#39;s Pest">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -196,21 +196,21 @@ if (!doNotTrack) {
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>A Microsoft engineer introduced me to <a href="https://pest.rs"><code>pest</code></a> as a way to introduce service filtering in a ZeroConf plugin that I&rsquo;m prototyping for <a href="https://github.com/deislabs/akri">Akri</a>. It&rsquo;s been fun to learn but I worry that, because I won&rsquo;t use it frequently, I&rsquo;m going to quickly forget what I&rsquo;ve done. So, here are my notes.</p>
 <p>Here&rsquo;s the problem, I&rsquo;d like to be able to provide users of the ZeroConf plugin with a string-based filter that permits them to filter the services discovered when the Akri agent browses a network.</p>
 <p>I originally used <a href=""><code>zeroconf</code></a> but am now exploring <a href=""><code>astro-dnssd</code></a> for ZeroConf browsing. Here&rsquo;s a list of results from the former:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">{
-    <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;freddie&#34;</span>,
-    <span style="color:#f92672">kind</span>: <span style="color:#e6db74">&#34;_rust._tcp&#34;</span>,
-    <span style="color:#f92672">domain</span>: <span style="color:#e6db74">&#34;local&#34;</span>,
-    <span style="color:#f92672">host_name</span>: <span style="color:#e6db74">&#34;freddie.local&#34;</span>,
-    <span style="color:#f92672">address</span>: <span style="color:#e6db74">&#34;192.168.100.15&#34;</span>,
-    <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8080</span>,
-    <span style="color:#f92672">txt</span>: <span style="color:#ae81ff">Some(AvahiTxtRecord(UnsafeCell))</span>
-}
-</code></pre></div><p>And then browsing using Avahi:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">avahi-browse --all
-+ enp5s0 IPv6 freddie           _rust._tcp           local
-</code></pre></div><p>And so, a filter may contain some subset of the above, e.g.:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">name=&#34;freddie&#34; domain=&#34;local&#34; kind=&#34;_rust._tcp&#34; port=&#34;8080&#34;
-</code></pre></div><p>For now, I&rsquo;m focusing on constant values but, in practice, this should support wildcards e.g. <code>name=&quot;fred*&quot;</code> too.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;freddie&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kind</span>: <span style="color:#e6db74">&#34;_rust._tcp&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">domain</span>: <span style="color:#e6db74">&#34;local&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">host_name</span>: <span style="color:#e6db74">&#34;freddie.local&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">address</span>: <span style="color:#e6db74">&#34;192.168.100.15&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8080</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">txt</span>: <span style="color:#ae81ff">Some(AvahiTxtRecord(UnsafeCell))</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And then browsing using Avahi:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>avahi-browse --all
+</span></span><span style="display:flex;"><span>+ enp5s0 IPv6 freddie           _rust._tcp           local
+</span></span></code></pre></div><p>And so, a filter may contain some subset of the above, e.g.:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>name=&#34;freddie&#34; domain=&#34;local&#34; kind=&#34;_rust._tcp&#34; port=&#34;8080&#34;
+</span></span></code></pre></div><p>For now, I&rsquo;m focusing on constant values but, in practice, this should support wildcards e.g. <code>name=&quot;fred*&quot;</code> too.</p>
 <p>I&rsquo;m using 2 crates: <a href="https://crates.io/crates/pest"><code>pest</code></a> and <a href="https://crates.io/crates/pest_derive"><code>pest_derive</code></a>. I started writing code but the <a href="https://pest.rs"><code>pest.rs</code></a> site has an in-browser <a href="https://pest.rs#editor">editor</a> which is excellent.</p>
 <blockquote>
 <p><strong>NOTE</strong> The &ldquo;share&rdquo; button is not working on the editor.</p>
@@ -221,29 +221,29 @@ if (!doNotTrack) {
 <pre tabindex="0"><code>// ZeroConf: Service Filtering
 
 name = { ASCII_ALPHANUMERIC ~ ( ( ASCII_ALPHANUMERIC ~ HYPHEN ~ ASCII_ALPHANUMERIC ) | ASCII_ALPHANUMERIC )* }
-full_name = _{ &quot;name=\&quot;&quot; ~ name ~ &quot;\&quot;&quot; }
+full_name = _{ &#34;name=\&#34;&#34; ~ name ~ &#34;\&#34;&#34; }
 
 domain = { ASCII_ALPHA_LOWER+ }
-full_domain = _{ &quot;domain=\&quot;&quot; ~ domain ~ &quot;\&quot;&quot; }
+full_domain = _{ &#34;domain=\&#34;&#34; ~ domain ~ &#34;\&#34;&#34; }
 
-host_name = { name ~ &quot;.&quot; ~ domain }
-full_host_name = _{ &quot;host_name=\&quot;&quot; ~ host_name ~ &quot;\&quot;&quot; }
+host_name = { name ~ &#34;.&#34; ~ domain }
+full_host_name = _{ &#34;host_name=\&#34;&#34; ~ host_name ~ &#34;\&#34;&#34; }
 
-tcp = { &quot;tcp&quot; }
-udp = { &quot;udp&quot; }
-sctp = { &quot;sctp&quot; }
+tcp = { &#34;tcp&#34; }
+udp = { &#34;udp&#34; }
+sctp = { &#34;sctp&#34; }
 
 protocol = { tcp | udp | sctp }
-full_protocol = _{ &quot;_&quot; ~ protocol }
+full_protocol = _{ &#34;_&#34; ~ protocol }
 
 stype = { ASCII_ALPHA_LOWER+ }
-full_stype = _{ &quot;_&quot; ~ stype }
+full_stype = _{ &#34;_&#34; ~ stype }
 
-kind = {  full_stype ~ &quot;.&quot; ~ full_protocol }
-full_kind = _{ &quot;kind=\&quot;&quot; ~ kind ~ &quot;\&quot;&quot; }
+kind = {  full_stype ~ &#34;.&#34; ~ full_protocol }
+full_kind = _{ &#34;kind=\&#34;&#34; ~ kind ~ &#34;\&#34;&#34; }
 
 port = { ASCII_DIGIT{1,5} }
-full_port = _{ &quot;port=\&quot;&quot; ~ port ~ &quot;\&quot;&quot; }
+full_port = _{ &#34;port=\&#34;&#34; ~ port ~ &#34;\&#34;&#34; }
 
 term = _{ full_kind | full_domain | full_name | full_port | full_host_name }
 
@@ -258,153 +258,153 @@ filter = { term ~ ( SPACE_SEPARATOR* ~ term )* }
 <li>The rule for <code>filter</code> also permits repeated spaces between terms. <code>kind=&quot;_rust.tcp&quot;       domain=&quot;local&quot;</code> is permitted.</li>
 </ul>
 <p>To derive a parser, we just need to reference <code>zeroconf.pest</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span> pest::Parser;
-<span style="color:#66d9ef">use</span> pest_derive::<span style="color:#f92672">*</span>;
-
-<span style="color:#75715e">#[derive(Parser)]</span>
-<span style="color:#75715e">#[grammar = </span><span style="color:#e6db74">&#34;zeroconf.pest&#34;</span><span style="color:#75715e">]</span>
-<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ZeroConfParser</span>;
-</code></pre></div><p>And then, per the documentation, we could:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">let</span> example <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;name=\&#34;hades-canyon\&#34; domain=\&#34;local\&#34; kind=\&#34;_rust._tcp\&#34; port=\&#34;8080\&#34; host_name=\&#34;hades-canyon.local\&#34;&#34;</span>;
-<span style="color:#66d9ef">let</span> filter <span style="color:#f92672">=</span> ZeroConfParser::parse(Rule::filter, example);
-println!(<span style="color:#e6db74">&#34;{:?}&#34;</span>, filter);
-</code></pre></div><p>But, I&rsquo;ve chosen to build tests for each of the rules, i.e.:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">#[cfg(test)]</span>
-<span style="color:#66d9ef">mod</span> tests {
-    <span style="color:#66d9ef">use</span> <span style="color:#66d9ef">super</span>::ZeroConfParser;
-    <span style="color:#66d9ef">use</span> <span style="color:#66d9ef">super</span>::<span style="color:#f92672">*</span>;
-    <span style="color:#66d9ef">use</span> lazy_static::<span style="color:#f92672">*</span>;
-    <span style="color:#66d9ef">use</span> pest::{consumes_to, parses_to};
-
-    <span style="color:#66d9ef">const</span> NAME: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;freddie&#34;</span>;
-    <span style="color:#66d9ef">const</span> TCP: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;tcp&#34;</span>;
-    <span style="color:#66d9ef">const</span> RUST: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;rust&#34;</span>;
-    <span style="color:#66d9ef">const</span> DOMAIN: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;local&#34;</span>;
-    <span style="color:#66d9ef">const</span> PORT: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;8080&#34;</span>;
-
-    lazy_static<span style="color:#f92672">!</span> {
-        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">ref</span> FULL_NAME: String <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;name=\&#34;{}\&#34;&#34;</span>, NAME);
-        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">ref</span> KIND: String <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;_{}._{}&#34;</span>, RUST, TCP);
-        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">ref</span> FULL_KIND: String <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;kind=\&#34;{}\&#34;&#34;</span>, <span style="color:#f92672">*</span>KIND);
-        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">ref</span> FULL_DOMAIN: String <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;domain=\&#34;{}\&#34;&#34;</span>, DOMAIN);
-    }
-
-    <span style="color:#75715e">#[test]</span>
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">test_filter_domain_kind_name</span>() {
-        <span style="color:#66d9ef">let</span> filter: String <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;{} {} {}&#34;</span>, <span style="color:#f92672">*</span>FULL_DOMAIN, <span style="color:#f92672">*</span>FULL_KIND, <span style="color:#f92672">*</span>FULL_NAME);
-        println!(<span style="color:#e6db74">&#34;{:?} [{}]&#34;</span>, filter, filter.len());
-        parses_to<span style="color:#f92672">!</span> {
-            parser:<span style="color:#a6e22e">ZeroConfParser</span>,
-            input:<span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">filter</span>,
-            rule:<span style="color:#a6e22e">Rule</span>::filter,
-            <span style="color:#75715e">// 000000000011111111112222222222333333333344444444
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">// 012345678901234567890123456789012345678901234567
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">// domain=&#34;local&#34; kind=&#34;_rust._tcp&#34; name=&#34;freddie&#34;
-</span><span style="color:#75715e"></span>            tokens:[
-                filter(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">47</span>,[
-                    domain(<span style="color:#ae81ff">8</span>,<span style="color:#ae81ff">13</span>),
-                    kind(<span style="color:#ae81ff">21</span>,<span style="color:#ae81ff">31</span>,[
-                        stype(<span style="color:#ae81ff">22</span>,<span style="color:#ae81ff">26</span>),
-                        protocol(<span style="color:#ae81ff">28</span>,<span style="color:#ae81ff">31</span>,[
-                            tcp(<span style="color:#ae81ff">28</span>,<span style="color:#ae81ff">31</span>)
-                        ])
-                    ]),
-                    name(<span style="color:#ae81ff">39</span>,<span style="color:#ae81ff">46</span>)
-                ])
-            ]
-        };
-    }
-}
-</code></pre></div><p>So, how does this work? We leverage the <code>parses_to!</code> macro, give it the parser, some input (<code>filter</code>) and then a set of <code>tokens</code>. The <code>tokens</code> is the hard part. Please see the comment string above the <code>tokens</code>. This helps work out what&rsquo;s where and why. The <code>filter</code> rule yields a <code>filter</code> that begins at <code>0</code> and ends at <code>47</code>. The last character of the filter is at <code>46</code> but the filter ends at <code>47</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> pest::Parser;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> pest_derive::<span style="color:#f92672">*</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[derive(Parser)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[grammar = </span><span style="color:#e6db74">&#34;zeroconf.pest&#34;</span><span style="color:#75715e">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ZeroConfParser</span>;
+</span></span></code></pre></div><p>And then, per the documentation, we could:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">let</span> example <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;name=\&#34;hades-canyon\&#34; domain=\&#34;local\&#34; kind=\&#34;_rust._tcp\&#34; port=\&#34;8080\&#34; host_name=\&#34;hades-canyon.local\&#34;&#34;</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> filter <span style="color:#f92672">=</span> ZeroConfParser::parse(Rule::filter, example);
+</span></span><span style="display:flex;"><span>println!(<span style="color:#e6db74">&#34;{:?}&#34;</span>, filter);
+</span></span></code></pre></div><p>But, I&rsquo;ve chosen to build tests for each of the rules, i.e.:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">#[cfg(test)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">mod</span> tests {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> <span style="color:#66d9ef">super</span>::ZeroConfParser;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> <span style="color:#66d9ef">super</span>::<span style="color:#f92672">*</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> lazy_static::<span style="color:#f92672">*</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> pest::{consumes_to, parses_to};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> NAME: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;freddie&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> TCP: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;tcp&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> RUST: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;rust&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> DOMAIN: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;local&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> PORT: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;8080&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    lazy_static<span style="color:#f92672">!</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">ref</span> FULL_NAME: String <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;name=\&#34;{}\&#34;&#34;</span>, NAME);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">ref</span> KIND: String <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;_{}._{}&#34;</span>, RUST, TCP);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">ref</span> FULL_KIND: String <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;kind=\&#34;{}\&#34;&#34;</span>, <span style="color:#f92672">*</span>KIND);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">ref</span> FULL_DOMAIN: String <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;domain=\&#34;{}\&#34;&#34;</span>, DOMAIN);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#[test]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">test_filter_domain_kind_name</span>() {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> filter: String <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;{} {} {}&#34;</span>, <span style="color:#f92672">*</span>FULL_DOMAIN, <span style="color:#f92672">*</span>FULL_KIND, <span style="color:#f92672">*</span>FULL_NAME);
+</span></span><span style="display:flex;"><span>        println!(<span style="color:#e6db74">&#34;{:?} [{}]&#34;</span>, filter, filter.len());
+</span></span><span style="display:flex;"><span>        parses_to<span style="color:#f92672">!</span> {
+</span></span><span style="display:flex;"><span>            parser:<span style="color:#a6e22e">ZeroConfParser</span>,
+</span></span><span style="display:flex;"><span>            input:<span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">filter</span>,
+</span></span><span style="display:flex;"><span>            rule:<span style="color:#a6e22e">Rule</span>::filter,
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 000000000011111111112222222222333333333344444444
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#75715e">// 012345678901234567890123456789012345678901234567
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#75715e">// domain=&#34;local&#34; kind=&#34;_rust._tcp&#34; name=&#34;freddie&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            tokens:[
+</span></span><span style="display:flex;"><span>                filter(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">47</span>,[
+</span></span><span style="display:flex;"><span>                    domain(<span style="color:#ae81ff">8</span>,<span style="color:#ae81ff">13</span>),
+</span></span><span style="display:flex;"><span>                    kind(<span style="color:#ae81ff">21</span>,<span style="color:#ae81ff">31</span>,[
+</span></span><span style="display:flex;"><span>                        stype(<span style="color:#ae81ff">22</span>,<span style="color:#ae81ff">26</span>),
+</span></span><span style="display:flex;"><span>                        protocol(<span style="color:#ae81ff">28</span>,<span style="color:#ae81ff">31</span>,[
+</span></span><span style="display:flex;"><span>                            tcp(<span style="color:#ae81ff">28</span>,<span style="color:#ae81ff">31</span>)
+</span></span><span style="display:flex;"><span>                        ])
+</span></span><span style="display:flex;"><span>                    ]),
+</span></span><span style="display:flex;"><span>                    name(<span style="color:#ae81ff">39</span>,<span style="color:#ae81ff">46</span>)
+</span></span><span style="display:flex;"><span>                ])
+</span></span><span style="display:flex;"><span>            ]
+</span></span><span style="display:flex;"><span>        };
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>So, how does this work? We leverage the <code>parses_to!</code> macro, give it the parser, some input (<code>filter</code>) and then a set of <code>tokens</code>. The <code>tokens</code> is the hard part. Please see the comment string above the <code>tokens</code>. This helps work out what&rsquo;s where and why. The <code>filter</code> rule yields a <code>filter</code> that begins at <code>0</code> and ends at <code>47</code>. The last character of the filter is at <code>46</code> but the filter ends at <code>47</code>.</p>
 <p>If we return to the rules, the <code>filter</code> rule is defined <code>filter = { term ~ ( SPACE_SEPARATOR* ~ term )* }</code>. So, we should get at least one (and possibly an infinite list of space-separated) terms. If you look at the code below, you&rsquo;ll see that its <code>token</code> includes <code>filter</code> and then includes 3 <code>terms</code>: <code>term(0,14...)</code>, <code>term(15,32,...)</code> and <code>term(33,47...)</code>. But, this is just complexity, what we really want to know is that these 3 <code>term</code>s are: <code>domain(...)</code>, <code>kind(...)</code> and <code>name</code>. By adding the silent modifier to the definition of <code>term</code>, this is what results in the above code.</p>
 <p>However, this adds some complexity because you&rsquo;ll note that e.g. <code>domain(8,13)</code>. This is because the silent term was <code>domain=&quot;local&quot;</code> but we&rsquo;ve silently ignored <code>domain=&quot;</code> (don&rsquo;t forget the <code>&quot;</code>) and the terminating <code>&quot;</code>. So, instead of the dropped <code>term(0,14,...)</code> corresponding to <code>domain=&quot;local&quot;</code> we only have <code>domain(8,13)</code> corresponding to <code>local</code>. Nice!!</p>
 <p>I think a further optimisim may be to drop <code>protocol = { tcp | udp | sctp }</code> and have just <code>protocol = { &quot;tcp&quot; | &quot;udp&quot; | &quot;sctp&quot; }</code> but, I&rsquo;m ignoring that for now.</p>
 <p>This test begins to show the benefit of using the Silent modifier on some rules. See below for the same test (and the regular code would need to navigate this entire hierarchy too) if the rules don&rsquo;t include the silent modifier:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">    <span style="color:#75715e">#[test]</span>
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">test_filter_domain_kind_name</span>() {
-        <span style="color:#66d9ef">let</span> filter: String <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;{} {} {}&#34;</span>, <span style="color:#f92672">*</span>FULL_DOMAIN, <span style="color:#f92672">*</span>FULL_KIND, <span style="color:#f92672">*</span>FULL_NAME);
-        println!(<span style="color:#e6db74">&#34;{:?} [{}]&#34;</span>, filter, filter.len());
-        parses_to<span style="color:#f92672">!</span> {
-            parser:<span style="color:#a6e22e">ZeroConfParser</span>,
-            input:<span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">filter</span>,
-            rule:<span style="color:#a6e22e">Rule</span>::filter,
-            <span style="color:#75715e">// 000000000011111111112222222222333333333344444444
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">// 012345678901234567890123456789012345678901234567
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">// domain=&#34;local&#34; kind=&#34;_rust._tcp&#34; name=&#34;freddie&#34;
-</span><span style="color:#75715e"></span>            tokens:[
-                filter(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">47</span>,[
-                    term(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">14</span>,[
-                        full_domain(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">14</span>,[
-                            domain(<span style="color:#ae81ff">8</span>,<span style="color:#ae81ff">13</span>)
-                        ])
-                    ]),
-                    term(<span style="color:#ae81ff">15</span>,<span style="color:#ae81ff">32</span>,[
-                        full_kind(<span style="color:#ae81ff">15</span>,<span style="color:#ae81ff">32</span>,[
-                            kind(<span style="color:#ae81ff">21</span>,<span style="color:#ae81ff">31</span>,[
-                                full_stype(<span style="color:#ae81ff">21</span>,<span style="color:#ae81ff">26</span>,[
-                                    stype(<span style="color:#ae81ff">22</span>,<span style="color:#ae81ff">26</span>)
-                                ]),
-                                full_protocol(<span style="color:#ae81ff">27</span>,<span style="color:#ae81ff">31</span>,[
-                                    protocol(<span style="color:#ae81ff">28</span>,<span style="color:#ae81ff">31</span>,[
-                                        tcp(<span style="color:#ae81ff">28</span>,<span style="color:#ae81ff">31</span>)
-                                    ])
-                                ])
-                            ])
-                        ])
-                    ]),
-                    term(<span style="color:#ae81ff">33</span>,<span style="color:#ae81ff">47</span>,[
-                        full_name(<span style="color:#ae81ff">33</span>,<span style="color:#ae81ff">47</span>,[
-                            name(<span style="color:#ae81ff">39</span>,<span style="color:#ae81ff">46</span>)
-                        ])
-                    ])
-                ])
-            ]
-        };
-    }
-</code></pre></div><p>One additional advantage of the silent modifier is that you need fewer tests because, you only need to test e.g. <code>domain</code> not <code>full_domain</code> and <code>domain</code>. You can imagine this ripples through the grammar, not only saves time but makes the code easier to
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>    <span style="color:#75715e">#[test]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">test_filter_domain_kind_name</span>() {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> filter: String <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;{} {} {}&#34;</span>, <span style="color:#f92672">*</span>FULL_DOMAIN, <span style="color:#f92672">*</span>FULL_KIND, <span style="color:#f92672">*</span>FULL_NAME);
+</span></span><span style="display:flex;"><span>        println!(<span style="color:#e6db74">&#34;{:?} [{}]&#34;</span>, filter, filter.len());
+</span></span><span style="display:flex;"><span>        parses_to<span style="color:#f92672">!</span> {
+</span></span><span style="display:flex;"><span>            parser:<span style="color:#a6e22e">ZeroConfParser</span>,
+</span></span><span style="display:flex;"><span>            input:<span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">filter</span>,
+</span></span><span style="display:flex;"><span>            rule:<span style="color:#a6e22e">Rule</span>::filter,
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 000000000011111111112222222222333333333344444444
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#75715e">// 012345678901234567890123456789012345678901234567
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#75715e">// domain=&#34;local&#34; kind=&#34;_rust._tcp&#34; name=&#34;freddie&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            tokens:[
+</span></span><span style="display:flex;"><span>                filter(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">47</span>,[
+</span></span><span style="display:flex;"><span>                    term(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">14</span>,[
+</span></span><span style="display:flex;"><span>                        full_domain(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">14</span>,[
+</span></span><span style="display:flex;"><span>                            domain(<span style="color:#ae81ff">8</span>,<span style="color:#ae81ff">13</span>)
+</span></span><span style="display:flex;"><span>                        ])
+</span></span><span style="display:flex;"><span>                    ]),
+</span></span><span style="display:flex;"><span>                    term(<span style="color:#ae81ff">15</span>,<span style="color:#ae81ff">32</span>,[
+</span></span><span style="display:flex;"><span>                        full_kind(<span style="color:#ae81ff">15</span>,<span style="color:#ae81ff">32</span>,[
+</span></span><span style="display:flex;"><span>                            kind(<span style="color:#ae81ff">21</span>,<span style="color:#ae81ff">31</span>,[
+</span></span><span style="display:flex;"><span>                                full_stype(<span style="color:#ae81ff">21</span>,<span style="color:#ae81ff">26</span>,[
+</span></span><span style="display:flex;"><span>                                    stype(<span style="color:#ae81ff">22</span>,<span style="color:#ae81ff">26</span>)
+</span></span><span style="display:flex;"><span>                                ]),
+</span></span><span style="display:flex;"><span>                                full_protocol(<span style="color:#ae81ff">27</span>,<span style="color:#ae81ff">31</span>,[
+</span></span><span style="display:flex;"><span>                                    protocol(<span style="color:#ae81ff">28</span>,<span style="color:#ae81ff">31</span>,[
+</span></span><span style="display:flex;"><span>                                        tcp(<span style="color:#ae81ff">28</span>,<span style="color:#ae81ff">31</span>)
+</span></span><span style="display:flex;"><span>                                    ])
+</span></span><span style="display:flex;"><span>                                ])
+</span></span><span style="display:flex;"><span>                            ])
+</span></span><span style="display:flex;"><span>                        ])
+</span></span><span style="display:flex;"><span>                    ]),
+</span></span><span style="display:flex;"><span>                    term(<span style="color:#ae81ff">33</span>,<span style="color:#ae81ff">47</span>,[
+</span></span><span style="display:flex;"><span>                        full_name(<span style="color:#ae81ff">33</span>,<span style="color:#ae81ff">47</span>,[
+</span></span><span style="display:flex;"><span>                            name(<span style="color:#ae81ff">39</span>,<span style="color:#ae81ff">46</span>)
+</span></span><span style="display:flex;"><span>                        ])
+</span></span><span style="display:flex;"><span>                    ])
+</span></span><span style="display:flex;"><span>                ])
+</span></span><span style="display:flex;"><span>            ]
+</span></span><span style="display:flex;"><span>        };
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>One additional advantage of the silent modifier is that you need fewer tests because, you only need to test e.g. <code>domain</code> not <code>full_domain</code> and <code>domain</code>. You can imagine this ripples through the grammar, not only saves time but makes the code easier to
 &ldquo;parse&rdquo; as a human too. See what I did there!?</p>
 <p>Ok, the next step is to begin to do something with the parser beyond just testing it. Once again, the documentation provides an example. Remember, what we&rsquo;d like is to give the parser some text and get back a set of terms. We can do this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
-    <span style="color:#66d9ef">let</span> example <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;name=\&#34;freddie\&#34; domain=\&#34;local\&#34; kind=\&#34;_rust._tcp\&#34; port=\&#34;8080\&#34; host_name=\&#34;freddie.local\&#34;&#34;</span>;
-    <span style="color:#66d9ef">let</span> filter <span style="color:#f92672">=</span> ZeroConfParser::parse(Rule::filter, example).unwrap_or_else(<span style="color:#f92672">|</span>e<span style="color:#f92672">|</span> panic!(<span style="color:#e6db74">&#34;{}&#34;</span>, e));
-
-    <span style="color:#66d9ef">for</span> terms <span style="color:#66d9ef">in</span> filter {
-        <span style="color:#66d9ef">for</span> term <span style="color:#66d9ef">in</span> terms.into_inner() {
-            <span style="color:#66d9ef">match</span> term.as_rule() {
-                Rule::name <span style="color:#f92672">=&gt;</span> println!(<span style="color:#e6db74">&#34;Name: {}&#34;</span>, term.as_str()),
-                Rule::kind <span style="color:#f92672">=&gt;</span> {
-                    println!(<span style="color:#e6db74">&#34;Kind: {}&#34;</span>, term.as_str());
-                    <span style="color:#66d9ef">for</span> i3p <span style="color:#66d9ef">in</span> term.into_inner() {
-                        <span style="color:#66d9ef">match</span> i3p.as_rule() {
-                            Rule::stype <span style="color:#f92672">=&gt;</span> {
-                                println!(<span style="color:#e6db74">&#34;Type: {}&#34;</span>, i3p.as_str())
-                            }
-                            Rule::protocol <span style="color:#f92672">=&gt;</span> {
-                                println!(<span style="color:#e6db74">&#34;Protocol: {}&#34;</span>, i3p.as_str())
-                            }
-                            _ <span style="color:#f92672">=&gt;</span> unreachable!(),
-                        }
-                    }
-                }
-                Rule::domain <span style="color:#f92672">=&gt;</span> println!(<span style="color:#e6db74">&#34;Domain: {}&#34;</span>, term.as_str()),
-                Rule::port <span style="color:#f92672">=&gt;</span> println!(<span style="color:#e6db74">&#34;Port: {}&#34;</span>, term.as_str()),
-                Rule::host_name <span style="color:#f92672">=&gt;</span> println!(<span style="color:#e6db74">&#34;Hostname: {}&#34;</span>, term.as_str()),
-                _ <span style="color:#f92672">=&gt;</span> unreachable!(),
-            }
-        }
-    }
-}
-</code></pre></div><p>And:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cargo run
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">Name: freddie
-Domain: local
-Kind: _rust._tcp
-Type: rust
-Protocol: tcp
-Port: 8080
-Hostname: freddie.local
-</code></pre></div><p>That&rsquo;s all (for now).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> example <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;name=\&#34;freddie\&#34; domain=\&#34;local\&#34; kind=\&#34;_rust._tcp\&#34; port=\&#34;8080\&#34; host_name=\&#34;freddie.local\&#34;&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> filter <span style="color:#f92672">=</span> ZeroConfParser::parse(Rule::filter, example).unwrap_or_else(<span style="color:#f92672">|</span>e<span style="color:#f92672">|</span> panic!(<span style="color:#e6db74">&#34;{}&#34;</span>, e));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> terms <span style="color:#66d9ef">in</span> filter {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> term <span style="color:#66d9ef">in</span> terms.into_inner() {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">match</span> term.as_rule() {
+</span></span><span style="display:flex;"><span>                Rule::name <span style="color:#f92672">=&gt;</span> println!(<span style="color:#e6db74">&#34;Name: {}&#34;</span>, term.as_str()),
+</span></span><span style="display:flex;"><span>                Rule::kind <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                    println!(<span style="color:#e6db74">&#34;Kind: {}&#34;</span>, term.as_str());
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">for</span> i3p <span style="color:#66d9ef">in</span> term.into_inner() {
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">match</span> i3p.as_rule() {
+</span></span><span style="display:flex;"><span>                            Rule::stype <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                                println!(<span style="color:#e6db74">&#34;Type: {}&#34;</span>, i3p.as_str())
+</span></span><span style="display:flex;"><span>                            }
+</span></span><span style="display:flex;"><span>                            Rule::protocol <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                                println!(<span style="color:#e6db74">&#34;Protocol: {}&#34;</span>, i3p.as_str())
+</span></span><span style="display:flex;"><span>                            }
+</span></span><span style="display:flex;"><span>                            _ <span style="color:#f92672">=&gt;</span> unreachable!(),
+</span></span><span style="display:flex;"><span>                        }
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>                Rule::domain <span style="color:#f92672">=&gt;</span> println!(<span style="color:#e6db74">&#34;Domain: {}&#34;</span>, term.as_str()),
+</span></span><span style="display:flex;"><span>                Rule::port <span style="color:#f92672">=&gt;</span> println!(<span style="color:#e6db74">&#34;Port: {}&#34;</span>, term.as_str()),
+</span></span><span style="display:flex;"><span>                Rule::host_name <span style="color:#f92672">=&gt;</span> println!(<span style="color:#e6db74">&#34;Hostname: {}&#34;</span>, term.as_str()),
+</span></span><span style="display:flex;"><span>                _ <span style="color:#f92672">=&gt;</span> unreachable!(),
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cargo run
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>Name: freddie
+</span></span><span style="display:flex;"><span>Domain: local
+</span></span><span style="display:flex;"><span>Kind: _rust._tcp
+</span></span><span style="display:flex;"><span>Type: rust
+</span></span><span style="display:flex;"><span>Protocol: tcp
+</span></span><span style="display:flex;"><span>Port: 8080
+</span></span><span style="display:flex;"><span>Hostname: freddie.local
+</span></span></code></pre></div><p>That&rsquo;s all (for now).</p>
 <ul class="pa0">
   
    <li class="list di">

@@ -9,7 +9,7 @@
     <meta name="description" content="I&rsquo;m investigating the use of LetsEncrypt for gRPC services. I found this straightforward post by Scott Devoid and am going to try this approach.
 Before I can do that, I need to be able to publish services (make them Internet-accessible) and would like to try to continue to use GCP for free.
 Some time ago, I wrote about using the excellent Microk8s on GCP. Using an f1-micro, I&rsquo;m hoping (!) to stay within the Compute Engine free tier.">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -205,117 +205,117 @@ if (!doNotTrack) {
 <p>Before I can do that, I need to be able to publish services (make them Internet-accessible) and would like to try to continue to use GCP for <a href="https://cloud.google.com/free/">free</a>.</p>
 <p>Some time ago, I <a href="https://medium.com/google-cloud/microk8s-on-google-cloud-platform-d8b7a71a3ef">wrote</a> about using the excellent <a href="https://microk8s.io/">Microk8s</a> on GCP. Using an <code>f1-micro</code>, I&rsquo;m hoping (!) to stay within the Compute Engine free tier. I&rsquo;ll also try to be diligent and delete the instance when it&rsquo;s not needed. This gives me a runtime platform and I can expose services to the Instance&rsquo;s (Node)Ports but, I&rsquo;d prefer to not be billed for a simple proxy.</p>
 <p>It struck me that, I could potentially use Google Cloud Functions (2m calls for free/month) as an economical HTTP proxy. I found Ben Church&rsquo;s <a href="https://hackernoon.com/writing-a-reverse-proxy-in-just-one-line-with-go-c1edfa78c84b">Writing a Reverse Proxy in just one line with Go</a> and tweaked that for my simpler needs:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">proxy</span>
-
-<span style="color:#f92672">import</span> (
-	<span style="color:#e6db74">&#34;log&#34;</span>
-	<span style="color:#e6db74">&#34;net/http&#34;</span>
-	<span style="color:#e6db74">&#34;net/http/httputil&#34;</span>
-	<span style="color:#e6db74">&#34;net/url&#34;</span>
-	<span style="color:#e6db74">&#34;os&#34;</span>
-)
-
-<span style="color:#75715e">// Handler is a function that proxies incoming requests
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">Handler</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>)
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">reverseproxy</span>(<span style="color:#a6e22e">url</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">URL</span>, <span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
-	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">URL</span>.<span style="color:#a6e22e">Host</span> = <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">Host</span>
-	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">URL</span>.<span style="color:#a6e22e">Scheme</span> = <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">Scheme</span>
-	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;X-Forwarded-Host&#34;</span>, <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;Host&#34;</span>))
-	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Host</span> = <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">Host</span>
-
-	<span style="color:#a6e22e">httputil</span>.<span style="color:#a6e22e">NewSingleHostReverseProxy</span>(<span style="color:#a6e22e">url</span>).<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">r</span>)
-}
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">init</span>() {
-	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">origin</span> = <span style="color:#a6e22e">Endpoint</span>{
-		<span style="color:#a6e22e">Host</span>: <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PROXY_HOST&#34;</span>),
-		<span style="color:#a6e22e">Port</span>: <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PROXY_PORT&#34;</span>),
-	}
-	<span style="color:#a6e22e">url</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">origin</span>.<span style="color:#a6e22e">URL</span>()
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-	}
-	<span style="color:#75715e">// Once the url is determined, it&#39;s static for this proxy handler
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">Handler</span> = <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
-		<span style="color:#a6e22e">reverseproxy</span>(<span style="color:#a6e22e">url</span>, <span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">r</span>)
-	}
-}
-</code></pre></div><p>If you&rsquo;d like to test this locally, you can wrap the function in <code>main</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
-
-<span style="color:#f92672">import</span> (
-    <span style="color:#e6db74">&#34;proxy&#34;</span>
-)
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-	<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/&#34;</span>, <span style="color:#a6e22e">proxy</span>.<span style="color:#a6e22e">Handler</span>)
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ListenAndServe</span>(<span style="color:#e6db74">&#34;:80&#34;</span>, <span style="color:#66d9ef">nil</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		panic(<span style="color:#a6e22e">err</span>)
-	}
-}
-</code></pre></div><p>and then simply: <code>PROXY_HOST=[[YOUR-HOST]] PROXY_PORT=[[YOUR-PORT]] go run main.go </code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">proxy</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;net/http&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;net/http/httputil&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;net/url&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Handler is a function that proxies incoming requests
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">Handler</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">reverseproxy</span>(<span style="color:#a6e22e">url</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">URL</span>, <span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">URL</span>.<span style="color:#a6e22e">Host</span> = <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">Host</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">URL</span>.<span style="color:#a6e22e">Scheme</span> = <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">Scheme</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;X-Forwarded-Host&#34;</span>, <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;Host&#34;</span>))
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Host</span> = <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">Host</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">httputil</span>.<span style="color:#a6e22e">NewSingleHostReverseProxy</span>(<span style="color:#a6e22e">url</span>).<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">r</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">init</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">origin</span> = <span style="color:#a6e22e">Endpoint</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Host</span>: <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PROXY_HOST&#34;</span>),
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Port</span>: <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PROXY_PORT&#34;</span>),
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">url</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">origin</span>.<span style="color:#a6e22e">URL</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Once the url is determined, it&#39;s static for this proxy handler
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">Handler</span> = <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">reverseproxy</span>(<span style="color:#a6e22e">url</span>, <span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">r</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>If you&rsquo;d like to test this locally, you can wrap the function in <code>main</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;proxy&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/&#34;</span>, <span style="color:#a6e22e">proxy</span>.<span style="color:#a6e22e">Handler</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ListenAndServe</span>(<span style="color:#e6db74">&#34;:80&#34;</span>, <span style="color:#66d9ef">nil</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		panic(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>and then simply: <code>PROXY_HOST=[[YOUR-HOST]] PROXY_PORT=[[YOUR-PORT]] go run main.go </code></p>
 <p>If you&rsquo;re using Microk8s as described in my post, there are additional steps for private and public testing.</p>
 <p>For private testing, we can use <code>gcloud</code> SSH port-forwarding to forward requests from a local port to the Microk8s instance. In order to do this, we must first determine the NodePort of our service:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NODEPORT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  gcloud compute ssh <span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --zone<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ZONE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --command<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/snap/bin/microk8s.kubectl get service/nginx --output=jsonpath=&#39;{.spec.ports[0].nodePort}&#39;&#34;</span><span style="color:#66d9ef">)</span>
-
-gcloud compute ssh <span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--zone<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ZONE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--ssh-flag<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;-L </span><span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span><span style="color:#e6db74">:localhost:</span><span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-</code></pre></div><p><strong>NB</strong> In the above, I&rsquo;m assuming your Kubernetes service is called <code>nginx</code> and that the service has only one port definition.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NODEPORT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud compute ssh <span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --zone<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ZONE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --command<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/snap/bin/microk8s.kubectl get service/nginx --output=jsonpath=&#39;{.spec.ports[0].nodePort}&#39;&#34;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud compute ssh <span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--zone<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ZONE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--ssh-flag<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;-L </span><span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span><span style="color:#e6db74">:localhost:</span><span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span></code></pre></div><p><strong>NB</strong> In the above, I&rsquo;m assuming your Kubernetes service is called <code>nginx</code> and that the service has only one port definition.</p>
 <p>One the port-forwarding is running, switch to another terminal and then:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROXY_HOST<span style="color:#f92672">=</span>localhost PROXY_PORT<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span> go run main.go
-</code></pre></div><p>You should then able to <code>curl localhost:80</code> to access the Nginx (or other) service running remotely on Microk8s.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROXY_HOST<span style="color:#f92672">=</span>localhost PROXY_PORT<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span> go run main.go
+</span></span></code></pre></div><p>You should then able to <code>curl localhost:80</code> to access the Nginx (or other) service running remotely on Microk8s.</p>
 <p>The next step is to then expose the Microk8s service to the Internet. Only proceed with the following steps if you&rsquo;re confident in what you&rsquo;re doing and aware that this may incur GCP costs.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FIREWALL<span style="color:#f92672">=</span>lb
-gcloud compute firewall-rules create <span style="color:#e6db74">${</span>FIREWALL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>  <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--network<span style="color:#f92672">=</span>default <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--action<span style="color:#f92672">=</span>ALLOW <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--rules<span style="color:#f92672">=</span>tcp:<span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--target-tags<span style="color:#f92672">=</span>microk8s
-</code></pre></div><p><strong>NB</strong> The tag <code>microk8s</code> was assigned to the instance when it was created. This permits us to focus the firewall rule.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>FIREWALL<span style="color:#f92672">=</span>lb
+</span></span><span style="display:flex;"><span>gcloud compute firewall-rules create <span style="color:#e6db74">${</span>FIREWALL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>  <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--network<span style="color:#f92672">=</span>default <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--action<span style="color:#f92672">=</span>ALLOW <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rules<span style="color:#f92672">=</span>tcp:<span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--target-tags<span style="color:#f92672">=</span>microk8s
+</span></span></code></pre></div><p><strong>NB</strong> The tag <code>microk8s</code> was assigned to the instance when it was created. This permits us to focus the firewall rule.</p>
 <p>Lastly, we need the instance&rsquo;s external IP address, either:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NODEHOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  gcloud compute instances describe <span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --zone<span style="color:#f92672">=</span>$ZONE <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span>$PROJECT <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(networkInterfaces[0].accessConfigs[0].natIP)&#34;</span><span style="color:#66d9ef">)</span>
-NODEHOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  gcloud compute instances describe <span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --zone<span style="color:#f92672">=</span>$ZONE <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span>$PROJECT <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;json&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  | jq --raw-output .networkInterfaces<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.accessConfigs<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.natIP<span style="color:#66d9ef">)</span>
-</code></pre></div><p>And, now we can test the proxy locally using the remote service:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROXY_HOST<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NODEHOST<span style="color:#e6db74">}</span> PROXY_PORT<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span> go run main.go
-</code></pre></div><p>And, when we&rsquo;re confident with that, we can &ndash; if necessary &ndash; enable Cloud Functions:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud services enable cloudfunctions.googleapis.com --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-</code></pre></div><p>And then deploy the proxy:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FUNCTION<span style="color:#f92672">=</span>proxy
-gcloud functions deploy <span style="color:#e6db74">${</span>FUNCTION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--entry-point<span style="color:#f92672">=</span>Handler <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--runtime<span style="color:#f92672">=</span>go111 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--set-env-vars<span style="color:#f92672">=</span>PROXY_HOST<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NODEHOST<span style="color:#e6db74">}</span>,PROXY_PORT<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--trigger-http <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-</code></pre></div><p>And, to confirm it&rsquo;s working correctly, curl the Functions' endpoint:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  gcloud functions describe <span style="color:#e6db74">${</span>FUNCTION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span>$PROJECT <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(httpsTrigger.url)&#34;</span><span style="color:#66d9ef">)</span>
-</code></pre></div><h2 id="tidy">Tidy</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud functions delete <span style="color:#e6db74">${</span>FUNCTION<span style="color:#e6db74">}</span> --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
-gcloud compute firewall-rules delete <span style="color:#e6db74">${</span>FIREWALL<span style="color:#e6db74">}</span> --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
-gcloud compute instances delete <span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span> --zone<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ZONE<span style="color:#e6db74">}</span> --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
-</code></pre></div><p>Or, more emphatically:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud projects delete <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
-</code></pre></div><h2 id="conclusion">Conclusion</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NODEHOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud compute instances describe <span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --zone<span style="color:#f92672">=</span>$ZONE <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span>$PROJECT <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(networkInterfaces[0].accessConfigs[0].natIP)&#34;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>NODEHOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud compute instances describe <span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --zone<span style="color:#f92672">=</span>$ZONE <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span>$PROJECT <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | jq --raw-output .networkInterfaces<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.accessConfigs<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.natIP<span style="color:#66d9ef">)</span>
+</span></span></code></pre></div><p>And, now we can test the proxy locally using the remote service:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROXY_HOST<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NODEHOST<span style="color:#e6db74">}</span> PROXY_PORT<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span> go run main.go
+</span></span></code></pre></div><p>And, when we&rsquo;re confident with that, we can &ndash; if necessary &ndash; enable Cloud Functions:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud services enable cloudfunctions.googleapis.com --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>And then deploy the proxy:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>FUNCTION<span style="color:#f92672">=</span>proxy
+</span></span><span style="display:flex;"><span>gcloud functions deploy <span style="color:#e6db74">${</span>FUNCTION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--entry-point<span style="color:#f92672">=</span>Handler <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--runtime<span style="color:#f92672">=</span>go111 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--set-env-vars<span style="color:#f92672">=</span>PROXY_HOST<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NODEHOST<span style="color:#e6db74">}</span>,PROXY_PORT<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--trigger-http <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>And, to confirm it&rsquo;s working correctly, curl the Functions&rsquo; endpoint:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud functions describe <span style="color:#e6db74">${</span>FUNCTION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span>$PROJECT <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(httpsTrigger.url)&#34;</span><span style="color:#66d9ef">)</span>
+</span></span></code></pre></div><h2 id="tidy">Tidy</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud functions delete <span style="color:#e6db74">${</span>FUNCTION<span style="color:#e6db74">}</span> --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
+</span></span><span style="display:flex;"><span>gcloud compute firewall-rules delete <span style="color:#e6db74">${</span>FIREWALL<span style="color:#e6db74">}</span> --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
+</span></span><span style="display:flex;"><span>gcloud compute instances delete <span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span> --zone<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ZONE<span style="color:#e6db74">}</span> --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
+</span></span></code></pre></div><p>Or, more emphatically:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud projects delete <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
+</span></span></code></pre></div><h2 id="conclusion">Conclusion</h2>
 <p>There&rsquo;s likely no better option than Google&rsquo;s own <a href="https://cloud.google.com/load-balancing/docs/https/">HTTP/S Load-Balancer</a> or even just Google&rsquo;s <a href="https://cloud.google.com/load-balancing/docs/tcp">TCP Load-Balancer</a>. But, if you&rsquo;re trying to save money, it doesn&rsquo;t get much cheaper than 2m calls/month w/ a Cloud Functions proxy.</p>
 <p>One oversight is that, because Cloud Functions automatically serves over TLS (HTTPS), it&rsquo;s not possible to use this mechanism to expose a service cheaply, in order to get LetsEncrypt to generate a certificate for it.</p>
 <p>Back to the drawing board.</p>

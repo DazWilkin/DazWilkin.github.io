@@ -7,7 +7,7 @@
     <title>Using Golang with the Firestore Emulator | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Using Golang with the Firestore Emulator">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -196,154 +196,154 @@ if (!doNotTrack) {
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p><img src="/images/210317.firebase.firestore.docs.png" alt="Firestore"></p>
 <p>This works great but it wasn&rsquo;t clearly documented for non-Firebase users. I assume it will work, as well, for any of the client libraries (not just Golang).</p>
 <p>Assuming you have some (Golang) code (in this case using the Google Cloud Client Library) that interacts with a Firestore database. Something of the form:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
-
-<span style="color:#f92672">import</span> (
-  <span style="color:#e6db74">&#34;context&#34;</span>
-  <span style="color:#e6db74">&#34;crypto/sha256&#34;</span>
-  <span style="color:#e6db74">&#34;fmt&#34;</span>
-  <span style="color:#e6db74">&#34;log&#34;</span>
-  <span style="color:#e6db74">&#34;os&#34;</span>
-  <span style="color:#e6db74">&#34;time&#34;</span>
-
-  <span style="color:#e6db74">&#34;cloud.google.com/go/firestore&#34;</span>
-)
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">hash</span>(<span style="color:#a6e22e">s</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">string</span> {
-  <span style="color:#a6e22e">h</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sha256</span>.<span style="color:#a6e22e">New</span>()
-  <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Write</span>([]byte(<span style="color:#a6e22e">s</span>))
-  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%x&#34;</span>, <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Sum</span>(<span style="color:#66d9ef">nil</span>))
-}
-
-<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Dog</span> <span style="color:#66d9ef">struct</span> {
-  <span style="color:#a6e22e">Name</span>    <span style="color:#66d9ef">string</span>                 <span style="color:#e6db74">`firestore:&#34;name&#34;`</span>
-  <span style="color:#a6e22e">Age</span>     <span style="color:#66d9ef">int</span>                    <span style="color:#e6db74">`firestore:&#34;age&#34;`</span>
-  <span style="color:#a6e22e">Human</span>   <span style="color:#f92672">*</span><span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">DocumentRef</span> <span style="color:#e6db74">`firestore:&#34;human&#34;`</span>
-  <span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>              <span style="color:#e6db74">`firestore:&#34;created&#34;`</span>
-}
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewDog</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">age</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">human</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">DocumentRef</span>) <span style="color:#a6e22e">Dog</span> {
-  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Dog</span>{
-    <span style="color:#a6e22e">Name</span>:    <span style="color:#a6e22e">name</span>,
-    <span style="color:#a6e22e">Age</span>:     <span style="color:#a6e22e">age</span>,
-    <span style="color:#a6e22e">Human</span>:   <span style="color:#a6e22e">human</span>,
-    <span style="color:#a6e22e">Created</span>: <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>(),
-  }
-}
-
-<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">d</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Dog</span>) <span style="color:#a6e22e">ID</span>() <span style="color:#66d9ef">string</span> {
-  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">hash</span>(<span style="color:#a6e22e">d</span>.<span style="color:#a6e22e">Name</span>)
-}
-
-<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Human</span> <span style="color:#66d9ef">struct</span> {
-  <span style="color:#a6e22e">Name</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`firestore:&#34;name&#34;`</span>
-}
-
-<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Human</span>) <span style="color:#a6e22e">ID</span>() <span style="color:#66d9ef">string</span> {
-  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">hash</span>(<span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Name</span>)
-}
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-  <span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
-  <span style="color:#a6e22e">project</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PROJECT&#34;</span>)
-
-  <span style="color:#a6e22e">client</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">NewClient</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">project</span>)
-
-  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">value</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;FIRESTORE_EMULATOR_HOST&#34;</span>); <span style="color:#a6e22e">value</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;&#34;</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Using Firestore Emulator: %s&#34;</span>, <span style="color:#a6e22e">value</span>)
-  }
-
-  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-  }
-  <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Close</span>()
-
-  <span style="color:#a6e22e">me</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Human</span>{
-    <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;me&#34;</span>,
-  }
-  <span style="color:#a6e22e">meDocRef</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;humans&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#a6e22e">me</span>.<span style="color:#a6e22e">ID</span>())
-  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">meDocRef</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">me</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-  }
-
-  <span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewDog</span>(<span style="color:#e6db74">&#34;Freddie&#34;</span>, <span style="color:#ae81ff">2</span>, <span style="color:#a6e22e">meDocRef</span>)
-  <span style="color:#a6e22e">freddieDocRef</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;dogs&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">ID</span>())
-  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">freddieDocRef</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-  }
-}
-</code></pre></div><p>Then you can interact instead with the Firestore Emulator.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;crypto/sha256&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;cloud.google.com/go/firestore&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">hash</span>(<span style="color:#a6e22e">s</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">string</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">h</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sha256</span>.<span style="color:#a6e22e">New</span>()
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Write</span>([]byte(<span style="color:#a6e22e">s</span>))
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%x&#34;</span>, <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Sum</span>(<span style="color:#66d9ef">nil</span>))
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Dog</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Name</span>    <span style="color:#66d9ef">string</span>                 <span style="color:#e6db74">`firestore:&#34;name&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Age</span>     <span style="color:#66d9ef">int</span>                    <span style="color:#e6db74">`firestore:&#34;age&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Human</span>   <span style="color:#f92672">*</span><span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">DocumentRef</span> <span style="color:#e6db74">`firestore:&#34;human&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>              <span style="color:#e6db74">`firestore:&#34;created&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewDog</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">age</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">human</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">DocumentRef</span>) <span style="color:#a6e22e">Dog</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Dog</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Name</span>:    <span style="color:#a6e22e">name</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Age</span>:     <span style="color:#a6e22e">age</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Human</span>:   <span style="color:#a6e22e">human</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Created</span>: <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>(),
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">d</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Dog</span>) <span style="color:#a6e22e">ID</span>() <span style="color:#66d9ef">string</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">hash</span>(<span style="color:#a6e22e">d</span>.<span style="color:#a6e22e">Name</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Human</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Name</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`firestore:&#34;name&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Human</span>) <span style="color:#a6e22e">ID</span>() <span style="color:#66d9ef">string</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">hash</span>(<span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Name</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">project</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PROJECT&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">client</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">NewClient</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">project</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">value</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;FIRESTORE_EMULATOR_HOST&#34;</span>); <span style="color:#a6e22e">value</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;&#34;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Using Firestore Emulator: %s&#34;</span>, <span style="color:#a6e22e">value</span>)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">me</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Human</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;me&#34;</span>,
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">meDocRef</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;humans&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#a6e22e">me</span>.<span style="color:#a6e22e">ID</span>())
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">meDocRef</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">me</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewDog</span>(<span style="color:#e6db74">&#34;Freddie&#34;</span>, <span style="color:#ae81ff">2</span>, <span style="color:#a6e22e">meDocRef</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">freddieDocRef</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;dogs&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">ID</span>())
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">freddieDocRef</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Then you can interact instead with the Firestore Emulator.</p>
 <p>First, create a firebase project. To save installing Node, NPM and a Java runtime, I chose to use Google&rsquo;s Cloud Shell. In the following command, we&rsquo;re configuring Cloud Shell to port-forward (from Cloud Shell to our host) ports <code>8080</code> and <code>4000</code> (to the same local ports). <code>8080</code> is the port on which the Firestore emulator will expose the database and <code>4000</code> is the port on which the UI will be exposed.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud alpha cloud-shell ssh <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--ssh-flag<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;-L 8080:localhost:8080&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--ssh-flag<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;-L 4000:localhost:4000&#34;</span>
-</code></pre></div><p>Then create a <code>test</code> directory and run <code>firebase init</code> from it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">mkdir ./test
-cd ./test
-firebase init
-</code></pre></div><p>Choose <code>Emulators</code> by cursoring down and hitting the spacebar to select:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">? Which Firebase CLI features do you want to set up for this folder?
- ◯ Database: Configure Firebase Realtime Database and deploy rules
- ◯ Firestore: Deploy rules and create indexes for Firestore
- ◯ Functions: Configure and deploy Cloud Functions
- ◯ Hosting: Configure and deploy Firebase Hosting sites
- ◯ Storage: Deploy Cloud Storage security rules
-❯◉ Emulators: Set up local emulators for Firebase features
- ◯ Remote Config: Get, deploy, and rollback configurations for Remote Config
-</code></pre></div><p>Hit enter, then <code>Add Firebase to an existing Google Cloud Platform project</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">? Please select an option: 
-  Use an existing project 
-  Create a new project 
-❯ Add Firebase to an existing Google Cloud Platform project 
-  Don&#39;t set up a default project 
-</code></pre></div><p>Choose your project from the list that the command provides.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud alpha cloud-shell ssh <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--ssh-flag<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;-L 8080:localhost:8080&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--ssh-flag<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;-L 4000:localhost:4000&#34;</span>
+</span></span></code></pre></div><p>Then create a <code>test</code> directory and run <code>firebase init</code> from it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mkdir ./test
+</span></span><span style="display:flex;"><span>cd ./test
+</span></span><span style="display:flex;"><span>firebase init
+</span></span></code></pre></div><p>Choose <code>Emulators</code> by cursoring down and hitting the spacebar to select:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>? Which Firebase CLI features do you want to set up for this folder?
+</span></span><span style="display:flex;"><span> ◯ Database: Configure Firebase Realtime Database and deploy rules
+</span></span><span style="display:flex;"><span> ◯ Firestore: Deploy rules and create indexes for Firestore
+</span></span><span style="display:flex;"><span> ◯ Functions: Configure and deploy Cloud Functions
+</span></span><span style="display:flex;"><span> ◯ Hosting: Configure and deploy Firebase Hosting sites
+</span></span><span style="display:flex;"><span> ◯ Storage: Deploy Cloud Storage security rules
+</span></span><span style="display:flex;"><span>❯◉ Emulators: Set up local emulators for Firebase features
+</span></span><span style="display:flex;"><span> ◯ Remote Config: Get, deploy, and rollback configurations for Remote Config
+</span></span></code></pre></div><p>Hit enter, then <code>Add Firebase to an existing Google Cloud Platform project</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>? Please select an option: 
+</span></span><span style="display:flex;"><span>  Use an existing project 
+</span></span><span style="display:flex;"><span>  Create a new project 
+</span></span><span style="display:flex;"><span>❯ Add Firebase to an existing Google Cloud Platform project 
+</span></span><span style="display:flex;"><span>  Don&#39;t set up a default project 
+</span></span></code></pre></div><p>Choose your project from the list that the command provides.</p>
 <p>You will then be prompted <code>Which Firebase emulators...?</code>. Be careful to select <code>Firestore Emulator</code> and not <code>Database Emulator</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">=== Emulators Setup
-? Which Firebase emulators do you want to set up?
- ◯ Authentication Emulator
- ◯ Functions Emulator
-❯◉ Firestore Emulator
- ◯ Database Emulator
- ◯ Hosting Emulator
- ◯ Pub/Sub Emulator
-</code></pre></div><p>Complete the remaining questions as shown below. I&rsquo;m assuming hereafter that you left the emulator port at the default (<code>8080</code>) and, that you proposed <code>4000</code> for the Emulator UI. If you want to use different ports, you&rsquo;ll need to ensure that these are matched by the <code>gcloud alpha cloud-shell ssh</code> command&rsquo;s <code>--ssh-flag</code> flags:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">=== Emulators Setup
-? Which port do you want to use for the firestore emulator? 8080
-? Would you like to enable the Emulator UI? Yes
-? Which port do you want to use for the Emulator UI? 4000
-? Would you like to download the emulators now? Yes
-</code></pre></div><p>You should receive <code>Firebase initialization complete</code> and can <code>more firebase.json</code> to receive:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON"><span style="color:#960050;background-color:#1e0010">more</span> <span style="color:#960050;background-color:#1e0010">firebase.json</span> 
-{
-  <span style="color:#f92672">&#34;emulators&#34;</span>: {
-    <span style="color:#f92672">&#34;firestore&#34;</span>: {
-      <span style="color:#f92672">&#34;port&#34;</span>: <span style="color:#ae81ff">8080</span>
-    },
-    <span style="color:#f92672">&#34;ui&#34;</span>: {
-      <span style="color:#f92672">&#34;enabled&#34;</span>: <span style="color:#66d9ef">true</span>,
-      <span style="color:#f92672">&#34;port&#34;</span>: <span style="color:#ae81ff">4000</span>
-    }
-  }
-}
-</code></pre></div><p>All being well, you can now type <code>firebase emulators:start</code> and you should see:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">firebase emulators:start
-i  emulators: Starting emulators: firestore
-i  firestore: Firestore Emulator logging to firestore-debug.log
-i  ui: Emulator UI logging to ui-debug.log
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>┌─────────────────────────────────────────────────────────────┐
-│ ✔  All emulators ready! It is now safe to connect your app. │
-│ i  View Emulator UI at http://localhost:4000                │
-└─────────────────────────────────────────────────────────────┘
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>┌───────────┬────────────────┬─────────────────────────────────┐
-│ Emulator  │ Host:Port      │ View in Emulator UI             │
-├───────────┼────────────────┼─────────────────────────────────┤
-│ Firestore │ localhost:8080 │ http://localhost:4000/firestore │
-└───────────┴────────────────┴─────────────────────────────────┘
-  Emulator Hub running at localhost:4400
-  Other reserved ports: 4500
-</code></pre></div><p>Now, from your localhost (!):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>=== Emulators Setup
+</span></span><span style="display:flex;"><span>? Which Firebase emulators do you want to set up?
+</span></span><span style="display:flex;"><span> ◯ Authentication Emulator
+</span></span><span style="display:flex;"><span> ◯ Functions Emulator
+</span></span><span style="display:flex;"><span>❯◉ Firestore Emulator
+</span></span><span style="display:flex;"><span> ◯ Database Emulator
+</span></span><span style="display:flex;"><span> ◯ Hosting Emulator
+</span></span><span style="display:flex;"><span> ◯ Pub/Sub Emulator
+</span></span></code></pre></div><p>Complete the remaining questions as shown below. I&rsquo;m assuming hereafter that you left the emulator port at the default (<code>8080</code>) and, that you proposed <code>4000</code> for the Emulator UI. If you want to use different ports, you&rsquo;ll need to ensure that these are matched by the <code>gcloud alpha cloud-shell ssh</code> command&rsquo;s <code>--ssh-flag</code> flags:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>=== Emulators Setup
+</span></span><span style="display:flex;"><span>? Which port do you want to use for the firestore emulator? 8080
+</span></span><span style="display:flex;"><span>? Would you like to enable the Emulator UI? Yes
+</span></span><span style="display:flex;"><span>? Which port do you want to use for the Emulator UI? 4000
+</span></span><span style="display:flex;"><span>? Would you like to download the emulators now? Yes
+</span></span></code></pre></div><p>You should receive <code>Firebase initialization complete</code> and can <code>more firebase.json</code> to receive:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">more</span> <span style="color:#960050;background-color:#1e0010">firebase.json</span> 
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;emulators&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;firestore&#34;</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;port&#34;</span>: <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;ui&#34;</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;enabled&#34;</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;port&#34;</span>: <span style="color:#ae81ff">4000</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>All being well, you can now type <code>firebase emulators:start</code> and you should see:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>firebase emulators:start
+</span></span><span style="display:flex;"><span>i  emulators: Starting emulators: firestore
+</span></span><span style="display:flex;"><span>i  firestore: Firestore Emulator logging to firestore-debug.log
+</span></span><span style="display:flex;"><span>i  ui: Emulator UI logging to ui-debug.log
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>┌─────────────────────────────────────────────────────────────┐
+</span></span><span style="display:flex;"><span>│ ✔  All emulators ready! It is now safe to connect your app. │
+</span></span><span style="display:flex;"><span>│ i  View Emulator UI at http://localhost:4000                │
+</span></span><span style="display:flex;"><span>└─────────────────────────────────────────────────────────────┘
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>┌───────────┬────────────────┬─────────────────────────────────┐
+</span></span><span style="display:flex;"><span>│ Emulator  │ Host:Port      │ View in Emulator UI             │
+</span></span><span style="display:flex;"><span>├───────────┼────────────────┼─────────────────────────────────┤
+</span></span><span style="display:flex;"><span>│ Firestore │ localhost:8080 │ http://localhost:4000/firestore │
+</span></span><span style="display:flex;"><span>└───────────┴────────────────┴─────────────────────────────────┘
+</span></span><span style="display:flex;"><span>  Emulator Hub running at localhost:4400
+</span></span><span style="display:flex;"><span>  Other reserved ports: 4500
+</span></span></code></pre></div><p>Now, from your localhost (!):</p>
 <p>You should be able to browse the Firebase Emulator UI via <a href="http://localhost:4000"><code>http://localhost:4000</code></a></p>
 <p><img src="/images/210317.firebase.emulator.png" alt="Firebase Emulator"></p>
 <blockquote>
@@ -355,11 +355,11 @@ i  ui: Emulator UI logging to ui-debug.log
 <p><strong>NOTE</strong> We&rsquo;ve not yet added any documents, so this will be empty.</p>
 </blockquote>
 <p>Then:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">export FIRESTORE_EMULATOR_HOST<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;localhost:8080&#34;</span>
-export PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[[YOUR-PROJECT]]&#34;</span>
-
-go run .
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>export FIRESTORE_EMULATOR_HOST<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;localhost:8080&#34;</span>
+</span></span><span style="display:flex;"><span>export PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[[YOUR-PROJECT]]&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>go run .
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The value of <code>${PROJECT}</code> must match your Google Cloud Platform Project ID; it will <strong>not</strong> work if you use  an arbitrary value like <code>test</code>.</p>
 </blockquote>
 <blockquote>

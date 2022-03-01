@@ -7,7 +7,7 @@
     <title>GitHub Actions &amp;&amp; GitHub Container Registry | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Creating Container Images using GitHub Actions &amp; GitHub Container Registry">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -204,36 +204,36 @@ if (!doNotTrack) {
 <p><a href="https://github.com/$%7BUSER%7D/$%7BREPO%7D/settings/secrets">https://github.com/${USER}/${REPO}/settings/secrets</a></p>
 <p>Because this secret provides access to GitHub Container Registry, I called the secret <code>GHCR</code></p>
 <p>Then you need to create the <a href="https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstepsenv">GitHub Actions YAML</a> file. In my case, I want to build a container image. It took me some time to get the following to work but <a href="https://github.com/docker/build-push-action/issues/100#issuecomment-715352826">this</a> answer is very helpful. Importantly, this adds a step <code>docker/setup-buildx-action@v1</code> before <code>docker/login-action@v1</code> that permits the workflow to complete.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">name</span>: <span style="color:#ae81ff">containers-builder</span>
-<span style="color:#f92672">on</span>:
-  <span style="color:#f92672">push</span>:
-    <span style="color:#f92672">branches</span>:
-    - <span style="color:#ae81ff">master</span>
-<span style="color:#f92672">jobs</span>:
-  <span style="color:#f92672">devices</span>:
-    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">devices</span>
-    <span style="color:#f92672">runs-on</span>: <span style="color:#ae81ff">ubuntu-20.04</span>
-    <span style="color:#f92672">env</span>:
-      <span style="color:#f92672">REPO</span>: <span style="color:#ae81ff">dazwilkin/akri-http-devices</span>
-    <span style="color:#f92672">steps</span>:
-      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">checkout</span>
-        <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">actions/checkout@v2</span>
-      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">setup</span>
-        <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">docker/setup-buildx-action@v1</span>
-      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">login</span>
-        <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">docker/login-action@v1</span>
-        <span style="color:#f92672">with</span>:
-          <span style="color:#f92672">registry</span>: <span style="color:#ae81ff">ghcr.io</span>
-          <span style="color:#f92672">username</span>: <span style="color:#ae81ff">${{ github.repository_owner }}</span>
-          <span style="color:#f92672">password</span>: <span style="color:#ae81ff">${{ secrets.GHCR }}</span>
-      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">build-push</span>
-        <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">docker/build-push-action@v2</span>
-        <span style="color:#f92672">with</span>:
-          <span style="color:#f92672">context</span>: <span style="color:#ae81ff">.</span>
-          <span style="color:#f92672">file</span>: <span style="color:#ae81ff">./deployment/Dockerfile.devices</span>
-          <span style="color:#f92672">tags</span>: <span style="color:#ae81ff">ghcr.io/${{ env.REPO }}:${{ github.sha }}</span>
-          <span style="color:#f92672">push</span>: <span style="color:#66d9ef">true</span>
-</code></pre></div><p>My GitHub username includes uppercase characters that aren&rsquo;t permitted in container image names.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">name</span>: <span style="color:#ae81ff">containers-builder</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">on</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">push</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">branches</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">master</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">jobs</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">devices</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">devices</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">runs-on</span>: <span style="color:#ae81ff">ubuntu-20.04</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">REPO</span>: <span style="color:#ae81ff">dazwilkin/akri-http-devices</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">steps</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">checkout</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">actions/checkout@v2</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">setup</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">docker/setup-buildx-action@v1</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">login</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">docker/login-action@v1</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">with</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">registry</span>: <span style="color:#ae81ff">ghcr.io</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">username</span>: <span style="color:#ae81ff">${{ github.repository_owner }}</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">password</span>: <span style="color:#ae81ff">${{ secrets.GHCR }}</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">build-push</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">docker/build-push-action@v2</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">with</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">context</span>: <span style="color:#ae81ff">.</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">file</span>: <span style="color:#ae81ff">./deployment/Dockerfile.devices</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">tags</span>: <span style="color:#ae81ff">ghcr.io/${{ env.REPO }}:${{ github.sha }}</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">push</span>: <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><p>My GitHub username includes uppercase characters that aren&rsquo;t permitted in container image names.</p>
 <p>If my GitHub username were all lowercase, I could have used <code>tags: ghcr.io/${{ github.repository }}-devices:${{ github.sha }}</code>.</p>
 <blockquote>
 <p><strong>NOTE</strong> <code>${{ github.repository_owner }}</code> would be <code>DazWilkin</code> for me and <code>${{ github.repository }}</code> would be <code>DazWilkin/akri-http</code>.</p>
@@ -247,33 +247,33 @@ if (!doNotTrack) {
 </ol>
 <p>There are some post-workflow steps that the service runs too.</p>
 <p>I needed to ensure the file <code>./deployment/Dockerfiles.devices</code> existed as this describes the image build to the workflow:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Dockerfile" data-lang="Dockerfile"><span style="color:#66d9ef">FROM</span><span style="color:#e6db74"> golang:1.15 as build</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ARG</span> PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri-http&#34;</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ARG</span> MODULE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;github.com/DazWilkin/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">WORKDIR</span><span style="color:#e6db74"> /${PROJECT}</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> go.mod .<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> go mod download<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> . .<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> GOOS<span style="color:#f92672">=</span>linux <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    go build -a -installsuffix cgo <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    -o /bin/devices <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    <span style="color:#e6db74">${</span>MODULE<span style="color:#e6db74">}</span>/cmd/devices<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">FROM</span><span style="color:#e6db74"> gcr.io/distroless/base-debian10</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> --from<span style="color:#f92672">=</span>build /bin/devices /<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">USER</span><span style="color:#e6db74"> 999</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ENTRYPOINT</span> [<span style="color:#e6db74">&#34;/devices&#34;</span>]<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">CMD</span> [<span style="color:#e6db74">&#34;--discovery_port=9999&#34;</span>,<span style="color:#e6db74">&#34;--starting_port=8000&#34;</span>,<span style="color:#e6db74">&#34;--num_devices=10&#34;</span>]<span style="color:#960050;background-color:#1e0010">
-</span></code></pre></div><p>Then, I could commit the workflow to my repo, triggering the workflow.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Dockerfile" data-lang="Dockerfile"><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span><span style="color:#e6db74"> golang:1.15 as build</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ARG</span> PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri-http&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ARG</span> MODULE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;github.com/DazWilkin/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">WORKDIR</span><span style="color:#e6db74"> /${PROJECT}</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> go.mod .<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> go mod download<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> . .<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> GOOS<span style="color:#f92672">=</span>linux <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    go build -a -installsuffix cgo <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    -o /bin/devices <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    <span style="color:#e6db74">${</span>MODULE<span style="color:#e6db74">}</span>/cmd/devices<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">FROM</span><span style="color:#e6db74"> gcr.io/distroless/base-debian10</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> --from<span style="color:#f92672">=</span>build /bin/devices /<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">USER</span><span style="color:#e6db74"> 999</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ENTRYPOINT</span> [<span style="color:#e6db74">&#34;/devices&#34;</span>]<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">CMD</span> [<span style="color:#e6db74">&#34;--discovery_port=9999&#34;</span>,<span style="color:#e6db74">&#34;--starting_port=8000&#34;</span>,<span style="color:#e6db74">&#34;--num_devices=10&#34;</span>]<span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><p>Then, I could commit the workflow to my repo, triggering the workflow.</p>
 <p>Workflow are located in a <code>.github/workflows</code> folder and can be descriptively named, in my case <code>containers-devices.yaml</code></p>
 <p>I can&rsquo;t tell you that this was the first attempt in getting this to work but, here are the results.</p>
 <p>Here&rsquo;s what shows on the &ldquo;Actions&rdquo; tab of my GitHub account after running the workflow:</p>

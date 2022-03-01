@@ -7,7 +7,7 @@
     <title>waPC and MsgPack (Rust|Golang) | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="A walk-through waPC and Message Pack aka MsgPack">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -201,90 +201,90 @@ if (!doNotTrack) {
 <h2 id="rust-wapc-guest">Rust waPC guest</h2>
 <p>I&rsquo;m still way back up the learning path on Rust. Feedback is always welcome.</p>
 <p>Cargo.toml:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-toml" data-lang="toml">[<span style="color:#a6e22e">dependencies</span>]
-<span style="color:#a6e22e">num-complex</span> = { <span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;&gt;=0.0.0&#34;</span>, <span style="color:#a6e22e">features</span> = [<span style="color:#e6db74">&#34;serde&#34;</span>] }
-<span style="color:#a6e22e">rmp</span> = <span style="color:#e6db74">&#34;&gt;0.0.0&#34;</span>
-<span style="color:#a6e22e">rmp-serde</span> = <span style="color:#e6db74">&#34;&gt;0.0.0&#34;</span>
-<span style="color:#a6e22e">serde</span> = { <span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;&gt;0.0.0&#34;</span>, <span style="color:#a6e22e">features</span> = [<span style="color:#e6db74">&#34;derive&#34;</span>] }
-<span style="color:#a6e22e">wapc-guest</span> = <span style="color:#e6db74">&#34;&gt;=0.0.0&#34;</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">dependencies</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">num-complex</span> = { <span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;&gt;=0.0.0&#34;</span>, <span style="color:#a6e22e">features</span> = [<span style="color:#e6db74">&#34;serde&#34;</span>] }
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rmp</span> = <span style="color:#e6db74">&#34;&gt;0.0.0&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rmp-serde</span> = <span style="color:#e6db74">&#34;&gt;0.0.0&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">serde</span> = { <span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;&gt;0.0.0&#34;</span>, <span style="color:#a6e22e">features</span> = [<span style="color:#e6db74">&#34;derive&#34;</span>] }
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">wapc-guest</span> = <span style="color:#e6db74">&#34;&gt;=0.0.0&#34;</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> Is it bad form to always grab the latest crate versions?</p>
 </blockquote>
 <p>Following the waPC &lsquo;convention&rsquo;, <code>lib.rs</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">mod</span> complex;
-
-<span style="color:#75715e">#[macro_use]</span>
-<span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">crate</span> serde_derive;
-
-<span style="color:#66d9ef">use</span> wapc_guest::prelude::<span style="color:#f92672">*</span>;
-
-wapc_handler<span style="color:#f92672">!</span>(handle_wapc);
-
-<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">handle_wapc</span>(operation: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
-    <span style="color:#66d9ef">match</span> operation {
-        <span style="color:#e6db74">&#34;add&#34;</span> <span style="color:#f92672">=&gt;</span> complex::export::add(msg),
-        <span style="color:#e6db74">&#34;sub&#34;</span> <span style="color:#f92672">=&gt;</span> complex::export::sub(msg),
-        <span style="color:#e6db74">&#34;mul&#34;</span> <span style="color:#f92672">=&gt;</span> complex::export::mul(msg),
-        <span style="color:#e6db74">&#34;div&#34;</span> <span style="color:#f92672">=&gt;</span> complex::export::div(msg),
-        e <span style="color:#f92672">=&gt;</span> Err((String::from(<span style="color:#e6db74">&#34;dispatch error: &#34;</span>) <span style="color:#f92672">+</span> <span style="color:#f92672">&amp;</span>String::from(e)).into()),
-    }
-}
-</code></pre></div><p>And then: <code>export.rs</code>, e.g.:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span> rmp_serde::{decode, encode};
-
-<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">add</span>(msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
-    <span style="color:#66d9ef">let</span> rqst: <span style="color:#a6e22e">ComplexRequest</span> <span style="color:#f92672">=</span> decode::from_slice(msg).expect(<span style="color:#e6db74">&#34;complexrequest&#34;</span>);
-    <span style="color:#66d9ef">let</span> c: <span style="color:#a6e22e">Complex</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f32</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> rqst.a <span style="color:#f92672">+</span> rqst.b;
-    <span style="color:#66d9ef">let</span> resp <span style="color:#f92672">=</span> encode::to_vec(<span style="color:#f92672">&amp;</span>c).expect(<span style="color:#e6db74">&#34;complex&#34;</span>);
-    Ok(resp)
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">mod</span> complex;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[macro_use]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">crate</span> serde_derive;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> wapc_guest::prelude::<span style="color:#f92672">*</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>wapc_handler<span style="color:#f92672">!</span>(handle_wapc);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">handle_wapc</span>(operation: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">match</span> operation {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;add&#34;</span> <span style="color:#f92672">=&gt;</span> complex::export::add(msg),
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;sub&#34;</span> <span style="color:#f92672">=&gt;</span> complex::export::sub(msg),
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;mul&#34;</span> <span style="color:#f92672">=&gt;</span> complex::export::mul(msg),
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;div&#34;</span> <span style="color:#f92672">=&gt;</span> complex::export::div(msg),
+</span></span><span style="display:flex;"><span>        e <span style="color:#f92672">=&gt;</span> Err((String::from(<span style="color:#e6db74">&#34;dispatch error: &#34;</span>) <span style="color:#f92672">+</span> <span style="color:#f92672">&amp;</span>String::from(e)).into()),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And then: <code>export.rs</code>, e.g.:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> rmp_serde::{decode, encode};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">add</span>(msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> rqst: <span style="color:#a6e22e">ComplexRequest</span> <span style="color:#f92672">=</span> decode::from_slice(msg).expect(<span style="color:#e6db74">&#34;complexrequest&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> c: <span style="color:#a6e22e">Complex</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f32</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> rqst.a <span style="color:#f92672">+</span> rqst.b;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> resp <span style="color:#f92672">=</span> encode::to_vec(<span style="color:#f92672">&amp;</span>c).expect(<span style="color:#e6db74">&#34;complex&#34;</span>);
+</span></span><span style="display:flex;"><span>    Ok(resp)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> <a href="https://docs.rs/rmp-serde/0.14.4/rmp_serde/"><code>rmp-serde</code></a> is a crate that facilitates serializing|deserializing (encoding|decoding) using the highly regarded <a href="https://serde.rs/"><code>serde</code></a></p>
 </blockquote>
 <p>I continue to struggle understanding Rust documentation and it took me some time to realize that the <code>rmp-serde</code> <a href="https://docs.rs/rmp-serde/0.14.4/rmp_serde/#examples">examples</a> were easier done using <code>encode</code> and <code>decode</code>.</p>
 <p>What about <code>ComplexRequest</code>?</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span> serde::{Deserialize, Serialize};
-
-<span style="color:#75715e">#[derive(Deserialize, Serialize)]</span>
-<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ComplexRequest</span> {
-    a: <span style="color:#a6e22e">Complex</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f32</span><span style="color:#f92672">&gt;</span>,
-    b: <span style="color:#a6e22e">Complex</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f32</span><span style="color:#f92672">&gt;</span>,
-}
-<span style="color:#66d9ef">impl</span> fmt::Display <span style="color:#66d9ef">for</span> ComplexRequest {
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">fmt</span>(<span style="color:#f92672">&amp;</span>self, f: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> fmt::Formatter) -&gt; <span style="color:#a6e22e">fmt</span>::Result {
-        write!(
-            f,
-            <span style="color:#e6db74">&#34;ComplexRequest: [a: {}, b: {}]&#34;</span>,
-            self.a.to_string(),
-            self.b.to_string(),
-        )
-    }
-}
-</code></pre></div><p>Compile this with e.g. <code>cargo build --target=wasm32-unknown-unknown --release</code> to yield:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">ls -la target/wasm32-unknown-unknown/release
-total 1644
-    4096 Aug  7 11:04 .
-    4096 Aug  7 10:57 ..
-    4096 Aug  7 11:04 build
-       0 Aug  7 10:24 .cargo-lock
-     332 Aug  7 10:24 complex.d
- 1648624 Aug  7 11:04 complex.wasm
-    4096 Aug  7 11:04 deps
-    4096 Aug  7 10:24 examples
-    4096 Aug  7 11:04 .fingerprint
-    4096 Aug  7 10:24 incremental
-</code></pre></div><h2 id="golang-wapc-host">Golang waPC host</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> serde::{Deserialize, Serialize};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[derive(Deserialize, Serialize)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ComplexRequest</span> {
+</span></span><span style="display:flex;"><span>    a: <span style="color:#a6e22e">Complex</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f32</span><span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>    b: <span style="color:#a6e22e">Complex</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f32</span><span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> fmt::Display <span style="color:#66d9ef">for</span> ComplexRequest {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">fmt</span>(<span style="color:#f92672">&amp;</span>self, f: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> fmt::Formatter) -&gt; <span style="color:#a6e22e">fmt</span>::Result {
+</span></span><span style="display:flex;"><span>        write!(
+</span></span><span style="display:flex;"><span>            f,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;ComplexRequest: [a: {}, b: {}]&#34;</span>,
+</span></span><span style="display:flex;"><span>            self.a.to_string(),
+</span></span><span style="display:flex;"><span>            self.b.to_string(),
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Compile this with e.g. <code>cargo build --target=wasm32-unknown-unknown --release</code> to yield:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>ls -la target/wasm32-unknown-unknown/release
+</span></span><span style="display:flex;"><span>total 1644
+</span></span><span style="display:flex;"><span>    4096 Aug  7 11:04 .
+</span></span><span style="display:flex;"><span>    4096 Aug  7 10:57 ..
+</span></span><span style="display:flex;"><span>    4096 Aug  7 11:04 build
+</span></span><span style="display:flex;"><span>       0 Aug  7 10:24 .cargo-lock
+</span></span><span style="display:flex;"><span>     332 Aug  7 10:24 complex.d
+</span></span><span style="display:flex;"><span> 1648624 Aug  7 11:04 complex.wasm
+</span></span><span style="display:flex;"><span>    4096 Aug  7 11:04 deps
+</span></span><span style="display:flex;"><span>    4096 Aug  7 10:24 examples
+</span></span><span style="display:flex;"><span>    4096 Aug  7 11:04 .fingerprint
+</span></span><span style="display:flex;"><span>    4096 Aug  7 10:24 incremental
+</span></span></code></pre></div><h2 id="golang-wapc-host">Golang waPC host</h2>
 <p>I tested this using a Rust waPC host but, to be concise, I&rsquo;m going to describe the Golang implementation here. The Golang implementation is more interesting because it requires some tweaking to the Golang structs to generate the expect (!?) msgpack messages.</p>
 <p>There were a couple of Golang msgpack SDKs. I chose tinylib <a href="https://github.com/tinylib/msgp"><code>msgp</code></a>. It&rsquo;s good. It leverages Golang&rsquo;s <a href="https://blog.golang.org/generate">code generation</a> which I&rsquo;d not encountered until now. In this case, code generation provides type-specific implementations of the msgpack Golang interfaces (marshaling, encoding) for user-defined types.</p>
 <p>Here&rsquo;s an example.</p>
 <p>This was my first (and incorrect) attempt to define <code>ComplexRequest</code> in Golang:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#75715e">//go:generate msgp
-</span><span style="color:#75715e"></span>
-<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ComplexRequest1</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">A</span> <span style="color:#66d9ef">complex64</span> <span style="color:#e6db74">`msg:&#34;a,complex&#34;`</span>
-	<span style="color:#a6e22e">B</span> <span style="color:#66d9ef">complex64</span> <span style="color:#e6db74">`msg:&#34;b,complex&#34;`</span>
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">//go:generate msgp
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ComplexRequest1</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">A</span> <span style="color:#66d9ef">complex64</span> <span style="color:#e6db74">`msg:&#34;a,complex&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">B</span> <span style="color:#66d9ef">complex64</span> <span style="color:#e6db74">`msg:&#34;b,complex&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> the annotation <code>//go:generate msgp</code> defines files (containing types) that will have code generated by msgp.</p>
 </blockquote>
 <blockquote>
@@ -293,107 +293,107 @@ total 1644
 <p>You&rsquo;ll need <code>msgp</code> so <code>go get github.com/tinylib/msgp</code> and then run <code>go generate</code>. This will generate two files: <code>main_gen.go</code> and <code>main_gen_test.go</code> (how good is that!?). <code>main_*.go</code> because, in my case, the package is <code>main</code>.</p>
 <p><code>main_gen.go</code> will include <code>DecodeMsg</code>, <code>EncodeMsg</code>, <code>MarshalMsg</code>, <code>UnmarshalMsg</code>, <code>Msgsize</code> for each type in the file (unless otherwise restricted).</p>
 <p>You can then:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ComplexRequest1</span>{
-	<span style="color:#a6e22e">A</span>: complex(float32(<span style="color:#ae81ff">39</span>), <span style="color:#ae81ff">3</span>),
-	<span style="color:#a6e22e">B</span>: complex(float32(<span style="color:#ae81ff">39</span>), <span style="color:#ae81ff">3</span>),
-}
-
-<span style="color:#a6e22e">msg</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">MarshalMsg</span>(<span style="color:#66d9ef">nil</span>)
-
-<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Encoded: %x\n&#34;</span>, <span style="color:#a6e22e">msg</span>)
-<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Encoded: %+v\n&#34;</span>, <span style="color:#a6e22e">msg</span>)
-
-<span style="color:#a6e22e">buf</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">bytes</span>.<span style="color:#a6e22e">Buffer</span>)
-<span style="color:#a6e22e">msgp</span>.<span style="color:#a6e22e">CopyToJSON</span>(<span style="color:#a6e22e">buf</span>, <span style="color:#a6e22e">bytes</span>.<span style="color:#a6e22e">NewReader</span>(<span style="color:#a6e22e">msg</span>))
-<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;JSON: %s&#34;</span>, <span style="color:#a6e22e">buf</span>.<span style="color:#a6e22e">String</span>())
-</code></pre></div><p>This will yield:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">Encoded: 82a161d703421c000040400000a162d703421c000040400000
-Encoded: [130 161 97 215 3 66 28 0 0 64 64 0 0 161 98 215 3 66 28 0 0 64 64 0 0]
-JSON: {&#34;a&#34;:{&#34;type:&#34;3,&#34;data&#34;:&#34;QhwAAEBAAAA=&#34;},&#34;b&#34;:{&#34;type:&#34;3,&#34;data&#34;:&#34;QhwAAEBAAAA=&#34;}}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ComplexRequest1</span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">A</span>: complex(float32(<span style="color:#ae81ff">39</span>), <span style="color:#ae81ff">3</span>),
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">B</span>: complex(float32(<span style="color:#ae81ff">39</span>), <span style="color:#ae81ff">3</span>),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">msg</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">MarshalMsg</span>(<span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Encoded: %x\n&#34;</span>, <span style="color:#a6e22e">msg</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Encoded: %+v\n&#34;</span>, <span style="color:#a6e22e">msg</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">buf</span> <span style="color:#f92672">:=</span> new(<span style="color:#a6e22e">bytes</span>.<span style="color:#a6e22e">Buffer</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">msgp</span>.<span style="color:#a6e22e">CopyToJSON</span>(<span style="color:#a6e22e">buf</span>, <span style="color:#a6e22e">bytes</span>.<span style="color:#a6e22e">NewReader</span>(<span style="color:#a6e22e">msg</span>))
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;JSON: %s&#34;</span>, <span style="color:#a6e22e">buf</span>.<span style="color:#a6e22e">String</span>())
+</span></span></code></pre></div><p>This will yield:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>Encoded: 82a161d703421c000040400000a162d703421c000040400000
+</span></span><span style="display:flex;"><span>Encoded: [130 161 97 215 3 66 28 0 0 64 64 0 0 161 98 215 3 66 28 0 0 64 64 0 0]
+</span></span><span style="display:flex;"><span>JSON: {&#34;a&#34;:{&#34;type:&#34;3,&#34;data&#34;:&#34;QhwAAEBAAAA=&#34;},&#34;b&#34;:{&#34;type:&#34;3,&#34;data&#34;:&#34;QhwAAEBAAAA=&#34;}}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> as you can see, the <code>CopyToJSON</code> function is useful (for debugging).</p>
 </blockquote>
 <p>You will note that the JSON has a curious encoding for both <code>complex</code> numbers:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
-    <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#ae81ff">3</span>,
-    <span style="color:#f92672">&#34;data&#34;</span>: <span style="color:#e6db74">&#34;QhwAAEBAAAA=&#34;</span>
-}
-</code></pre></div><p>This is because the library is using an in-built <a href="https://github.com/tinylib/msgp/wiki/Using-Extensions#extensiontype">Extension</a> for <code>complex64</code> associated with type 3.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#ae81ff">3</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;data&#34;</span>: <span style="color:#e6db74">&#34;QhwAAEBAAAA=&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This is because the library is using an in-built <a href="https://github.com/tinylib/msgp/wiki/Using-Extensions#extensiontype">Extension</a> for <code>complex64</code> associated with type 3.</p>
 <p>If we take the value of <code>&quot;data&quot;</code>, base64 decode it and output it as decimal (<code>printf &quot;QhwAAEBAAAA=&quot; | base64 --decode | od -t u1</code>), we get: <code>66 280 0 0 64 64 0 0</code> (see below)</p>
 <p>Having also written a Rust version of the waPC host, I know that the Rust-Rust implementation ships the following msgpack message for the above-valued <code>ComplexRequest</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">Encoded: [146 146 202 66 28 0 0 202 64 64 0 0 146 202 66 28 0 0 202 64 64 0 0]
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>Encoded: [146 146 202 66 28 0 0 202 64 64 0 0 146 202 66 28 0 0 202 64 64 0 0]
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> <code>146</code> (a preamble?) then <code>146</code> then <code>202</code> then <code>66 28 00</code> then <code>202</code> then <code>64 64 0 0</code>. Clearly this matches the expected encoding.</p>
 </blockquote>
 <p>Plugging this in to the Golang code as the value for <code>msg</code>, we get:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">JSON: [[39,3],[39,3]]
-</code></pre></div><p>The above is encoded as arrays (or tuples).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>JSON: [[39,3],[39,3]]
+</span></span></code></pre></div><p>The above is encoded as arrays (or tuples).</p>
 <p>It just so happens that the Golang msgpack SDK supports generating tuples too. But, we need to do this, not only for <code>ComplexRequest</code> but for the complex numbers it represents too.</p>
 <p>This could be achieved by tweaking the above struct and providing a new Extension implementation for (an alias of?) <code>complex64</code> but, for simplicity, I went with the following:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#75715e">//msgp:tuple ComplexRequest2
-</span><span style="color:#75715e"></span>
-<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ComplexRequest</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">A</span> <span style="color:#a6e22e">Complex</span>
-	<span style="color:#a6e22e">B</span> <span style="color:#a6e22e">Complex</span>
-}
-
-<span style="color:#75715e">//msgp:tuple Complex
-</span><span style="color:#75715e"></span>
-<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Complex</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">Re</span> <span style="color:#66d9ef">float32</span> <span style="color:#e6db74">`msg:&#34;re&#34;`</span>
-	<span style="color:#a6e22e">Im</span> <span style="color:#66d9ef">float32</span> <span style="color:#e6db74">`msg:&#34;im&#34;`</span>
-}
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewComplex</span>(<span style="color:#a6e22e">c</span> <span style="color:#66d9ef">complex64</span>) <span style="color:#a6e22e">Complex</span> {
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Complex</span>{
-		<span style="color:#a6e22e">Re</span>: real(<span style="color:#a6e22e">c</span>),
-		<span style="color:#a6e22e">Im</span>: imag(<span style="color:#a6e22e">c</span>),
-	}
-}
-</code></pre></div><p>The annotations <code>//msgp:tuple [[Type]]</code> tell <code>msgp</code> to encode the structs as tuple (array) types. After re-running <code>go generate</code> and retrying the code, we will now get:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">Encoded: 9292ca421c0000ca4040000092ca421c0000ca40400000
-Encoded: [146 146 202 66 28 0 0 202 64 64 0 0 146 202 66 28 0 0 202 64 64 0 0]
-JSON: [[39,3],[39,3]]
-</code></pre></div><p>Great! That matches what the Rust waPC guest implementation expects.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">//msgp:tuple ComplexRequest2
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ComplexRequest</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">A</span> <span style="color:#a6e22e">Complex</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">B</span> <span style="color:#a6e22e">Complex</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">//msgp:tuple Complex
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Complex</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Re</span> <span style="color:#66d9ef">float32</span> <span style="color:#e6db74">`msg:&#34;re&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Im</span> <span style="color:#66d9ef">float32</span> <span style="color:#e6db74">`msg:&#34;im&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewComplex</span>(<span style="color:#a6e22e">c</span> <span style="color:#66d9ef">complex64</span>) <span style="color:#a6e22e">Complex</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Complex</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Re</span>: real(<span style="color:#a6e22e">c</span>),
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Im</span>: imag(<span style="color:#a6e22e">c</span>),
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The annotations <code>//msgp:tuple [[Type]]</code> tell <code>msgp</code> to encode the structs as tuple (array) types. After re-running <code>go generate</code> and retrying the code, we will now get:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>Encoded: 9292ca421c0000ca4040000092ca421c0000ca40400000
+</span></span><span style="display:flex;"><span>Encoded: [146 146 202 66 28 0 0 202 64 64 0 0 146 202 66 28 0 0 202 64 64 0 0]
+</span></span><span style="display:flex;"><span>JSON: [[39,3],[39,3]]
+</span></span></code></pre></div><p>Great! That matches what the Rust waPC guest implementation expects.</p>
 <p>Now we must simply ship this msgpack&rsquo;d message to it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">code</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadFile</span>(<span style="color:#e6db74">&#34;path/to/complex.wasm&#34;</span>)
-
-<span style="color:#a6e22e">module</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">wapc</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">consoleLog</span>, <span style="color:#a6e22e">code</span>, <span style="color:#a6e22e">callback</span>)
-<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">module</span>.<span style="color:#a6e22e">Close</span>()
-
-<span style="color:#a6e22e">instance</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">module</span>.<span style="color:#a6e22e">Instantiate</span>()
-<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">instance</span>.<span style="color:#a6e22e">Close</span>()
-
-<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
-
-<span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">instance</span>.<span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;add&#34;</span>, <span style="color:#a6e22e">msg</span>)
-
-<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[main] Result: %+v\n&#34;</span>, <span style="color:#a6e22e">result</span>)
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">code</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadFile</span>(<span style="color:#e6db74">&#34;path/to/complex.wasm&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">module</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">wapc</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">consoleLog</span>, <span style="color:#a6e22e">code</span>, <span style="color:#a6e22e">callback</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">module</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">instance</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">module</span>.<span style="color:#a6e22e">Instantiate</span>()
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">instance</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">instance</span>.<span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;add&#34;</span>, <span style="color:#a6e22e">msg</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[main] Result: %+v\n&#34;</span>, <span style="color:#a6e22e">result</span>)
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> the value of <code>operation</code> in the <code>Invoke</code> method matches one of the operation strings (<code>&quot;add&quot;</code>, <code>&quot;sub&quot;</code>, <code>&quot;mul&quot;</code>, <code>&quot;div&quot;</code>) defined in the <code>handle_wapc</code> function in the Rust <code>lib.rs</code> above.</p>
 </blockquote>
 <p>Running this yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">[callback] binding: binding operation: add payload: ComplexRequest: [a: 39+3i, b: 39+3i]
-[callback] binding: binding operation: add payload: 78+6i
-Result: [146 202 66 156 0 0 202 64 192 0 0]
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>[callback] binding: binding operation: add payload: ComplexRequest: [a: 39+3i, b: 39+3i]
+</span></span><span style="display:flex;"><span>[callback] binding: binding operation: add payload: 78+6i
+</span></span><span style="display:flex;"><span>Result: [146 202 66 156 0 0 202 64 192 0 0]
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> the above includes some host callback lines that I did not show in the Rust guest.</p>
 </blockquote>
 <p>There&rsquo;s a useful online tool: <a href="https://kawanet.github.io/msgpack-lite/">https://kawanet.github.io/msgpack-lite/</a></p>
 <p>Plugging the <code>Result</code> from the above into the <code>MessagePack</code> panel on the right hand side of the tool (Array) and interspersing <code>,</code> between each value, the JSON is shown to be:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">[
-  <span style="color:#ae81ff">78</span>,
-  <span style="color:#ae81ff">6</span>
-]
-</code></pre></div><p>Which, of course, corresponds to a <code>Complex</code> value resulting from 39+3i + 39+3i = 78+6i</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>[
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">78</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">6</span>
+</span></span><span style="display:flex;"><span>]
+</span></span></code></pre></div><p>Which, of course, corresponds to a <code>Complex</code> value resulting from 39+3i + 39+3i = 78+6i</p>
 <p>All that work to do 2 adds :-)</p>
 <p>Let&rsquo;s just unmarshal <code>result</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">resp</span> <span style="color:#a6e22e">Complex</span>
-<span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">UnmarshalMsg</span>(<span style="color:#a6e22e">result</span>)
-<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[main] Response: %+v\n&#34;</span>, <span style="color:#a6e22e">resp</span>)
-</code></pre></div><p>yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">Response: {Re:78 Im:6}
-</code></pre></div><p>A quick tour of msgp using Rust, Golang, WASM and waPC.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">resp</span> <span style="color:#a6e22e">Complex</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">UnmarshalMsg</span>(<span style="color:#a6e22e">result</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[main] Response: %+v\n&#34;</span>, <span style="color:#a6e22e">resp</span>)
+</span></span></code></pre></div><p>yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>Response: {Re:78 Im:6}
+</span></span></code></pre></div><p>A quick tour of msgp using Rust, Golang, WASM and waPC.</p>
 <ul class="pa0">
   
    <li class="list di">

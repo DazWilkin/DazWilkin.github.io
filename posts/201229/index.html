@@ -7,7 +7,7 @@
     <title>Kubernetes Webhooks | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Kubernetes webhook for Akri Configurations">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -193,44 +193,44 @@ if (!doNotTrack) {
         <span class="f6 mv4 dib tracked"> - 2124 words </span>
       
     </header>
-    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I spent some time last week writing my first <a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/">admission webhook</a> for Kubernetes. I wrote the handler in Golang because I&rsquo;m most familiar with Golang and because, as Kubernetes' native language, I was more confident that the necessary SDKs would exist and that the documentation would likely use Golang by default. I struggled to find useful documentation and so this post is to help you (and me!) remember how to do this next time!</p>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I spent some time last week writing my first <a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/">admission webhook</a> for Kubernetes. I wrote the handler in Golang because I&rsquo;m most familiar with Golang and because, as Kubernetes&rsquo; native language, I was more confident that the necessary SDKs would exist and that the documentation would likely use Golang by default. I struggled to find useful documentation and so this post is to help you (and me!) remember how to do this next time!</p>
 <p>If I have time, I&rsquo;m going to rewrite the handler in Rust. The webhook validates <a href="https://github.com/deislabs/akri">Akri</a> <a href="https://github.com/deislabs/akri/blob/main/docs/architecture.md#akri-configuration-crd">Configuration (CRDs)</a> and, because Akri is written in Rust, it would likely be better if this handler were too.</p>
 <h2 id="outcome">Outcome</h2>
 <p>So, &ldquo;What&rsquo;s an admission webhook?&rdquo; and &ldquo;Why would I want one?&rdquo;. I&rsquo;m going to provide a skeleton for building Kubernetes webhooks but will use the Akri webhook by way of example. It arose from an <a href="https://github.com/deislabs/akri/issues/180">issue</a> that I encountered with an Akri Configuration for a Zeroconf protocol implementation. I had:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">akri.sh/v0</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Configuration</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">zeroconf</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">protocol</span>:
-    <span style="color:#f92672">zeroconf</span>:
-      <span style="color:#f92672">kind</span>: <span style="color:#e6db74">&#34;_rust._tcp&#34;</span>
-      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8888</span>
-      <span style="color:#f92672">txtRecords</span>:
-        <span style="color:#f92672">project</span>: <span style="color:#ae81ff">akri</span>
-        <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">zeroconf</span>
-        <span style="color:#f92672">component</span>: <span style="color:#ae81ff">avahi-publish</span>
-  <span style="color:#f92672">capacity</span>: <span style="color:#ae81ff">1</span>
-  <span style="color:#f92672">brokerPodSpec</span>:
-    <span style="color:#f92672">containers</span>:
-      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">zeroconf-broker</span>
-        <span style="color:#f92672">image</span>: <span style="color:#ae81ff">some-image</span>
-    <span style="color:#f92672">resources</span>: <span style="color:#ae81ff">&lt;------------ INCORRECTLY INDENTED AFTER EDIT</span>
-              <span style="color:#f92672">limits</span>: 
-                <span style="color:#f92672">&#34;{{PLACEHOLDER}}&#34;: </span><span style="color:#e6db74">&#34;1&#34;</span>
-</code></pre></div><p>And, as you can see from the comment, I munged the YAML after editing it, the <code>resources</code> section was moved from under <code>containers</code> to be under <code>brokerProdSpec</code>. The result is invalid YAML but this was not caught by Kubernetes because the configuration is for a CRD rather than an internal type.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">akri.sh/v0</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Configuration</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">zeroconf</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">protocol</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">zeroconf</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">kind</span>: <span style="color:#e6db74">&#34;_rust._tcp&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8888</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">txtRecords</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">project</span>: <span style="color:#ae81ff">akri</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">zeroconf</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">component</span>: <span style="color:#ae81ff">avahi-publish</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">capacity</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">brokerPodSpec</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">zeroconf-broker</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">image</span>: <span style="color:#ae81ff">some-image</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">resources</span>: <span style="color:#ae81ff">&lt;------------ INCORRECTLY INDENTED AFTER EDIT</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">limits</span>: 
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;{{PLACEHOLDER}}&#34;: </span><span style="color:#e6db74">&#34;1&#34;</span>
+</span></span></code></pre></div><p>And, as you can see from the comment, I munged the YAML after editing it, the <code>resources</code> section was moved from under <code>containers</code> to be under <code>brokerProdSpec</code>. The result is invalid YAML but this was not caught by Kubernetes because the configuration is for a CRD rather than an internal type.</p>
 <p>And so, <strong>without</strong> a <code>ValidatingWebhookConfiguration</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>./zeroconf.yam
-akri.sh/v0/configuration created
-</code></pre></div><p>And, <strong>with</strong> a <code>ValidatingWebhookConfiguration</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>./zeroconf.yaml 
-Error from server: error when creating <span style="color:#e6db74">&#34;./zeroconf.yaml&#34;</span>:
-admission webhook <span style="color:#e6db74">&#34;webhook.akri.sh&#34;</span> denied the request:
-Configuration does not include <span style="color:#e6db74">`</span>resources.limits<span style="color:#e6db74">`</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply --filename<span style="color:#f92672">=</span>./zeroconf.yam
+</span></span><span style="display:flex;"><span>akri.sh/v0/configuration created
+</span></span></code></pre></div><p>And, <strong>with</strong> a <code>ValidatingWebhookConfiguration</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply --filename<span style="color:#f92672">=</span>./zeroconf.yaml 
+</span></span><span style="display:flex;"><span>Error from server: error when creating <span style="color:#e6db74">&#34;./zeroconf.yaml&#34;</span>:
+</span></span><span style="display:flex;"><span>admission webhook <span style="color:#e6db74">&#34;webhook.akri.sh&#34;</span> denied the request:
+</span></span><span style="display:flex;"><span>Configuration does not include <span style="color:#e6db74">`</span>resources.limits<span style="color:#e6db74">`</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> not only do we get validation of the CRD (<code>reosurces.limits</code> is missing) but the (erroneous) Configuration is not applied to the cluster.</p>
 </blockquote>
-<p>By way of background, <code>resources</code> is a instance of <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#resourcerequirements-v1-core">ResourceRequirements</a> and is used to limit the amount of resources allowed to be used by a container. Akri uses this facility to bind containers to IoT device <a href="https://github.com/deislabs/akri/blob/main/docs/architecture.md#akri-instance-crd"><code>Instances</code></a> (another Akri CRD) that are &lsquo;twinned&rsquo; to the cluster.</p>
+<p>By way of background, <code>resources</code> is a instance of <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#resourcerequirements-v1-core">ResourceRequirements</a> and is used to limit the amount of resources allowed to be used by a container. Akri uses this facility to bind containers to IoT device <a href="https://github.com/deislabs/akri/blob/main/docs/architecture.md#akri-instance-crd"><code>Instances</code></a> (another Akri CRD) that are &rsquo;twinned&rsquo; to the cluster.</p>
 <p>In my erroneous YAML, this section was not present including the important <code>{{PLACEHOLDER}}</code> value, Akri was unable to bind my container to an Akri (device) Instance and, the container had no mounted environment variables which are the conduit through which a container can interact with an IoT device.</p>
 <p>Nothing good, basically.</p>
 <h2 id="overview">Overview</h2>
@@ -244,159 +244,159 @@ Configuration does not include <span style="color:#e6db74">`</span>resources.lim
 <p>I&rsquo;ll include as much detail as possible below because the crevasses are to be found!</p>
 <h2 id="admissionregistration-versions">AdmissionRegistration versions</h2>
 <p>IIUC <code>admissionregistration.k8s.io/v1beta1</code> is being deprecated and won&rsquo;t be available in Kubernetes v1.19+. It is replaced by <code>admissionregistration.k8s.io/v1</code>. You may determine which (hopefully one of the two) versions is available in your cluster:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl api-versions | grep admission
-admissionregistration.k8s.io/v1
-admissionregistration.k8s.io/v1beta1
-</code></pre></div><p>If you need to revert the following to <code>v1beta</code>, you can judiciously search-and-replace <code>v1</code> with <code>v1beta</code> for e.g. <code>AdmissionReview</code> and <code>Admission[Request|Response]</code>. You will need to</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl api-versions | grep admission
+</span></span><span style="display:flex;"><span>admissionregistration.k8s.io/v1
+</span></span><span style="display:flex;"><span>admissionregistration.k8s.io/v1beta1
+</span></span></code></pre></div><p>If you need to revert the following to <code>v1beta</code>, you can judiciously search-and-replace <code>v1</code> with <code>v1beta</code> for e.g. <code>AdmissionReview</code> and <code>Admission[Request|Response]</code>. You will need to</p>
 <p>Import the following</p>
 <ul>
 <li><code>&quot;k8s.io/api/admission/v1beta1&quot;</code> (instead of <code>&quot;k8s.io/api/admission/v1b&quot;</code>)</li>
 <li><code>apiextv1beta1 &quot;k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1&quot;</code></li>
 </ul>
 <p>And revise the section of code to include <code>apiextv1beta1</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">sch</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">NewScheme</span>()
-<span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">clientgoscheme</span>.<span style="color:#a6e22e">AddToScheme</span>(<span style="color:#a6e22e">sch</span>)
-<span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">apiextv1beta1</span>.<span style="color:#a6e22e">AddToScheme</span>(<span style="color:#a6e22e">sch</span>)
-</code></pre></div><h2 id="webhook">Webhook</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">sch</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">NewScheme</span>()
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">clientgoscheme</span>.<span style="color:#a6e22e">AddToScheme</span>(<span style="color:#a6e22e">sch</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">apiextv1beta1</span>.<span style="color:#a6e22e">AddToScheme</span>(<span style="color:#a6e22e">sch</span>)
+</span></span></code></pre></div><h2 id="webhook">Webhook</h2>
 <p>The webhook handler is trivial:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">var</span> (
-	<span style="color:#a6e22e">crtFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;tls-crt-file&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;TLS certificate file&#34;</span>)
-	<span style="color:#a6e22e">keyFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;tls-key-file&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;TLS key file&#34;</span>)
-	<span style="color:#a6e22e">port</span>    = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Int</span>(<span style="color:#e6db74">&#34;port&#34;</span>, <span style="color:#ae81ff">0</span>, <span style="color:#e6db74">&#34;Webhook Port&#34;</span>)
-)
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-    <span style="color:#a6e22e">cert</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">LoadX509KeyPair</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">crtFile</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">keyFile</span>)
-	<span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Config</span>{
-		<span style="color:#a6e22e">Certificates</span>: []<span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Certificate</span>{<span style="color:#a6e22e">cert</span>},
-	}
-
-	<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/validate&#34;</span>, <span style="color:#a6e22e">validate</span>)
-
-    <span style="color:#a6e22e">addr</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;:%d&#34;</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">port</span>)
-	<span style="color:#a6e22e">server</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Server</span>{
-		<span style="color:#a6e22e">Addr</span>:      <span style="color:#a6e22e">addr</span>,
-		<span style="color:#a6e22e">TLSConfig</span>: <span style="color:#a6e22e">config</span>,
-	}
-
-	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">ListenAndServeTLS</span>(<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>))
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">crtFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;tls-crt-file&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;TLS certificate file&#34;</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">keyFile</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;tls-key-file&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;TLS key file&#34;</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">port</span>    = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Int</span>(<span style="color:#e6db74">&#34;port&#34;</span>, <span style="color:#ae81ff">0</span>, <span style="color:#e6db74">&#34;Webhook Port&#34;</span>)
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">cert</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">LoadX509KeyPair</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">crtFile</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">keyFile</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Config</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Certificates</span>: []<span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Certificate</span>{<span style="color:#a6e22e">cert</span>},
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/validate&#34;</span>, <span style="color:#a6e22e">validate</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">addr</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;:%d&#34;</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">port</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">server</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Server</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Addr</span>:      <span style="color:#a6e22e">addr</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">TLSConfig</span>: <span style="color:#a6e22e">config</span>,
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">ListenAndServeTLS</span>(<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>))
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> <code>validate</code> is a regular Golang HTTP handler.</p>
 </blockquote>
 <p>Kubernetes requires that webhooks are secured by TLS.</p>
 <p>For testing (!) purposes, you can generate a self-signed certificate and key, using <code>openssl</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FILENAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;localhost&#34;</span>
-
-openssl req <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-x509 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-nodes <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-newkey rsa:2048 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-keyout <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.key <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-out <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.crt <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-days <span style="color:#ae81ff">365</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-subj <span style="color:#e6db74">&#34;/CN=localhost&#34;</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>FILENAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;localhost&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>openssl req <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-x509 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-nodes <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-newkey rsa:2048 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-keyout <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.key <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-out <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.crt <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-days <span style="color:#ae81ff">365</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-subj <span style="color:#e6db74">&#34;/CN=localhost&#34;</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> <code>-x509</code> does not generate a certificate-signing request (CSR). When you deploy to Kubernetes, you&rsquo;ll need to use the instructions in the <a href="#Certificiates">Certificates</a> section below to include a CSR and have the Kubernetes cluster approve this in order to generate a correctly-signed certificate.</p>
 </blockquote>
 <p>The <code>validate</code> function is where we grab <a href="https://pkg.go.dev/k8s.io/api/admission/v1beta1#AdmissionReview"><code>AdmissionReview</code></a> messages that are shipped to us by Kubernetes to invoke our webhook. We&rsquo;ll create an <a href="https://pkg.go.dev/k8s.io/api/admission/v1beta1#AdmissionResponse"><code>AdmissionResponse</code></a> to send back.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">validate</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
-	<span style="color:#a6e22e">contentType</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;Content-Type&#34;</span>)
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">contentType</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;application/json&#34;</span> {
-		<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusBadRequest</span>)
-		<span style="color:#66d9ef">return</span>
-	}
-
-    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">body</span> []<span style="color:#66d9ef">byte</span>
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Body</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadAll</span>(<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Body</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
-			<span style="color:#a6e22e">body</span> = <span style="color:#a6e22e">data</span>
-		}
-	}
-
-	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionReview</span>{}
-
-	<span style="color:#a6e22e">sch</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">NewScheme</span>()
-	<span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">clientgoscheme</span>.<span style="color:#a6e22e">AddToScheme</span>(<span style="color:#a6e22e">sch</span>)
-	<span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">apiextv1beta1</span>.<span style="color:#a6e22e">AddToScheme</span>(<span style="color:#a6e22e">sch</span>)
-
-	<span style="color:#a6e22e">decode</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">serializer</span>.<span style="color:#a6e22e">NewCodecFactory</span>(<span style="color:#a6e22e">sch</span>).<span style="color:#a6e22e">UniversalDeserializer</span>().<span style="color:#a6e22e">Decode</span>
-
-	<span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">decode</span>(<span style="color:#a6e22e">body</span>, <span style="color:#66d9ef">nil</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">rqst</span>)
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusBadRequest</span>)
-		<span style="color:#66d9ef">return</span>
-	}
-
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Request</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusBadRequest</span>)
-		<span style="color:#66d9ef">return</span>
-	}
-
-	<span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">validateSomething</span>(<span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Request</span>)
-
-	<span style="color:#a6e22e">bytes</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionReview</span>{
-		<span style="color:#a6e22e">Response</span>: <span style="color:#a6e22e">resp</span>,
-	})
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusInternalServerError</span>)
-		<span style="color:#66d9ef">return</span>
-	}
-	<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">Write</span>(<span style="color:#a6e22e">bytes</span>)
-}
-</code></pre></div><ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">validate</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">contentType</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;Content-Type&#34;</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">contentType</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;application/json&#34;</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusBadRequest</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">body</span> []<span style="color:#66d9ef">byte</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Body</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadAll</span>(<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Body</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">body</span> = <span style="color:#a6e22e">data</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionReview</span>{}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">sch</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">NewScheme</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">clientgoscheme</span>.<span style="color:#a6e22e">AddToScheme</span>(<span style="color:#a6e22e">sch</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">apiextv1beta1</span>.<span style="color:#a6e22e">AddToScheme</span>(<span style="color:#a6e22e">sch</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">decode</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">serializer</span>.<span style="color:#a6e22e">NewCodecFactory</span>(<span style="color:#a6e22e">sch</span>).<span style="color:#a6e22e">UniversalDeserializer</span>().<span style="color:#a6e22e">Decode</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">decode</span>(<span style="color:#a6e22e">body</span>, <span style="color:#66d9ef">nil</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusBadRequest</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Request</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusBadRequest</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">validateSomething</span>(<span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Request</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">bytes</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionReview</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Response</span>: <span style="color:#a6e22e">resp</span>,
+</span></span><span style="display:flex;"><span>	})
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusInternalServerError</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">Write</span>(<span style="color:#a6e22e">bytes</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><ol>
 <li>The message will be POSTed to the webhook (not captured here)</li>
 <li>The <code>Content-Type</code> of the incoming request must be <code>application/json</code></li>
 <li>The request body is what we&rsquo;re interested in</li>
-<li><a href="https://pkg.go.dev/k8s.io/apimachinery@v0.20.1/pkg/runtime"><code>runtime</code></a>, <a href="https://pkg.go.dev/k8s.io/client-go@v11.0.0+incompatible/kubernetes/scheme"><code>clientgoscheme</code></a>; and <a href="https://pkg.go.dev/k8s.io/apiextensions-apiserver@v0.20.1/pkg/apis/apiextensions/v1beta1?utm_source=gopls"><code>apiextv1beta</code></a> is an incantation that I discovered in Kubernetes' webhook tests (See: <a href="https://github.com/kubernetes-sigs/mutating-trace-admission-controller/blob/8800f77acd67b2e30a34a284b393f018a154e2ea/webhook.go#L38">webhook.go</a>)</li>
+<li><a href="https://pkg.go.dev/k8s.io/apimachinery@v0.20.1/pkg/runtime"><code>runtime</code></a>, <a href="https://pkg.go.dev/k8s.io/client-go@v11.0.0+incompatible/kubernetes/scheme"><code>clientgoscheme</code></a>; and <a href="https://pkg.go.dev/k8s.io/apiextensions-apiserver@v0.20.1/pkg/apis/apiextensions/v1beta1?utm_source=gopls"><code>apiextv1beta</code></a> is an incantation that I discovered in Kubernetes&rsquo; webhook tests (See: <a href="https://github.com/kubernetes-sigs/mutating-trace-admission-controller/blob/8800f77acd67b2e30a34a284b393f018a154e2ea/webhook.go#L38">webhook.go</a>)</li>
 <li>Combined with magic from [<code>UniversalDeserializer](https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime/serializer#CodecFactory.UniversalDeserializer) gives us the ability to unmarshal the request body into an </code>AdmissionReview`</li>
 <li>An <code>AdmissionReview</code> includes optional <code>AdmissioRequest</code> and <code>AdmissionResponse</code> types</li>
 <li>This is what we&rsquo;re after and encapsulates the request (<code>AdmissionRequest</code>) that our webhook should validate; in this case <code>validateSomething</code> returning an <code>AdmissionResponse</code> both of which are wrapped by the <code>AdmissionReview</code> type.</li>
 </ol>
 <p>Up to this point, the code has been generic and applicable to any <code>ValidatingWebhookConfiguration</code>. I&rsquo;m going to leave the <code>validateSomething</code> open to your implementation:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">validateSomething</span>(<span style="color:#a6e22e">rqst</span> <span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionRequest</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span> {
-	<span style="color:#75715e">// See: https://github.com/kubernetes/apimachinery/issues/102
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">raw</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Object</span>.<span style="color:#a6e22e">Raw</span>
-
-	<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">raw</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
-		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span>{
-			<span style="color:#a6e22e">UID</span>:     <span style="color:#a6e22e">uid</span>,
-			<span style="color:#a6e22e">Allowed</span>: <span style="color:#66d9ef">false</span>,
-			<span style="color:#a6e22e">Result</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Status</span>{
-				<span style="color:#a6e22e">Message</span>: <span style="color:#e6db74">&#34;object contains no data&#34;</span>,
-			},
-		}
-	}
-
-	<span style="color:#a6e22e">something</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Something</span>{}
-
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">raw</span>, <span style="color:#a6e22e">something</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span>{
-			<span style="color:#a6e22e">UID</span>:     <span style="color:#a6e22e">uid</span>,
-			<span style="color:#a6e22e">Allowed</span>: <span style="color:#66d9ef">false</span>,
-			<span style="color:#a6e22e">Result</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Status</span>{
-				<span style="color:#a6e22e">Message</span>: <span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>(),
-			},
-		}
-	}
-
-    <span style="color:#75715e">// Process `something`
-</span><span style="color:#75715e"></span>    <span style="color:#75715e">// If there are any problems with `something`
-</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span>{
-		<span style="color:#a6e22e">UID</span>:     <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Request</span>.<span style="color:#a6e22e">UID</span>,
-        <span style="color:#a6e22e">Allowed</span>: <span style="color:#66d9ef">false</span>,
-        <span style="color:#a6e22e">Result</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Status</span>{
-				<span style="color:#a6e22e">Message</span>: <span style="color:#a6e22e">message</span>,
-        },
-    }
-
-    <span style="color:#75715e">// If we reach this far, all&#39;s good
-</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span>{
-		<span style="color:#a6e22e">UID</span>:     <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Request</span>.<span style="color:#a6e22e">UID</span>,
-		<span style="color:#a6e22e">Allowed</span>: <span style="color:#66d9ef">true</span>,
-    }
-}
-</code></pre></div><ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">validateSomething</span>(<span style="color:#a6e22e">rqst</span> <span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionRequest</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// See: https://github.com/kubernetes/apimachinery/issues/102
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">raw</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Object</span>.<span style="color:#a6e22e">Raw</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">raw</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">UID</span>:     <span style="color:#a6e22e">uid</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Allowed</span>: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Result</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Status</span>{
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Message</span>: <span style="color:#e6db74">&#34;object contains no data&#34;</span>,
+</span></span><span style="display:flex;"><span>			},
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">something</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Something</span>{}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">raw</span>, <span style="color:#a6e22e">something</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">UID</span>:     <span style="color:#a6e22e">uid</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Allowed</span>: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Result</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Status</span>{
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Message</span>: <span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>(),
+</span></span><span style="display:flex;"><span>			},
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Process `something`
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// If there are any problems with `something`
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">UID</span>:     <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Request</span>.<span style="color:#a6e22e">UID</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Allowed</span>: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Result</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">Status</span>{
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Message</span>: <span style="color:#a6e22e">message</span>,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// If we reach this far, all&#39;s good
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">v1beta1</span>.<span style="color:#a6e22e">AdmissionResponse</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">UID</span>:     <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Request</span>.<span style="color:#a6e22e">UID</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Allowed</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><ol>
 <li>The configuration that was attempt applied, deleted or updated to the cluster, triggering the webhook, is accessible as <code>AdmissionReview.Request.Object.Raw</code></li>
 <li>It&rsquo;s possible best to limit one webhook to one Kubernetes resource|<code>Kind</code> but this isn&rsquo;t a requirement. If your webhook is invoked for multiple resource types, you&rsquo;ll need to disambiguate them here.</li>
 <li>Then the raw object must be unmarshaled into a Golang type (that we can process), in the above, a type called <code>Something</code>.</li>
@@ -414,146 +414,146 @@ openssl req <span style="color:#ae81ff">\
 <li><code>kubectl</code> is used to get the signed certificate (<code>.status.certificate</code>) from the cluster</li>
 <li><code>kubectl</code> is used to create a Secret that will be mounted into the <code>Deployment</code> combining this certificate and the previously created private key.</li>
 </ol>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">DIR<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/secrets
-SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;webhook&#34;</span>
-NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;default&#34;</span>
-
-FILENAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>DIR<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">.</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-
-openssl req <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-new <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-sha256 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-newkey rsa:2048 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-keyout <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.key <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-out <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.csr <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-nodes <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-subj <span style="color:#e6db74">&#34;/CN=</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">.</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">.svc&#34;</span>
-
-echo <span style="color:#e6db74">&#34;
-</span><span style="color:#e6db74">apiVersion: certificates.k8s.io/v1beta1
-</span><span style="color:#e6db74">kind: CertificateSigningRequest
-</span><span style="color:#e6db74">metadata:
-</span><span style="color:#e6db74">  name: </span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">.</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">
-</span><span style="color:#e6db74">spec:
-</span><span style="color:#e6db74">  groups:
-</span><span style="color:#e6db74">  - system:authenticated
-</span><span style="color:#e6db74">  request: </span><span style="color:#66d9ef">$(</span>cat <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.csr | base64 | tr -d <span style="color:#e6db74">&#39;\n&#39;</span><span style="color:#66d9ef">)</span><span style="color:#e6db74">
-</span><span style="color:#e6db74">  usages:
-</span><span style="color:#e6db74">  - digital signature
-</span><span style="color:#e6db74">  - key encipherment
-</span><span style="color:#e6db74">  - server auth
-</span><span style="color:#e6db74">&#34;</span> | kubectl apply --filename<span style="color:#f92672">=</span>-
-
-kubectl certificate approve <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.<span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-
-kubectl get csr <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.<span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.status.certificate}&#39;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| base64 --decode &gt; <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.crt
-
-kubectl create secret tls <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--cert<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.crt <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--key<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.key
-</code></pre></div><h2 id="deployment">Deployment</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>DIR<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/secrets
+</span></span><span style="display:flex;"><span>SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;webhook&#34;</span>
+</span></span><span style="display:flex;"><span>NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;default&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>FILENAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>DIR<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">.</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>openssl req <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-new <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-sha256 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-newkey rsa:2048 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-keyout <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.key <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-out <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.csr <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-nodes <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-subj <span style="color:#e6db74">&#34;/CN=</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">.</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">.svc&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">apiVersion: certificates.k8s.io/v1beta1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">kind: CertificateSigningRequest
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">metadata:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  name: </span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">.</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">spec:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  groups:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  - system:authenticated
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  request: </span><span style="color:#66d9ef">$(</span>cat <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.csr | base64 | tr -d <span style="color:#e6db74">&#39;\n&#39;</span><span style="color:#66d9ef">)</span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  usages:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  - digital signature
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  - key encipherment
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  - server auth
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;</span> | kubectl apply --filename<span style="color:#f92672">=</span>-
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl certificate approve <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.<span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl get csr <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.<span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.status.certificate}&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| base64 --decode &gt; <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.crt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl create secret tls <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--cert<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.crt <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--key<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.key
+</span></span></code></pre></div><h2 id="deployment">Deployment</h2>
 <p>We&rsquo;re now able to deploy the webhook handler to the cluster.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apps/v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Deployment</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">NAMESPACE</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
-  <span style="color:#f92672">selector</span>:
-    <span style="color:#f92672">matchLabels</span>:
-      <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
-  <span style="color:#f92672">template</span>:
-    <span style="color:#f92672">metadata</span>:
-      <span style="color:#f92672">labels</span>:
-        <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
-    <span style="color:#f92672">spec</span>:
-      <span style="color:#f92672">containers</span>:
-        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">webhook</span>
-          <span style="color:#f92672">image</span>: <span style="color:#ae81ff">your-image</span>
-          <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">Always</span>
-          <span style="color:#f92672">args</span>:
-            - --<span style="color:#ae81ff">tls-crt-file=/secrets/tls.crt</span>
-            - --<span style="color:#ae81ff">tls-key-file=/secrets/tls.key</span>
-            - --<span style="color:#ae81ff">port=8443</span>
-            - --<span style="color:#ae81ff">logtostderr</span>
-            - -<span style="color:#ae81ff">v=2</span>
-          <span style="color:#f92672">volumeMounts</span>:
-            - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">secrets</span>
-              <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/secrets</span>
-              <span style="color:#f92672">readOnly</span>: <span style="color:#66d9ef">true</span>
-      <span style="color:#f92672">volumes</span>:
-        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">secrets</span>
-          <span style="color:#f92672">secret</span>:
-            <span style="color:#f92672">secretName</span>: <span style="color:#ae81ff">SERVICE</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apps/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Deployment</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">NAMESPACE</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">template</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">webhook</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">image</span>: <span style="color:#ae81ff">your-image</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">Always</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">args</span>:
+</span></span><span style="display:flex;"><span>            - --<span style="color:#ae81ff">tls-crt-file=/secrets/tls.crt</span>
+</span></span><span style="display:flex;"><span>            - --<span style="color:#ae81ff">tls-key-file=/secrets/tls.key</span>
+</span></span><span style="display:flex;"><span>            - --<span style="color:#ae81ff">port=8443</span>
+</span></span><span style="display:flex;"><span>            - --<span style="color:#ae81ff">logtostderr</span>
+</span></span><span style="display:flex;"><span>            - -<span style="color:#ae81ff">v=2</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">volumeMounts</span>:
+</span></span><span style="display:flex;"><span>            - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">secrets</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/secrets</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">readOnly</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">secrets</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">secret</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">secretName</span>: <span style="color:#ae81ff">SERVICE</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> the above includes <code>PLACEHOLDER</code> values that we must replace with the value created during the previous (<a href="#Certificates">Certificates</a>) step. To do this, you can use <code>sed</code> to replace <code>PLACEHOLDER</code> with values:</p>
 </blockquote>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cat ./deployment.yaml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|SERVICE|</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|NAMESPACE|</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-</code></pre></div><h2 id="service">Service</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat ./deployment.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|SERVICE|</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|NAMESPACE|</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><h2 id="service">Service</h2>
 <p>The Service exposes the Deployment (on port <code>:8443</code>) on port of <code>:443</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">NAMESPACE</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">selector</span>:
-    <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
-  <span style="color:#f92672">ports</span>:
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">http</span>
-      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">443</span>
-      <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">8443</span>
-</code></pre></div><p>Again, we must replace the <code>PLACEHOLDER</code> values:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cat ./service.yaml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|SERVICE|</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|NAMESPACE|</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-</code></pre></div><h2 id="validatingadmissionwebook">ValidatingAdmissionWebook</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">NAMESPACE</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">http</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">443</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">8443</span>
+</span></span></code></pre></div><p>Again, we must replace the <code>PLACEHOLDER</code> values:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat ./service.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|SERVICE|</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|NAMESPACE|</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><h2 id="validatingadmissionwebook">ValidatingAdmissionWebook</h2>
 <p>Finally, we can combine the Service (using the <code>Deployment</code>) into a <code>ValidatingWebhookConfiguration</code>.</p>
 <p>The configuration is <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#validatingwebhook-v1-admissionregistration-k8s-io"><code>admissionregistration.k8s.io/v1</code></a></p>
 <p>This process was kinda gnarly too but I found a configuation that worked for me:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">admissionregistration.k8s.io/v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ValidatingWebhookConfiguration</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">NAMESPACE</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
-<span style="color:#f92672">webhooks</span>:
-  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE.NAMESPACE.svc</span>
-    <span style="color:#f92672">clientConfig</span>:
-      <span style="color:#f92672">service</span>:
-        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE</span>
-        <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">NAMESPACE</span>
-        <span style="color:#f92672">port</span>: <span style="color:#ae81ff">443</span>
-        <span style="color:#f92672">path</span>: <span style="color:#e6db74">&#34;/validate&#34;</span>
-      <span style="color:#f92672">caBundle</span>: <span style="color:#ae81ff">CABUNDLE</span>
-    <span style="color:#f92672">rules</span>:
-      - <span style="color:#f92672">operations</span>:
-          - <span style="color:#e6db74">&#34;CREATE&#34;</span>
-          - <span style="color:#e6db74">&#34;UPDATE&#34;</span>
-        <span style="color:#f92672">apiGroups</span>:
-          - <span style="color:#e6db74">&#34;akri.sh&#34;</span>
-        <span style="color:#f92672">apiVersions</span>:
-          - <span style="color:#e6db74">&#34;v0&#34;</span>
-        <span style="color:#f92672">resources</span>:
-          - <span style="color:#e6db74">&#34;configurations&#34;</span>
-        <span style="color:#f92672">scope</span>: <span style="color:#e6db74">&#34;*&#34;</span>
-    <span style="color:#f92672">admissionReviewVersions</span>:
-      - <span style="color:#ae81ff">v1beta1</span>
-    <span style="color:#f92672">sideEffects</span>: <span style="color:#ae81ff">None</span>
-</code></pre></div><ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">admissionregistration.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ValidatingWebhookConfiguration</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">NAMESPACE</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">component</span>: <span style="color:#ae81ff">webhook</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">webhooks</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE.NAMESPACE.svc</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">clientConfig</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">service</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVICE</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">NAMESPACE</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">port</span>: <span style="color:#ae81ff">443</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">path</span>: <span style="color:#e6db74">&#34;/validate&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">caBundle</span>: <span style="color:#ae81ff">CABUNDLE</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">operations</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#e6db74">&#34;CREATE&#34;</span>
+</span></span><span style="display:flex;"><span>          - <span style="color:#e6db74">&#34;UPDATE&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">apiGroups</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#e6db74">&#34;akri.sh&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">apiVersions</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#e6db74">&#34;v0&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#e6db74">&#34;configurations&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">scope</span>: <span style="color:#e6db74">&#34;*&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">admissionReviewVersions</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">v1beta1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">sideEffects</span>: <span style="color:#ae81ff">None</span>
+</span></span></code></pre></div><ol>
 <li><code>webhooks.name</code> must match the Common Name from the certificate signing request, i.e. <code>${SERVICE}.${NAMESPACE}.svc</code>. This is qualified endpoint by which the webhook may be accessed within the cluster.</li>
 <li>We&rsquo;ll use port <code>:443</code> as exposed by the Service</li>
 <li>The path to the webhook was defined (statically) in the Golang code <code>/validate</code> (but could of course be defined by a flag or environment variable if preferred).</li>
@@ -563,73 +563,73 @@ kubectl create secret tls <span style="color:#e6db74">${</span>SERVICE<span styl
 <li>You&rsquo;ll recall that our Golang code used <code>v1beta1.Admission[Review|Response]</code> and so that&rsquo;s referenced here too.</li>
 </ol>
 <p>We must also provide this resource with cluster&rsquo;s CA bundle:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">CABUNDLE<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  kubectl get secrets <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.items[?(@.metadata.annotations[&#39;kubernetes\.io/service-account\.name&#39;]==&#39;default&#39;)].data.ca\.crt}&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>CABUNDLE<span style="color:#e6db74">}</span>
-</code></pre></div><p>Then, we can replace this along with the <code>SERVICE</code> and <code>NAMESPACE</code> values using <code>sed</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cat ./webhook.yaml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|SERVICE|</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|NAMESPACE|</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|CABUNDLE|</span><span style="color:#e6db74">${</span>CABUNDLE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-</code></pre></div><h2 id="testing">Testing</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>CABUNDLE<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  kubectl get secrets <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.items[?(@.metadata.annotations[&#39;kubernetes\.io/service-account\.name&#39;]==&#39;default&#39;)].data.ca\.crt}&#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>CABUNDLE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>Then, we can replace this along with the <code>SERVICE</code> and <code>NAMESPACE</code> values using <code>sed</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat ./webhook.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|SERVICE|</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|NAMESPACE|</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| sed <span style="color:#e6db74">&#34;s|CABUNDLE|</span><span style="color:#e6db74">${</span>CABUNDLE<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><h2 id="testing">Testing</h2>
 <p>You may now test your webhook handler by <code>CREATE</code>ing or <code>UPDATE</code>ing whatever resource you defined as <code>Something</code>.</p>
 <p>You may use <code>curl</code> to test the Golang (locally) (<code>ENDPOINT=localhost:8443</code>) or Kubernetes service too (<code>ENDPOINT=${SERVICE}.${NAMESPACE}.svc:443</code>)</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--insecure <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--cert <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.crt <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--key <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.key <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#34;@./admissionreview.json&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/validate<span style="color:#f92672">)</span>
-</code></pre></div><p>Using an <code>admissionreview.json</code> of the form:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">{
-    <span style="color:#f92672">&#34;kind&#34;: </span><span style="color:#e6db74">&#34;AdmissionReview&#34;</span>,
-    <span style="color:#f92672">&#34;apiVersion&#34;: </span><span style="color:#e6db74">&#34;admission.k8s.io/v1&#34;</span>,
-    <span style="color:#f92672">&#34;request&#34;: </span>{
-        <span style="color:#f92672">&#34;uid&#34;: </span><span style="color:#e6db74">&#34;12345678-1234-1234-1234-1234567890ab&#34;</span>,
-        <span style="color:#f92672">&#34;kind&#34;: </span>{
-            <span style="color:#f92672">&#34;group&#34;: </span><span style="color:#e6db74">&#34;akri.sh&#34;</span>,
-            <span style="color:#f92672">&#34;version&#34;: </span><span style="color:#e6db74">&#34;v0&#34;</span>,
-            <span style="color:#f92672">&#34;kind&#34;: </span><span style="color:#e6db74">&#34;Configuration&#34;</span>
-        },
-        <span style="color:#f92672">&#34;resource&#34;: </span>{
-            <span style="color:#f92672">&#34;group&#34;: </span><span style="color:#e6db74">&#34;akri.sh&#34;</span>,
-            <span style="color:#f92672">&#34;version&#34;: </span><span style="color:#e6db74">&#34;v0&#34;</span>,
-            <span style="color:#f92672">&#34;resource&#34;: </span><span style="color:#e6db74">&#34;configurations&#34;</span>
-        },
-        <span style="color:#f92672">&#34;requestKind&#34;: </span>{
-            <span style="color:#f92672">&#34;group&#34;: </span><span style="color:#e6db74">&#34;akri.sh&#34;</span>,
-            <span style="color:#f92672">&#34;version&#34;: </span><span style="color:#e6db74">&#34;v0&#34;</span>,
-            <span style="color:#f92672">&#34;kind&#34;: </span><span style="color:#e6db74">&#34;Configuration&#34;</span>
-        },
-        <span style="color:#f92672">&#34;requestResource&#34;: </span>{
-            <span style="color:#f92672">&#34;group&#34;: </span><span style="color:#e6db74">&#34;akri.sh&#34;</span>,
-            <span style="color:#f92672">&#34;version&#34;: </span><span style="color:#e6db74">&#34;v0&#34;</span>,
-            <span style="color:#f92672">&#34;resource&#34;: </span><span style="color:#e6db74">&#34;configurations&#34;</span>
-        },
-        <span style="color:#f92672">&#34;name&#34;: </span><span style="color:#e6db74">&#34;something&#34;</span>,
-        <span style="color:#f92672">&#34;namespace&#34;: </span><span style="color:#e6db74">&#34;something&#34;</span>,
-        <span style="color:#f92672">&#34;operation&#34;: </span><span style="color:#e6db74">&#34;CREATE&#34;</span>,
-        <span style="color:#f92672">&#34;userInfo&#34;: </span>{
-            <span style="color:#f92672">&#34;username&#34;: </span><span style="color:#e6db74">&#34;admin&#34;</span>,
-            <span style="color:#f92672">&#34;uid&#34;: </span><span style="color:#e6db74">&#34;admin&#34;</span>,
-            <span style="color:#f92672">&#34;groups&#34;: </span>[
-                <span style="color:#e6db74">&#34;system:masters&#34;</span>,
-                <span style="color:#e6db74">&#34;system:authenticated&#34;</span>
-            ]
-        },
-        <span style="color:#f92672">&#34;object&#34;: </span>{
-            <span style="color:#f92672">&#34;apiVersion&#34;: </span><span style="color:#e6db74">&#34;akri.sh/v0&#34;</span>,
-            <span style="color:#f92672">&#34;kind&#34;: </span><span style="color:#e6db74">&#34;Configuration&#34;</span>,
-            <span style="color:#ae81ff">...</span>
-        },
-    }
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--insecure <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--cert <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.crt <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--key <span style="color:#e6db74">${</span>FILENAME<span style="color:#e6db74">}</span>.key <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#34;@./admissionreview.json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/validate<span style="color:#f92672">)</span>
+</span></span></code></pre></div><p>Using an <code>admissionreview.json</code> of the form:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;kind&#34;: </span><span style="color:#e6db74">&#34;AdmissionReview&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;apiVersion&#34;: </span><span style="color:#e6db74">&#34;admission.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;request&#34;: </span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;uid&#34;: </span><span style="color:#e6db74">&#34;12345678-1234-1234-1234-1234567890ab&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;kind&#34;: </span>{
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;group&#34;: </span><span style="color:#e6db74">&#34;akri.sh&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;version&#34;: </span><span style="color:#e6db74">&#34;v0&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;kind&#34;: </span><span style="color:#e6db74">&#34;Configuration&#34;</span>
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;resource&#34;: </span>{
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;group&#34;: </span><span style="color:#e6db74">&#34;akri.sh&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;version&#34;: </span><span style="color:#e6db74">&#34;v0&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;resource&#34;: </span><span style="color:#e6db74">&#34;configurations&#34;</span>
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;requestKind&#34;: </span>{
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;group&#34;: </span><span style="color:#e6db74">&#34;akri.sh&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;version&#34;: </span><span style="color:#e6db74">&#34;v0&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;kind&#34;: </span><span style="color:#e6db74">&#34;Configuration&#34;</span>
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;requestResource&#34;: </span>{
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;group&#34;: </span><span style="color:#e6db74">&#34;akri.sh&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;version&#34;: </span><span style="color:#e6db74">&#34;v0&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;resource&#34;: </span><span style="color:#e6db74">&#34;configurations&#34;</span>
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;name&#34;: </span><span style="color:#e6db74">&#34;something&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;namespace&#34;: </span><span style="color:#e6db74">&#34;something&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;operation&#34;: </span><span style="color:#e6db74">&#34;CREATE&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;userInfo&#34;: </span>{
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;username&#34;: </span><span style="color:#e6db74">&#34;admin&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;uid&#34;: </span><span style="color:#e6db74">&#34;admin&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;groups&#34;: </span>[
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;system:masters&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;system:authenticated&#34;</span>
+</span></span><span style="display:flex;"><span>            ]
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;object&#34;: </span>{
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;apiVersion&#34;: </span><span style="color:#e6db74">&#34;akri.sh/v0&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;kind&#34;: </span><span style="color:#e6db74">&#34;Configuration&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> This JSON is based upon the <code>akri.sh/v0/configurations</code> discussed, the <code>.request</code> details would need to refer to your something.</p>
 </blockquote>
 <p>That&rsquo;s all!</p>

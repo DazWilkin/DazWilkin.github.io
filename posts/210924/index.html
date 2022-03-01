@@ -7,7 +7,7 @@
     <title>GitHub help with dependency management | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="GitHub helps with Golang dependency management">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -195,7 +195,7 @@ if (!doNotTrack) {
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>This is very useful:</p>
 <p><img src="/images/210924.notifications.png" alt="GitHub Notifications"></p>
-<p>I am building an application that comprises multiple repos. I continue to procrastinate on whether using multiple repos vs. a monorepo was a good idea but, an issue that I have (had) is the need to ensure that the repos' contents are using current|latest modules. GitHub can help.</p>
+<p>I am building an application that comprises multiple repos. I continue to procrastinate on whether using multiple repos vs. a monorepo was a good idea but, an issue that I have (had) is the need to ensure that the repos&rsquo; contents are using current|latest modules. GitHub can help.</p>
 <p>Most of the application is written in Golang with a smattering of Rust and some JavaScript.</p>
 <blockquote>
 <p><strong>Aside</strong> Even though I&rsquo;m more proficient with Golang, I want to become more proficient in Rust and I contemplated trying to write the entire application in Rust. However, because I use many Google services and because Google does not yet provide Rust SDKs for its services (gRPC based offerings aside), I think I dodged some bullets using Golang.</p>
@@ -203,14 +203,14 @@ if (!doNotTrack) {
 <p>Earlier this week, I decided to inventory the application&rsquo;s repos by key dependency, i.e. which repos use e.g. <a href="https://pkg.go.dev/google.golang.org/grpc">google.golang.org/grpc</a>. There are less than 10 repos and I keyed the result to less than 25 modules. So, not an insurmountable problem. Interestingly, a chunk of my dependencies are, of course, the app&rsquo;s other repos. I pause every time I think about this, worrying about circular depdenencies and whether, if I touch one repo, I&rsquo;ll spend the week recursively upgrading all the others!</p>
 <h2 id="go-modules-latest">Go Modules <code>@latest</code></h2>
 <p>One challenge I continue to have with Go Modules is whether I should publish releases on GitHub. If I publish a (Go Module) as a release, then I can reference it consistently in <code>go.mod</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">module github.com/me/some-repo
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>go 1.17
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>require (
-	github.com/me/some-other-repo v0.0.8
-)
-</code></pre></div><p>But, of course, whenever I bump one of <code>some-other-repo</code>&rsquo;s depedencies, I should also create a release and then I need to trawl through its dependents and update their references to it.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>module github.com/me/some-repo
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>go 1.17
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>require (
+</span></span><span style="display:flex;"><span>	github.com/me/some-other-repo v0.0.8
+</span></span><span style="display:flex;"><span>)
+</span></span></code></pre></div><p>But, of course, whenever I bump one of <code>some-other-repo</code>&rsquo;s depedencies, I should also create a release and then I need to trawl through its dependents and update their references to it.</p>
 <p>The alternative appears to be (!?) not publishing releases on these internal module dependencies and letting <code>@latest</code> be the mechanism for always grabbing the most recent version.</p>
 <blockquote>
 <p><strong>Test</strong></p>
@@ -227,17 +227,17 @@ if (!doNotTrack) {
 <p><strong>NOTE</strong> So there&rsquo;s the original <a href="https://dependabot.com/">Dependabot</a> and there&rsquo;s the version deployed to GitHub and the two aren&rsquo;t the same so, take care when viewing the documentation.</p>
 </blockquote>
 <p>By committing a Dependabot spec|config file to your repos, you can configure GitHub to check code dependencies for you (Golang, JavaScript, Python, Rust etc. etc.). See <a href="https://docs.github.com/en/code-security/supply-chain-security/keeping-your-dependencies-updated-automatically/about-dependabot-version-updates#supported-repositories-and-ecosystems">Supported repos and ecos</a>. You can either commit the file (<code>.github/dependabot.yml</code>) manually or, if you browse &ldquo;Insights&rdquo; (<code>https://github.com/OWNER/REPO/pulse</code>), &ldquo;Dependency Graph&rdquo;, then &ldquo;Dependabot&rdquo; (<code>https://github.com/OWNER/REPO/network/updates</code>), if not already configured, the GitHub UI will help guide you to committing the file.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">version</span>: <span style="color:#ae81ff">2</span>
-<span style="color:#f92672">updates</span>:
-- <span style="color:#f92672">package-ecosystem</span>: <span style="color:#e6db74">&#34;github-actions&#34;</span>
-  <span style="color:#f92672">directory</span>: <span style="color:#e6db74">&#34;/&#34;</span>
-  <span style="color:#f92672">schedule</span>:
-    <span style="color:#f92672">interval</span>: <span style="color:#e6db74">&#34;daily&#34;</span>
-- <span style="color:#f92672">package-ecosystem</span>: <span style="color:#e6db74">&#34;gomod&#34;</span>
-  <span style="color:#f92672">directory</span>: <span style="color:#e6db74">&#34;/&#34;</span>
-  <span style="color:#f92672">schedule</span>:
-    <span style="color:#f92672">interval</span>: <span style="color:#e6db74">&#34;daily&#34;</span>
-</code></pre></div><p>In the example above, taken from <a href="https://github.com/DazWilkin/gcp-exporter"><code>github.com/DazWilkin/gcp-exporter</code></a>, Dependabot is configured to check GitHub Actions and Golang Modules for updates.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">version</span>: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">updates</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">package-ecosystem</span>: <span style="color:#e6db74">&#34;github-actions&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">directory</span>: <span style="color:#e6db74">&#34;/&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">schedule</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">interval</span>: <span style="color:#e6db74">&#34;daily&#34;</span>
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">package-ecosystem</span>: <span style="color:#e6db74">&#34;gomod&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">directory</span>: <span style="color:#e6db74">&#34;/&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">schedule</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">interval</span>: <span style="color:#e6db74">&#34;daily&#34;</span>
+</span></span></code></pre></div><p>In the example above, taken from <a href="https://github.com/DazWilkin/gcp-exporter"><code>github.com/DazWilkin/gcp-exporter</code></a>, Dependabot is configured to check GitHub Actions and Golang Modules for updates.</p>
 <p>I&rsquo;ve also been enabling: &ldquo;Dependency graph&rdquo;, &ldquo;Dependabot alerts&rdquo; and &ldquo;Dependabot security updates&rdquo; via each repo&rsquo;s &ldquo;Settings&rdquo;, &ldquo;Security &amp; analysis&rdquo; page (<code>https://github.com/OWNER/REPO/settings/security_analysis</code>)</p>
 <p><img src="/images/210924.settings.png" alt="Security & analysis"></p>
 <p>The screenshot at the top of the post, shows Notifications for this repo that I received this week for this week:</p>

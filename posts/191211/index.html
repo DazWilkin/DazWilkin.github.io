@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="I&rsquo;ve written a couple of deployment options (Google Compute Engine; Kubernetes) for an open-source project. The Kubernetes deployment provides NodePort and (TCP) LoadBalancer options and I&rsquo;ve been trying (unsuccessfully) to add HTTPS Load-balancing.
 I should (!) try to deploy to Google Kubernetes Engine (GKE) but I&rsquo;ve been using microk8s, Digital Ocean Managed Kubernetes and the Linode LKE Beta. Each of these requires an implementation of Ingress controller. For GKE, GCP&rsquo;s HTTP/S Load-balancer (GCLB) is used.">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -201,119 +201,118 @@ if (!doNotTrack) {
 <p>I should (!) try to deploy to <a href="https://cloud.google.com/kubernetes-engine/">Google Kubernetes Engine (GKE)</a> but I&rsquo;ve been using <a href="https://microk8s.io">microk8s</a>, Digital Ocean <a href="https://www.digitalocean.com/products/kubernetes/">Managed Kubernetes</a> and the Linode <a href="https://www.linode.com/products/kubernetes/">LKE</a> Beta. Each of these requires an implementation of Ingress controller. For GKE, GCP&rsquo;s HTTP/S Load-balancer (GCLB) is used. But, for the other services, NGINX Ingress is a good option and so I&rsquo;ve been exploring NGINX Ingress (Controller) <a href="https://kubernetes.github.io/ingress-nginx/">link</a>. This Ingress appears to work except that I&rsquo;ve been unable to get it to work with mutual TLS between the (NGINX) proxy and my backend services.</p>
 <p><a href="https://github.com/kubernetes/ingress-nginx/issues/3511">This</a> may be related to my problem.</p>
 <p>For microk8s, a TCP Load-balancer is required too. <a href="https://metallb.universe.tf/">MetalLB</a> just works.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>https://raw.githubusercontent.com/google/metallb/v0.8.3/manifests/metallb.yaml
-
-echo <span style="color:#e6db74">&#34;apiVersion: v1
-</span><span style="color:#e6db74">kind: ConfigMap
-</span><span style="color:#e6db74">metadata:
-</span><span style="color:#e6db74">  namespace: metallb-system
-</span><span style="color:#e6db74">  name: config
-</span><span style="color:#e6db74">data:
-</span><span style="color:#e6db74">  config: |
-</span><span style="color:#e6db74">    address-pools:
-</span><span style="color:#e6db74">    - name: default
-</span><span style="color:#e6db74">      protocol: layer2
-</span><span style="color:#e6db74">      addresses:
-</span><span style="color:#e6db74">      - 192.168.1.240-192.168.1.250
-</span><span style="color:#e6db74">&#34;</span> | kubectl apply --filename<span style="color:#f92672">=</span>-
-
-kubectl apply --filename<span style="color:#f92672">=</span>https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml
-
-microk8s.enable ingress
-</code></pre></div><p><strong>NB</strong> In the above, I&rsquo;m allocating <code>192.168.1.240-192.168.1.250</code> to MetalLB to use in creating Load-balancers.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply --filename<span style="color:#f92672">=</span>https://raw.githubusercontent.com/google/metallb/v0.8.3/manifests/metallb.yaml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;apiVersion: v1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">kind: ConfigMap
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">metadata:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  namespace: metallb-system
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  name: config
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">data:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  config: |
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    address-pools:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    - name: default
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      protocol: layer2
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      addresses:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      - 192.168.1.240-192.168.1.250
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;</span> | kubectl apply --filename<span style="color:#f92672">=</span>-
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl apply --filename<span style="color:#f92672">=</span>https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>microk8s.enable ingress
+</span></span></code></pre></div><p><strong>NB</strong> In the above, I&rsquo;m allocating <code>192.168.1.240-192.168.1.250</code> to MetalLB to use in creating Load-balancers.</p>
 <p>To test:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl run kuard --image<span style="color:#f92672">=</span>gcr.io/kuar-demo/kuard-amd64:blue --port<span style="color:#f92672">=</span><span style="color:#ae81ff">8080</span>
-kubectl expose deployment/bigmachine-<span style="color:#e6db74">${</span>ID<span style="color:#e6db74">}</span> --type<span style="color:#f92672">=</span>LoadBalancer --port<span style="color:#f92672">=</span><span style="color:#ae81ff">8080</span>
-</code></pre></div><p>Then browse: <code>http://$(kubectl get service/kuard --output=jsonpath=&quot;{.status.loadBalancer.ingress[0].ip}&quot;):8080</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl run kuard --image<span style="color:#f92672">=</span>gcr.io/kuar-demo/kuard-amd64:blue --port<span style="color:#f92672">=</span><span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>kubectl expose deployment/bigmachine-<span style="color:#e6db74">${</span>ID<span style="color:#e6db74">}</span> --type<span style="color:#f92672">=</span>LoadBalancer --port<span style="color:#f92672">=</span><span style="color:#ae81ff">8080</span>
+</span></span></code></pre></div><p>Then browse: <code>http://$(kubectl get service/kuard --output=jsonpath=&quot;{.status.loadBalancer.ingress[0].ip}&quot;):8080</code></p>
 <p>To tidy-up:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl delete deployment/kuard
-kubectl delete service/kuard
-</code></pre></div><h2 id="mutual-tls">Mutual TLS</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl delete deployment/kuard
+</span></span><span style="display:flex;"><span>kubectl delete service/kuard
+</span></span></code></pre></div><h2 id="mutual-tls">Mutual TLS</h2>
 <p>I then used openssl to generate &lsquo;CA&rsquo; cert|key and server cert|key PEM files. I combined the <code>.crt</code> and <code>.key</code> files into singular <code>.pem</code> files too.</p>
 <p>files: <a href="https://gist.github.com/DazWilkin/ac6ca02a9bee44e5d5621aabe233eb1b">https://gist.github.com/DazWilkin/ac6ca02a9bee44e5d5621aabe233eb1b</a></p>
 <p>Lastly &ndash; and where I&rsquo;ve been spending my time &ndash; the Kubernetes spec to create secrets, Deployments|Services and an Ingress. The file is at the end of this document.</p>
 <p>In my file, there are 3 distinct Deployments|Services and path specs but, for conciseness, I&rsquo;ve collapsed that to a single Deployment|Service and 3 path specs.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>test.yaml
-</code></pre></div><p>All being well:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get services --namespace<span style="color:#f92672">=</span>test
-</code></pre></div><p>And:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NODEPORT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  kubectl get services/something-00 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span>test <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.ports[0].nodePort}&#34;</span><span style="color:#66d9ef">)</span>
-
-curl --insecure --cert /path/to/ca.pem https://localhost:<span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span>/healthz
-ok
-curl --insecure --cert /path/to/ca.pem https://localhost:<span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span>/certs
------BEGIN CERTIFICATE-----
-MIIC6TCCAdGgAwIBAgIBATANBgkqhkiG9w0BAQsFADAVMRMwEQYDVQQDEwpiaWdt
-YWNoaW5lMCAXDTE5MTIwMjE5MjIyOVoYDzIwNjAwMTAxMDAwMDAwWjAVMRMwEQYD
-VQQDEwpiaWdtYWNoaW5lMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA
-vG3g/mKgWUkKmC3PJ8pKFXW6Gd4LMpVcMLzxJfT9RbtrwWl9FVFUEBeROlYJIvS8
-5gccuZvW870noGOvMvcZNl+VjeJ/RjQeblp4siS+aGiCzCJ/l8+NsHY+j5nN6GPR
-3zbS3P/sNXjtzWcLX759rpxEUzaIW6j1TgMGkG39PEUyqoOj513OzEtCrAKV/zIh
-bizmdyTiHmDg7aZPj45XkojMybCdWDxOPBCcvb4qov0FPf8EaeKTzwLADvne1pCZ
-uhydMOfluIpZ0AxORpxpQCLQT9ZY4voG3GQQyOlgiBn0VvXJjtpOvWNI8t4NCzUy
-PLVl7HuPphJa0u4os/NBsQIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAqQwHQYDVR0l
-BBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMBMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZI
-hvcNAQELBQADggEBAJtePqx5npb2Pc421kaxTH4VaoU4K+BKKd62nZKwILaQbJSt
-PIVYktdL2zmr2ajTNOl4YM/EfJcwS6By0duI96zG1j6dG9txMDUFurDGpc4LVr3G
-AZbgtqi9gH/R4l7VUQPtGi/CKMFID5dIOrLsx6d6u7Yuohy+5tP2YUqkHHyJXznt
-I932aYBPoZmFYc7WrvdSmPSYcbjeTmCO/nBiokCLGY8bP/FftIhaZ/dwf+XBwTnU
-Ki+IscwXVDc+qTZLqSJgmr9vJyB+mUYI+XnIEQ7LmlFClykR+eL+BcWXptJ04r24
-gQygJvBJ0TvECJkQdYduRgXCi950aE42YtKdisA<span style="color:#f92672">=</span>
------END CERTIFICATE-----
-</code></pre></div><p>Which matches the content of my ca.crt file.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply --filename<span style="color:#f92672">=</span>test.yaml
+</span></span></code></pre></div><p>All being well:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get services --namespace<span style="color:#f92672">=</span>test
+</span></span></code></pre></div><p>And:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NODEPORT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  kubectl get services/something-00 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span>test <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.ports[0].nodePort}&#34;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>curl --insecure --cert /path/to/ca.pem https://localhost:<span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span>/healthz
+</span></span><span style="display:flex;"><span>ok
+</span></span><span style="display:flex;"><span>curl --insecure --cert /path/to/ca.pem https://localhost:<span style="color:#e6db74">${</span>NODEPORT<span style="color:#e6db74">}</span>/certs
+</span></span><span style="display:flex;"><span>-----BEGIN CERTIFICATE-----
+</span></span><span style="display:flex;"><span>MIIC6TCCAdGgAwIBAgIBATANBgkqhkiG9w0BAQsFADAVMRMwEQYDVQQDEwpiaWdt
+</span></span><span style="display:flex;"><span>YWNoaW5lMCAXDTE5MTIwMjE5MjIyOVoYDzIwNjAwMTAxMDAwMDAwWjAVMRMwEQYD
+</span></span><span style="display:flex;"><span>VQQDEwpiaWdtYWNoaW5lMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA
+</span></span><span style="display:flex;"><span>vG3g/mKgWUkKmC3PJ8pKFXW6Gd4LMpVcMLzxJfT9RbtrwWl9FVFUEBeROlYJIvS8
+</span></span><span style="display:flex;"><span>5gccuZvW870noGOvMvcZNl+VjeJ/RjQeblp4siS+aGiCzCJ/l8+NsHY+j5nN6GPR
+</span></span><span style="display:flex;"><span>3zbS3P/sNXjtzWcLX759rpxEUzaIW6j1TgMGkG39PEUyqoOj513OzEtCrAKV/zIh
+</span></span><span style="display:flex;"><span>bizmdyTiHmDg7aZPj45XkojMybCdWDxOPBCcvb4qov0FPf8EaeKTzwLADvne1pCZ
+</span></span><span style="display:flex;"><span>uhydMOfluIpZ0AxORpxpQCLQT9ZY4voG3GQQyOlgiBn0VvXJjtpOvWNI8t4NCzUy
+</span></span><span style="display:flex;"><span>PLVl7HuPphJa0u4os/NBsQIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAqQwHQYDVR0l
+</span></span><span style="display:flex;"><span>BBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMBMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZI
+</span></span><span style="display:flex;"><span>hvcNAQELBQADggEBAJtePqx5npb2Pc421kaxTH4VaoU4K+BKKd62nZKwILaQbJSt
+</span></span><span style="display:flex;"><span>PIVYktdL2zmr2ajTNOl4YM/EfJcwS6By0duI96zG1j6dG9txMDUFurDGpc4LVr3G
+</span></span><span style="display:flex;"><span>AZbgtqi9gH/R4l7VUQPtGi/CKMFID5dIOrLsx6d6u7Yuohy+5tP2YUqkHHyJXznt
+</span></span><span style="display:flex;"><span>I932aYBPoZmFYc7WrvdSmPSYcbjeTmCO/nBiokCLGY8bP/FftIhaZ/dwf+XBwTnU
+</span></span><span style="display:flex;"><span>Ki+IscwXVDc+qTZLqSJgmr9vJyB+mUYI+XnIEQ7LmlFClykR+eL+BcWXptJ04r24
+</span></span><span style="display:flex;"><span>gQygJvBJ0TvECJkQdYduRgXCi950aE42YtKdisA<span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>-----END CERTIFICATE-----
+</span></span></code></pre></div><p>Which matches the content of my ca.crt file.</p>
 <p>However (!), if I try to route this request through the proxy, no joy :-(</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl --insecure --cert /path/to/ca.pem https://localhost:443/something-00/healthz
-&lt;html&gt;
-&lt;head&gt;&lt;title&gt;502 Bad Gateway&lt;/title&gt;&lt;/head&gt;
-&lt;body&gt;
-&lt;center&gt;&lt;h1&gt;502 Bad Gateway&lt;/h1&gt;&lt;/center&gt;
-&lt;hr&gt;&lt;center&gt;openresty/1.15.8.1&lt;/center&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-
-curl --insecure --cert /path/to/ca.pem https://localhost:443/something-00/certs
-&lt;html&gt;
-&lt;head&gt;&lt;title&gt;502 Bad Gateway&lt;/title&gt;&lt;/head&gt;
-&lt;body&gt;
-&lt;center&gt;&lt;h1&gt;502 Bad Gateway&lt;/h1&gt;&lt;/center&gt;
-&lt;hr&gt;&lt;center&gt;openresty/1.15.8.1&lt;/center&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-
-</code></pre></div><p>If I look at the Pods' logs:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NAMESPACE<span style="color:#f92672">=</span>test
-PODS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  kubectl get pods <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>name<span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#66d9ef">for</span> POD in <span style="color:#e6db74">${</span>PODS<span style="color:#e6db74">}</span>
-<span style="color:#66d9ef">do</span>
-  echo <span style="color:#e6db74">&#34;** </span><span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-  kubectl logs <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span> --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-  echo
-<span style="color:#66d9ef">done</span>
-** pod/something-00-7df4f998df-879tf
-2019/12/12 00:45:08 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> CA: /secrets/ca/tls.crt
-2019/12/12 00:45:08 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Server cert: /secrets/server/tls.crt; key: /secrets/server/tls.key
-2019/12/12 00:45:08 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Server starting <span style="color:#f92672">[</span>:443<span style="color:#f92672">]</span>
-2019/12/12 00:51:03 http: TLS handshake error from 10.1.1.1:50060: tls: client didn<span style="color:#e6db74">&#39;t provide a certificate
-</span><span style="color:#e6db74">2019/12/12 00:51:03 http: TLS handshake error from 10.1.1.1:50062: tls: client didn&#39;</span>t provide a certificate
-2019/12/12 00:51:03 http: TLS handshake error from 10.1.1.1:50064: tls: client didn<span style="color:#e6db74">&#39;t provide a certificate
-</span><span style="color:#e6db74">2019/12/12 00:51:29 http: TLS handshake error from 10.1.1.1:50164: tls: client didn&#39;</span>t provide a certificate
-2019/12/12 00:51:29 http: TLS handshake error from 10.1.1.1:50166: tls: client didn<span style="color:#e6db74">&#39;t provide a certificate
-</span><span style="color:#e6db74">2019/12/12 00:51:29 http: TLS handshake error from 10.1.1.1:50168: tls: client didn&#39;</span>t provide a certificate
-</code></pre></div><p>I tried restarting the Ingress using the command-line flag <code>--enable-ssl-passthrough</code> and swapping the annotations as outlined below, but this makes no difference. I achieved this by pulling the YAML for the NGINX Ingress controller, editing the YAML to include that arg and then reapplying the YAML.</p>
-<p>The Ingress' logs show nothing obvious:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">POD<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\ </span>                                                                                        
-  kubectl get pods <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --selector<span style="color:#f92672">=</span>app.kubernetes.io/name<span style="color:#f92672">=</span>ingress-nginx <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span>ingress-nginx <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.items[0].metadata.name}&#34;</span><span style="color:#66d9ef">)</span>
-kubectl logs <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span> --namespace<span style="color:#f92672">=</span>ingress-nginx
-</code></pre></div><p>results in:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl --insecure --cert /path/to/ca.pem https://localhost:443/something-00/healthz
+</span></span><span style="display:flex;"><span>&lt;html&gt;
+</span></span><span style="display:flex;"><span>&lt;head&gt;&lt;title&gt;502 Bad Gateway&lt;/title&gt;&lt;/head&gt;
+</span></span><span style="display:flex;"><span>&lt;body&gt;
+</span></span><span style="display:flex;"><span>&lt;center&gt;&lt;h1&gt;502 Bad Gateway&lt;/h1&gt;&lt;/center&gt;
+</span></span><span style="display:flex;"><span>&lt;hr&gt;&lt;center&gt;openresty/1.15.8.1&lt;/center&gt;
+</span></span><span style="display:flex;"><span>&lt;/body&gt;
+</span></span><span style="display:flex;"><span>&lt;/html&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>curl --insecure --cert /path/to/ca.pem https://localhost:443/something-00/certs
+</span></span><span style="display:flex;"><span>&lt;html&gt;
+</span></span><span style="display:flex;"><span>&lt;head&gt;&lt;title&gt;502 Bad Gateway&lt;/title&gt;&lt;/head&gt;
+</span></span><span style="display:flex;"><span>&lt;body&gt;
+</span></span><span style="display:flex;"><span>&lt;center&gt;&lt;h1&gt;502 Bad Gateway&lt;/h1&gt;&lt;/center&gt;
+</span></span><span style="display:flex;"><span>&lt;hr&gt;&lt;center&gt;openresty/1.15.8.1&lt;/center&gt;
+</span></span><span style="display:flex;"><span>&lt;/body&gt;
+</span></span><span style="display:flex;"><span>&lt;/html&gt;
+</span></span></code></pre></div><p>If I look at the Pods&rsquo; logs:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NAMESPACE<span style="color:#f92672">=</span>test
+</span></span><span style="display:flex;"><span>PODS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  kubectl get pods <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>name<span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#66d9ef">for</span> POD in <span style="color:#e6db74">${</span>PODS<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  echo <span style="color:#e6db74">&#34;** </span><span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>  kubectl logs <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span> --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>  echo
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>** pod/something-00-7df4f998df-879tf
+</span></span><span style="display:flex;"><span>2019/12/12 00:45:08 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> CA: /secrets/ca/tls.crt
+</span></span><span style="display:flex;"><span>2019/12/12 00:45:08 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Server cert: /secrets/server/tls.crt; key: /secrets/server/tls.key
+</span></span><span style="display:flex;"><span>2019/12/12 00:45:08 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Server starting <span style="color:#f92672">[</span>:443<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>2019/12/12 00:51:03 http: TLS handshake error from 10.1.1.1:50060: tls: client didn<span style="color:#e6db74">&#39;t provide a certificate
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">2019/12/12 00:51:03 http: TLS handshake error from 10.1.1.1:50062: tls: client didn&#39;</span>t provide a certificate
+</span></span><span style="display:flex;"><span>2019/12/12 00:51:03 http: TLS handshake error from 10.1.1.1:50064: tls: client didn<span style="color:#e6db74">&#39;t provide a certificate
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">2019/12/12 00:51:29 http: TLS handshake error from 10.1.1.1:50164: tls: client didn&#39;</span>t provide a certificate
+</span></span><span style="display:flex;"><span>2019/12/12 00:51:29 http: TLS handshake error from 10.1.1.1:50166: tls: client didn<span style="color:#e6db74">&#39;t provide a certificate
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">2019/12/12 00:51:29 http: TLS handshake error from 10.1.1.1:50168: tls: client didn&#39;</span>t provide a certificate
+</span></span></code></pre></div><p>I tried restarting the Ingress using the command-line flag <code>--enable-ssl-passthrough</code> and swapping the annotations as outlined below, but this makes no difference. I achieved this by pulling the YAML for the NGINX Ingress controller, editing the YAML to include that arg and then reapplying the YAML.</p>
+<p>The Ingress&rsquo; logs show nothing obvious:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>POD<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\ </span>                                                                                        
+</span></span><span style="display:flex;"><span>  kubectl get pods <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --selector<span style="color:#f92672">=</span>app.kubernetes.io/name<span style="color:#f92672">=</span>ingress-nginx <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span>ingress-nginx <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.items[0].metadata.name}&#34;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>kubectl logs <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span> --namespace<span style="color:#f92672">=</span>ingress-nginx
+</span></span></code></pre></div><p>results in:</p>
 <pre tabindex="0"><code>-------------------------------------------------------------------------------
 NGINX Ingress controller
   Release:       0.26.1
@@ -329,12 +328,12 @@ I1212 00:55:46.282650       6 main.go:182] Creating API client for https://10.15
 I1212 00:55:46.288624       6 main.go:226] Running in Kubernetes cluster version v1.16 (v1.16.3) - git (clean) commit b3cbbae08ec52a7fc73d334838e18d17e8512749 - platform linux/amd64
 I1212 00:55:46.473487       6 main.go:101] SSL fake certificate created /etc/ingress-controller/ssl/default-fake-certificate.pem
 I1212 00:55:46.492963       6 nginx.go:263] Starting NGINX Ingress controller
-I1212 00:55:46.497370       6 event.go:255] Event(v1.ObjectReference{Kind:&quot;ConfigMap&quot;, Namespace:&quot;ingress-nginx&quot;, Name:&quot;tcp-services&quot;, UID:&quot;a48b9837-035a-40ba-a88d-cad5c4352b98&quot;, APIVersion:&quot;v1&quot;, ResourceVersion:&quot;3615062&quot;, FieldPath:&quot;&quot;}): type: 'Normal' reason: 'CREATE' ConfigMap ingress-nginx/tcp-services
-I1212 00:55:46.497414       6 event.go:255] Event(v1.ObjectReference{Kind:&quot;ConfigMap&quot;, Namespace:&quot;ingress-nginx&quot;, Name:&quot;udp-services&quot;, UID:&quot;3e53e812-0fb0-4559-bad6-898577676d3d&quot;, APIVersion:&quot;v1&quot;, ResourceVersion:&quot;3615063&quot;, FieldPath:&quot;&quot;}): type: 'Normal' reason: 'CREATE' ConfigMap ingress-nginx/udp-services
-I1212 00:55:46.497468       6 event.go:255] Event(v1.ObjectReference{Kind:&quot;ConfigMap&quot;, Namespace:&quot;ingress-nginx&quot;, Name:&quot;nginx-configuration&quot;, UID:&quot;280901b5-27d0-41da-9771-cf1abe3e28b4&quot;, APIVersion:&quot;v1&quot;, ResourceVersion:&quot;3615059&quot;, FieldPath:&quot;&quot;}): type: 'Normal' reason: 'CREATE' ConfigMap ingress-nginx/nginx-configuration
-I1212 00:55:47.594976       6 event.go:255] Event(v1.ObjectReference{Kind:&quot;Ingress&quot;, Namespace:&quot;test&quot;, Name:&quot;something&quot;, UID:&quot;4205269b-0be4-4841-aa10-d9c5a7f09b48&quot;, APIVersion:&quot;networking.k8s.io/v1beta1&quot;, ResourceVersion:&quot;4304305&quot;, FieldPath:&quot;&quot;}): type: 'Normal' reason: 'CREATE' Ingress test/something
-I1212 00:55:47.595087       6 backend_ssl.go:66] Adding Secret &quot;test/ca&quot; to the local store
-I1212 00:55:47.595322       6 backend_ssl.go:66] Adding Secret &quot;test/server&quot; to the local store
+I1212 00:55:46.497370       6 event.go:255] Event(v1.ObjectReference{Kind:&#34;ConfigMap&#34;, Namespace:&#34;ingress-nginx&#34;, Name:&#34;tcp-services&#34;, UID:&#34;a48b9837-035a-40ba-a88d-cad5c4352b98&#34;, APIVersion:&#34;v1&#34;, ResourceVersion:&#34;3615062&#34;, FieldPath:&#34;&#34;}): type: &#39;Normal&#39; reason: &#39;CREATE&#39; ConfigMap ingress-nginx/tcp-services
+I1212 00:55:46.497414       6 event.go:255] Event(v1.ObjectReference{Kind:&#34;ConfigMap&#34;, Namespace:&#34;ingress-nginx&#34;, Name:&#34;udp-services&#34;, UID:&#34;3e53e812-0fb0-4559-bad6-898577676d3d&#34;, APIVersion:&#34;v1&#34;, ResourceVersion:&#34;3615063&#34;, FieldPath:&#34;&#34;}): type: &#39;Normal&#39; reason: &#39;CREATE&#39; ConfigMap ingress-nginx/udp-services
+I1212 00:55:46.497468       6 event.go:255] Event(v1.ObjectReference{Kind:&#34;ConfigMap&#34;, Namespace:&#34;ingress-nginx&#34;, Name:&#34;nginx-configuration&#34;, UID:&#34;280901b5-27d0-41da-9771-cf1abe3e28b4&#34;, APIVersion:&#34;v1&#34;, ResourceVersion:&#34;3615059&#34;, FieldPath:&#34;&#34;}): type: &#39;Normal&#39; reason: &#39;CREATE&#39; ConfigMap ingress-nginx/nginx-configuration
+I1212 00:55:47.594976       6 event.go:255] Event(v1.ObjectReference{Kind:&#34;Ingress&#34;, Namespace:&#34;test&#34;, Name:&#34;something&#34;, UID:&#34;4205269b-0be4-4841-aa10-d9c5a7f09b48&#34;, APIVersion:&#34;networking.k8s.io/v1beta1&#34;, ResourceVersion:&#34;4304305&#34;, FieldPath:&#34;&#34;}): type: &#39;Normal&#39; reason: &#39;CREATE&#39; Ingress test/something
+I1212 00:55:47.595087       6 backend_ssl.go:66] Adding Secret &#34;test/ca&#34; to the local store
+I1212 00:55:47.595322       6 backend_ssl.go:66] Adding Secret &#34;test/server&#34; to the local store
 I1212 00:55:47.693495       6 nginx.go:307] Starting NGINX process
 I1212 00:55:47.693545       6 leaderelection.go:241] attempting to acquire leader lease  ingress-nginx/ingress-controller-leader-nginx...
 I1212 00:55:47.694200       6 controller.go:134] Configuration changes detected, backend reload required.
@@ -344,151 +343,151 @@ I1212 00:55:47.740067       6 controller.go:159] Initial sync, sleeping for 1 se
 I1212 00:56:37.251319       6 status.go:86] new leader elected: nginx-ingress-controller-568867bf56-tfbll
 I1212 00:56:37.251642       6 leaderelection.go:251] successfully acquired lease ingress-nginx/ingress-controller-leader-nginx
 I1212 00:56:37.258543       6 status.go:274] updating Ingress test/something status from [{127.0.0.1 }] to [{10.152.183.75 }]
-I1212 00:56:37.263063       6 event.go:255] Event(v1.ObjectReference{Kind:&quot;Ingress&quot;, Namespace:&quot;test&quot;, Name:&quot;something&quot;, UID:&quot;4205269b-0be4-4841-aa10-d9c5a7f09b48&quot;, APIVersion:&quot;networking.k8s.io/v1beta1&quot;, ResourceVersion:&quot;4304427&quot;, FieldPath:&quot;&quot;}): type: 'Normal' reason: 'UPDATE' Ingress test/something
+I1212 00:56:37.263063       6 event.go:255] Event(v1.ObjectReference{Kind:&#34;Ingress&#34;, Namespace:&#34;test&#34;, Name:&#34;something&#34;, UID:&#34;4205269b-0be4-4841-aa10-d9c5a7f09b48&#34;, APIVersion:&#34;networking.k8s.io/v1beta1&#34;, ResourceVersion:&#34;4304427&#34;, FieldPath:&#34;&#34;}): type: &#39;Normal&#39; reason: &#39;UPDATE&#39; Ingress test/something
 </code></pre><p>Unfortunately, I&rsquo;m insufficiently well-versed in NGINX configs to make much sense of the result of:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">POD<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  kubectl get pods <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --selector<span style="color:#f92672">=</span>app.kubernetes.io/name<span style="color:#f92672">=</span>ingress-nginx <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span>ingress-nginx <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.items[0].metadata.name}&#34;</span><span style="color:#66d9ef">)</span>
-kubectl exec --stdin --tty <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span> --namespace<span style="color:#f92672">=</span>ingress-nginx -- cat /etc/nginx/nginx.conf
-</code></pre></div><p>To tidy-up</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>POD<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  kubectl get pods <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --selector<span style="color:#f92672">=</span>app.kubernetes.io/name<span style="color:#f92672">=</span>ingress-nginx <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span>ingress-nginx <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.items[0].metadata.name}&#34;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>kubectl exec --stdin --tty <span style="color:#e6db74">${</span>POD<span style="color:#e6db74">}</span> --namespace<span style="color:#f92672">=</span>ingress-nginx -- cat /etc/nginx/nginx.conf
+</span></span></code></pre></div><p>To tidy-up</p>
 <ul>
 <li>either: <code>kubectl delete namespace/test</code></li>
 <li>or: <code>kubectl delete --filename=test.yaml</code></li>
 </ul>
 <h2 id="spec">Spec</h2>
 <p>Kubernetes Secret, Deployment|Service and Ingress spec:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">---
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Namespace</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">test</span>
----
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Secret</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">server</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">test</span>
-<span style="color:#f92672">data</span>:
-  <span style="color:#f92672">tls.crt</span>: <span style="color:#e6db74">&#34;[REDACTED]&#34;</span>
-  <span style="color:#f92672">tls.key</span>: <span style="color:#e6db74">&#34;[REDACTED]&#34;</span>
----
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Secret</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ca</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">test</span>
-<span style="color:#f92672">data</span>:
-  <span style="color:#f92672">tls.crt</span>: <span style="color:#e6db74">&#34;[REDACTED]&#34;</span>
-  <span style="color:#f92672">tls.key</span>: <span style="color:#e6db74">&#34;[REDACTED]&#34;</span>
----
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apps/v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Deployment</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">something</span>
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">something-00</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">test</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
-  <span style="color:#f92672">selector</span>:
-    <span style="color:#f92672">matchLabels</span>:
-      <span style="color:#f92672">run</span>: <span style="color:#e6db74">&#34;00&#34;</span>
-  <span style="color:#f92672">template</span>:
-    <span style="color:#f92672">metadata</span>:
-      <span style="color:#f92672">labels</span>:
-        <span style="color:#f92672">run</span>: <span style="color:#e6db74">&#34;00&#34;</span>
-    <span style="color:#f92672">spec</span>:
-      <span style="color:#f92672">volumes</span>:
-        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ca</span>
-          <span style="color:#f92672">secret</span>:
-            <span style="color:#f92672">secretName</span>: <span style="color:#ae81ff">ca</span>
-        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">server</span>
-          <span style="color:#f92672">secret</span>:
-            <span style="color:#f92672">secretName</span>: <span style="color:#ae81ff">server</span>
-      <span style="color:#f92672">containers</span>:
-        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">server</span>
-          <span style="color:#f92672">image</span>: <span style="color:#ae81ff">dazwilkin/server@sha256:441210d5204153b4e0873881330711b86e653504cd5971c481637d223e1a82ea</span>
-          <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
-          <span style="color:#f92672">args</span>:
-            - --<span style="color:#ae81ff">https_endpoint=:443</span>
-            - --<span style="color:#ae81ff">crt_ca=/secrets/ca/tls.crt</span>
-            - --<span style="color:#ae81ff">crt_server=/secrets/server/tls.crt</span>
-            - --<span style="color:#ae81ff">key_server=/secrets/server/tls.key</span>
-          <span style="color:#f92672">ports</span>:
-            - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">443</span>
-              <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
-          <span style="color:#f92672">volumeMounts</span>:
-            - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ca</span>
-              <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/secrets/ca</span>
-            - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">server</span>
-              <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/secrets/server</span>
----
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">something</span>
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">something-00</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">test</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">ports</span>:
-    - <span style="color:#f92672">port</span>: <span style="color:#ae81ff">443</span>
-      <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
-      <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">443</span>
-  <span style="color:#f92672">selector</span>:
-    <span style="color:#f92672">run</span>: <span style="color:#e6db74">&#34;00&#34;</span>
-  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">NodePort</span>
----
-<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">networking.k8s.io/v1beta1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Ingress</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">something</span>
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">something</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">test</span>
-  <span style="color:#f92672">annotations</span>:
-    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#e6db74">&#34;nginx&#34;</span>
-    <span style="color:#f92672">nginx.ingress.kubernetes.io/rewrite-target</span>: <span style="color:#ae81ff">/$2</span>
-    <span style="color:#f92672">nginx.ingress.kubernetes.io/backend-protocol</span>: <span style="color:#e6db74">&#34;HTTPS&#34;</span>
-    <span style="color:#f92672">nginx.ingress.kubernetes.io/proxy-ssl-secret</span>: <span style="color:#e6db74">&#34;test/ca&#34;</span>
-    <span style="color:#f92672">nginx.ingress.kubernetes.io/proxy-ssl-verify</span>: <span style="color:#e6db74">&#34;on&#34;</span>
-    <span style="color:#75715e"># nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: &#34;true&#34;</span>
-    <span style="color:#75715e"># nginx.ingress.kubernetes.io/ssl-passthrough: &#34;true&#34;</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">rules</span>:
-    - <span style="color:#f92672">http</span>:
-        <span style="color:#f92672">paths</span>:
-          - <span style="color:#f92672">backend</span>:
-              <span style="color:#f92672">serviceName</span>: <span style="color:#ae81ff">something-00</span>
-              <span style="color:#f92672">servicePort</span>: <span style="color:#ae81ff">443</span>
-            <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/something-00(/|$)(.*)</span>
-    - <span style="color:#f92672">http</span>:
-        <span style="color:#f92672">paths</span>:
-          - <span style="color:#f92672">backend</span>:
-              <span style="color:#f92672">serviceName</span>: <span style="color:#ae81ff">something-00</span>
-              <span style="color:#f92672">servicePort</span>: <span style="color:#ae81ff">443</span>
-            <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/something-01(/|$)(.*)</span>
-    - <span style="color:#f92672">http</span>:
-        <span style="color:#f92672">paths</span>:
-          - <span style="color:#f92672">backend</span>:
-              <span style="color:#f92672">serviceName</span>: <span style="color:#ae81ff">something-00</span>
-              <span style="color:#f92672">servicePort</span>: <span style="color:#ae81ff">443</span>
-            <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/something-02(/|$)(.*)</span>
-  <span style="color:#f92672">tls</span>:
-    - <span style="color:#f92672">secretName</span>: <span style="color:#ae81ff">server</span>
-</code></pre></div><p><strong>NB</strong> crt|key PEMs bundled into Kubernetes Secrets using <code>base64 --wrap=0 ./${FILE}</code> and <code>tls.crt</code> and <code>tls.key</code> filenames respectively.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Namespace</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">test</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Secret</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">server</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">test</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">data</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">tls.crt</span>: <span style="color:#e6db74">&#34;[REDACTED]&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">tls.key</span>: <span style="color:#e6db74">&#34;[REDACTED]&#34;</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Secret</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ca</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">test</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">data</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">tls.crt</span>: <span style="color:#e6db74">&#34;[REDACTED]&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">tls.key</span>: <span style="color:#e6db74">&#34;[REDACTED]&#34;</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apps/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Deployment</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">something</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">something-00</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">test</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#e6db74">&#34;00&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">template</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">run</span>: <span style="color:#e6db74">&#34;00&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ca</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">secret</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">secretName</span>: <span style="color:#ae81ff">ca</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">server</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">secret</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">secretName</span>: <span style="color:#ae81ff">server</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">server</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">image</span>: <span style="color:#ae81ff">dazwilkin/server@sha256:441210d5204153b4e0873881330711b86e653504cd5971c481637d223e1a82ea</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">args</span>:
+</span></span><span style="display:flex;"><span>            - --<span style="color:#ae81ff">https_endpoint=:443</span>
+</span></span><span style="display:flex;"><span>            - --<span style="color:#ae81ff">crt_ca=/secrets/ca/tls.crt</span>
+</span></span><span style="display:flex;"><span>            - --<span style="color:#ae81ff">crt_server=/secrets/server/tls.crt</span>
+</span></span><span style="display:flex;"><span>            - --<span style="color:#ae81ff">key_server=/secrets/server/tls.key</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>            - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">443</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">volumeMounts</span>:
+</span></span><span style="display:flex;"><span>            - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ca</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/secrets/ca</span>
+</span></span><span style="display:flex;"><span>            - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">server</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/secrets/server</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">something</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">something-00</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">test</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">port</span>: <span style="color:#ae81ff">443</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">443</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: <span style="color:#e6db74">&#34;00&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">NodePort</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">networking.k8s.io/v1beta1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Ingress</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">something</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">something</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">test</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#e6db74">&#34;nginx&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">nginx.ingress.kubernetes.io/rewrite-target</span>: <span style="color:#ae81ff">/$2</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">nginx.ingress.kubernetes.io/backend-protocol</span>: <span style="color:#e6db74">&#34;HTTPS&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">nginx.ingress.kubernetes.io/proxy-ssl-secret</span>: <span style="color:#e6db74">&#34;test/ca&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">nginx.ingress.kubernetes.io/proxy-ssl-verify</span>: <span style="color:#e6db74">&#34;on&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: &#34;true&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># nginx.ingress.kubernetes.io/ssl-passthrough: &#34;true&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">http</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">paths</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#f92672">backend</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">serviceName</span>: <span style="color:#ae81ff">something-00</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">servicePort</span>: <span style="color:#ae81ff">443</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/something-00(/|$)(.*)</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">http</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">paths</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#f92672">backend</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">serviceName</span>: <span style="color:#ae81ff">something-00</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">servicePort</span>: <span style="color:#ae81ff">443</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/something-01(/|$)(.*)</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">http</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">paths</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#f92672">backend</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">serviceName</span>: <span style="color:#ae81ff">something-00</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">servicePort</span>: <span style="color:#ae81ff">443</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/something-02(/|$)(.*)</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">tls</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">secretName</span>: <span style="color:#ae81ff">server</span>
+</span></span></code></pre></div><p><strong>NB</strong> crt|key PEMs bundled into Kubernetes Secrets using <code>base64 --wrap=0 ./${FILE}</code> and <code>tls.crt</code> and <code>tls.key</code> filenames respectively.</p>
 <p>When trying to use SSL passthrough, I changed the paths to be:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">spec</span>:
-   <span style="color:#f92672">rules</span>:
-    - <span style="color:#f92672">http</span>:
-      <span style="color:#f92672">paths</span>:
-       - <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/</span>
-         <span style="color:#f92672">backend</span>:
-           <span style="color:#f92672">serviceName</span>: <span style="color:#ae81ff">something-00</span>
-           <span style="color:#f92672">servicePort</span>: <span style="color:#ae81ff">443</span>
-</code></pre></div><ul class="pa0">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">http</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">paths</span>:
+</span></span><span style="display:flex;"><span>       - <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/</span>
+</span></span><span style="display:flex;"><span>         <span style="color:#f92672">backend</span>:
+</span></span><span style="display:flex;"><span>           <span style="color:#f92672">serviceName</span>: <span style="color:#ae81ff">something-00</span>
+</span></span><span style="display:flex;"><span>           <span style="color:#f92672">servicePort</span>: <span style="color:#ae81ff">443</span>
+</span></span></code></pre></div><ul class="pa0">
   
    <li class="list di">
      <a href="/tags/kubernetes" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">kubernetes</a>

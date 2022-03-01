@@ -7,7 +7,7 @@
     <title>Firestore Golang Timestamps &amp; Merging | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="How to persist timestamps when using Firestore">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -196,58 +196,58 @@ if (!doNotTrack) {
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;m using Google&rsquo;s <a href="https://pkg.go.dev/cloud.google.com/go/firestore#DocumentRef">Golang SDK for Firestore</a>. The experience is excellent and I&rsquo;m quikcly becoming a fan of Firestore. However, as a Golang Firestore developer, I&rsquo;m feeling less loved and some of the concepts in the database were causing me a conundrum.</p>
 <p>I&rsquo;m still not entirely certain that I have Timestamps nailed but&hellip; I learned an important lesson on the auto-creation of Timestamps in documents and how to retain these values.</p>
 <p>Here&rsquo;s a simple Golang struct with <code>firestore</code> tags:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Dog</span> <span style="color:#66d9ef">struct</span> {
-    <span style="color:#a6e22e">Name</span>    <span style="color:#66d9ef">string</span>    <span style="color:#e6db74">`firestore:&#34;name&#34;`</span>
-    <span style="color:#a6e22e">Age</span>     <span style="color:#66d9ef">uint8</span>     <span style="color:#e6db74">`firestore:&#34;age&#34;`</span>
-    <span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`firestore:&#34;created,serverTimestamp&#34;`</span>
-    <span style="color:#a6e22e">Updated</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`firestore:&#34;updated,omitempty&#34;`</span>
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Dog</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Name</span>    <span style="color:#66d9ef">string</span>    <span style="color:#e6db74">`firestore:&#34;name&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Age</span>     <span style="color:#66d9ef">uint8</span>     <span style="color:#e6db74">`firestore:&#34;age&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`firestore:&#34;created,serverTimestamp&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Updated</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`firestore:&#34;updated,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> It&rsquo;s good practice to include <code>description</code> tags too but these are omitted here for succinctness</p>
 </blockquote>
 <p>This approach provides some Golang syntactic sugar for working with Firestore documents. Conceptually, I think (!?), it&rsquo;s good to consider Firestore documents as JSON documents. This model also helps explain some of what follows.</p>
 <p>The tag <code>serverTimestamp</code> indicates that the Golang field (Firestore document property) should be replaced by the service&rsquo;s timestamp when the document is created.</p>
 <p>Let&rsquo;s test that:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{
-    <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;Freddie&#34;</span>,
-    <span style="color:#a6e22e">Age</span>:  <span style="color:#ae81ff">2</span>,
-}
-<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">freddie</span>)
-
-<span style="color:#a6e22e">ref</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;dogs&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#e6db74">&#34;freddie&#34;</span>)
-
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-
-<span style="color:#a6e22e">snap</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">ctx</span>)
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-
-<span style="color:#a6e22e">d</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{}
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">snap</span>.<span style="color:#a6e22e">DataTo</span>(<span style="color:#a6e22e">d</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-
-<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">d</span>)
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;Freddie&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Age</span>:  <span style="color:#ae81ff">2</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">freddie</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ref</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;dogs&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#e6db74">&#34;freddie&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">snap</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">d</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">snap</span>.<span style="color:#a6e22e">DataTo</span>(<span style="color:#a6e22e">d</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">d</span>)
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> <a href="https://pkg.go.dev/cloud.google.com/go/firestore#DocumentRef">DocumentRef</a>s do <strong>not</strong> consume network bandwidth but it pays to not unnecessarily recompute them.</p>
 </blockquote>
 <p>This yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">{
-    Name:Freddie
-    Age:2
-    Created:0001-01-01 00:00:00 +0000 UTC
-    Updated:0001-01-01 00:00:00 +0000 UTC
-}
-{
-    Name:Freddie
-    Age:2
-    Created:2021-05-06 16:33:02.768 +0000 UTC
-    Updated:0001-01-01 00:00:00 +0000 UTC
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Name:Freddie
+</span></span><span style="display:flex;"><span>    Age:2
+</span></span><span style="display:flex;"><span>    Created:0001-01-01 00:00:00 +0000 UTC
+</span></span><span style="display:flex;"><span>    Updated:0001-01-01 00:00:00 +0000 UTC
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Name:Freddie
+</span></span><span style="display:flex;"><span>    Age:2
+</span></span><span style="display:flex;"><span>    Created:2021-05-06 16:33:02.768 +0000 UTC
+</span></span><span style="display:flex;"><span>    Updated:0001-01-01 00:00:00 +0000 UTC
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> pretty-printed to aid comprehension</p>
 </blockquote>
 <blockquote>
@@ -255,78 +255,78 @@ if (!doNotTrack) {
 </blockquote>
 <p>But, great, the <code>Created</code> field is set.</p>
 <p>Let&rsquo;s update the retrieved (!) record, <code>Set</code> then <code>Get</code> it again:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Name</span> = <span style="color:#e6db74">&#34;Frederik Jack&#34;</span>
-<span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Updated</span> = <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>()
-
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-
-<span style="color:#a6e22e">snap</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">ctx</span>)
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-
-<span style="color:#a6e22e">d</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{}
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">snap</span>.<span style="color:#a6e22e">DataTo</span>(<span style="color:#a6e22e">d</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-
-<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">d</span>)
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">{
-    Name:Frederik Jack
-    Age:2
-    Created:2021-05-06 16:33:02.768 +0000 UTC
-    Updated:2021-05-06 16:37:39.571753 +0000 UTC
-}
-</code></pre></div><p>All good&hellip; The <code>Name</code> and <code>Updated</code> fields were updated.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Name</span> = <span style="color:#e6db74">&#34;Frederik Jack&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Updated</span> = <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">snap</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">d</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">snap</span>.<span style="color:#a6e22e">DataTo</span>(<span style="color:#a6e22e">d</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">d</span>)
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Name:Frederik Jack
+</span></span><span style="display:flex;"><span>    Age:2
+</span></span><span style="display:flex;"><span>    Created:2021-05-06 16:33:02.768 +0000 UTC
+</span></span><span style="display:flex;"><span>    Updated:2021-05-06 16:37:39.571753 +0000 UTC
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>All good&hellip; The <code>Name</code> and <code>Updated</code> fields were updated.</p>
 <p>BUT, this probably isn&rsquo;t what we&rsquo;d customarily do. In the above code, we retrieve the document, mutate it and then persist it.</p>
 <p>We&rsquo;d probably do this in practice:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{
-    <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;Freddie&#34;</span>,
-    <span style="color:#a6e22e">Age</span>:  <span style="color:#ae81ff">2</span>,
-}
-<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">freddie</span>)
-
-<span style="color:#a6e22e">ref</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;dogs&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#e6db74">&#34;freddie&#34;</span>)
-
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-
-<span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Name</span> = <span style="color:#e6db74">&#34;Frederik Jack&#34;</span>
-<span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Updated</span> = <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>()
-
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-
-<span style="color:#a6e22e">snap</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">ctx</span>)
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-
-<span style="color:#a6e22e">d</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{}
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">snap</span>.<span style="color:#a6e22e">DataTo</span>(<span style="color:#a6e22e">d</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-
-<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">d</span>)
-</code></pre></div><p>The difference here is that we treat our local object as the source of truth, create it, persist it, change it and then persist it. We&rsquo;re not retrieving the document after each <code>Set</code> because we assume (incorrectly) that it is the source of truth. It isn&rsquo;t!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;Freddie&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Age</span>:  <span style="color:#ae81ff">2</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">freddie</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ref</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;dogs&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#e6db74">&#34;freddie&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Name</span> = <span style="color:#e6db74">&#34;Frederik Jack&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Updated</span> = <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">snap</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">d</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">snap</span>.<span style="color:#a6e22e">DataTo</span>(<span style="color:#a6e22e">d</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">d</span>)
+</span></span></code></pre></div><p>The difference here is that we treat our local object as the source of truth, create it, persist it, change it and then persist it. We&rsquo;re not retrieving the document after each <code>Set</code> because we assume (incorrectly) that it is the source of truth. It isn&rsquo;t!</p>
 <p>Case in point, our local copy doesn&rsquo;t include a value for <code>Created</code> timestamp.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">{
-    Name:Frederik
-    Age:2
-    Created:2021-05-06 10:01:48
-}
-{
-    Name:Frederik Jack
-    Age:2
-    Created:2021-05-06 10:03:31
-    Updated:2021-05-06 10:03:30
-}
-</code></pre></div><p>There are a bunch of (subtle) changes here:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Name:Frederik
+</span></span><span style="display:flex;"><span>    Age:2
+</span></span><span style="display:flex;"><span>    Created:2021-05-06 10:01:48
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Name:Frederik Jack
+</span></span><span style="display:flex;"><span>    Age:2
+</span></span><span style="display:flex;"><span>    Created:2021-05-06 10:03:31
+</span></span><span style="display:flex;"><span>    Updated:2021-05-06 10:03:30
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>There are a bunch of (subtle) changes here:</p>
 <ol>
 <li><code>Frederik</code> to <code>Frederik Jack</code>, good&hellip; expected</li>
 <li><code>Updated</code> is created and set , good&hellip; expected</li>
@@ -349,69 +349,69 @@ if (!doNotTrack) {
 <p>What&rsquo;s the solution?</p>
 <p>If I understand this correctly, the solution is that, unless we&rsquo;re always <code>Set</code>ing every field and we&rsquo;re not using <code>serverTimestamp</code>, we <strong>must</strong> include <a href="https://pkg.go.dev/cloud.google.com/go/firestore#SetOption"><code>SetOption</code></a> when using <code>Set</code>.</p>
 <p>The first time a document is created with <code>Set</code>, there&rsquo;s no document in Firestore and so the concept of merging is moot. Firestore doesn&rsquo;t balk at include merge options but, I think they&rsquo;re redundant at this point:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{
-    <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;Freddie&#34;</span>,
-    <span style="color:#a6e22e">Age</span>:  <span style="color:#ae81ff">2</span>,
-}
-<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">freddie</span>)
-
-<span style="color:#a6e22e">ref</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;dogs&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#e6db74">&#34;freddie&#34;</span>)
-
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-</code></pre></div><p>All subsequent (!) times, we update (this doesn&rsquo;t apply to deletes or gets) an (existing!) document, we must consider applying merge options.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;Freddie&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Age</span>:  <span style="color:#ae81ff">2</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">freddie</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ref</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;dogs&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#e6db74">&#34;freddie&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>All subsequent (!) times, we update (this doesn&rsquo;t apply to deletes or gets) an (existing!) document, we must consider applying merge options.</p>
 <p>Specifically, if we&rsquo;ve a <code>Created</code> field regardless of whether we&rsquo;re using <code>serverTimestamp</code> to set it initally or setting it in our code, we must remember to never overwrite this value and to do so we must <strong>exclude</strong> it from the merge options. This has the effect of leaving it unchanged.</p>
 <p>However, for all the fields that we want to update, we must include these field names in the merge options so as to only overwrite these fields (and leave everything else unchanged).</p>
 <p>This brings me to the final gotcha with the SDK. I was using <code>SetOption</code> incorrectly and was receiving errors. In the following code, note the very specific way in which fields must be represented:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Name</span> = <span style="color:#e6db74">&#34;Frederik Jack&#34;</span>
-<span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Updated</span> = <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>()
-
-<span style="color:#a6e22e">opt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">Merge</span>(
-    []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;name&#34;</span>},
-    []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;age&#34;</span>},
-    []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;updated&#34;</span>},
-)
-
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>, <span style="color:#a6e22e">opt</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-
-<span style="color:#a6e22e">snap</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">ctx</span>)
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-
-<span style="color:#a6e22e">d</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{}
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">snap</span>.<span style="color:#a6e22e">DataTo</span>(<span style="color:#a6e22e">d</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-
-<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">d</span>)
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Name</span> = <span style="color:#e6db74">&#34;Frederik Jack&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Updated</span> = <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">opt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">Merge</span>(
+</span></span><span style="display:flex;"><span>    []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;name&#34;</span>},
+</span></span><span style="display:flex;"><span>    []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;age&#34;</span>},
+</span></span><span style="display:flex;"><span>    []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;updated&#34;</span>},
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>, <span style="color:#a6e22e">opt</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">snap</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ref</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">d</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Dog</span>{}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">snap</span>.<span style="color:#a6e22e">DataTo</span>(<span style="color:#a6e22e">d</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">d</span>)
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> <code>firestore.Merge</code> is variadic and takes an <code>[]string{}</code> for <strong>each</strong> field. There appears to be no simpler mechanism (i.e. to provide just a string) and this complexity appears to result from the need to be able to support complex JSON documents with nested structs in which it&rsquo;s necessary to path to a field.</p>
 </blockquote>
 <blockquote>
 <p><strong>NOTE</strong> <code>Created</code> is <strong>not</strong> included in <code>Merge(...)</code> because we don&rsquo;t plan to overwrite it; it won&rsquo;t be merged (just left)</p>
 </blockquote>
 <p>This yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">{
-    Name:Freddie
-    Age:2
-}
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>{
-    Name:Freddie
-    Age:2
-    Created:2021-05-06 17:32:39.935 +0000 UTC
-}
-{
-    Name:Frederik Jack
-    Age:2
-    Created:2021-05-06 17:32:39.935 +0000 UTC
-    Updated:2021-05-06 17:32:50.626336 +0000 UTC
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Name:Freddie
+</span></span><span style="display:flex;"><span>    Age:2
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>{
+</span></span><span style="display:flex;"><span>    Name:Freddie
+</span></span><span style="display:flex;"><span>    Age:2
+</span></span><span style="display:flex;"><span>    Created:2021-05-06 17:32:39.935 +0000 UTC
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Name:Frederik Jack
+</span></span><span style="display:flex;"><span>    Age:2
+</span></span><span style="display:flex;"><span>    Created:2021-05-06 17:32:39.935 +0000 UTC
+</span></span><span style="display:flex;"><span>    Updated:2021-05-06 17:32:50.626336 +0000 UTC
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> I&rsquo;ve removed the <code>IsZero</code> timestamps as these aren&rsquo;t recorded in Firestore</p>
 </blockquote>
 <p>What are we observing from the above?</p>
@@ -420,7 +420,7 @@ if (!doNotTrack) {
 <li>Because <code>Created</code> is not in the merge list, even if it changes in the code, the update value, not being in the merge list, won&rsquo;t be persisted to Firestore.</li>
 <li>We must manually update <code>Updated</code></li>
 </ol>
-<p>See this issue <a href="https://github.com/googleapis/google-cloud-go/issues/1171">firestore: Set method zeros out serverTimestamp fields unexpectedly #1171</a> for more details including Google&rsquo;s engineers' explanation of this behavior.</p>
+<p>See this issue <a href="https://github.com/googleapis/google-cloud-go/issues/1171">firestore: Set method zeros out serverTimestamp fields unexpectedly #1171</a> for more details including Google&rsquo;s engineers&rsquo; explanation of this behavior.</p>
 <ul class="pa0">
   
    <li class="list di">

@@ -7,7 +7,7 @@
     <title>Kubernetes Device Plugins | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Kubernetes Device Plugins and Akri">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -197,236 +197,236 @@ if (!doNotTrack) {
 <p>IIUC plugins register with the Kubelet (!) via a gRPC service (<code>Registration</code>) that the Kubelet exposes on a UNIX socket at <code>/var/lib/kubelet/device-plugins/kubelet.sock</code></p>
 <p>Then (!) if successful, devices should be reported by the Node&rsquo;s metadata (spec) and available to be bound to Pods.</p>
 <p>Here&rsquo;s the directory listing once a <code>kubelet</code> is running:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ls -l /var/lib/kubelet/device-plugins/
-
--rw-r--r-- <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:39 DEPRECATION
-srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:39 kubelet.sock
--rw------- <span style="color:#ae81ff">1</span> root root <span style="color:#ae81ff">2860</span> Dec <span style="color:#ae81ff">17</span> 17:44 kubelet_internal_checkpoint
-</code></pre></div><p>Curious <code>DEPRECATION</code> notice?|warning? aside, the <code>kubelet</code>&rsquo;s gRPC endpoint is on <code>kubelet.sock</code>. I should be able to interact with it using <code>gRPCurl</code> if necessary but I haven&rsquo;t tried this (yet).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ls -l /var/lib/kubelet/device-plugins/
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>-rw-r--r-- <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:39 DEPRECATION
+</span></span><span style="display:flex;"><span>srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:39 kubelet.sock
+</span></span><span style="display:flex;"><span>-rw------- <span style="color:#ae81ff">1</span> root root <span style="color:#ae81ff">2860</span> Dec <span style="color:#ae81ff">17</span> 17:44 kubelet_internal_checkpoint
+</span></span></code></pre></div><p>Curious <code>DEPRECATION</code> notice?|warning? aside, the <code>kubelet</code>&rsquo;s gRPC endpoint is on <code>kubelet.sock</code>. I should be able to interact with it using <code>gRPCurl</code> if necessary but I haven&rsquo;t tried this (yet).</p>
 <p>After running Akri and applying a (<code>Zeroconf</code>) Configuration, 4 Instances are created. Each of these matches a service that is being published using <code>avahi-publish --server ${NAME} ...</code> on the Node&rsquo;s host:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>./zeroconf.yaml
-
-kubectl get instances
-NAME              CONFIG     SHARED   NODES    AGE
-zeroconf-218f68   zeroconf   true     <span style="color:#f92672">[</span>akri<span style="color:#f92672">]</span>   13s
-zeroconf-2b9223   zeroconf   true     <span style="color:#f92672">[</span>akri<span style="color:#f92672">]</span>   13s
-zeroconf-ddec04   zeroconf   true     <span style="color:#f92672">[</span>akri<span style="color:#f92672">]</span>   13s
-zeroconf-ef5d4a   zeroconf   true     <span style="color:#f92672">[</span>akri<span style="color:#f92672">]</span>   13s
-</code></pre></div><p>Rechecking the Kubelet&rsquo;s list of sockets, we can see that 4 new sockets have been created:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ls -l /var/lib/kubelet/device-plugins/
-
--rw-r--r-- <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:39 DEPRECATION
-srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:39 kubelet.sock
--rw------- <span style="color:#ae81ff">1</span> root root <span style="color:#ae81ff">3051</span> Dec <span style="color:#ae81ff">17</span> 17:48 kubelet_internal_checkpoint
-srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-218f68-1608227293.sock
-srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-2b9223-1608227293.sock
-srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-ddec04-1608227293.sock
-srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-ef5d4a-1608227293.sock
-</code></pre></div><p>You can eyeball the Instance names (<code>zeroconf-XXXXXX</code>) to see the matching socket <code>zeroconf-XXXXXX-1608227293.sock</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply --filename<span style="color:#f92672">=</span>./zeroconf.yaml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl get instances
+</span></span><span style="display:flex;"><span>NAME              CONFIG     SHARED   NODES    AGE
+</span></span><span style="display:flex;"><span>zeroconf-218f68   zeroconf   true     <span style="color:#f92672">[</span>akri<span style="color:#f92672">]</span>   13s
+</span></span><span style="display:flex;"><span>zeroconf-2b9223   zeroconf   true     <span style="color:#f92672">[</span>akri<span style="color:#f92672">]</span>   13s
+</span></span><span style="display:flex;"><span>zeroconf-ddec04   zeroconf   true     <span style="color:#f92672">[</span>akri<span style="color:#f92672">]</span>   13s
+</span></span><span style="display:flex;"><span>zeroconf-ef5d4a   zeroconf   true     <span style="color:#f92672">[</span>akri<span style="color:#f92672">]</span>   13s
+</span></span></code></pre></div><p>Rechecking the Kubelet&rsquo;s list of sockets, we can see that 4 new sockets have been created:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ls -l /var/lib/kubelet/device-plugins/
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>-rw-r--r-- <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:39 DEPRECATION
+</span></span><span style="display:flex;"><span>srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:39 kubelet.sock
+</span></span><span style="display:flex;"><span>-rw------- <span style="color:#ae81ff">1</span> root root <span style="color:#ae81ff">3051</span> Dec <span style="color:#ae81ff">17</span> 17:48 kubelet_internal_checkpoint
+</span></span><span style="display:flex;"><span>srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-218f68-1608227293.sock
+</span></span><span style="display:flex;"><span>srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-2b9223-1608227293.sock
+</span></span><span style="display:flex;"><span>srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-ddec04-1608227293.sock
+</span></span><span style="display:flex;"><span>srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-ef5d4a-1608227293.sock
+</span></span></code></pre></div><p>You can eyeball the Instance names (<code>zeroconf-XXXXXX</code>) to see the matching socket <code>zeroconf-XXXXXX-1608227293.sock</code></p>
 <p>Each of these <code>zeroconf-XXXXXX-*</code> sockets is also a gRPC endpoint exposing a service called <code>DevicePlugin</code>.</p>
 <p>The Kubelet annotates the Node with details of these devices.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NODE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri&#34;</span>
-HANDLER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;zeroconf&#34;</span>
-FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;\
-</span><span style="color:#e6db74">| with_entries(select(.key|contains(\&#34;</span><span style="color:#e6db74">${</span>HANDLER<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;)))
-</span><span style="color:#e6db74">| with_entries(select(.value==\&#34;1\&#34;))&#34;</span>
-
-
-<span style="color:#75715e"># Capacity</span>
-kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> --output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#34;.status.capacity  </span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-<span style="color:#f92672">{</span>
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-218f68&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-2b9223&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-ddec04&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-ef5d4a&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>
-<span style="color:#f92672">}</span>
-
-<span style="color:#75715e"># Allocatable</span>
-kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> --output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#34;.status.allocatable  </span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-<span style="color:#f92672">{</span>
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-218f68&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-2b9223&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-ddec04&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-ef5d4a&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>
-<span style="color:#f92672">}</span>
-</code></pre></div><p>Again, you can see that each device is now mapped to an entry in the Node&rsquo;s <code>.status.allocatable</code> and <code>.status.capacity</code> values.</p>
-<p>Because the Akri Agent registers the devices using Kubernetes' Device Plugins, Akri names devices that it&rsquo;s managing using the prefix <code>akri.sh/</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NODE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri&#34;</span>
+</span></span><span style="display:flex;"><span>HANDLER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;zeroconf&#34;</span>
+</span></span><span style="display:flex;"><span>FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;\
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">| with_entries(select(.key|contains(\&#34;</span><span style="color:#e6db74">${</span>HANDLER<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;)))
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">| with_entries(select(.value==\&#34;1\&#34;))&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Capacity</span>
+</span></span><span style="display:flex;"><span>kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> --output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#34;.status.capacity  </span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-218f68&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-2b9223&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-ddec04&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-ef5d4a&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Allocatable</span>
+</span></span><span style="display:flex;"><span>kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> --output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#34;.status.allocatable  </span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-218f68&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-2b9223&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-ddec04&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-ef5d4a&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>Again, you can see that each device is now mapped to an entry in the Node&rsquo;s <code>.status.allocatable</code> and <code>.status.capacity</code> values.</p>
+<p>Because the Akri Agent registers the devices using Kubernetes&rsquo; Device Plugins, Akri names devices that it&rsquo;s managing using the prefix <code>akri.sh/</code>.</p>
 <p>Ultimately, when Akri creates Broker Pods for these device Instances, the resulting Kubernetes spec includes, e.g.:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">containers</span>:
-  - <span style="color:#f92672">image</span>: <span style="color:#ae81ff">ghcr.io/dazwilkin/zeroconf-broker@sha256:993e5b8d...</span>
-    <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
-    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">zeroconf-broker</span>
-    <span style="color:#f92672">resources</span>:
-      <span style="color:#f92672">limits</span>:
-        <span style="color:#f92672">akri.sh/akri-zeroconf-218f68</span>: <span style="color:#e6db74">&#34;1&#34;</span>
-      <span style="color:#f92672">requests</span>:
-        <span style="color:#f92672">akri.sh/akri-zeroconf-218f68</span>: <span style="color:#e6db74">&#34;1&#34;</span>
-</code></pre></div><p>And this maps against the Node&rsquo;s <code>allocatable</code>|<code>capacity</code> values such that, once taken (by a Broker Pod), the device (Instance) is no longer (unless shared) available to be bound to a different Pod.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">image</span>: <span style="color:#ae81ff">ghcr.io/dazwilkin/zeroconf-broker@sha256:993e5b8d...</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">zeroconf-broker</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">limits</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">akri.sh/akri-zeroconf-218f68</span>: <span style="color:#e6db74">&#34;1&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">requests</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">akri.sh/akri-zeroconf-218f68</span>: <span style="color:#e6db74">&#34;1&#34;</span>
+</span></span></code></pre></div><p>And this maps against the Node&rsquo;s <code>allocatable</code>|<code>capacity</code> values such that, once taken (by a Broker Pod), the device (Instance) is no longer (unless shared) available to be bound to a different Pod.</p>
 <p>It&rsquo;s important to know that, as far as the Device Plugins functionality is concerned, advertising resource (device) availability and capacity to a Node, is the entirety of its function. Any Pod that wishes to use the resources (per above), will make a claim for the resource type (e.g. <code>akri.sh/akri-zeroconf-218f68</code> above) and some discrete (integral) quantity (e.g. <code>&quot;1&quot;</code>) but, once this is provided to the Pod, the Pod must then e.g. load relevant device drivers and communicate with the device as normal (as if there were no Kubernetes infrastructure).</p>
 <p>What Akri provides beyond this is that handlers can be configured to mount environment variables, devices and volumes. Further, Akri&rsquo;s model of proposing (these aren&rsquo;t required) Broker Pods is somewhat akin to the idea of device twins. Broker Pods could be standardized in a deployment to e.g. always surface gRPC services and these services could then be provided to application developers as a standard mechanism for device interaction.</p>
 <h2 id="allocatablecapacity-tidying">Allocatable|Capacity Tidying</h2>
 <p>I&rsquo;d been unable to determine how to <code>PATCH</code> a Node&rsquo;s <code>.status.allocatable</code> and <code>.status.capacity</code>. Then I stumbled upon <a href="https://kubernetes.io/docs/tasks/administer-cluster/extended-resource-node/">Advertise Extended Resources for a Node</a> and it provided the solution.</p>
 <p>I had:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Kubernetes Node name</span>
-NODE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri&#34;</span>
-
-kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq <span style="color:#e6db74">&#34;.status.capacity&#34;</span>
-<span style="color:#f92672">{</span>
-  <span style="color:#e6db74">&#34;akri.sh/nessie-64ebdb&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-074bbf&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-129a69&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-218f68&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-2b9223&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-320a0c&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-3ada00&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-4e7c97&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-591f22&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-7548ec&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-8e12f9&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-90d0fb&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-9e1938&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-bc5064&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-ddec04&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-e7f45d&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-f1acf2&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;akri.sh/zeroconf-f27f70&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;2&#34;</span>,
-  <span style="color:#e6db74">&#34;ephemeral-storage&#34;</span>: <span style="color:#e6db74">&#34;8934656Ki&#34;</span>,
-  <span style="color:#e6db74">&#34;example.com/dongle&#34;</span>: <span style="color:#e6db74">&#34;4&#34;</span>,
-  <span style="color:#e6db74">&#34;hugepages-1Gi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;hugepages-2Mi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;8050104Ki&#34;</span>,
-  <span style="color:#e6db74">&#34;pods&#34;</span>: <span style="color:#e6db74">&#34;110&#34;</span>
-<span style="color:#f92672">}</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Kubernetes Node name</span>
+</span></span><span style="display:flex;"><span>NODE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq <span style="color:#e6db74">&#34;.status.capacity&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/nessie-64ebdb&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-074bbf&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-129a69&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-218f68&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-2b9223&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-320a0c&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-3ada00&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-4e7c97&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-591f22&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-7548ec&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-8e12f9&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-90d0fb&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-9e1938&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-bc5064&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-ddec04&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-e7f45d&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-f1acf2&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/zeroconf-f27f70&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;2&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;ephemeral-storage&#34;</span>: <span style="color:#e6db74">&#34;8934656Ki&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;example.com/dongle&#34;</span>: <span style="color:#e6db74">&#34;4&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;hugepages-1Gi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;hugepages-2Mi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;8050104Ki&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;pods&#34;</span>: <span style="color:#e6db74">&#34;110&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> And a matching set in <code>.status.allocatable</code></p>
 </blockquote>
 <p>And:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Kubernetes Node name</span>
-NODE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri&#34;</span>
-
-<span style="color:#75715e"># Query the list for these items</span>
-FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri.sh/zeroconf&#34;</span>
-DEVICES<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  | jq -r <span style="color:#e6db74">&#34;.status.capacity | with_entries(select(.key|contains(\&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;))) | keys[]&#34;</span><span style="color:#66d9ef">)</span>
-
-<span style="color:#75715e"># Iterate over the list of devices</span>
-<span style="color:#66d9ef">for</span> DEVICE in <span style="color:#e6db74">${</span>DEVICES<span style="color:#e6db74">}</span>
-<span style="color:#66d9ef">do</span>
-  <span style="color:#75715e"># This replaces e.g. `akri.sh/` with `akri.sh~1` to accommodate PATCH&#39;ing</span>
-  DEVICE<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>DEVICE/<span style="color:#ae81ff">\/</span>/~1<span style="color:#e6db74">}</span>
-  <span style="color:#75715e"># PATCH the Node&#39;s `.status.capacity` and remove the device</span>
-  curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --header <span style="color:#e6db74">&#34;Content-Type: application/json-patch+json&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --request PATCH <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --data <span style="color:#e6db74">&#34;[{\&#34;op\&#34;: \&#34;remove\&#34;, \&#34;path\&#34;: \&#34;/status/capacity/</span><span style="color:#e6db74">${</span>DEVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;}]&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  http://localhost:8888/api/v1/nodes/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span>/status
-<span style="color:#66d9ef">done</span>
-</code></pre></div><p>Then:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq <span style="color:#e6db74">&#34;.status.capacity&#34;</span>
-<span style="color:#f92672">{</span>
-  <span style="color:#e6db74">&#34;akri.sh/nessie-64ebdb&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;2&#34;</span>,
-  <span style="color:#e6db74">&#34;ephemeral-storage&#34;</span>: <span style="color:#e6db74">&#34;9983232Ki&#34;</span>,
-  <span style="color:#e6db74">&#34;example.com/dongle&#34;</span>: <span style="color:#e6db74">&#34;4&#34;</span>,
-  <span style="color:#e6db74">&#34;hugepages-1Gi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;hugepages-2Mi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;8152504Ki&#34;</span>,
-  <span style="color:#e6db74">&#34;pods&#34;</span>: <span style="color:#e6db74">&#34;110&#34;</span>
-<span style="color:#f92672">}</span>
-</code></pre></div><p>The system deletes the matching entry is <code>.status.allocatable</code> automatically:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq <span style="color:#e6db74">&#34;.status.allocatable&#34;</span>
-<span style="color:#f92672">{</span>
-  <span style="color:#e6db74">&#34;akri.sh/nessie-64ebdb&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;2&#34;</span>,
-  <span style="color:#e6db74">&#34;ephemeral-storage&#34;</span>: <span style="color:#e6db74">&#34;8934656Ki&#34;</span>,
-  <span style="color:#e6db74">&#34;example.com/dongle&#34;</span>: <span style="color:#e6db74">&#34;4&#34;</span>,
-  <span style="color:#e6db74">&#34;hugepages-1Gi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;hugepages-2Mi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
-  <span style="color:#e6db74">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;8050104Ki&#34;</span>,
-  <span style="color:#e6db74">&#34;pods&#34;</span>: <span style="color:#e6db74">&#34;110&#34;</span>
-<span style="color:#f92672">}</span>
-</code></pre></div><h2 id="grpcurl">gRPCurl</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Kubernetes Node name</span>
+</span></span><span style="display:flex;"><span>NODE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Query the list for these items</span>
+</span></span><span style="display:flex;"><span>FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;akri.sh/zeroconf&#34;</span>
+</span></span><span style="display:flex;"><span>DEVICES<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | jq -r <span style="color:#e6db74">&#34;.status.capacity | with_entries(select(.key|contains(\&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;))) | keys[]&#34;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Iterate over the list of devices</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> DEVICE in <span style="color:#e6db74">${</span>DEVICES<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># This replaces e.g. `akri.sh/` with `akri.sh~1` to accommodate PATCH&#39;ing</span>
+</span></span><span style="display:flex;"><span>  DEVICE<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>DEVICE/<span style="color:#ae81ff">\/</span>/~1<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># PATCH the Node&#39;s `.status.capacity` and remove the device</span>
+</span></span><span style="display:flex;"><span>  curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --header <span style="color:#e6db74">&#34;Content-Type: application/json-patch+json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --request PATCH <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --data <span style="color:#e6db74">&#34;[{\&#34;op\&#34;: \&#34;remove\&#34;, \&#34;path\&#34;: \&#34;/status/capacity/</span><span style="color:#e6db74">${</span>DEVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;}]&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  http://localhost:8888/api/v1/nodes/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span>/status
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span></code></pre></div><p>Then:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq <span style="color:#e6db74">&#34;.status.capacity&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/nessie-64ebdb&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;2&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;ephemeral-storage&#34;</span>: <span style="color:#e6db74">&#34;9983232Ki&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;example.com/dongle&#34;</span>: <span style="color:#e6db74">&#34;4&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;hugepages-1Gi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;hugepages-2Mi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;8152504Ki&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;pods&#34;</span>: <span style="color:#e6db74">&#34;110&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>The system deletes the matching entry is <code>.status.allocatable</code> automatically:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get node/<span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq <span style="color:#e6db74">&#34;.status.allocatable&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;akri.sh/nessie-64ebdb&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;2&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;ephemeral-storage&#34;</span>: <span style="color:#e6db74">&#34;8934656Ki&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;example.com/dongle&#34;</span>: <span style="color:#e6db74">&#34;4&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;hugepages-1Gi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;hugepages-2Mi&#34;</span>: <span style="color:#e6db74">&#34;0&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;8050104Ki&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;pods&#34;</span>: <span style="color:#e6db74">&#34;110&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><h2 id="grpcurl">gRPCurl</h2>
 <p>The protobuf listed in the Kubernetes <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/">Device Plugin</a> documentation is incomplete but, I grabbed a copy of the v1beta1.Registration service <a href="https://github.com/kubernetes/kubernetes/blob/cea1d4e20b4a7886d8ff65f34c6d4f95efcb4742/staging/src/k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1/api.proto">here</a> and hacked its reference to <a href="https://raw.githubusercontent.com/gogo/protobuf/master/gogoproto/gogo.proto"><code>gogoproto/gogo.proto</code></a></p>
 <p>Then, assuming:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ls -l /var/lib/kubelet/device-plugins/
-
--rw-r--r-- <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:39 DEPRECATION
-srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:39 kubelet.sock
--rw------- <span style="color:#ae81ff">1</span> root root <span style="color:#ae81ff">3051</span> Dec <span style="color:#ae81ff">17</span> 17:48 kubelet_internal_checkpoint
-srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-218f68-1608227293.sock
-srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-2b9223-1608227293.sock
-srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-ddec04-1608227293.sock
-srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-ef5d4a-1608227293.sock
-</code></pre></div><p>The Kubelet socket is write-only so there&rsquo;s not much to see with it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">
-SOCK<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/kubelet/device-plugins/kubelet.sock&#34;</span>
-
-sudo ./grpcurl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-unix <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>./deviceplugin.proto <span style="color:#e6db74">${</span>SOCK<span style="color:#e6db74">}</span> list
-
-v1beta1.DevicePlugin
-v1beta1.Registration
-</code></pre></div><p>But, slightly more interestingly, there&rsquo;s some interaction possible with device sockets:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">SOCK<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/kubelet/device-plugins/zeroconf-3ada00-1608315686.sock&#34;</span>
-
-sudo ./grpcurl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-unix <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>./deviceplugin.proto <span style="color:#e6db74">${</span>SOCK<span style="color:#e6db74">}</span> list
-
-v1beta1.DevicePlugin
-v1beta1.Registration
-
-sudo ./grpcurl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-unix <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>./deviceplugin.proto <span style="color:#e6db74">${</span>SOCK<span style="color:#e6db74">}</span> list v1beta1.DevicePlugin
-
-v1beta1.DevicePlugin.Allocate
-v1beta1.DevicePlugin.GetDevicePluginOptions
-v1beta1.DevicePlugin.ListAndWatch
-v1beta1.DevicePlugin.PreStartContainer
-
-sudo ./grpcurl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-unix <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>./deviceplugin.proto <span style="color:#e6db74">${</span>SOCK<span style="color:#e6db74">}</span> v1beta1.DevicePlugin.ListAndWatch
-<span style="color:#f92672">{</span>
-  <span style="color:#e6db74">&#34;devices&#34;</span>: <span style="color:#f92672">[</span>
-    <span style="color:#f92672">{</span>
-      <span style="color:#e6db74">&#34;ID&#34;</span>: <span style="color:#e6db74">&#34;zeroconf-3ada00-0&#34;</span>,
-      <span style="color:#e6db74">&#34;health&#34;</span>: <span style="color:#e6db74">&#34;Healthy&#34;</span>
-    <span style="color:#f92672">}</span>
-  <span style="color:#f92672">]</span>
-<span style="color:#f92672">}</span>
-
-sudo ./grpcurl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-unix <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>./deviceplugin.proto <span style="color:#e6db74">${</span>SOCK<span style="color:#e6db74">}</span> v1beta1.DevicePlugin.GetDevicePluginOptions
-<span style="color:#f92672">{</span>
-  <span style="color:#e6db74">&#34;preStartRequired&#34;</span>: true
-<span style="color:#f92672">}</span>
-</code></pre></div><p>That&rsquo;s all!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ls -l /var/lib/kubelet/device-plugins/
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>-rw-r--r-- <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:39 DEPRECATION
+</span></span><span style="display:flex;"><span>srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:39 kubelet.sock
+</span></span><span style="display:flex;"><span>-rw------- <span style="color:#ae81ff">1</span> root root <span style="color:#ae81ff">3051</span> Dec <span style="color:#ae81ff">17</span> 17:48 kubelet_internal_checkpoint
+</span></span><span style="display:flex;"><span>srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-218f68-1608227293.sock
+</span></span><span style="display:flex;"><span>srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-2b9223-1608227293.sock
+</span></span><span style="display:flex;"><span>srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-ddec04-1608227293.sock
+</span></span><span style="display:flex;"><span>srwxr-xr-x <span style="color:#ae81ff">1</span> root root    <span style="color:#ae81ff">0</span> Dec <span style="color:#ae81ff">17</span> 17:48 zeroconf-ef5d4a-1608227293.sock
+</span></span></code></pre></div><p>The Kubelet socket is write-only so there&rsquo;s not much to see with it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>SOCK<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/kubelet/device-plugins/kubelet.sock&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>sudo ./grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-unix <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>./deviceplugin.proto <span style="color:#e6db74">${</span>SOCK<span style="color:#e6db74">}</span> list
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>v1beta1.DevicePlugin
+</span></span><span style="display:flex;"><span>v1beta1.Registration
+</span></span></code></pre></div><p>But, slightly more interestingly, there&rsquo;s some interaction possible with device sockets:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>SOCK<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/kubelet/device-plugins/zeroconf-3ada00-1608315686.sock&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>sudo ./grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-unix <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>./deviceplugin.proto <span style="color:#e6db74">${</span>SOCK<span style="color:#e6db74">}</span> list
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>v1beta1.DevicePlugin
+</span></span><span style="display:flex;"><span>v1beta1.Registration
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>sudo ./grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-unix <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>./deviceplugin.proto <span style="color:#e6db74">${</span>SOCK<span style="color:#e6db74">}</span> list v1beta1.DevicePlugin
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>v1beta1.DevicePlugin.Allocate
+</span></span><span style="display:flex;"><span>v1beta1.DevicePlugin.GetDevicePluginOptions
+</span></span><span style="display:flex;"><span>v1beta1.DevicePlugin.ListAndWatch
+</span></span><span style="display:flex;"><span>v1beta1.DevicePlugin.PreStartContainer
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>sudo ./grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-unix <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>./deviceplugin.proto <span style="color:#e6db74">${</span>SOCK<span style="color:#e6db74">}</span> v1beta1.DevicePlugin.ListAndWatch
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;devices&#34;</span>: <span style="color:#f92672">[</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;ID&#34;</span>: <span style="color:#e6db74">&#34;zeroconf-3ada00-0&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;health&#34;</span>: <span style="color:#e6db74">&#34;Healthy&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>sudo ./grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-unix <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>./deviceplugin.proto <span style="color:#e6db74">${</span>SOCK<span style="color:#e6db74">}</span> v1beta1.DevicePlugin.GetDevicePluginOptions
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;preStartRequired&#34;</span>: true
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>That&rsquo;s all!</p>
 <ul class="pa0">
   
    <li class="list di">

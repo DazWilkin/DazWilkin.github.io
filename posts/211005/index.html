@@ -7,7 +7,7 @@
     <title>Scraping metrics exposed by Google Cloud Run services that require authentication | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Scraping metrics exposed by Google Cloud Run services that require authentication">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -196,35 +196,35 @@ if (!doNotTrack) {
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve written a solution (<a href="https://github.com/DazWilkin/gcp-oidc-token-proxy"><code>gcp-oidc-token-proxy</code></a>) that can be used in conjunction with Prometheus <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#oauth2">OAuth2</a> to authenticate requests so that Prometheus can scrape metrics exposed by e.g. Cloud Run services that require authentication. The solution resulted from my <a href="https://stackoverflow.com/questions/69411584/is-there-a-way-to-configure-prometheus-to-use-a-google-service-account-to-auth">question</a> on Stack overflow.</p>
 <p>Problem #1: Endpoint requires authentication</p>
 <p>Given a Cloud Run service URL for which:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;my-server-blahblah-wl.a.run.app&#34;</span>
-
-<span style="color:#75715e"># Returns 200 when authentication w/ an ID token</span>
-TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>gcloud auth print-identity-token<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
-curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--write-out <span style="color:#e6db74">&#34;%{response_code}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output /dev/null <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/metrics
-
-<span style="color:#75715e"># Returns 403 otherwise</span>
-curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--write-out <span style="color:#e6db74">&#34;%{response_code}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output /dev/null <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/metrics
-</code></pre></div><p>Problem #2: Prometheus <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#oauth2">OAuth2</a> configuration is constrained</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">client_id</span>: <span style="color:#ae81ff">&lt;string&gt;</span>
-<span style="color:#f92672">client_secret</span>: <span style="color:#ae81ff">&lt;secret&gt;</span>
-<span style="color:#f92672">scopes</span>:
-- <span style="color:#ae81ff">&lt;string&gt;</span>
-<span style="color:#f92672">token_url</span>: <span style="color:#ae81ff">&lt;string&gt;</span>
-<span style="color:#f92672">endpoint_params</span>:
-  <span style="color:#f92672">&lt;string&gt;</span>: <span style="color:#ae81ff">&lt;string&gt;</span>
-</code></pre></div><p>The naive optimist in me wanted<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> to be able to leverage <code>gcloud</code>&rsquo;s application default credentials (<a href="https://cloud.google.com/sdk/gcloud/reference/auth/application-default">link</a>) and the <code>client_id</code> and <code>client_secret</code> to be found in <code>${HOME}/.config/gcloud/application_default_credentials.json</code> but this will yield <code>400</code>&rsquo;s</p>
-<p>In a comment responding to my Stack overflow question, <a href="https://github.com/leviharrison">Levi Harrison</a> who authored Prometheus' OAuth2 support, suggested I consider writing a sidecar to generate the access token.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;my-server-blahblah-wl.a.run.app&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Returns 200 when authentication w/ an ID token</span>
+</span></span><span style="display:flex;"><span>TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>gcloud auth print-identity-token<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--write-out <span style="color:#e6db74">&#34;%{response_code}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output /dev/null <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/metrics
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Returns 403 otherwise</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--write-out <span style="color:#e6db74">&#34;%{response_code}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output /dev/null <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/metrics
+</span></span></code></pre></div><p>Problem #2: Prometheus <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#oauth2">OAuth2</a> configuration is constrained</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">client_id</span>: <span style="color:#ae81ff">&lt;string&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">client_secret</span>: <span style="color:#ae81ff">&lt;secret&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">scopes</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#ae81ff">&lt;string&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">token_url</span>: <span style="color:#ae81ff">&lt;string&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">endpoint_params</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;string&gt;</span>: <span style="color:#ae81ff">&lt;string&gt;</span>
+</span></span></code></pre></div><p>The naive optimist in me wanted<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup> to be able to leverage <code>gcloud</code>&rsquo;s application default credentials (<a href="https://cloud.google.com/sdk/gcloud/reference/auth/application-default">link</a>) and the <code>client_id</code> and <code>client_secret</code> to be found in <code>${HOME}/.config/gcloud/application_default_credentials.json</code> but this will yield <code>400</code>&rsquo;s</p>
+<p>In a comment responding to my Stack overflow question, <a href="https://github.com/leviharrison">Levi Harrison</a> who authored Prometheus&rsquo; OAuth2 support, suggested I consider writing a sidecar to generate the access token.</p>
 <p>This was a clever idea and is the root of the solution.</p>
 <p>The solution (<a href="https://github.com/DazWilkin/gcp-oidc-token-proxy"><code>gcp-oidc-token-proxy</code></a>) provides a proxy token service to Prometheus (<code>token_url: gcp-oidc-token-proxy</code>) that accepts the <code>/token</code> request from Prometheus and, using a Google Service Account to authenticate itself, get Google&rsquo;s identity service to mint an identity token that it returns to Prometheus which uses it as <code>Authorization: Bearer ${TOKEN}</code>.</p>
 <p>In an application that I&rsquo;m developing, I use <a href="https://developers.google.com/identity/toolkit/reference/securetoken/rest/v1/token">Google Token Service</a> with <code>grant_type=refresh_token</code> to mint access tokens and I was thinking that I could use this service to mint an access token from an identity token to return to Prometheus.</p>
@@ -243,28 +243,28 @@ curl <span style="color:#ae81ff">\
 <blockquote>
 <p><strong>NOTE</strong> Auth0&rsquo;s <a href="https://jwt.io"><code>jwt.io</code></a> tool is a safe (doesn&rsquo;t leave your browser) tool for decoding identity tokens.</p>
 </blockquote>
-<p>Given a Google Service Account that has IAM permissions sufficient to invoke the desired (e.g. Cloud Run) service (for Cloud Run, <a href="https://cloud.google.com/run/docs/reference/iam/roles">`roles/run.invoker'</a>), the proxy can be run:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;7777&#34;</span> <span style="color:#75715e"># Or your preference</span>
-
-export GOOGLE_APPLICATION_CREDENTIALS<span style="color:#f92672">=</span>/path/to/key.json
-
-./proxy <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--port<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--target_url<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>
-</code></pre></div><p>The Prometheus OAuth2 configuration utilizes <code>endpoint_params</code> to provide an additional property in the request for <code>audience</code>. This is necessary because identity tokens provided by Google require an <code>audience</code> value and the Cloud Run service authenticates identity tokens that include an <code>audience</code> that matches the service&rsquo;s URL. Here&rsquo;s an example Prometheus OAuth2 configuration for the proxy:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#75715e"># Cloud Run service</span>
-- <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;cloudrun-service&#34;</span>
-  <span style="color:#f92672">scheme</span>: <span style="color:#ae81ff">https</span>
-  <span style="color:#f92672">oauth2</span>:
-    <span style="color:#f92672">client_id</span>: <span style="color:#e6db74">&#34;anything&#34;</span>
-    <span style="color:#f92672">client_secret</span>: <span style="color:#e6db74">&#34;anything&#34;</span>
-    <span style="color:#f92672">token_url</span>: <span style="color:#e6db74">&#34;http://localhost:7777&#34;</span>
-    <span style="color:#f92672">endpoint_params</span>:
-      <span style="color:#f92672">audience</span>: <span style="color:#e6db74">&#34;https://some-service-xxxxxxxxxx-xx.a.run.app&#34;</span>
-  <span style="color:#f92672">static_configs</span>:
-  - <span style="color:#f92672">targets</span>:
-    - <span style="color:#e6db74">&#34;some-service-xxxxxxxxxx-xx.a.run.app:443&#34;</span>
-</code></pre></div><blockquote>
+<p>Given a Google Service Account that has IAM permissions sufficient to invoke the desired (e.g. Cloud Run) service (for Cloud Run, <a href="https://cloud.google.com/run/docs/reference/iam/roles">`roles/run.invoker&rsquo;</a>), the proxy can be run:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;7777&#34;</span> <span style="color:#75715e"># Or your preference</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>export GOOGLE_APPLICATION_CREDENTIALS<span style="color:#f92672">=</span>/path/to/key.json
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>./proxy <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--port<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--target_url<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>The Prometheus OAuth2 configuration utilizes <code>endpoint_params</code> to provide an additional property in the request for <code>audience</code>. This is necessary because identity tokens provided by Google require an <code>audience</code> value and the Cloud Run service authenticates identity tokens that include an <code>audience</code> that matches the service&rsquo;s URL. Here&rsquo;s an example Prometheus OAuth2 configuration for the proxy:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#75715e"># Cloud Run service</span>
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;cloudrun-service&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">scheme</span>: <span style="color:#ae81ff">https</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">oauth2</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">client_id</span>: <span style="color:#e6db74">&#34;anything&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">client_secret</span>: <span style="color:#e6db74">&#34;anything&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">token_url</span>: <span style="color:#e6db74">&#34;http://localhost:7777&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">endpoint_params</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">audience</span>: <span style="color:#e6db74">&#34;https://some-service-xxxxxxxxxx-xx.a.run.app&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">static_configs</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">targets</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#e6db74">&#34;some-service-xxxxxxxxxx-xx.a.run.app:443&#34;</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong></p>
 <ul>
 <li><code>scheme</code> must be <code>https</code> as Cloud Run service&rsquo;s require TLS</li>
@@ -279,15 +279,15 @@ export GOOGLE_APPLICATION_CREDENTIALS<span style="color:#f92672">=</span>/path/t
 <blockquote>
 <p><strong>NOTE</strong> One limitation of this solution is that, because identity token are minted for a specific Cloud Run service URL provided as the <code>audience</code> value in the request, if there are multiple Cloud Run services to be scraped, each much have its own Prometheus <code>scrape_targets</code> section.</p>
 </blockquote>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">ts</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">idtoken</span>.<span style="color:#a6e22e">NewTokenSource</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">audience</span>)
-<span style="color:#a6e22e">tok</span>, <span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">Token</span>()
-</code></pre></div><p>The proxy simply maps the identity token (!) into a response as the value of <code>access_token</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">struct</span> {
-    <span style="color:#a6e22e">AccessToken</span>  <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;access_token&#34;`</span>
-}{
-    <span style="color:#a6e22e">AccessToken</span>:  <span style="color:#a6e22e">tok</span>.<span style="color:#a6e22e">AccessToken</span>,
-}
-</code></pre></div><p>The response (<code>resp</code>) is then marshaled into a string and returned to Prometheus which uses the identity token as a header <code>Authorization: Bearer ${TOKEN}</code> to authenticate the request against the Cloud Run service&rsquo;s metrics endpoints.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">ts</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">idtoken</span>.<span style="color:#a6e22e">NewTokenSource</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">audience</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">tok</span>, <span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">Token</span>()
+</span></span></code></pre></div><p>The proxy simply maps the identity token (!) into a response as the value of <code>access_token</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">AccessToken</span>  <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;access_token&#34;`</span>
+</span></span><span style="display:flex;"><span>}{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">AccessToken</span>:  <span style="color:#a6e22e">tok</span>.<span style="color:#a6e22e">AccessToken</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The response (<code>resp</code>) is then marshaled into a string and returned to Prometheus which uses the identity token as a header <code>Authorization: Bearer ${TOKEN}</code> to authenticate the request against the Cloud Run service&rsquo;s metrics endpoints.</p>
 <blockquote>
 <p><strong>NOTE</strong> The Prometheus server&rsquo;s incoming request object is ignored. The <code>client_id</code> and <code>client_secret</code> values are expected (cannot be nil or <code>&quot;&quot;</code>) but may be anything else.</p>
 </blockquote>

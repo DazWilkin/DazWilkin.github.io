@@ -7,7 +7,7 @@
     <title>Prometheus Service Discovery w/ Consul for Cloud Run | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Configuring Prometheus to use service discovery with Consul to find Cloud Run services">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -208,106 +208,106 @@ if (!doNotTrack) {
 <li>Create Prometheus Graphs</li>
 </ol>
 <p>Here&rsquo;s my <code>docker-compose.yml</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#34;3&#34;</span>
-
-<span style="color:#f92672">services</span>:
-  <span style="color:#f92672">cadvisor</span>:
-    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
-    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">gcr.io/google-containers/cadvisor:v0.36.0</span>
-    <span style="color:#f92672">volumes</span>:
-      - <span style="color:#e6db74">&#34;/:/rootfs:ro&#34;</span>
-      - <span style="color:#e6db74">&#34;/var/run:/var/run:rw&#34;</span>
-      - <span style="color:#e6db74">&#34;/sys:/sys:ro&#34;</span>
-      <span style="color:#75715e"># Default location</span>
-      <span style="color:#75715e"># - &#34;/var/lib/docker/:/var/lib/docker:ro&#34;</span>
-      <span style="color:#75715e"># Snap location</span>
-      <span style="color:#75715e"># - &#34;/var/snap/docker/current:/var/lib/docker:ro&#34;</span>
-    <span style="color:#f92672">expose</span>:
-      - <span style="color:#e6db74">&#34;8080&#34;</span>
-    <span style="color:#f92672">ports</span>:
-      - <span style="color:#ae81ff">8089</span>:<span style="color:#ae81ff">8080</span>
-
-  <span style="color:#f92672">consul</span>:
-    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
-    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">consul:1.10.0-beta</span>
-    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">consul</span>
-    <span style="color:#f92672">expose</span>:
-    - <span style="color:#e6db74">&#34;8500&#34;</span> <span style="color:#75715e"># HTTP API|UI</span>
-    <span style="color:#f92672">ports</span>:
-    <span style="color:#75715e"># - 8400:8400</span>
-    - <span style="color:#ae81ff">8500</span>:<span style="color:#ae81ff">8500</span><span style="color:#ae81ff">/tcp</span>
-    - <span style="color:#ae81ff">8600</span>:<span style="color:#ae81ff">8600</span><span style="color:#ae81ff">/udp</span>
-
-  <span style="color:#f92672">prometheus</span>:
-    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
-    <span style="color:#f92672">depends_on</span>:
-      - <span style="color:#ae81ff">consul</span>
-    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">prom/prometheus:v2.26.0</span>
-    <span style="color:#f92672">command</span>:
-      - --<span style="color:#ae81ff">config.file=/etc/prometheus/prometheus.yml</span>
-      - --<span style="color:#ae81ff">web.enable-lifecycle</span>
-    <span style="color:#f92672">volumes</span>:
-      - <span style="color:#ae81ff">${PWD}/prometheus.yml:/etc/prometheus/prometheus.yml</span>
-    <span style="color:#f92672">expose</span>:
-      - <span style="color:#e6db74">&#34;9090&#34;</span>
-    <span style="color:#f92672">ports</span>:
-      - <span style="color:#ae81ff">9099</span>:<span style="color:#ae81ff">9090</span>
-
-  <span style="color:#f92672">node-exporter-01</span>:
-    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
-    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">prom/node-exporter:v1.1.2</span>
-    <span style="color:#f92672">ports</span>:
-    - <span style="color:#ae81ff">9101</span>:<span style="color:#ae81ff">9100</span><span style="color:#ae81ff">/tcp</span> <span style="color:#75715e"># Prometheus Metrics (/metrics)</span>
-
-  <span style="color:#f92672">node-exporter-02</span>:
-    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
-    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">prom/node-exporter:v1.1.2</span>
-    <span style="color:#f92672">ports</span>:
-    - <span style="color:#ae81ff">9102</span>:<span style="color:#ae81ff">9100</span><span style="color:#ae81ff">/tcp</span> <span style="color:#75715e"># Prometheus Metrics (/metrics)</span>
-
-  <span style="color:#f92672">busybox</span>:
-    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
-    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">radial/busyboxplus:curl</span>
-    <span style="color:#f92672">command</span>:
-    - <span style="color:#ae81ff">ash</span>
-    - -<span style="color:#ae81ff">c</span>
-    - |<span style="color:#e6db74">
-</span><span style="color:#e6db74">      while true
-</span><span style="color:#e6db74">      do
-</span><span style="color:#e6db74">        sleep 15
-</span><span style="color:#e6db74">      done</span>      
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#34;3&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">cadvisor</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">gcr.io/google-containers/cadvisor:v0.36.0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;/:/rootfs:ro&#34;</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;/var/run:/var/run:rw&#34;</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;/sys:/sys:ro&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Default location</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># - &#34;/var/lib/docker/:/var/lib/docker:ro&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Snap location</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># - &#34;/var/snap/docker/current:/var/lib/docker:ro&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">expose</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;8080&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">8089</span>:<span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">consul</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">consul:1.10.0-beta</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">consul</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">expose</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#e6db74">&#34;8500&#34;</span> <span style="color:#75715e"># HTTP API|UI</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># - 8400:8400</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">8500</span>:<span style="color:#ae81ff">8500</span><span style="color:#ae81ff">/tcp</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">8600</span>:<span style="color:#ae81ff">8600</span><span style="color:#ae81ff">/udp</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">prometheus</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">depends_on</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">consul</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">prom/prometheus:v2.26.0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">command</span>:
+</span></span><span style="display:flex;"><span>      - --<span style="color:#ae81ff">config.file=/etc/prometheus/prometheus.yml</span>
+</span></span><span style="display:flex;"><span>      - --<span style="color:#ae81ff">web.enable-lifecycle</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">${PWD}/prometheus.yml:/etc/prometheus/prometheus.yml</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">expose</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;9090&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">9099</span>:<span style="color:#ae81ff">9090</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">node-exporter-01</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">prom/node-exporter:v1.1.2</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">9101</span>:<span style="color:#ae81ff">9100</span><span style="color:#ae81ff">/tcp</span> <span style="color:#75715e"># Prometheus Metrics (/metrics)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">node-exporter-02</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">prom/node-exporter:v1.1.2</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">9102</span>:<span style="color:#ae81ff">9100</span><span style="color:#ae81ff">/tcp</span> <span style="color:#75715e"># Prometheus Metrics (/metrics)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">busybox</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">radial/busyboxplus:curl</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">command</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">ash</span>
+</span></span><span style="display:flex;"><span>    - -<span style="color:#ae81ff">c</span>
+</span></span><span style="display:flex;"><span>    - |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      while true
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      do
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        sleep 15
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      done</span>      
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTES</strong><!-- raw HTML omitted -->If you include <code>cadvisor</code>, choose the correct (either <code>default</code> or <code>snap</code>) configuration for your Docker installation; I use the Docker Snap.<!-- raw HTML omitted -->The <code>consul</code> service only needs the DNS (UDP) ports exposed to the host (<code>8600:8600/udp</code>) for testing.<!-- raw HTML omitted -->There are two (of the same) <code>node-exporter-xx</code> services running.</p>
 </blockquote>
 <p>The <code>prometheus</code> service requires <code>prometheus.yml</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">global</span>:
-  <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">1m</span>
-  <span style="color:#f92672">evaluation_interval</span>: <span style="color:#ae81ff">1m</span>
-
-<span style="color:#f92672">scrape_configs</span>:
-  <span style="color:#75715e"># Consul</span>
-  - <span style="color:#f92672">job_name</span>: <span style="color:#ae81ff">consul</span>
-    <span style="color:#f92672">consul_sd_configs</span>:
-      - <span style="color:#f92672">server</span>: <span style="color:#ae81ff">consul:8500</span>
-        <span style="color:#f92672">datacenter</span>: <span style="color:#ae81ff">dc1</span>
-        <span style="color:#f92672">tags</span>:
-        - <span style="color:#ae81ff">foo</span>
-
-  <span style="color:#75715e"># Self</span>
-  - <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;prometheus-server&#34;</span>
-    <span style="color:#f92672">static_configs</span>:
-      - <span style="color:#f92672">targets</span>:
-          - <span style="color:#e6db74">&#34;localhost:9090&#34;</span>
-
-  <span style="color:#75715e"># cAdvisor exports metrics for *all* containers running on this host</span>
-  - <span style="color:#f92672">job_name</span>: <span style="color:#ae81ff">cadvisor</span>
-    <span style="color:#f92672">static_configs</span>:
-      - <span style="color:#f92672">targets</span>:
-          - <span style="color:#e6db74">&#34;cadvisor:8080&#34;</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">global</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">1m</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">evaluation_interval</span>: <span style="color:#ae81ff">1m</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">scrape_configs</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Consul</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">job_name</span>: <span style="color:#ae81ff">consul</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">consul_sd_configs</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">server</span>: <span style="color:#ae81ff">consul:8500</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">datacenter</span>: <span style="color:#ae81ff">dc1</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">tags</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#ae81ff">foo</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Self</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;prometheus-server&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">static_configs</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">targets</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#e6db74">&#34;localhost:9090&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># cAdvisor exports metrics for *all* containers running on this host</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">job_name</span>: <span style="color:#ae81ff">cadvisor</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">static_configs</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">targets</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#e6db74">&#34;cadvisor:8080&#34;</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTES</strong> The only <code>job_name</code> that&rsquo;s required here is <code>consul</code>. In the following, sections, I&rsquo;ve excluded the other two jobs for clarity.<!-- raw HTML omitted -->The <code>server</code> entry <code>consul:8500</code> refers to the <code>docker-compose</code> service called <code>consul</code> that exposes port <code>8500</code>.</p>
 </blockquote>
-<p>After running <code>docker-compose up</code>, let&rsquo;s immediately browse to Prometheus' Service Discovery page:</p>
+<p>After running <code>docker-compose up</code>, let&rsquo;s immediately browse to Prometheus&rsquo; Service Discovery page:</p>
 <p><code>http://localhost:9099/service-discovery</code></p>
 <p><img src="/images/210419.prometheus.sd.empty.png" alt="Prometheus Service Discovery: Empty"></p>
 <p>It&rsquo;s empty :-(</p>
@@ -315,147 +315,147 @@ if (!doNotTrack) {
 <p>Consul includes a clear UI: http://localhost:8500/ui</p>
 <p><img src="/images/210419.consul.services.empty.png" alt="Consul: Services: Empty"></p>
 <p>As you can see, with the exception of the default <code>consul</code> service, there are (as expected) no <code>node-exporter-xx</code> services. Let&rsquo;s add these using Consul&rsquo;s HTTP API:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">REGISTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://127.0.0.1:8500/v1/agent/service/register&#34;</span>
-
-<span style="color:#66d9ef">for</span> XX in <span style="color:#f92672">{</span>01..03<span style="color:#f92672">}</span>
-<span style="color:#66d9ef">do</span>
-  curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --request PUT <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">${</span>REGISTER<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --data <span style="color:#e6db74">&#34;{
-</span><span style="color:#e6db74">    \&#34;name\&#34;: \&#34;node-exporter-</span><span style="color:#e6db74">${</span>XX<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;,
-</span><span style="color:#e6db74">    \&#34;port\&#34;:9100,
-</span><span style="color:#e6db74">    \&#34;tags\&#34;:[\&#34;foo\&#34;, \&#34;bar\&#34;],
-</span><span style="color:#e6db74">    \&#34;address\&#34;: \&#34;node-exporter-</span><span style="color:#e6db74">${</span>XX<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;
-</span><span style="color:#e6db74">  }&#34;</span>
-<span style="color:#66d9ef">done</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>REGISTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://127.0.0.1:8500/v1/agent/service/register&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> XX in <span style="color:#f92672">{</span>01..03<span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --request PUT <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">${</span>REGISTER<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --data <span style="color:#e6db74">&#34;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;name\&#34;: \&#34;node-exporter-</span><span style="color:#e6db74">${</span>XX<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;port\&#34;:9100,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;tags\&#34;:[\&#34;foo\&#34;, \&#34;bar\&#34;],
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;address\&#34;: \&#34;node-exporter-</span><span style="color:#e6db74">${</span>XX<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The service <code>name</code> changes e.g. <code>node-exporter-02</code> but the <code>port</code> and <code>address</code> point to the docker-compose service called <code>node-exporter</code> that exposes metrics on port <code>9100</code>. Both services are tagged with 2 labels <code>foo</code> and <code>bar</code>.</p>
 </blockquote>
 <p>If we now return to the Consul UI:</p>
 <p><img src="/images/210419.consul.services.node-exporter-xx.png" alt="Consul: Services: Node Exporters"></p>
-<p>And, back to Prometheus' Service Discovery:</p>
+<p>And, back to Prometheus&rsquo; Service Discovery:</p>
 <p><img src="/images/210419.prometheus.sd.node-exporter-xx.png" alt="Prometheus: Service Discovery: Node Exporters"></p>
-<p>If we switch to Prometheus' Targets, we can confirm this:</p>
+<p>If we switch to Prometheus&rsquo; Targets, we can confirm this:</p>
 <p><img src="/images/210419.prometheus.targets.node-exporter-xx.png" alt="Prometheus: Targets: Node Exporters"></p>
-<p>And, of course, we&rsquo;re doing this primarily to observe metrics. So, let&rsquo;s switch to Prometheus' Graph UI and visualize some metrics from the Node Exporters:</p>
+<p>And, of course, we&rsquo;re doing this primarily to observe metrics. So, let&rsquo;s switch to Prometheus&rsquo; Graph UI and visualize some metrics from the Node Exporters:</p>
 <p><img src="/images/210419.prometheus.graph.hwmon.png" alt="Prometheus: Graph: hwmon"></p>
 <p>I mentioned that I&rsquo;d like to use this approach to gather metrics from Cloud Run but I&rsquo;ve been demonstrating how to do this using Node Exporter running locally. Let&rsquo;s deploy Node Exporter to Cloud Run:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
-BILLING<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
-
-gcloud projects create
-gcloud billing
-
-gcloud services enable run.googleapis.com --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-
-<span style="color:#75715e"># Node Exporters</span>
-<span style="color:#66d9ef">for</span> XX in <span style="color:#f92672">{</span>01..02<span style="color:#f92672">}</span>
-<span style="color:#66d9ef">do</span>
-  gcloud run deploy node-exporter-01 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --max-instances<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --image<span style="color:#f92672">=</span>us.gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/node-exporter:v1.1.2 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --ingress<span style="color:#f92672">=</span>all <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --port<span style="color:#f92672">=</span><span style="color:#ae81ff">9100</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --allow-unauthenticated <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-<span style="color:#66d9ef">done</span>
-</code></pre></div><p>Then, we can enumerate the services with the name and location:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">SERVICES<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud run services list <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;csv(name,status.address.url)&#39;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>SERVICES<span style="color:#e6db74">}</span>
-</code></pre></div><p>Yielding:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>BILLING<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud projects create
+</span></span><span style="display:flex;"><span>gcloud billing
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud services enable run.googleapis.com --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Node Exporters</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> XX in <span style="color:#f92672">{</span>01..02<span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  gcloud run deploy node-exporter-01 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --max-instances<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --image<span style="color:#f92672">=</span>us.gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/node-exporter:v1.1.2 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --ingress<span style="color:#f92672">=</span>all <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --port<span style="color:#f92672">=</span><span style="color:#ae81ff">9100</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --allow-unauthenticated <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span></code></pre></div><p>Then, we can enumerate the services with the name and location:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>SERVICES<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud run services list <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;csv(name,status.address.url)&#39;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>SERVICES<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>Yielding:</p>
 <pre tabindex="0"><code class="language-csv" data-lang="csv">node-exporter-01,https://node-exporter-01-mvgi2eemha-uw.a.run.app
 node-exporter-02,https://node-exporter-02-mvgi2eemha-uw.a.run.app
 </code></pre><p>And then register these services with Consul:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#66d9ef">for</span> SERVICE in <span style="color:#e6db74">${</span>SERVICES<span style="color:#e6db74">}</span>
-<span style="color:#66d9ef">do</span>
-  IFS<span style="color:#f92672">=</span>, read NAME ENDPOINT <span style="color:#f92672">&lt;&lt;&lt;</span> <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>
-  curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --request PUT <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">${</span>REGISTER<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --data <span style="color:#e6db74">&#34;{
-</span><span style="color:#e6db74">    \&#34;name\&#34;: \&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;,
-</span><span style="color:#e6db74">    \&#34;port\&#34;:443,
-</span><span style="color:#e6db74">    \&#34;tags\&#34;:[\&#34;foo\&#34;, \&#34;bar\&#34;],
-</span><span style="color:#e6db74">    \&#34;address\&#34;: \&#34;</span><span style="color:#e6db74">${</span>ENDPOINT#https://<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;
-</span><span style="color:#e6db74">  }&#34;</span>
-<span style="color:#66d9ef">done</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">for</span> SERVICE in <span style="color:#e6db74">${</span>SERVICES<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  IFS<span style="color:#f92672">=</span>, read NAME ENDPOINT <span style="color:#f92672">&lt;&lt;&lt;</span> <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>  curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --request PUT <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">${</span>REGISTER<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --data <span style="color:#e6db74">&#34;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;name\&#34;: \&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;port\&#34;:443,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;tags\&#34;:[\&#34;foo\&#34;, \&#34;bar\&#34;],
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;address\&#34;: \&#34;</span><span style="color:#e6db74">${</span>ENDPOINT#https://<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> We need to remove the prefixing <code>https://</code> from the endpoint values using <code>${ENDPOINT#https://}</code></p>
 </blockquote>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Check Consul</span>
-curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>http://localhost:8500/v1/agent/services
-</code></pre></div><p>Yielding:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
-    <span style="color:#f92672">&#34;cloud-run-01&#34;</span>: {
-        <span style="color:#f92672">&#34;ID&#34;</span>: <span style="color:#e6db74">&#34;cloud-run-01&#34;</span>,
-        <span style="color:#f92672">&#34;Service&#34;</span>: <span style="color:#e6db74">&#34;cloud-run-01&#34;</span>,
-        <span style="color:#f92672">&#34;Tags&#34;</span>: [
-            <span style="color:#e6db74">&#34;foo&#34;</span>,
-            <span style="color:#e6db74">&#34;bar&#34;</span>
-        ],
-        <span style="color:#f92672">&#34;Meta&#34;</span>: {},
-        <span style="color:#f92672">&#34;Port&#34;</span>: <span style="color:#ae81ff">443</span>,
-        <span style="color:#f92672">&#34;Address&#34;</span>: <span style="color:#e6db74">&#34;node-exporter-01-mvgi2eemha-uw.a.run.app&#34;</span>,
-        <span style="color:#f92672">&#34;Weights&#34;</span>: {
-            <span style="color:#f92672">&#34;Passing&#34;</span>: <span style="color:#ae81ff">1</span>,
-            <span style="color:#f92672">&#34;Warning&#34;</span>: <span style="color:#ae81ff">1</span>
-        },
-        <span style="color:#f92672">&#34;EnableTagOverride&#34;</span>: <span style="color:#66d9ef">false</span>,
-        <span style="color:#f92672">&#34;Datacenter&#34;</span>: <span style="color:#e6db74">&#34;dc1&#34;</span>
-    },
-    <span style="color:#f92672">&#34;cloud-run-02&#34;</span>: {
-        <span style="color:#f92672">&#34;ID&#34;</span>: <span style="color:#e6db74">&#34;cloud-run-02&#34;</span>,
-        <span style="color:#f92672">&#34;Service&#34;</span>: <span style="color:#e6db74">&#34;cloud-run-02&#34;</span>,
-        <span style="color:#f92672">&#34;Tags&#34;</span>: [
-            <span style="color:#e6db74">&#34;foo&#34;</span>,
-            <span style="color:#e6db74">&#34;bar&#34;</span>
-        ],
-        <span style="color:#f92672">&#34;Meta&#34;</span>: {},
-        <span style="color:#f92672">&#34;Port&#34;</span>: <span style="color:#ae81ff">443</span>,
-        <span style="color:#f92672">&#34;Address&#34;</span>: <span style="color:#e6db74">&#34;node-exporter-02-mvgi2eemha-uw.a.run.app&#34;</span>,
-        <span style="color:#f92672">&#34;Weights&#34;</span>: {
-            <span style="color:#f92672">&#34;Passing&#34;</span>: <span style="color:#ae81ff">1</span>,
-            <span style="color:#f92672">&#34;Warning&#34;</span>: <span style="color:#ae81ff">1</span>
-        },
-        <span style="color:#f92672">&#34;EnableTagOverride&#34;</span>: <span style="color:#66d9ef">false</span>,
-        <span style="color:#f92672">&#34;Datacenter&#34;</span>: <span style="color:#e6db74">&#34;dc1&#34;</span>
-    }
-}
-</code></pre></div><p>And, we now have:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check Consul</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>http://localhost:8500/v1/agent/services
+</span></span></code></pre></div><p>Yielding:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;cloud-run-01&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;ID&#34;</span>: <span style="color:#e6db74">&#34;cloud-run-01&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Service&#34;</span>: <span style="color:#e6db74">&#34;cloud-run-01&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Tags&#34;</span>: [
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;foo&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;bar&#34;</span>
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Meta&#34;</span>: {},
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Port&#34;</span>: <span style="color:#ae81ff">443</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Address&#34;</span>: <span style="color:#e6db74">&#34;node-exporter-01-mvgi2eemha-uw.a.run.app&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Weights&#34;</span>: {
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;Passing&#34;</span>: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;Warning&#34;</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;EnableTagOverride&#34;</span>: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Datacenter&#34;</span>: <span style="color:#e6db74">&#34;dc1&#34;</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;cloud-run-02&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;ID&#34;</span>: <span style="color:#e6db74">&#34;cloud-run-02&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Service&#34;</span>: <span style="color:#e6db74">&#34;cloud-run-02&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Tags&#34;</span>: [
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;foo&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;bar&#34;</span>
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Meta&#34;</span>: {},
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Port&#34;</span>: <span style="color:#ae81ff">443</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Address&#34;</span>: <span style="color:#e6db74">&#34;node-exporter-02-mvgi2eemha-uw.a.run.app&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Weights&#34;</span>: {
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;Passing&#34;</span>: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;Warning&#34;</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;EnableTagOverride&#34;</span>: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;Datacenter&#34;</span>: <span style="color:#e6db74">&#34;dc1&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And, we now have:</p>
 <p><img src="/images/210419.consul.services.cloud-run-xx.png" alt="Consul: Services: cloud-run-xx"></p>
 <p>We need to revise the Prometheus config of Consul because Cloud Run endpoints use TLS. Thanks to <a href="https://stackoverflow.com/a/63356229/609290">this</a> answer on Stackoverflow my initial, faltering attempts at understanding how to configure service discovery, became:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">global</span>:
-  <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">1m</span>
-  <span style="color:#f92672">evaluation_interval</span>: <span style="color:#ae81ff">1m</span>
-
-  <span style="color:#75715e"># Consul: Cloud Run</span>
-  <span style="color:#75715e"># TLS: https://stackoverflow.com/a/63356229/609290</span>
-  - <span style="color:#f92672">job_name</span>: <span style="color:#ae81ff">cloud-run</span>
-    <span style="color:#75715e">#metrics_path: /metrics</span>
-    <span style="color:#f92672">tls_config</span>:
-      <span style="color:#f92672">insecure_skip_verify</span>: <span style="color:#66d9ef">false</span>
-    <span style="color:#f92672">consul_sd_configs</span>:
-      - <span style="color:#f92672">server</span>: <span style="color:#ae81ff">consul:8500</span>
-        <span style="color:#f92672">datacenter</span>: <span style="color:#ae81ff">dc1</span>
-        <span style="color:#75715e"># services:</span>
-        <span style="color:#75715e">#   - &#34;cloud-run-01&#34;</span>
-        <span style="color:#75715e">#   - &#34;cloud-run-02&#34;</span>
-        <span style="color:#f92672">tags</span>:
-        - <span style="color:#ae81ff">foo</span>
-        - <span style="color:#ae81ff">bar</span>
-    <span style="color:#f92672">relabel_configs</span>:
-      - <span style="color:#f92672">source_labels</span>:
-          - <span style="color:#ae81ff">__scheme__</span>
-        <span style="color:#f92672">target_label</span>: <span style="color:#ae81ff">__scheme__</span>
-        <span style="color:#f92672">replacement</span>: <span style="color:#ae81ff">https</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">global</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">1m</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">evaluation_interval</span>: <span style="color:#ae81ff">1m</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Consul: Cloud Run</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># TLS: https://stackoverflow.com/a/63356229/609290</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">job_name</span>: <span style="color:#ae81ff">cloud-run</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#metrics_path: /metrics</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">tls_config</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">insecure_skip_verify</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">consul_sd_configs</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">server</span>: <span style="color:#ae81ff">consul:8500</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">datacenter</span>: <span style="color:#ae81ff">dc1</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># services:</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">#   - &#34;cloud-run-01&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">#   - &#34;cloud-run-02&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">tags</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#ae81ff">foo</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#ae81ff">bar</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">relabel_configs</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">source_labels</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#ae81ff">__scheme__</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">target_label</span>: <span style="color:#ae81ff">__scheme__</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">replacement</span>: <span style="color:#ae81ff">https</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTES</strong> The <code>metrics_path</code> defaults to <code>/metrics</code> but is included here to better document what&rsquo;s going on<!-- raw HTML omitted -->The <code>tls_config</code> sets <code>insecure_skip_verify</code> to <code>false</code>. This verifies (!) that the certs returned by Cloud Run are verified. It&rsquo;s possible to enumerate a list of <code>services</code> but it&rsquo;s more elegant (and dynamic) to select those services with specific <code>tags</code>. As shown above, when creating the services, <code>tags</code> of <code>foo</code> and <code>bar</code> were set and so these are used to filter the services discovered from Consule.<!-- raw HTML omitted -->The <code>relabel_configs</code> finds the occurrences of <code>__scheme = &quot;http&quot;</code> in the labels discovered by Prometheus and rewrites these to be <code>__scheme = &quot;https&quot;</code>, interestingly (!) this causes the protocol switch to TLS.</p>
 </blockquote>
 <p><img src="/images/210419.prometheus.sd.cloud-run.png" alt="Prometheus: Service Discovery: Cloud Run"></p>
@@ -465,68 +465,68 @@ curl <span style="color:#ae81ff">\
 <p><img src="/images/210419.prometheus.graph.png" alt="Prometheus: Graph"></p>
 <h2 id="dig"><code>dig</code></h2>
 <p>Consul is also able to respond as a DNS daemon. By reconfiguring <code>docker-compose.yml</code> to expose the default DNS port (<code>8600</code>):</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">  <span style="color:#f92672">consul</span>:
-    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
-    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">consul:1.10.0-beta</span>
-    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">consul</span>
-    <span style="color:#f92672">expose</span>:
-    - <span style="color:#e6db74">&#34;8500&#34;</span> <span style="color:#75715e"># HTTP API|UI</span>
-    - <span style="color:#e6db74">&#34;8600&#34;</span> <span style="color:#75715e"># DNS</span>
-    <span style="color:#f92672">ports</span>:
-    - <span style="color:#ae81ff">8500</span>:<span style="color:#ae81ff">8500</span><span style="color:#ae81ff">/tcp</span>
-    - <span style="color:#ae81ff">8600</span>:<span style="color:#ae81ff">8600</span><span style="color:#ae81ff">/udp</span>
-</code></pre></div><p>We can, use <code>dig</code> to query our services:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">dig @localhost -p8600 cloud-run-01.service.dc1.consul.
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">dig @127.0.0.1 -p 8600 cloud-run-01.service.dc1.consul.
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>; &lt;&lt;&gt;&gt; DiG 9.16.1-Ubuntu &lt;&lt;&gt;&gt; @127.0.0.1 -p 8600 cloud-run-01.service.dc1.consul.
-; (1 server found)
-;; global options: +cmd
-;; Got answer:
-;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 58382
-;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
-;; WARNING: recursion requested but not available
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>;; OPT PSEUDOSECTION:
-; EDNS: version: 0, flags:; udp: 4096
-;; QUESTION SECTION:
-;cloud-run-01.service.dc1.consul. IN	A
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>;; ANSWER SECTION:
-cloud-run-01.service.dc1.consul. 0 IN	CNAME	node-exporter-01-mvgi2eemha-uw.a.run.app.
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>;; Query time: 4 msec
-;; SERVER: 127.0.0.1#8600(127.0.0.1)
-;; WHEN: Tue Apr 20 10:18:50 PDT 2021
-;; MSG SIZE  rcvd: 114
-</code></pre></div><p>Or by <code>SRV</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">dig @127.0.0.1 -p <span style="color:#ae81ff">8600</span> cloud-run-01.service.dc1.consul. SRV
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">; &lt;&lt;&gt;&gt; DiG 9.16.1-Ubuntu &lt;&lt;&gt;&gt; @127.0.0.1 -p 8600 cloud-run-01.service.dc1.consul. SRV
-; (1 server found)
-;; global options: +cmd
-;; Got answer:
-;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 11114
-;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 2
-;; WARNING: recursion requested but not available
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>;; OPT PSEUDOSECTION:
-; EDNS: version: 0, flags:; udp: 4096
-;; QUESTION SECTION:
-;cloud-run-01.service.dc1.consul. IN	SRV
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>;; ANSWER SECTION:
-cloud-run-01.service.dc1.consul. 0 IN	SRV	1 1 443 node-exporter-01-mvgi2eemha-uw.a.run.app.
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>;; ADDITIONAL SECTION:
-9fd04d771d42.node.dc1.consul. 0	IN	TXT	&#34;consul-network-segment=&#34;
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>;; Query time: 0 msec
-;; SERVER: 127.0.0.1#8600(127.0.0.1)
-;; WHEN: Tue Apr 20 10:24:02 PDT 2021
-;; MSG SIZE  rcvd: 174
-</code></pre></div><ul class="pa0">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>  <span style="color:#f92672">consul</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">always</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">consul:1.10.0-beta</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">consul</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">expose</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#e6db74">&#34;8500&#34;</span> <span style="color:#75715e"># HTTP API|UI</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#e6db74">&#34;8600&#34;</span> <span style="color:#75715e"># DNS</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">8500</span>:<span style="color:#ae81ff">8500</span><span style="color:#ae81ff">/tcp</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">8600</span>:<span style="color:#ae81ff">8600</span><span style="color:#ae81ff">/udp</span>
+</span></span></code></pre></div><p>We can, use <code>dig</code> to query our services:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>dig @localhost -p8600 cloud-run-01.service.dc1.consul.
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>dig @127.0.0.1 -p 8600 cloud-run-01.service.dc1.consul.
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>; &lt;&lt;&gt;&gt; DiG 9.16.1-Ubuntu &lt;&lt;&gt;&gt; @127.0.0.1 -p 8600 cloud-run-01.service.dc1.consul.
+</span></span><span style="display:flex;"><span>; (1 server found)
+</span></span><span style="display:flex;"><span>;; global options: +cmd
+</span></span><span style="display:flex;"><span>;; Got answer:
+</span></span><span style="display:flex;"><span>;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 58382
+</span></span><span style="display:flex;"><span>;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+</span></span><span style="display:flex;"><span>;; WARNING: recursion requested but not available
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>;; OPT PSEUDOSECTION:
+</span></span><span style="display:flex;"><span>; EDNS: version: 0, flags:; udp: 4096
+</span></span><span style="display:flex;"><span>;; QUESTION SECTION:
+</span></span><span style="display:flex;"><span>;cloud-run-01.service.dc1.consul. IN	A
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>;; ANSWER SECTION:
+</span></span><span style="display:flex;"><span>cloud-run-01.service.dc1.consul. 0 IN	CNAME	node-exporter-01-mvgi2eemha-uw.a.run.app.
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>;; Query time: 4 msec
+</span></span><span style="display:flex;"><span>;; SERVER: 127.0.0.1#8600(127.0.0.1)
+</span></span><span style="display:flex;"><span>;; WHEN: Tue Apr 20 10:18:50 PDT 2021
+</span></span><span style="display:flex;"><span>;; MSG SIZE  rcvd: 114
+</span></span></code></pre></div><p>Or by <code>SRV</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>dig @127.0.0.1 -p <span style="color:#ae81ff">8600</span> cloud-run-01.service.dc1.consul. SRV
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>; &lt;&lt;&gt;&gt; DiG 9.16.1-Ubuntu &lt;&lt;&gt;&gt; @127.0.0.1 -p 8600 cloud-run-01.service.dc1.consul. SRV
+</span></span><span style="display:flex;"><span>; (1 server found)
+</span></span><span style="display:flex;"><span>;; global options: +cmd
+</span></span><span style="display:flex;"><span>;; Got answer:
+</span></span><span style="display:flex;"><span>;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 11114
+</span></span><span style="display:flex;"><span>;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 2
+</span></span><span style="display:flex;"><span>;; WARNING: recursion requested but not available
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>;; OPT PSEUDOSECTION:
+</span></span><span style="display:flex;"><span>; EDNS: version: 0, flags:; udp: 4096
+</span></span><span style="display:flex;"><span>;; QUESTION SECTION:
+</span></span><span style="display:flex;"><span>;cloud-run-01.service.dc1.consul. IN	SRV
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>;; ANSWER SECTION:
+</span></span><span style="display:flex;"><span>cloud-run-01.service.dc1.consul. 0 IN	SRV	1 1 443 node-exporter-01-mvgi2eemha-uw.a.run.app.
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>;; ADDITIONAL SECTION:
+</span></span><span style="display:flex;"><span>9fd04d771d42.node.dc1.consul. 0	IN	TXT	&#34;consul-network-segment=&#34;
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>;; Query time: 0 msec
+</span></span><span style="display:flex;"><span>;; SERVER: 127.0.0.1#8600(127.0.0.1)
+</span></span><span style="display:flex;"><span>;; WHEN: Tue Apr 20 10:24:02 PDT 2021
+</span></span><span style="display:flex;"><span>;; MSG SIZE  rcvd: 174
+</span></span></code></pre></div><ul class="pa0">
   
    <li class="list di">
      <a href="/tags/prometheus" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">prometheus</a>

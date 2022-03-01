@@ -7,7 +7,7 @@
     <title>Minimizing WASM binaries | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="A summary of ways to minimize WASM binaries">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -195,78 +195,78 @@ if (!doNotTrack) {
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve spent time recently playing around with WebAssembly (WASM) and <a href="https://github.com/wapc">waPC</a>. Rust and WASM were born at Mozilla and there&rsquo;s a natural affinity with writing WASM binaries in Rust. In the WASM examples I&rsquo;ve been using for <a href="https://pretired.dazwilkin.com/posts/200817/">WASM Transparency</a>, <a href="https://pretired.dazwilkin.com/posts/200807/">waPC and MsgPack</a> and <a href="https://pretired.dazwilkin.com/posts/200612/">waPC and Protobufs</a>.</p>
 <p>I&rsquo;ve created 3 WASM binaries: <code>complex.wasm</code>, <code>simplex.wasm</code> and <code>fabcar.wasm</code> and each is about 2.5MB when:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">cargo build --target<span style="color:#f92672">=</span>wasm32-unknown-unknown --release
-</code></pre></div><p>The <a href="https://rustwasm.github.io/docs/book">Rust and WebAssembly</a> book has an excellent section titled <a href="https://rustwasm.github.io/docs/book/reference/code-size.html">Shrinking <code>.wasm.</code> Code Size</a>. So, let&rsquo;s see what help that provides.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cargo build --target<span style="color:#f92672">=</span>wasm32-unknown-unknown --release
+</span></span></code></pre></div><p>The <a href="https://rustwasm.github.io/docs/book">Rust and WebAssembly</a> book has an excellent section titled <a href="https://rustwasm.github.io/docs/book/reference/code-size.html">Shrinking <code>.wasm.</code> Code Size</a>. So, let&rsquo;s see what help that provides.</p>
 <p>For <code>complex.wasm</code>, the starting file size using the above command is: 2,473,898.</p>
 <p>Adding <code>Link-Time Optimizations</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-TOML" data-lang="TOML">[<span style="color:#a6e22e">profile</span>.<span style="color:#a6e22e">release</span>]
-<span style="color:#a6e22e">lto</span> = <span style="color:#66d9ef">true</span>
-</code></pre></div><p>Reduces the file size to: 1,112,965 (~50%)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-TOML" data-lang="TOML"><span style="display:flex;"><span>[<span style="color:#a6e22e">profile</span>.<span style="color:#a6e22e">release</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">lto</span> = <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><p>Reduces the file size to: 1,112,965 (~50%)</p>
 <p>Then, aggressively optimizing for size:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-TOML" data-lang="TOML">[<span style="color:#a6e22e">profile</span>.<span style="color:#a6e22e">release</span>]
-<span style="color:#a6e22e">lto</span> = <span style="color:#66d9ef">true</span>
-<span style="color:#a6e22e">opt-level</span> = <span style="color:#e6db74">&#39;z&#39;</span>
-</code></pre></div><p>Reduces the file size to: 1,053,485 (~43% of original)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-TOML" data-lang="TOML"><span style="display:flex;"><span>[<span style="color:#a6e22e">profile</span>.<span style="color:#a6e22e">release</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">lto</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">opt-level</span> = <span style="color:#e6db74">&#39;z&#39;</span>
+</span></span></code></pre></div><p>Reduces the file size to: 1,053,485 (~43% of original)</p>
 <p>Let&rsquo;s use <a href="https://github.com/rustwasm/twiggy">twiggy</a> to see what&rsquo;s remaining:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">twiggy top -n <span style="color:#ae81ff">10</span> ./target/wasm32-unknown-unknown/release/complex.wasm
- Shallow Bytes │ Shallow % │ Item
-───────────────┼───────────┼────────────────────────────────────────────────────────
-        <span style="color:#ae81ff">296065</span> ┊    28.10% ┊ <span style="color:#e6db74">&#34;function names&#34;</span> subsection
-         <span style="color:#ae81ff">85876</span> ┊     8.15% ┊ custom section <span style="color:#e6db74">&#39;.debug_str&#39;</span>
-         <span style="color:#ae81ff">75273</span> ┊     7.15% ┊ data<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>
-         <span style="color:#ae81ff">56076</span> ┊     5.32% ┊ custom section <span style="color:#e6db74">&#39;.debug_info&#39;</span>
-         <span style="color:#ae81ff">47403</span> ┊     4.50% ┊ custom section <span style="color:#e6db74">&#39;.debug_line&#39;</span>
-         <span style="color:#ae81ff">25480</span> ┊     2.42% ┊ custom section <span style="color:#e6db74">&#39;.debug_ranges&#39;</span>
-         <span style="color:#ae81ff">25067</span> ┊     2.38% ┊ custom section <span style="color:#e6db74">&#39;.debug_pubnames&#39;</span>
-          <span style="color:#ae81ff">5859</span> ┊     0.56% ┊ dlmalloc::dlmalloc::Dlmalloc::malloc::h86eb72a884c31be6
-          <span style="color:#ae81ff">5829</span> ┊     0.55% ┊ &lt;protobuf::descriptor::DescriptorProto
-          <span style="color:#ae81ff">4678</span> ┊     0.44% ┊ &lt;protobuf::descriptor::FileDescriptorProto
-        <span style="color:#ae81ff">425879</span> ┊    40.43% ┊ ... and <span style="color:#ae81ff">2951</span> more.
-       <span style="color:#ae81ff">1053485</span> ┊   100.00% ┊ Σ <span style="color:#f92672">[</span><span style="color:#ae81ff">2961</span> Total Rows<span style="color:#f92672">]</span>
-</code></pre></div><p>Now, let&rsquo;s use <a href="https://github.com/WebAssembly/binaryen">binaryren</a>&rsquo;s <code>wasm-opt</code> tool.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wasm-opt <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--strip-debug <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-o complex.no_debug.wasm <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>./target/wasm32-unknown-unknown/release/complex.wasm
-</code></pre></div><p>Then:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">twiggy top -n <span style="color:#ae81ff">10</span> complex.nodebug.wasm
- Shallow Bytes │ Shallow % │ Item
-───────────────┼───────────┼─────────────────────
-         <span style="color:#ae81ff">75273</span> ┊    16.18% ┊ data<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">5498</span> ┊     1.18% ┊ code<span style="color:#f92672">[</span>1410<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">5478</span> ┊     1.18% ┊ code<span style="color:#f92672">[</span>424<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">4409</span> ┊     0.95% ┊ code<span style="color:#f92672">[</span>1369<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">4348</span> ┊     0.93% ┊ elem<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">4214</span> ┊     0.91% ┊ code<span style="color:#f92672">[</span>383<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">4069</span> ┊     0.87% ┊ code<span style="color:#f92672">[</span>340<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">3459</span> ┊     0.74% ┊ code<span style="color:#f92672">[</span>385<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">2892</span> ┊     0.62% ┊ code<span style="color:#f92672">[</span>1382<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">2707</span> ┊     0.58% ┊ code<span style="color:#f92672">[</span>1552<span style="color:#f92672">]</span>
-        <span style="color:#ae81ff">352801</span> ┊    75.85% ┊ ... and <span style="color:#ae81ff">2933</span> more.
-        <span style="color:#ae81ff">465148</span> ┊   100.00% ┊ Σ <span style="color:#f92672">[</span><span style="color:#ae81ff">2943</span> Total Rows<span style="color:#f92672">]</span>
-</code></pre></div><p>Reduces the fize size to: 465,148 (~20% of original)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>twiggy top -n <span style="color:#ae81ff">10</span> ./target/wasm32-unknown-unknown/release/complex.wasm
+</span></span><span style="display:flex;"><span> Shallow Bytes │ Shallow % │ Item
+</span></span><span style="display:flex;"><span>───────────────┼───────────┼────────────────────────────────────────────────────────
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">296065</span> ┊    28.10% ┊ <span style="color:#e6db74">&#34;function names&#34;</span> subsection
+</span></span><span style="display:flex;"><span>         <span style="color:#ae81ff">85876</span> ┊     8.15% ┊ custom section <span style="color:#e6db74">&#39;.debug_str&#39;</span>
+</span></span><span style="display:flex;"><span>         <span style="color:#ae81ff">75273</span> ┊     7.15% ┊ data<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>         <span style="color:#ae81ff">56076</span> ┊     5.32% ┊ custom section <span style="color:#e6db74">&#39;.debug_info&#39;</span>
+</span></span><span style="display:flex;"><span>         <span style="color:#ae81ff">47403</span> ┊     4.50% ┊ custom section <span style="color:#e6db74">&#39;.debug_line&#39;</span>
+</span></span><span style="display:flex;"><span>         <span style="color:#ae81ff">25480</span> ┊     2.42% ┊ custom section <span style="color:#e6db74">&#39;.debug_ranges&#39;</span>
+</span></span><span style="display:flex;"><span>         <span style="color:#ae81ff">25067</span> ┊     2.38% ┊ custom section <span style="color:#e6db74">&#39;.debug_pubnames&#39;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">5859</span> ┊     0.56% ┊ dlmalloc::dlmalloc::Dlmalloc::malloc::h86eb72a884c31be6
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">5829</span> ┊     0.55% ┊ &lt;protobuf::descriptor::DescriptorProto
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">4678</span> ┊     0.44% ┊ &lt;protobuf::descriptor::FileDescriptorProto
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">425879</span> ┊    40.43% ┊ ... and <span style="color:#ae81ff">2951</span> more.
+</span></span><span style="display:flex;"><span>       <span style="color:#ae81ff">1053485</span> ┊   100.00% ┊ Σ <span style="color:#f92672">[</span><span style="color:#ae81ff">2961</span> Total Rows<span style="color:#f92672">]</span>
+</span></span></code></pre></div><p>Now, let&rsquo;s use <a href="https://github.com/WebAssembly/binaryen">binaryren</a>&rsquo;s <code>wasm-opt</code> tool.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>wasm-opt <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--strip-debug <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-o complex.no_debug.wasm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>./target/wasm32-unknown-unknown/release/complex.wasm
+</span></span></code></pre></div><p>Then:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>twiggy top -n <span style="color:#ae81ff">10</span> complex.nodebug.wasm
+</span></span><span style="display:flex;"><span> Shallow Bytes │ Shallow % │ Item
+</span></span><span style="display:flex;"><span>───────────────┼───────────┼─────────────────────
+</span></span><span style="display:flex;"><span>         <span style="color:#ae81ff">75273</span> ┊    16.18% ┊ data<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">5498</span> ┊     1.18% ┊ code<span style="color:#f92672">[</span>1410<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">5478</span> ┊     1.18% ┊ code<span style="color:#f92672">[</span>424<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">4409</span> ┊     0.95% ┊ code<span style="color:#f92672">[</span>1369<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">4348</span> ┊     0.93% ┊ elem<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">4214</span> ┊     0.91% ┊ code<span style="color:#f92672">[</span>383<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">4069</span> ┊     0.87% ┊ code<span style="color:#f92672">[</span>340<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">3459</span> ┊     0.74% ┊ code<span style="color:#f92672">[</span>385<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">2892</span> ┊     0.62% ┊ code<span style="color:#f92672">[</span>1382<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">2707</span> ┊     0.58% ┊ code<span style="color:#f92672">[</span>1552<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">352801</span> ┊    75.85% ┊ ... and <span style="color:#ae81ff">2933</span> more.
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">465148</span> ┊   100.00% ┊ Σ <span style="color:#f92672">[</span><span style="color:#ae81ff">2943</span> Total Rows<span style="color:#f92672">]</span>
+</span></span></code></pre></div><p>Reduces the fize size to: 465,148 (~20% of original)</p>
 <p>And, lastly, optimized aggressively for size (using <code>wasm-opt</code> this time):</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wasm-opt <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-Oz <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-o complex.size.wasm <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>complex.no_debug.wasm
-</code></pre></div><p>Then:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">twiggy top -n <span style="color:#ae81ff">10</span> output.wasm
- Shallow Bytes │ Shallow % │ Item
-───────────────┼───────────┼─────────────────────
-         <span style="color:#ae81ff">46380</span> ┊    11.90% ┊ data<span style="color:#f92672">[</span>36<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">6072</span> ┊     1.56% ┊ data<span style="color:#f92672">[</span>58<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">5843</span> ┊     1.50% ┊ data<span style="color:#f92672">[</span>14<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">5412</span> ┊     1.39% ┊ code<span style="color:#f92672">[</span>332<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">5071</span> ┊     1.30% ┊ code<span style="color:#f92672">[</span>978<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">4168</span> ┊     1.07% ┊ code<span style="color:#f92672">[</span>942<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">4014</span> ┊     1.03% ┊ elem<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">3824</span> ┊     0.98% ┊ code<span style="color:#f92672">[</span>291<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">3547</span> ┊     0.91% ┊ code<span style="color:#f92672">[</span>259<span style="color:#f92672">]</span>
-          <span style="color:#ae81ff">3311</span> ┊     0.85% ┊ data<span style="color:#f92672">[</span>10<span style="color:#f92672">]</span>
-        <span style="color:#ae81ff">302236</span> ┊    77.52% ┊ ... and <span style="color:#ae81ff">1874</span> more.
-        <span style="color:#ae81ff">389878</span> ┊   100.00% ┊ Σ <span style="color:#f92672">[</span><span style="color:#ae81ff">1884</span> Total Rows<span style="color:#f92672">]</span>
-</code></pre></div><p>Reduces the fize size to: 389,878 (~16 of original)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>wasm-opt <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-Oz <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-o complex.size.wasm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>complex.no_debug.wasm
+</span></span></code></pre></div><p>Then:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>twiggy top -n <span style="color:#ae81ff">10</span> output.wasm
+</span></span><span style="display:flex;"><span> Shallow Bytes │ Shallow % │ Item
+</span></span><span style="display:flex;"><span>───────────────┼───────────┼─────────────────────
+</span></span><span style="display:flex;"><span>         <span style="color:#ae81ff">46380</span> ┊    11.90% ┊ data<span style="color:#f92672">[</span>36<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">6072</span> ┊     1.56% ┊ data<span style="color:#f92672">[</span>58<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">5843</span> ┊     1.50% ┊ data<span style="color:#f92672">[</span>14<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">5412</span> ┊     1.39% ┊ code<span style="color:#f92672">[</span>332<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">5071</span> ┊     1.30% ┊ code<span style="color:#f92672">[</span>978<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">4168</span> ┊     1.07% ┊ code<span style="color:#f92672">[</span>942<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">4014</span> ┊     1.03% ┊ elem<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">3824</span> ┊     0.98% ┊ code<span style="color:#f92672">[</span>291<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">3547</span> ┊     0.91% ┊ code<span style="color:#f92672">[</span>259<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">3311</span> ┊     0.85% ┊ data<span style="color:#f92672">[</span>10<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">302236</span> ┊    77.52% ┊ ... and <span style="color:#ae81ff">1874</span> more.
+</span></span><span style="display:flex;"><span>        <span style="color:#ae81ff">389878</span> ┊   100.00% ┊ Σ <span style="color:#f92672">[</span><span style="color:#ae81ff">1884</span> Total Rows<span style="color:#f92672">]</span>
+</span></span></code></pre></div><p>Reduces the fize size to: 389,878 (~16 of original)</p>
 <p>There are even more optimisations described in the book but, I think ~16% is a sufficiently dramatic improvement to call it quits.</p>
 <ul class="pa0">
   

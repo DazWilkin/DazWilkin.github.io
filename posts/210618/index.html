@@ -7,7 +7,7 @@
     <title>Firebase Authentication, Cloud Endpoints and gRPC (2of2) | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Using Firebase Auth to authorize users of a gRPC service behind Cloud Endpoints">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -198,23 +198,23 @@ if (!doNotTrack) {
 <p>The Cloud Enpoints (ESPv2) proxy must be run as <code>--allow-unauthenticated</code> on Cloud Run to ensure that requests make it to the proxy where the request is authenticated and only authenticated requests make it on to the backend service. Thanks Google&rsquo;s <a href="https://github.com/nareddyt">Teju Nareddy</a>!</p>
 <blockquote>
 <p><strong>NOTE</strong> The backend service should be run with <code>--no-allow-authenticated</code> and the proxy&rsquo;s service account (perhaps the default Compute Engine account) must be <code>roles/run.invoker</code> per Google&rsquo;s documentation or:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Get this Project&#39;s (`${PROJECT}`) number</span>
-PROJECT_NUM<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span> gcloud projects describe <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span> --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(projectNumber)&#34;</span><span style="color:#66d9ef">)</span>
-
-<span style="color:#75715e"># Use this Project&#39;s number to identify</span>
-<span style="color:#75715e"># the Compute Engine service account</span>
-EMAIL<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT_NUM<span style="color:#e6db74">}</span>-compute@developer.gserviceaccount.com
-
-<span style="color:#75715e"># Grant the service account `roles/run.invoker`</span>
-gcloud run services add-iam-policy-binding <span style="color:#e6db74">${</span>SRV_NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--member<span style="color:#f92672">=</span>serviceAccount:<span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--role<span style="color:#f92672">=</span>roles/run.invoker <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-</code></pre></div></blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Get this Project&#39;s (`${PROJECT}`) number</span>
+</span></span><span style="display:flex;"><span>PROJECT_NUM<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> gcloud projects describe <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(projectNumber)&#34;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Use this Project&#39;s number to identify</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># the Compute Engine service account</span>
+</span></span><span style="display:flex;"><span>EMAIL<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT_NUM<span style="color:#e6db74">}</span>-compute@developer.gserviceaccount.com
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Grant the service account `roles/run.invoker`</span>
+</span></span><span style="display:flex;"><span>gcloud run services add-iam-policy-binding <span style="color:#e6db74">${</span>SRV_NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--member<span style="color:#f92672">=</span>serviceAccount:<span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--role<span style="color:#f92672">=</span>roles/run.invoker <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div></blockquote>
 <h2 id="grpc-backend-service">gRPC backend service</h2>
 <p>The backend service (methods) will be invoked by the Cloud Endpoints proxy and with gRPC over HTTP/2, the contents of the headers frame is surfaced through metadata. Here&rsquo;s a snapshot of the metadata received by the <a href="#interceptor">Interceptor</a>:</p>
 <table>
@@ -302,26 +302,26 @@ gcloud run services add-iam-policy-binding <span style="color:#e6db74">${</span>
 <p><strong>NOTE</strong> An important item of metadata is <code>X-Endpoint-API-UserInfo</code> which we&rsquo;ll use in the following code.</p>
 </blockquote>
 <p>It&rsquo;s straightforward to interact with the metadata:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">import</span> (
-	<span style="color:#e6db74">&#34;context&#34;</span>
-
-	<span style="color:#e6db74">&#34;google.golang.org/grpc/metadata&#34;</span>
-)
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">SomeMethod</span>(
-    <span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
-    <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">SomeMethodRequest</span>,
-    ) (<span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">SomeMethodResponse</span>, <span style="color:#66d9ef">error</span>) {
-    <span style="color:#a6e22e">md</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">FromIncomingContext</span>(<span style="color:#a6e22e">ctx</span>)
-    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
-        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#e6db74">&#34;unable to retrieve gRPC metadata&#34;</span>)
-    }
-
-    <span style="color:#75715e">// Get returns []string
-</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">value</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">SomeKey</span>)
-    <span style="color:#f92672">...</span>
-}
-</code></pre></div><p>But, in this case, we want to apply authorization (not authentication, that&rsquo;s already done) to users of our service.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc/metadata&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">SomeMethod</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">SomeMethodRequest</span>,
+</span></span><span style="display:flex;"><span>    ) (<span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">SomeMethodResponse</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">md</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">FromIncomingContext</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#e6db74">&#34;unable to retrieve gRPC metadata&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get returns []string
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">value</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">SomeKey</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>But, in this case, we want to apply authorization (not authentication, that&rsquo;s already done) to users of our service.</p>
 <h2 id="authorization-authz">Authorization (AuthZ)</h2>
 <p>Sometimes, for convenience and to highlight the different authentication is referred to as AuthN and authorization is referred to as AuthZ. Firebase Authentication (AuthN) has enabled us to outsource all the messiness of authentication for users of myriad OAuth providers to Google Firebase which is great.</p>
 <p>But, Firebase does <strong>not</strong> include an authorization (AuthZ) service.</p>
@@ -329,187 +329,187 @@ gcloud run services add-iam-policy-binding <span style="color:#e6db74">${</span>
 <p><strong>NOTE</strong> Cloud Endpoints also supports <a href="https://cloud.google.com/endpoints/docs/openapi/authenticating-users-auth0">Auth0</a>. Auth0 provides <a href="https://auth0.com/docs/authentication">authentication</a> and <a href="https://auth0.com/docs/authorization">authorization</a> services. It&rsquo;s possible, as my service grows that I&rsquo;ll consider swapping both AuthN and AuthZ to Auth0.</p>
 </blockquote>
 <p>I&rsquo;m considering using Firestore as the backend for authorization but have not yet implemented this. Meantime, I wanted to write a very simple &ndash; the simplest possible? &ndash; authorization service:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#75715e">// Users is a type that represents the system&#39;s list of users
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Users</span> []<span style="color:#a6e22e">User</span>
-
-<span style="color:#75715e">// User is a type that represents one of the system&#39;s users
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">User</span> <span style="color:#66d9ef">struct</span> {
-    <span style="color:#a6e22e">Email</span> <span style="color:#66d9ef">string</span>
-}
-
-<span style="color:#66d9ef">var</span> (
-	<span style="color:#a6e22e">SystemUsers</span> = <span style="color:#a6e22e">Users</span>{
-		{
-			<span style="color:#a6e22e">Email</span>: <span style="color:#e6db74">&#34;my@email.com&#34;</span>,
-		},
-	}
-)
-
-<span style="color:#75715e">// Contains is a method that determines whether a User is in Users
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">uu</span> <span style="color:#a6e22e">Users</span>) <span style="color:#a6e22e">Contains</span>(<span style="color:#a6e22e">u</span> <span style="color:#a6e22e">User</span>) <span style="color:#66d9ef">bool</span> {
-	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">x</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">uu</span> {
-		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">x</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">u</span> {
-			<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>
-		}
-	}
-	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
-}
-</code></pre></div><h2 id="grpc-interceptor">gRPC Interceptor</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// Users is a type that represents the system&#39;s list of users
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Users</span> []<span style="color:#a6e22e">User</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// User is a type that represents one of the system&#39;s users
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">User</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Email</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">SystemUsers</span> = <span style="color:#a6e22e">Users</span>{
+</span></span><span style="display:flex;"><span>		{
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Email</span>: <span style="color:#e6db74">&#34;my@email.com&#34;</span>,
+</span></span><span style="display:flex;"><span>		},
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Contains is a method that determines whether a User is in Users
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">uu</span> <span style="color:#a6e22e">Users</span>) <span style="color:#a6e22e">Contains</span>(<span style="color:#a6e22e">u</span> <span style="color:#a6e22e">User</span>) <span style="color:#66d9ef">bool</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">x</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">uu</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">x</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">u</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="grpc-interceptor">gRPC Interceptor</h2>
 <p>See <a href="https://shijuvar.medium.com/writing-grpc-interceptors-in-go-bf3e7671fe48">Writing gRPC Interceptors in Go</a></p>
 <p>Rather than apply authorization piecemeal to each gRPC server method, I&rsquo;ve written a gRPC interceptor. The Interceptor intercepts every gRPC request that&rsquo;s received by the server, checks whether the authenticated user included in its metadata and represented by <code>X-Endpoint-API-UserInfo</code> is authorized and, if they are, then it invokes the gRPC method and returns the method&rsquo;s results. If the user is not authenticated, then the interceptor returns an error without invoking the method. Clean!</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">serverInteceptor</span>(
-	<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
-	<span style="color:#a6e22e">rqst</span> <span style="color:#66d9ef">interface</span>{},
-	<span style="color:#a6e22e">info</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryServerInfo</span>,
-	<span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryHandler</span>,
-) (<span style="color:#66d9ef">interface</span>{}, <span style="color:#66d9ef">error</span>) {
-    <span style="color:#f92672">...</span>
-
-	<span style="color:#75715e">// Get metadata
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">md</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">FromIncomingContext</span>(<span style="color:#a6e22e">ctx</span>)
-	<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
-		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;...&#34;</span>)
-	}
-
-	<span style="color:#75715e">// Metadata keys are lowercase
-</span><span style="color:#75715e"></span>	<span style="color:#75715e">// Avoid md.Get()&#39;s use of strings.ToLower(), use lowercase
-</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">encUserInfos</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;x-endpoint-api-userinfo&#34;</span>);
-    len(<span style="color:#a6e22e">encUserInfos</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> {
-		<span style="color:#75715e">// Should be none or one
-</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">encUserInfos</span>) &gt; <span style="color:#ae81ff">1</span> {
-			<span style="color:#f92672">...</span>
-		}
-
-        <span style="color:#75715e">// Decode the header
-</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">userinfo</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewUserInfo</span>(<span style="color:#a6e22e">encUserInfos</span>[<span style="color:#ae81ff">0</span>])
-        <span style="color:#75715e">// Create a User
-</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">user</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewUser</span>(<span style="color:#a6e22e">userinfo</span>)
-		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">Valid</span>() {
-			<span style="color:#75715e">// Authorize the User
-</span><span style="color:#75715e"></span>			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">SystemUsers</span>.<span style="color:#a6e22e">Authorized</span>(<span style="color:#a6e22e">user</span>) {
-				<span style="color:#75715e">// Call the intercepted handler
-</span><span style="color:#75715e"></span>                <span style="color:#75715e">// Returning its results
-</span><span style="color:#75715e"></span>				<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">handler</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
-		}
-	}
-
-	<span style="color:#75715e">// Unauthenticated or Unauthorized
-</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>,
-        <span style="color:#a6e22e">status</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#a6e22e">codes</span>.<span style="color:#a6e22e">PermissionDenied</span>, <span style="color:#e6db74">&#34;permission denied&#34;</span>)
-}
-</code></pre></div><p>I won&rsquo;t labor the <code>User</code> struct but <code>UserInfo</code> decodes the incoming metadata header:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#f92672">import</span> (
-	<span style="color:#e6db74">&#34;encoding/base64&#34;</span>
-	<span style="color:#e6db74">&#34;encoding/json&#34;</span>
-	<span style="color:#e6db74">&#34;fmt&#34;</span>
-)
-
-<span style="color:#75715e">// UserInfo is a type that represents `X-Endpoint-API-UserToken`
-</span><span style="color:#75715e">// The Firebase field matches the service config auth provider
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">UserInfo</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">Name</span>           <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;name&#34;`</span>
-	<span style="color:#a6e22e">Issuer</span>         <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;iss&#34;`</span>
-	<span style="color:#a6e22e">Audience</span>       <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;aud&#34;`</span>
-	<span style="color:#a6e22e">AuthNTime</span>      <span style="color:#a6e22e">Time</span>     <span style="color:#e6db74">`json:&#34;auth_time&#34;`</span>
-	<span style="color:#a6e22e">UserID</span>         <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;user_id&#34;`</span>
-	<span style="color:#a6e22e">Subject</span>        <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;sub&#34;`</span>
-	<span style="color:#a6e22e">IssuedAt</span>       <span style="color:#a6e22e">Time</span>     <span style="color:#e6db74">`json:&#34;iat&#34;`</span>
-	<span style="color:#a6e22e">ExpirationTime</span> <span style="color:#a6e22e">Time</span>     <span style="color:#e6db74">`json:&#34;exp&#34;`</span>
-	<span style="color:#a6e22e">Email</span>          <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;email&#34;`</span>
-	<span style="color:#a6e22e">EmailVerified</span>  <span style="color:#66d9ef">bool</span>     <span style="color:#e6db74">`json:&#34;email_verified&#34;`</span>
-	<span style="color:#a6e22e">Firebase</span>       <span style="color:#a6e22e">Provider</span> <span style="color:#e6db74">`json:&#34;firebase&#34;`</span>
-}
-
-<span style="color:#75715e">// Provider is a type that represents a service config auth provider
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Provider</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">Identities</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>][]<span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;identities&#34;`</span>
-	<span style="color:#a6e22e">Provider</span>   <span style="color:#66d9ef">string</span>              <span style="color:#e6db74">`json:&#34;sign_in_provider&#34;`</span>
-}
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewUserInfo</span>(<span style="color:#a6e22e">enc</span> <span style="color:#66d9ef">string</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">UserInfo</span>, <span style="color:#66d9ef">error</span>) {
-	<span style="color:#a6e22e">log</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;NewUserInfo&#34;</span>)
-
-	<span style="color:#75715e">// Value is base64url encoded
-</span><span style="color:#75715e"></span>	<span style="color:#75715e">// Decode it
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">base64</span>.<span style="color:#a6e22e">RawURLEncoding</span>.<span style="color:#a6e22e">DecodeString</span>(<span style="color:#a6e22e">enc</span>)
-
-	<span style="color:#a6e22e">userinfo</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">UserInfo</span>{}
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">userinfo</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#f92672">...</span>
-	}
-
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">userinfo</span>, <span style="color:#66d9ef">nil</span>
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">serverInteceptor</span>(
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rqst</span> <span style="color:#66d9ef">interface</span>{},
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">info</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryServerInfo</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryHandler</span>,
+</span></span><span style="display:flex;"><span>) (<span style="color:#66d9ef">interface</span>{}, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Get metadata
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">md</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">FromIncomingContext</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;...&#34;</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Metadata keys are lowercase
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// Avoid md.Get()&#39;s use of strings.ToLower(), use lowercase
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">encUserInfos</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;x-endpoint-api-userinfo&#34;</span>);
+</span></span><span style="display:flex;"><span>    len(<span style="color:#a6e22e">encUserInfos</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Should be none or one
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">encUserInfos</span>) &gt; <span style="color:#ae81ff">1</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Decode the header
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">userinfo</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewUserInfo</span>(<span style="color:#a6e22e">encUserInfos</span>[<span style="color:#ae81ff">0</span>])
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Create a User
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">user</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewUser</span>(<span style="color:#a6e22e">userinfo</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">Valid</span>() {
+</span></span><span style="display:flex;"><span>			<span style="color:#75715e">// Authorize the User
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">SystemUsers</span>.<span style="color:#a6e22e">Authorized</span>(<span style="color:#a6e22e">user</span>) {
+</span></span><span style="display:flex;"><span>				<span style="color:#75715e">// Call the intercepted handler
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                <span style="color:#75715e">// Returning its results
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>				<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">handler</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Unauthenticated or Unauthorized
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">status</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#a6e22e">codes</span>.<span style="color:#a6e22e">PermissionDenied</span>, <span style="color:#e6db74">&#34;permission denied&#34;</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I won&rsquo;t labor the <code>User</code> struct but <code>UserInfo</code> decodes the incoming metadata header:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;encoding/base64&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;encoding/json&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// UserInfo is a type that represents `X-Endpoint-API-UserToken`
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// The Firebase field matches the service config auth provider
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">UserInfo</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Name</span>           <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;name&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Issuer</span>         <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;iss&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Audience</span>       <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;aud&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">AuthNTime</span>      <span style="color:#a6e22e">Time</span>     <span style="color:#e6db74">`json:&#34;auth_time&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">UserID</span>         <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;user_id&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Subject</span>        <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;sub&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">IssuedAt</span>       <span style="color:#a6e22e">Time</span>     <span style="color:#e6db74">`json:&#34;iat&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ExpirationTime</span> <span style="color:#a6e22e">Time</span>     <span style="color:#e6db74">`json:&#34;exp&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Email</span>          <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;email&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">EmailVerified</span>  <span style="color:#66d9ef">bool</span>     <span style="color:#e6db74">`json:&#34;email_verified&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Firebase</span>       <span style="color:#a6e22e">Provider</span> <span style="color:#e6db74">`json:&#34;firebase&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Provider is a type that represents a service config auth provider
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Provider</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Identities</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>][]<span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;identities&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Provider</span>   <span style="color:#66d9ef">string</span>              <span style="color:#e6db74">`json:&#34;sign_in_provider&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewUserInfo</span>(<span style="color:#a6e22e">enc</span> <span style="color:#66d9ef">string</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">UserInfo</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;NewUserInfo&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Value is base64url encoded
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// Decode it
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">base64</span>.<span style="color:#a6e22e">RawURLEncoding</span>.<span style="color:#a6e22e">DecodeString</span>(<span style="color:#a6e22e">enc</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">userinfo</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">UserInfo</span>{}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">userinfo</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">userinfo</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> <code>Time</code> isn&rsquo;t Golang&rsquo;s <code>time.Time</code> but <a href="https://www.yellowduck.be/posts/handling-unix-timestamps-in-json/">YellowDuck&rsquo;s <code>Time</code></a>; Golang&rsquo;s default JSON unmarshaler doesn&rsquo;t unmarshal UNIX epoch times correctly.</p>
 </blockquote>
 <h2 id="test">Test</h2>
 <p>Now we can deploy and test the Interceptor. Cloud Endpoints will only permit authenticated users so we want an authenticated user (i.e. someone with valid e.g. Google, Microsoft, GitHub credentials) but who isn&rsquo;t authorized to use the service.</p>
 <p>In this case, anyone other than <code>my@email.com</code> is denied:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-v <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>FIREBASE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{...}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-proto some.proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>SomeService/SomeMethod
-
-Resolved method descriptor:
-rpc SomeMethod <span style="color:#f92672">(</span> .v1alpha1.SomeMethodRequest <span style="color:#f92672">)</span>
-    returns <span style="color:#f92672">(</span> .v1alpha1.SomeMethodResponse <span style="color:#f92672">)</span>;
-
-Request metadata to send:
-authorization: Bearer <span style="color:#f92672">[[</span>JWT<span style="color:#f92672">]]</span>
-
-Response headers received:
-alt-svc: h3<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;:443&#34;</span>; ...
-content-length: <span style="color:#ae81ff">0</span>
-content-type: application/grpc
-date: Thu, <span style="color:#ae81ff">18</span> Jun <span style="color:#ae81ff">2021</span> 00:00:00
-server: Google Frontend
-x-cloud-trace-context: ...
-x-envoy-decorator-operation: ingress SomeMethod
-
-Response trailers received:
-<span style="color:#f92672">(</span>empty<span style="color:#f92672">)</span>
-Sent <span style="color:#ae81ff">1</span> request and received <span style="color:#ae81ff">0</span> responses
-ERROR:
-  Code: PermissionDenied
-  Message: permission denied
-</code></pre></div><p>But, authenticating with Firebase using <code>my@memail.com</code>, and passing the JWT:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">grpcurl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-v <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>FIREBASE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{...}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-proto some.proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>SomeService/SomeMethod
-
-Resolved method descriptor:
-rpc SomeMethod <span style="color:#f92672">(</span> .v1alpha1.SomeMethodRequest <span style="color:#f92672">)</span>
-    returns <span style="color:#f92672">(</span> .v1alpha1.SomeMethodResponse <span style="color:#f92672">)</span>;
-
-Request metadata to send:
-authorization: Bearer <span style="color:#f92672">[[</span>JWT<span style="color:#f92672">]]</span>
-
-Response headers received:
-alt-svc: h3<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;:443&#34;</span>; ...
-content-length: <span style="color:#ae81ff">0</span>
-content-type: application/grpc
-date: Thu, <span style="color:#ae81ff">18</span> Jun <span style="color:#ae81ff">2021</span> 00:00:00
-server: Google Frontend
-x-cloud-trace-context: ...
-x-envoy-decorator-operation: ingress SomeMethod
-
-Response contents:
-<span style="color:#f92672">{</span>
-  ...
-<span style="color:#f92672">}</span>
-
-Response trailers received:
-<span style="color:#f92672">(</span>empty<span style="color:#f92672">)</span>
-Sent <span style="color:#ae81ff">1</span> request and received <span style="color:#ae81ff">1</span> response
-</code></pre></div><ul class="pa0">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-v <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>FIREBASE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{...}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-proto some.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>SomeService/SomeMethod
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Resolved method descriptor:
+</span></span><span style="display:flex;"><span>rpc SomeMethod <span style="color:#f92672">(</span> .v1alpha1.SomeMethodRequest <span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    returns <span style="color:#f92672">(</span> .v1alpha1.SomeMethodResponse <span style="color:#f92672">)</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Request metadata to send:
+</span></span><span style="display:flex;"><span>authorization: Bearer <span style="color:#f92672">[[</span>JWT<span style="color:#f92672">]]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Response headers received:
+</span></span><span style="display:flex;"><span>alt-svc: h3<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;:443&#34;</span>; ...
+</span></span><span style="display:flex;"><span>content-length: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>content-type: application/grpc
+</span></span><span style="display:flex;"><span>date: Thu, <span style="color:#ae81ff">18</span> Jun <span style="color:#ae81ff">2021</span> 00:00:00
+</span></span><span style="display:flex;"><span>server: Google Frontend
+</span></span><span style="display:flex;"><span>x-cloud-trace-context: ...
+</span></span><span style="display:flex;"><span>x-envoy-decorator-operation: ingress SomeMethod
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Response trailers received:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">(</span>empty<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>Sent <span style="color:#ae81ff">1</span> request and received <span style="color:#ae81ff">0</span> responses
+</span></span><span style="display:flex;"><span>ERROR:
+</span></span><span style="display:flex;"><span>  Code: PermissionDenied
+</span></span><span style="display:flex;"><span>  Message: permission denied
+</span></span></code></pre></div><p>But, authenticating with Firebase using <code>my@memail.com</code>, and passing the JWT:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-v <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>FIREBASE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{...}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-proto some.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>SomeService/SomeMethod
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Resolved method descriptor:
+</span></span><span style="display:flex;"><span>rpc SomeMethod <span style="color:#f92672">(</span> .v1alpha1.SomeMethodRequest <span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    returns <span style="color:#f92672">(</span> .v1alpha1.SomeMethodResponse <span style="color:#f92672">)</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Request metadata to send:
+</span></span><span style="display:flex;"><span>authorization: Bearer <span style="color:#f92672">[[</span>JWT<span style="color:#f92672">]]</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Response headers received:
+</span></span><span style="display:flex;"><span>alt-svc: h3<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;:443&#34;</span>; ...
+</span></span><span style="display:flex;"><span>content-length: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>content-type: application/grpc
+</span></span><span style="display:flex;"><span>date: Thu, <span style="color:#ae81ff">18</span> Jun <span style="color:#ae81ff">2021</span> 00:00:00
+</span></span><span style="display:flex;"><span>server: Google Frontend
+</span></span><span style="display:flex;"><span>x-cloud-trace-context: ...
+</span></span><span style="display:flex;"><span>x-envoy-decorator-operation: ingress SomeMethod
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Response contents:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Response trailers received:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">(</span>empty<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>Sent <span style="color:#ae81ff">1</span> request and received <span style="color:#ae81ff">1</span> response
+</span></span></code></pre></div><ul class="pa0">
   
    <li class="list di">
      <a href="/tags/cloud-endpoints" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">cloud-endpoints</a>

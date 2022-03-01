@@ -7,7 +7,7 @@
     <title>Fly.io | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="First look at Fly.io">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -197,235 +197,235 @@ if (!doNotTrack) {
 <p>One of the team&rsquo;s posts, <a href="https://fly.io/blog/docker-without-docker/">Docker without Docker</a> surfaced in my Feedly feed (<a href="https://news.ycombinator.com/item?id=26746280">hackernews</a>) and it piqued my interest.</p>
 <p>I&rsquo;ve a basic implementation of gRPC healthchecking that I deployed to Fly.io. The documentation is mostly excellent and there&rsquo;s a quickstart <a href="https://fly.io/docs/speedrun/">Speedrun</a> that may serve your purposes. Coming from different platforms, I found some differences in how developers interact with Fly.io that I&rsquo;ll document here.</p>
 <p>I&rsquo;m loathe to install anything on my machine and prefer to use containers or Snaps when possible. Fly.io&rsquo;s CLI is called <code>flyctl</code> and can be run|aliased:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">alias flyctl<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;\
-</span><span style="color:#e6db74">  docker run \
-</span><span style="color:#e6db74">  --interactive --tty --rm \
-</span><span style="color:#e6db74">  --volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.fly:/.fly \
-</span><span style="color:#e6db74">  --volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/fly.toml:/fly.toml \
-</span><span style="color:#e6db74">  flyio/flyctl&#34;</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>alias flyctl<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;\
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  docker run \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  --interactive --tty --rm \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  --volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.fly:/.fly \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  --volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/fly.toml:/fly.toml \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  flyio/flyctl&#34;</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The volume mounts are for the CLI&rsquo;s config (located in <code>.fly</code>) and the default app config (<code>fly.toml</code>). Ensure you&rsquo;re running the alias from the directory where you want these files created.</p>
 </blockquote>
 <p>The CLI works great but the app flow is different than I&rsquo;m used to. Rather than be able to spec an app and then deploy it, you&rsquo;ll need to create an app before you can deploy it. This is, in part, in order for the app&rsquo;s unique name to be created on the Fly.io service.</p>
 <blockquote>
 <p><strong>NOTE</strong> Be careful inadvertently overwriting an existing <code>fly.toml</code> with this approach. The CLI will prompt before overwriting but you&rsquo;ll need to overwrite in order to create a new app.</p>
 </blockquote>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">APP<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
-flyctl app create --app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
-</code></pre></div><p>For simplicity, you can select <code>None</code> for the builder and accept the default port (<code>8080</code>).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>APP<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>flyctl app create --app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>For simplicity, you can select <code>None</code> for the builder and accept the default port (<code>8080</code>).</p>
 <p>The CLI should report:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">New app created
-  Name         = ${APP}
-  Organization = personal
-  Version      = 0
-  Status       =
-  Hostname     = &lt;empty&gt;
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>App will initially deploy to [[somewhere]] region
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>Wrote config file fly.toml
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>New app created
+</span></span><span style="display:flex;"><span>  Name         = ${APP}
+</span></span><span style="display:flex;"><span>  Organization = personal
+</span></span><span style="display:flex;"><span>  Version      = 0
+</span></span><span style="display:flex;"><span>  Status       =
+</span></span><span style="display:flex;"><span>  Hostname     = &lt;empty&gt;
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>App will initially deploy to [[somewhere]] region
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>Wrote config file fly.toml
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The service locates the nearest data-center to your host. In my case, Seattle. YMMV.</p>
 </blockquote>
 <p>I&rsquo;ve then manually added config details to the <code>fly.toml</code> file:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#ae81ff">app = &#34;[[YOUR-APP]]&#34;</span>
-
-<span style="color:#ae81ff">kill_signal = &#34;SIGINT&#34;</span>
-<span style="color:#ae81ff">kill_timeout = 5</span>
-
-[<span style="color:#ae81ff">build]</span>
-  <span style="color:#ae81ff">image = &#34;[[YOUR-IMAGE]]&#34;</span>
-
-[<span style="color:#ae81ff">experimental]</span>
-  <span style="color:#ae81ff">exec = [</span>
-    <span style="color:#e6db74">&#34;/server&#34;</span>,
-    <span style="color:#e6db74">&#34;--failure_rate=0.5&#34;</span>,
-    <span style="color:#e6db74">&#34;--changes_rate=15s&#34;</span>,
-    <span style="color:#e6db74">&#34;--grpc_endpoint=:50051&#34;</span>,
-    <span style="color:#e6db74">&#34;--prom_endpoint=:8080&#34;</span>
-  ]
-
-[[<span style="color:#ae81ff">services]]</span>
-  <span style="color:#ae81ff">internal_port = 50051</span>
-  <span style="color:#ae81ff">protocol = &#34;tcp&#34;</span>
-
-  [<span style="color:#ae81ff">services.concurrency]</span>
-    <span style="color:#ae81ff">hard_limit = 25</span>
-    <span style="color:#ae81ff">soft_limit = 20</span>
-
-  [[<span style="color:#ae81ff">services.ports]]</span>
-    <span style="color:#ae81ff">handlers = []</span>
-    <span style="color:#ae81ff">port = &#34;10001&#34;</span>
-
-[[<span style="color:#ae81ff">services]]</span>
-  <span style="color:#ae81ff">internal_port = 8080</span>
-  <span style="color:#ae81ff">protocol = &#34;tcp&#34;</span>
-
-  [[<span style="color:#ae81ff">services.ports]]</span>
-    <span style="color:#ae81ff">handlers = [&#34;http&#34;]</span>
-    <span style="color:#ae81ff">port = &#34;80&#34;</span>
-
-  [[<span style="color:#ae81ff">services.ports]]</span>
-    <span style="color:#ae81ff">handlers = [&#34;http&#34;,&#34;tls&#34;]</span>
-    <span style="color:#ae81ff">port = &#34;443&#34;</span>
-</code></pre></div><p>I&rsquo;m deploying a container <code>IMAGE</code> but the service supports buildpacks, permitting you to provide Golang, Node|Deno, Python and Ruby sources to be built and deployed.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#ae81ff">app = &#34;[[YOUR-APP]]&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">kill_signal = &#34;SIGINT&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">kill_timeout = 5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#ae81ff">build]</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">image = &#34;[[YOUR-IMAGE]]&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#ae81ff">experimental]</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">exec = [</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;/server&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--failure_rate=0.5&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--changes_rate=15s&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--grpc_endpoint=:50051&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--prom_endpoint=:8080&#34;</span>
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[[<span style="color:#ae81ff">services]]</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">internal_port = 50051</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">protocol = &#34;tcp&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  [<span style="color:#ae81ff">services.concurrency]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">hard_limit = 25</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">soft_limit = 20</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  [[<span style="color:#ae81ff">services.ports]]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">handlers = []</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">port = &#34;10001&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[[<span style="color:#ae81ff">services]]</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">internal_port = 8080</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">protocol = &#34;tcp&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  [[<span style="color:#ae81ff">services.ports]]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">handlers = [&#34;http&#34;]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">port = &#34;80&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  [[<span style="color:#ae81ff">services.ports]]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">handlers = [&#34;http&#34;,&#34;tls&#34;]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">port = &#34;443&#34;</span>
+</span></span></code></pre></div><p>I&rsquo;m deploying a container <code>IMAGE</code> but the service supports buildpacks, permitting you to provide Golang, Node|Deno, Python and Ruby sources to be built and deployed.</p>
 <p>My image requires runtime flags so I&rsquo;m using <code>[experimental]</code> and <code>exec</code> to define the runtime binary and args|flags.</p>
 <p>My config has 2 <code>[[services]]</code> sections. The first defines the gRPC service. The second defines the Prometheus metrics.</p>
 <p>For gRPC, the <code>[[services]]</code> value for <code>internal_port</code> of <code>50051</code> matches the container image&rsquo;s flag <code>--grpc_endpoint</code>. The service is TCP and it exposes (publicly) one port <code>10001</code> which requires the raw TCP handler (<code>handlers = []</code>).</p>
 <p>For Prometheus, the <code>[[service]]</code> value for <code>internal_port</code> of <code>8080</code> matches the container image&rsquo;s flag <code>--prom_endpoint</code>. The service is TCP and it exposes (publicly) two ports <code>80</code> which is insecure HTTP and a secure port <code>443</code> which is HTTP/S (w/ TLS). In practice, the insecure port <code>80</code> should be inaccessible but it&rsquo;s present for testing.</p>
 <p>Once, the <code>fly.toml</code> is defined, the app can be deployed:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">flyctl deploy --app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">Deploying [[MY-APP]]
-==&gt; Validating app configuration
---&gt; Validating app configuration done
-Services
-TCP 10001 ⇢ 50051
-TCP 80 ⇢ 8080
-Searching for image &#39;[[MY-IMAGE]]&#39; remotely...
-image found: img_6nk3yvl35lvome79
-Image: [[MY-IMAGE]]
-Image size: 6.9 MB
-==&gt; Creating release
-Release v0 created
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>You can detach the terminal anytime without stopping the deployment
-Monitoring Deployment
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>1 desired, 1 placed, 1 healthy, 0 unhealthy
---&gt; v0 deployed successfully
-</code></pre></div><p>This can be confirmed through the CLI:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">flyctl apps list
-NAME       OWNER    STATUS  LATEST DEPLOY 
-<span style="color:#f92672">[[</span>MY-APP<span style="color:#f92672">]]</span> personal running 1m ago
-</code></pre></div><p>And through the service&rsquo;s console:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>flyctl deploy --app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>Deploying [[MY-APP]]
+</span></span><span style="display:flex;"><span>==&gt; Validating app configuration
+</span></span><span style="display:flex;"><span>--&gt; Validating app configuration done
+</span></span><span style="display:flex;"><span>Services
+</span></span><span style="display:flex;"><span>TCP 10001 ⇢ 50051
+</span></span><span style="display:flex;"><span>TCP 80 ⇢ 8080
+</span></span><span style="display:flex;"><span>Searching for image &#39;[[MY-IMAGE]]&#39; remotely...
+</span></span><span style="display:flex;"><span>image found: img_6nk3yvl35lvome79
+</span></span><span style="display:flex;"><span>Image: [[MY-IMAGE]]
+</span></span><span style="display:flex;"><span>Image size: 6.9 MB
+</span></span><span style="display:flex;"><span>==&gt; Creating release
+</span></span><span style="display:flex;"><span>Release v0 created
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>You can detach the terminal anytime without stopping the deployment
+</span></span><span style="display:flex;"><span>Monitoring Deployment
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>1 desired, 1 placed, 1 healthy, 0 unhealthy
+</span></span><span style="display:flex;"><span>--&gt; v0 deployed successfully
+</span></span></code></pre></div><p>This can be confirmed through the CLI:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>flyctl apps list
+</span></span><span style="display:flex;"><span>NAME       OWNER    STATUS  LATEST DEPLOY 
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[[</span>MY-APP<span style="color:#f92672">]]</span> personal running 1m ago
+</span></span></code></pre></div><p>And through the service&rsquo;s console:</p>
 <p><img src="/images/210412.fly.io.console.app.png" alt="Fly.io Console: Apps"></p>
 <p>Which also provides useful (Prometheus-derived) metrics:</p>
 <p><img src="/images/210412.fly.io.console.metrics.png" alt="Fly.io Console: Metrics"></p>
 <p>Unfortunately, the instance and scaling details aren&rsquo;t part of the <code>fly.toml</code> config.</p>
 <p>In order to confirm these values:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">APP<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
-
-flyctl scale count <span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
-Count changed to <span style="color:#ae81ff">1</span>
-
-flyctl scale show <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
-VM Resources <span style="color:#66d9ef">for</span> ...
-        VM Size: shared-cpu-1x
-      VM Memory: <span style="color:#ae81ff">256</span> MB
-          Count: <span style="color:#ae81ff">1</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>APP<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>flyctl scale count <span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>Count changed to <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>flyctl scale show <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>VM Resources <span style="color:#66d9ef">for</span> ...
+</span></span><span style="display:flex;"><span>        VM Size: shared-cpu-1x
+</span></span><span style="display:flex;"><span>      VM Memory: <span style="color:#ae81ff">256</span> MB
+</span></span><span style="display:flex;"><span>          Count: <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> IIUC these settings will keep my app to a single (<code>1</code>) <code>shared-cpu-1x</code> instance. Per pricing, this instance (unsure about bandwidth costs) should be free.</p>
 </blockquote>
 <p>To grab the app&rsquo;s IPs and <code>fly.dev</code> DNS name:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Get IP v4</span>
-IP4<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>flyctl ips list <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.[]|select(.Type==&#34;v4&#34;).Address&#39;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>echo <span style="color:#e6db74">${</span>IP4<span style="color:#e6db74">}</span>
-213.188:...
-
-<span style="color:#75715e"># Get IP v6</span>
-IP6<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>flyctl ips list <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.[]|select(.Type==&#34;v6&#34;).Address&#39;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>echo <span style="color:#e6db74">${</span>IP6<span style="color:#e6db74">}</span>
-2a09:8280:1:...
-
-<span style="color:#75715e"># Get app&#39;s DNS</span>
-ENDPOINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>flyctl apps list <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#34;.[]|select(.ID==\&#34;</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;).Hostname&#34;</span><span style="color:#66d9ef">)</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>
-<span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>.fly.dev
-</code></pre></div><p>Then, in my case, I can curl the app&rsquo;s Prometheus metrics:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># HTTP</span>
-curl http://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:80/metrics
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.25&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.5&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.75&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds_sum <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds_count <span style="color:#ae81ff">0</span>
-
-<span style="color:#75715e"># HTTP/S (TLS)</span>
-curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:443/metrics
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.25&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.5&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.75&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds_sum <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds_count <span style="color:#ae81ff">0</span>
-</code></pre></div><p>All good!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Get IP v4</span>
+</span></span><span style="display:flex;"><span>IP4<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>flyctl ips list <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.[]|select(.Type==&#34;v4&#34;).Address&#39;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>echo <span style="color:#e6db74">${</span>IP4<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>213.188:...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Get IP v6</span>
+</span></span><span style="display:flex;"><span>IP6<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>flyctl ips list <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.[]|select(.Type==&#34;v6&#34;).Address&#39;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>echo <span style="color:#e6db74">${</span>IP6<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>2a09:8280:1:...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Get app&#39;s DNS</span>
+</span></span><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>flyctl apps list <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#34;.[]|select(.ID==\&#34;</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;).Hostname&#34;</span><span style="color:#66d9ef">)</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>.fly.dev
+</span></span></code></pre></div><p>Then, in my case, I can curl the app&rsquo;s Prometheus metrics:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># HTTP</span>
+</span></span><span style="display:flex;"><span>curl http://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:80/metrics
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.25&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.5&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.75&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds_sum <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds_count <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># HTTP/S (TLS)</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:443/metrics
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.25&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.5&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.75&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds_sum <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds_count <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><p>All good!</p>
 <p>And then, for ease, I&rsquo;m using the excellent <a href="https://github.com/fullstorydev/grpcurl"><code>gRPCurl</code></a>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># List service&#39;s methods</span>
-docker run <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/health.proto:/protos/health.proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>fullstorydev/grpcurl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--proto protos/health.proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>GRPC<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>list grpc.health.v1.Health
-grpc.health.v1.Health.Check
-grpc.health.v1.Health.Watch
-
-<span style="color:#75715e"># Invoke Watch</span>
-docker run <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/health.proto:/protos/health.proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>fullstorydev/grpcurl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--proto protos/health.proto <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:10001 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>grpc.health.v1.Health/Watch
-<span style="color:#f92672">{</span>
-  <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;SERVING&#34;</span>
-<span style="color:#f92672">}</span>
-<span style="color:#f92672">{</span>
-  <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;SERVING&#34;</span>
-<span style="color:#f92672">}</span>
-<span style="color:#f92672">{</span>
-  <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;NOT_SERVING&#34;</span>
-<span style="color:#f92672">}</span>
-</code></pre></div><p>Lastly, we can configure our app to use a custom domain.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">flyctl certs add <span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>
-
-<span style="color:#75715e"># Check on it</span>
-flyctl certs check <span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>
-</code></pre></div><p>You&rsquo;ll need to add DNS entries to a domain you own. Either a <code>CNAME</code> of the form <code>${APP}</code> &ndash;&gt; <code>${APP}.fly.dev.</code> or, more efficiently using <code>A</code> and <code>AAAA</code> records against the IPv4 and v6 addresses.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># List service&#39;s methods</span>
+</span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/health.proto:/protos/health.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>fullstorydev/grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proto protos/health.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>GRPC<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>list grpc.health.v1.Health
+</span></span><span style="display:flex;"><span>grpc.health.v1.Health.Check
+</span></span><span style="display:flex;"><span>grpc.health.v1.Health.Watch
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Invoke Watch</span>
+</span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/health.proto:/protos/health.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>fullstorydev/grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proto protos/health.proto <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:10001 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>grpc.health.v1.Health/Watch
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;SERVING&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;SERVING&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;NOT_SERVING&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>Lastly, we can configure our app to use a custom domain.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>flyctl certs add <span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check on it</span>
+</span></span><span style="display:flex;"><span>flyctl certs check <span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>You&rsquo;ll need to add DNS entries to a domain you own. Either a <code>CNAME</code> of the form <code>${APP}</code> &ndash;&gt; <code>${APP}.fly.dev.</code> or, more efficiently using <code>A</code> and <code>AAAA</code> records against the IPv4 and v6 addresses.</p>
 <p>You can confirm your DNS changes with <code>dig</code> or <code>nslookup</code>. In my case, using Google Domains, I can avoid waiting on DNS propagation, with:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--dns-servers 8.8.8.8,8.8.4.4 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>:443/metrics
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.25&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.5&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.75&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds_sum <span style="color:#ae81ff">0</span>
-go_gc_duration_seconds_count <span style="color:#ae81ff">0</span>
-</code></pre></div><p>And eventually:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">docker run <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/health.proto:/protos/health.proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>fullstorydev/grpcurl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--proto protos/health.proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>:10001 grpc.health.v1.Health/Watch
-</code></pre></div><p>When you&rsquo;re done, you can either delete the app (resetting the entire process):</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">flyctl apps destroy --app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--dns-servers 8.8.8.8,8.8.4.4 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>:443/metrics
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.25&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.5&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.75&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds<span style="color:#f92672">{</span>quantile<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds_sum <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>go_gc_duration_seconds_count <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><p>And eventually:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/health.proto:/protos/health.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>fullstorydev/grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proto protos/health.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>:10001 grpc.health.v1.Health/Watch
+</span></span></code></pre></div><p>When you&rsquo;re done, you can either delete the app (resetting the entire process):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>flyctl apps destroy --app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> I want there to be an <code>undeploy</code> but there isn&rsquo;t.</p>
 </blockquote>
 <p>Or, suspend it (though I&rsquo;m unsure whether you&rsquo;ll still incure costs):</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">flyctl suspend --app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
-</code></pre></div><p>That&rsquo;s all!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>flyctl suspend --app<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>APP<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>That&rsquo;s all!</p>
 <ul class="pa0">
   
    <li class="list di">

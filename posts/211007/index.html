@@ -10,7 +10,7 @@
 This morning while walking with my dog, I listened to Google&rsquo;s Dan Lorenc explain Sigstore (blog](https://blog.sigstore.dev/)) on The Kubelist Podcast1
 The plan today is to try to sign the gcp-oidc-token-proxy container images in GitHub Container Registry.
  NOTE I decided against trying the hardware key approach. I have a Google Titan key and only Yubikeys are well-tested by go-piv">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -212,266 +212,266 @@ if (!doNotTrack) {
 <p><strong>NOTE</strong> I decided against trying the hardware key approach. I have a Google Titan key and only Yubikeys are <a href="https://github.com/go-piv/piv-go#non-yubikey-smartcards">well-tested</a> by <a href="https://github.com/go-piv/piv-go"><code>go-piv</code></a></p>
 </blockquote>
 <h2 id="cosign-sign"><code>cosign sign</code></h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">go install github.com/sigstore/cosign/cmd/cosign@latest
-</code></pre></div><p>Initially, I followed the <a href="https://github.com/sigstore/cosign#quick-start">Quick Start</a> but, after chatting on the team&rsquo;s Slack <a href="https://sigstore.slack.com">channel</a>, I was referred to Luke Hinds' <a href="https://github.com/lukehinds/sigstore-the-hard-way">Sigstore The Hard Way</a> and specifically <a href="https://github.com/lukehinds/sigstore-the-hard-way/blob/main/docs/10-sign-container.md">Sign Container</a> which importantly uses <code>COSIGN_EXPERIMENTAL=1</code> and GitHub&rsquo;s secret squirrel OIDC federation functionality.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go install github.com/sigstore/cosign/cmd/cosign@latest
+</span></span></code></pre></div><p>Initially, I followed the <a href="https://github.com/sigstore/cosign#quick-start">Quick Start</a> but, after chatting on the team&rsquo;s Slack <a href="https://sigstore.slack.com">channel</a>, I was referred to Luke Hinds&rsquo; <a href="https://github.com/lukehinds/sigstore-the-hard-way">Sigstore The Hard Way</a> and specifically <a href="https://github.com/lukehinds/sigstore-the-hard-way/blob/main/docs/10-sign-container.md">Sign Container</a> which importantly uses <code>COSIGN_EXPERIMENTAL=1</code> and GitHub&rsquo;s secret squirrel OIDC federation functionality.</p>
 <p>All I needed was:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">COSIGN_EXPERIMENTAL<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>cosign sign <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
-</code></pre></div><p>This command uses some flag default values and is equivalent to:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">COSIGN_EXPERIMENTAL<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>cosign sign <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -oidc-issuer https://oauth2.sigstore.dev/auth <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -fulcio-url https://fulcio.sigstore.dev <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -rekor-url https://rekor.sigstore.dev <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>COSIGN_EXPERIMENTAL<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>cosign sign <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
+</span></span></code></pre></div><p>This command uses some flag default values and is equivalent to:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>COSIGN_EXPERIMENTAL<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>cosign sign <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -oidc-issuer https://oauth2.sigstore.dev/auth <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -fulcio-url https://fulcio.sigstore.dev <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -rekor-url https://rekor.sigstore.dev <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> <code>3e44...</code> is the image&rsquo;s tag and represents the <code>git rev-parse HEAD</code> of the repo when the image was built from it. As it occur below, the image&rsquo;s SHA-256 is <code>c26f799823766c54155653cb709df811b7ae73a68ba504a4da2e57153bcf4c40</code></p>
 </blockquote>
 <p>The <code>oidc-issuer</code> is evident in the output below as it is the endpoint through which the user authenticates with Sigstore.</p>
 <p>The <code>fulcio-url</code> points to an instance of <a href="https://github.com/sigstore/fulcio">Fulcio</a> which is a root CA and issues certs that can be used to sign software artifacts.</p>
 <p>The command outputs:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">Generating ephemeral keys...
-Retrieving signed certificate...
-Your browser will now be opened to:
-https://oauth2.sigstore.dev/auth/auth?access_type=online&amp;client_id=sigstore...
-</code></pre></div><p>Which prompts:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>Generating ephemeral keys...
+</span></span><span style="display:flex;"><span>Retrieving signed certificate...
+</span></span><span style="display:flex;"><span>Your browser will now be opened to:
+</span></span><span style="display:flex;"><span>https://oauth2.sigstore.dev/auth/auth?access_type=online&amp;client_id=sigstore...
+</span></span></code></pre></div><p>Which prompts:</p>
 <p><img src="/images/211007.login.png" alt="Log in to sigstore"></p>
 <p>And, when you do:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">Successfully verified SCT...
-tlog entry created with index: 756105
-Pushing signature to: ghcr.io/dazwilkin/gcp-oidc-token-proxy:sha256-c26f799823766c54155653cb709df811b7ae73a68ba504a4da2e57153bcf4c40.sig
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>Successfully verified SCT...
+</span></span><span style="display:flex;"><span>tlog entry created with index: 756105
+</span></span><span style="display:flex;"><span>Pushing signature to: ghcr.io/dazwilkin/gcp-oidc-token-proxy:sha256-c26f799823766c54155653cb709df811b7ae73a68ba504a4da2e57153bcf4c40.sig
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The signature follows the image reference but its tag is <code>sha256-${HASH}.sig</code> where <code>HASH</code> is the underlying image&rsquo;s SHA-256 hash.</p>
 </blockquote>
 <blockquote>
 <p><strong>NOTE</strong> Initially, I had errors when <code>cosign</code> tried to push to GHCR (<code>ghcr.io</code>):</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">POST https://ghcr.io/v2/dazwilkin/gcp-oidc-token-proxy/blobs/uploads/: DENIED: unauthenticated: User cannot be authenticated with the token provided.
-</code></pre></div><p>. Experience has taught me that this is because I&rsquo;m running Docker as a(n Ubuntu) Snap and the Snap stores the Docker config in the non-default location. <code>cosign</code> expects Docker to be installed and, more specifically, expects <code>${HOME}/.docker/config.json</code> to contain an <code>auths</code> key for (in this case) <code>ghcr.io</code> as it uses the token value to authenticate. I copied (but could probably have <code>ln -s</code>) <code>${HOME}/snap/docker/current/.docker/config.json</code> to the default location to resolve the issue.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>POST https://ghcr.io/v2/dazwilkin/gcp-oidc-token-proxy/blobs/uploads/: DENIED: unauthenticated: User cannot be authenticated with the token provided.
+</span></span></code></pre></div><p>. Experience has taught me that this is because I&rsquo;m running Docker as a(n Ubuntu) Snap and the Snap stores the Docker config in the non-default location. <code>cosign</code> expects Docker to be installed and, more specifically, expects <code>${HOME}/.docker/config.json</code> to contain an <code>auths</code> key for (in this case) <code>ghcr.io</code> as it uses the token value to authenticate. I copied (but could probably have <code>ln -s</code>) <code>${HOME}/snap/docker/current/.docker/config.json</code> to the default location to resolve the issue.</p>
 </blockquote>
 <p>This is still slightly confusing to me but, a new artifact (a Sigstore signature artifact) has indeed been <code>POST</code>ed to the repositry (in this case <code>ghcr.io/dazwilkin/gcp-oidc-token-proxy</code>)</p>
 <h2 id="github-container-registry">GitHub Container Registry</h2>
 <p>We can query the GitHub REST API for Container Registry resources.</p>
 <p>I&rsquo;ve skipped a step below and, after listing all the versions in the repository <code>ghcr.io/dazwilkin/gcp-oidc-token-proxy</code>, I&rsquo;m <code>GET</code>&lsquo;ting the version (<code>864123</code>) that happens to correspond to the signature uploaded by <code>cosign sign</code> in the previous step:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Accept: application/vnd.github.v3+json&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>https://api.github.com/users/dazwilkin/packages/container/gcp-oidc-token-proxy/versions/8641325
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">{
-  <span style="color:#f92672">&#34;id&#34;: </span><span style="color:#ae81ff">8641325</span>,
-  <span style="color:#f92672">&#34;name&#34;: </span><span style="color:#e6db74">&#34;sha256:2991a4bf27837d9d4d198ea999d8ad6d1c40d3635d0941baa27973187cc463ec&#34;</span>,
-  <span style="color:#f92672">&#34;url&#34;: </span><span style="color:#e6db74">&#34;https://api.github.com/users/DazWilkin/packages/container/gcp-oidc-token-proxy/versions/8641325&#34;</span>,
-  <span style="color:#f92672">&#34;package_html_url&#34;: </span><span style="color:#e6db74">&#34;https://github.com/users/DazWilkin/packages/container/package/gcp-oidc-token-proxy&#34;</span>,
-  <span style="color:#f92672">&#34;created_at&#34;: </span><span style="color:#e6db74">&#34;2021-10-08T17:08:57Z&#34;</span>,
-  <span style="color:#f92672">&#34;updated_at&#34;: </span><span style="color:#e6db74">&#34;2021-10-08T17:08:57Z&#34;</span>,
-  <span style="color:#f92672">&#34;html_url&#34;: </span><span style="color:#e6db74">&#34;https://github.com/users/DazWilkin/packages/container/gcp-oidc-token-proxy/8641325&#34;</span>,
-  <span style="color:#f92672">&#34;metadata&#34;: </span>{
-    <span style="color:#f92672">&#34;package_type&#34;: </span><span style="color:#e6db74">&#34;container&#34;</span>,
-    <span style="color:#f92672">&#34;container&#34;: </span>{
-      <span style="color:#f92672">&#34;tags&#34;: </span>[
-        <span style="color:#e6db74">&#34;sha256-c26f799823766c54155653cb709df811b7ae73a68ba504a4da2e57153bcf4c40.sig&#34;</span>
-      ]
-    }
-  }
-}
-</code></pre></div><p>I&rsquo;m unable to determine how to query container manifests using GitHub REST API but here&rsquo;s a copy from the web page. I don&rsquo;t understand what this comprises. <code>layer[0].digest</code> is the SHA-256 hash of the underlying container image. But I don&rsquo;t understand (yet) what <code>layer[1].digest</code> represents. Presumably it&rsquo;s some representation of the signature.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">{
-  <span style="color:#f92672">&#34;digest&#34;: </span><span style="color:#e6db74">&#34;sha256:2991a4bf27837d9d4d198ea999d8ad6d1c40d3635d0941baa27973187cc463ec&#34;</span>,
-  <span style="color:#f92672">&#34;mediaType&#34;: </span><span style="color:#e6db74">&#34;application/vnd.oci.image.manifest.v1+json&#34;</span>,
-  <span style="color:#f92672">&#34;size&#34;: </span><span style="color:#ae81ff">4643</span>,
-  <span style="color:#f92672">&#34;config&#34;: </span>{
-    <span style="color:#f92672">&#34;digest&#34;: </span><span style="color:#e6db74">&#34;sha256:7fd7ade75e85747f790ac7fcb5643e77ea27803789edc339a840ae98464fc9eb&#34;</span>,
-    <span style="color:#f92672">&#34;mediaType&#34;: </span><span style="color:#e6db74">&#34;application/vnd.oci.image.config.v1+json&#34;</span>,
-    <span style="color:#f92672">&#34;size&#34;: </span><span style="color:#ae81ff">233</span>
-  },
-  <span style="color:#f92672">&#34;layers&#34;: </span>[
-    {
-      <span style="color:#f92672">&#34;digest&#34;: </span><span style="color:#e6db74">&#34;sha256:6da5b4f75eeffd0d594c207bb4244da436c91582043eda4127eaa5ad13b349b0&#34;</span>,
-      <span style="color:#f92672">&#34;mediaType&#34;: </span><span style="color:#e6db74">&#34;application/octet-stream&#34;</span>,
-      <span style="color:#f92672">&#34;size&#34;: </span><span style="color:#ae81ff">254</span>
-    },
-    {
-      <span style="color:#f92672">&#34;digest&#34;: </span><span style="color:#e6db74">&#34;sha256:7fd7ade75e85747f790ac7fcb5643e77ea27803789edc339a840ae98464fc9eb&#34;</span>,
-      <span style="color:#f92672">&#34;mediaType&#34;: </span><span style="color:#e6db74">&#34;application/octet-stream&#34;</span>,
-      <span style="color:#f92672">&#34;size&#34;: </span><span style="color:#ae81ff">233</span>
-    }
-  ]
-}
-</code></pre></div><h2 id="cosign-verify"><code>cosign verify</code></h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Accept: application/vnd.github.v3+json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://api.github.com/users/dazwilkin/packages/container/gcp-oidc-token-proxy/versions/8641325
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;id&#34;: </span><span style="color:#ae81ff">8641325</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;name&#34;: </span><span style="color:#e6db74">&#34;sha256:2991a4bf27837d9d4d198ea999d8ad6d1c40d3635d0941baa27973187cc463ec&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;url&#34;: </span><span style="color:#e6db74">&#34;https://api.github.com/users/DazWilkin/packages/container/gcp-oidc-token-proxy/versions/8641325&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;package_html_url&#34;: </span><span style="color:#e6db74">&#34;https://github.com/users/DazWilkin/packages/container/package/gcp-oidc-token-proxy&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;created_at&#34;: </span><span style="color:#e6db74">&#34;2021-10-08T17:08:57Z&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;updated_at&#34;: </span><span style="color:#e6db74">&#34;2021-10-08T17:08:57Z&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;html_url&#34;: </span><span style="color:#e6db74">&#34;https://github.com/users/DazWilkin/packages/container/gcp-oidc-token-proxy/8641325&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;metadata&#34;: </span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;package_type&#34;: </span><span style="color:#e6db74">&#34;container&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;container&#34;: </span>{
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;tags&#34;: </span>[
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;sha256-c26f799823766c54155653cb709df811b7ae73a68ba504a4da2e57153bcf4c40.sig&#34;</span>
+</span></span><span style="display:flex;"><span>      ]
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I&rsquo;m unable to determine how to query container manifests using GitHub REST API but here&rsquo;s a copy from the web page. I don&rsquo;t understand what this comprises. <code>layer[0].digest</code> is the SHA-256 hash of the underlying container image. But I don&rsquo;t understand (yet) what <code>layer[1].digest</code> represents. Presumably it&rsquo;s some representation of the signature.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;digest&#34;: </span><span style="color:#e6db74">&#34;sha256:2991a4bf27837d9d4d198ea999d8ad6d1c40d3635d0941baa27973187cc463ec&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;mediaType&#34;: </span><span style="color:#e6db74">&#34;application/vnd.oci.image.manifest.v1+json&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;size&#34;: </span><span style="color:#ae81ff">4643</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;config&#34;: </span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;digest&#34;: </span><span style="color:#e6db74">&#34;sha256:7fd7ade75e85747f790ac7fcb5643e77ea27803789edc339a840ae98464fc9eb&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;mediaType&#34;: </span><span style="color:#e6db74">&#34;application/vnd.oci.image.config.v1+json&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;size&#34;: </span><span style="color:#ae81ff">233</span>
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;layers&#34;: </span>[
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;digest&#34;: </span><span style="color:#e6db74">&#34;sha256:6da5b4f75eeffd0d594c207bb4244da436c91582043eda4127eaa5ad13b349b0&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;mediaType&#34;: </span><span style="color:#e6db74">&#34;application/octet-stream&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;size&#34;: </span><span style="color:#ae81ff">254</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;digest&#34;: </span><span style="color:#e6db74">&#34;sha256:7fd7ade75e85747f790ac7fcb5643e77ea27803789edc339a840ae98464fc9eb&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;mediaType&#34;: </span><span style="color:#e6db74">&#34;application/octet-stream&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;size&#34;: </span><span style="color:#ae81ff">233</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="cosign-verify"><code>cosign verify</code></h2>
 <p><code>cosign verify</code> verifies the signature of a signed (!) artifact.</p>
 <p>This is where <code>rekor</code> comes back into play. Rekor is a transparency log (built on Google&rsquo;s <a href="https://github.com/google/trillian">Trillian</a>) that includes entries (hashes) representing our signed artifacts. Since the log is immutable, deleting signatures from e.g. GHCR should have no effect on Rekor&rsquo;s log entries and, more importantly, we can query Rekor to get information about our artifact.</p>
 <blockquote>
 <p><strong>NOTE</strong> I give <code>cosign verify</code> the original container image. Presumably it looks for an articate with a specific tag (<code>sha256-${HASH}.sig</code>) and uses this for the verification. I guess if I delete that artifact, <code>cosign verify</code> should then fail?</p>
 </blockquote>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">COSIGN_EXPERIMENTAL<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>cosign verify  <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
-</code></pre></div><p>Yielding:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">No TUF root installed, using embedded CA certificate.
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>No TUF root installed, using embedded rekor key
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>Verification for ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c --
-The following checks were performed on each of these signatures:
-  - The cosign claims were validated
-  - Existence of the claims in the transparency log was verified offline
-  - Any certificates were verified against the Fulcio roots.
-</code></pre></div><p>And:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">[
-    {<span style="color:#f92672">&#34;critical&#34;: </span>{
-        <span style="color:#f92672">&#34;identity&#34;: </span>{
-            <span style="color:#e6db74">&#34;docker-reference&#34;</span>:<span style="color:#e6db74">&#34;ghcr.io/dazwilkin/gcp-oidc-token-proxy&#34;</span>},
-            <span style="color:#e6db74">&#34;image&#34;</span>:{
-                <span style="color:#f92672">&#34;docker-manifest-digest&#34;: </span><span style="color:#e6db74">&#34;sha256:c26f799823766c54155653cb709df811b7ae73a68ba504a4da2e57153bcf4c40&#34;</span>
-            },
-            <span style="color:#e6db74">&#34;type&#34;</span>:<span style="color:#e6db74">&#34;cosign container image signature&#34;</span>
-        },
-        <span style="color:#e6db74">&#34;optional&#34;</span>:{
-            <span style="color:#f92672">&#34;Bundle&#34;: </span>{
-                <span style="color:#e6db74">&#34;SignedEntryTimestamp&#34;</span>:<span style="color:#e6db74">&#34;...&#34;</span>,
-                <span style="color:#f92672">&#34;Payload&#34;: </span>{
-                    <span style="color:#e6db74">&#34;body&#34;</span>:<span style="color:#e6db74">&#34;ey...&#34;</span>,
-                    <span style="color:#e6db74">&#34;integratedTime&#34;</span>:<span style="color:#ae81ff">1633712934</span>,
-                    <span style="color:#e6db74">&#34;logIndex&#34;</span>:<span style="color:#ae81ff">756105</span>,
-                    <span style="color:#e6db74">&#34;logID&#34;</span>:<span style="color:#e6db74">&#34;c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d&#34;</span>
-                }
-            },
-            <span style="color:#e6db74">&#34;Subject&#34;</span>:<span style="color:#e6db74">&#34;daz.wilkin@gmail.com&#34;</span>
-        }
-    }
-]
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>COSIGN_EXPERIMENTAL<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>cosign verify  <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
+</span></span></code></pre></div><p>Yielding:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>No TUF root installed, using embedded CA certificate.
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>No TUF root installed, using embedded rekor key
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>Verification for ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c --
+</span></span><span style="display:flex;"><span>The following checks were performed on each of these signatures:
+</span></span><span style="display:flex;"><span>  - The cosign claims were validated
+</span></span><span style="display:flex;"><span>  - Existence of the claims in the transparency log was verified offline
+</span></span><span style="display:flex;"><span>  - Any certificates were verified against the Fulcio roots.
+</span></span></code></pre></div><p>And:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>[
+</span></span><span style="display:flex;"><span>    {<span style="color:#f92672">&#34;critical&#34;: </span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;identity&#34;: </span>{
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;docker-reference&#34;</span>:<span style="color:#e6db74">&#34;ghcr.io/dazwilkin/gcp-oidc-token-proxy&#34;</span>},
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;image&#34;</span>:{
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;docker-manifest-digest&#34;: </span><span style="color:#e6db74">&#34;sha256:c26f799823766c54155653cb709df811b7ae73a68ba504a4da2e57153bcf4c40&#34;</span>
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;type&#34;</span>:<span style="color:#e6db74">&#34;cosign container image signature&#34;</span>
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;optional&#34;</span>:{
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;Bundle&#34;: </span>{
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;SignedEntryTimestamp&#34;</span>:<span style="color:#e6db74">&#34;...&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;Payload&#34;: </span>{
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;body&#34;</span>:<span style="color:#e6db74">&#34;ey...&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;integratedTime&#34;</span>:<span style="color:#ae81ff">1633712934</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;logIndex&#34;</span>:<span style="color:#ae81ff">756105</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;logID&#34;</span>:<span style="color:#e6db74">&#34;c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d&#34;</span>
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;Subject&#34;</span>:<span style="color:#e6db74">&#34;daz.wilkin@gmail.com&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>]
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The <code>logIndex</code> and <code>logID</code> values</p>
 </blockquote>
 <p>So, IIUC, anyone should be able to run <code>cosign verify</code> on an artifact and get the above data.</p>
 <p>I decoded the JWT value of <code>optional.Bundled.Payload.body</code> with <a href="https://jwt.io">jwt.io</a> yielding:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">{
-  <span style="color:#f92672">&#34;apiVersion&#34;: </span><span style="color:#e6db74">&#34;0.0.1&#34;</span>,
-  <span style="color:#f92672">&#34;kind&#34;: </span><span style="color:#e6db74">&#34;rekord&#34;</span>,
-  <span style="color:#f92672">&#34;spec&#34;: </span>{
-    <span style="color:#f92672">&#34;data&#34;: </span>{
-      <span style="color:#f92672">&#34;hash&#34;: </span>{
-        <span style="color:#f92672">&#34;algorithm&#34;: </span><span style="color:#e6db74">&#34;sha256&#34;</span>,
-        <span style="color:#f92672">&#34;value&#34;: </span><span style="color:#e6db74">&#34;6da5b4f75eeffd0d594c207bb4244da436c91582043eda4127eaa5ad13b349b0&#34;</span>
-      }
-    },
-    <span style="color:#f92672">&#34;signature&#34;: </span>{
-      <span style="color:#f92672">&#34;content&#34;: </span><span style="color:#e6db74">&#34;MEQCIH8VA3Yul38uPvlr7L3ytwjMNqiNqDqJdk9I4pQjorRbAiBrIa7mb6YFUgW+njijF00beyZAgUCEvPuC612/zn1rjA==&#34;</span>,
-      <span style="color:#f92672">&#34;format&#34;: </span><span style="color:#e6db74">&#34;x509&#34;</span>,
-      <span style="color:#f92672">&#34;publicKey&#34;: </span>{
-        <span style="color:#f92672">&#34;content&#34;: </span><span style="color:#e6db74">&#34;LS0tLS1C...&#34;</span>
-      }
-    }
-  }
-}
-</code></pre></div><p>And, after installing <code>rekor-cli</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">go install github.com/sigstore/rekor/cmd/rekor-cli@latest
-</code></pre></div><p>We can:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">rekor-cli get <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--log-index<span style="color:#f92672">=</span><span style="color:#ae81ff">756105</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq -r .
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;apiVersion&#34;: </span><span style="color:#e6db74">&#34;0.0.1&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;kind&#34;: </span><span style="color:#e6db74">&#34;rekord&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;spec&#34;: </span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;data&#34;: </span>{
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;hash&#34;: </span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;algorithm&#34;: </span><span style="color:#e6db74">&#34;sha256&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;value&#34;: </span><span style="color:#e6db74">&#34;6da5b4f75eeffd0d594c207bb4244da436c91582043eda4127eaa5ad13b349b0&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;signature&#34;: </span>{
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;content&#34;: </span><span style="color:#e6db74">&#34;MEQCIH8VA3Yul38uPvlr7L3ytwjMNqiNqDqJdk9I4pQjorRbAiBrIa7mb6YFUgW+njijF00beyZAgUCEvPuC612/zn1rjA==&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;format&#34;: </span><span style="color:#e6db74">&#34;x509&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;publicKey&#34;: </span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;content&#34;: </span><span style="color:#e6db74">&#34;LS0tLS1C...&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And, after installing <code>rekor-cli</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go install github.com/sigstore/rekor/cmd/rekor-cli@latest
+</span></span></code></pre></div><p>We can:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>rekor-cli get <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--log-index<span style="color:#f92672">=</span><span style="color:#ae81ff">756105</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r .
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> There&rsquo;s that <code>logIndex</code> value</p>
 </blockquote>
 <p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">{
-  <span style="color:#f92672">&#34;Attestation&#34;: </span><span style="color:#e6db74">&#34;&#34;</span>,
-  <span style="color:#f92672">&#34;AttestationType&#34;: </span><span style="color:#e6db74">&#34;&#34;</span>,
-  <span style="color:#f92672">&#34;Body&#34;: </span>{
-    <span style="color:#f92672">&#34;RekordObj&#34;: </span>{
-      <span style="color:#f92672">&#34;data&#34;: </span>{
-        <span style="color:#f92672">&#34;hash&#34;: </span>{
-          <span style="color:#f92672">&#34;algorithm&#34;: </span><span style="color:#e6db74">&#34;sha256&#34;</span>,
-          <span style="color:#f92672">&#34;value&#34;: </span><span style="color:#e6db74">&#34;6da5b4f75eeffd0d594c207bb4244da436c91582043eda4127eaa5ad13b349b0&#34;</span>
-        }
-      },
-      <span style="color:#f92672">&#34;signature&#34;: </span>{
-        <span style="color:#f92672">&#34;content&#34;: </span><span style="color:#e6db74">&#34;MEQCIH8VA3Yul38uPvlr7L3ytwjMNqiNqDqJdk9I4pQjorRbAiBrIa7mb6YFUgW+njijF00beyZAgUCEvPuC612/zn1rjA==&#34;</span>,
-        <span style="color:#f92672">&#34;format&#34;: </span><span style="color:#e6db74">&#34;x509&#34;</span>,
-        <span style="color:#f92672">&#34;publicKey&#34;: </span>{
-          <span style="color:#f92672">&#34;content&#34;: </span><span style="color:#e6db74">&#34;LS0tLS1C...&#34;</span>
-        }
-      }
-    }
-  },
-  <span style="color:#f92672">&#34;LogIndex&#34;: </span><span style="color:#ae81ff">756105</span>,
-  <span style="color:#f92672">&#34;IntegratedTime&#34;: </span><span style="color:#ae81ff">1633712934</span>,
-  <span style="color:#f92672">&#34;UUID&#34;: </span><span style="color:#e6db74">&#34;f9bfb33439ed512126658a1354999b5be662da3e3d69c732fc72e09de492ce60&#34;</span>,
-  <span style="color:#f92672">&#34;LogID&#34;: </span><span style="color:#e6db74">&#34;c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d&#34;</span>
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;Attestation&#34;: </span><span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;AttestationType&#34;: </span><span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;Body&#34;: </span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;RekordObj&#34;: </span>{
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;data&#34;: </span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;hash&#34;: </span>{
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;algorithm&#34;: </span><span style="color:#e6db74">&#34;sha256&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;value&#34;: </span><span style="color:#e6db74">&#34;6da5b4f75eeffd0d594c207bb4244da436c91582043eda4127eaa5ad13b349b0&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;signature&#34;: </span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;content&#34;: </span><span style="color:#e6db74">&#34;MEQCIH8VA3Yul38uPvlr7L3ytwjMNqiNqDqJdk9I4pQjorRbAiBrIa7mb6YFUgW+njijF00beyZAgUCEvPuC612/zn1rjA==&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;format&#34;: </span><span style="color:#e6db74">&#34;x509&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;publicKey&#34;: </span>{
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;content&#34;: </span><span style="color:#e6db74">&#34;LS0tLS1C...&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;LogIndex&#34;: </span><span style="color:#ae81ff">756105</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;IntegratedTime&#34;: </span><span style="color:#ae81ff">1633712934</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;UUID&#34;: </span><span style="color:#e6db74">&#34;f9bfb33439ed512126658a1354999b5be662da3e3d69c732fc72e09de492ce60&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;LogID&#34;: </span><span style="color:#e6db74">&#34;c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The <code>UUID</code></p>
 </blockquote>
 <blockquote>
 <p><strong>NOTE</strong> I&rsquo;ve elided the <code>publicKey</code> for display purposes. I feel as though I should be able to do something useful with this key with regards my artifact but I&rsquo;m unclear how|what.</p>
 </blockquote>
 <p>And:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">rekor-cli get <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--uuid<span style="color:#f92672">=</span>f9bfb33439ed512126658a1354999b5be662da3e3d69c732fc72e09de492ce60 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq -r .
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">{
-  <span style="color:#f92672">&#34;RekordObj&#34;: </span>{
-    <span style="color:#f92672">&#34;data&#34;: </span>{
-      <span style="color:#f92672">&#34;hash&#34;: </span>{
-        <span style="color:#f92672">&#34;algorithm&#34;: </span><span style="color:#e6db74">&#34;sha256&#34;</span>,
-        <span style="color:#f92672">&#34;value&#34;: </span><span style="color:#e6db74">&#34;6da5b4f75eeffd0d594c207bb4244da436c91582043eda4127eaa5ad13b349b0&#34;</span>
-      }
-    },
-    <span style="color:#f92672">&#34;signature&#34;: </span>{
-      <span style="color:#f92672">&#34;content&#34;: </span><span style="color:#e6db74">&#34;MEQCIH8VA3Yul38uPvlr7L3ytwjMNqiNqDqJdk9I4pQjorRbAiBrIa7mb6YFUgW+njijF00beyZAgUCEvPuC612/zn1rjA==&#34;</span>,
-      <span style="color:#f92672">&#34;format&#34;: </span><span style="color:#e6db74">&#34;x509&#34;</span>,
-      <span style="color:#f92672">&#34;publicKey&#34;: </span>{
-        <span style="color:#f92672">&#34;content&#34;: </span><span style="color:#e6db74">&#34;LS0tLS1C...&#34;</span>
-      }
-    }
-  }
-}
-</code></pre></div><p>Rekor exposes a REST API, we can perform the above command using it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Accept: application/json&#34;</span>  <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>https://rekor.sigstore.dev/api/v1/log/entries/f9bfb33439ed512126658a1354999b5be662da3e3d69c732fc72e09de492ce60 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq .
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML">{
-  <span style="color:#f92672">&#34;f9bfb33439ed512126658a1354999b5be662da3e3d69c732fc72e09de492ce60&#34;: </span>{
-    <span style="color:#f92672">&#34;attestation&#34;: </span>{},
-    <span style="color:#f92672">&#34;body&#34;: </span><span style="color:#e6db74">&#34;eyJhcGlWZXJzaW9uIjoiMC4wLjEiLCJraW5kIjoicmVrb3JkIiwic3BlYyI6eyJkYXRhIjp7Imhhc2giOnsiYWxnb3JpdGhtIjoic2hhMjU2IiwidmFsdWUiOiI2ZGE1YjRmNzVlZWZmZDBkNTk0YzIwN2JiNDI0NGRhNDM2YzkxNTgyMDQzZWRhNDEyN2VhYTVhZDEzYjM0OWIwIn19LCJzaWduYXR1cmUiOnsiY29udGVudCI6Ik1FUUNJSDhWQTNZdWwzOHVQdmxyN0wzeXR3ak1OcWlOcURxSmRrOUk0cFFqb3JSYkFpQnJJYTdtYjZZRlVnVytuamlqRjAwYmV5WkFnVUNFdlB1QzYxMi96bjFyakE9PSIsImZvcm1hdCI6Ing1MDkiLCJwdWJsaWNLZXkiOnsiY29udGVudCI6IkxTMHRMUzFDUlVkSlRpQkRSVkpVU1VaSlEwRlVSUzB0TFMwdENrMUpTVU5rYWtORFFXWTJaMEYzU1VKQlowbFVWM1p6Vm1sME0xWnphSHBqTTBWd2JqSnlUREpqUlRsQ1NYcEJTMEpuWjNGb2EycFBVRkZSUkVGNlFYRUtUVkpWZDBWM1dVUldVVkZMUlhkNGVtRlhaSHBrUnpsNVdsTTFhMXBZV1hoRlZFRlFRbWRPVmtKQlRWUkRTRTV3V2pOT01HSXpTbXhOUWpSWVJGUkplQXBOVkVGM1QwUkZNMDFFWnpGTk1XOVlSRlJKZUUxVVFYZFBSRVV6VFdwbk1VMXNiM2RCUkVKYVRVSk5SMEo1Y1VkVFRUUTVRV2RGUjBORGNVZFRUVFE1Q2tGM1JVaEJNRWxCUWtKSlozTkhTbEpOV1N0UGVraFRlR1JsTDBOa1IwTjRaMnRuYldwaU9EWkJOMmsyTWxCRk1WRklUVUpaVkZsSFZrVnNVV1JyV2pRS016SlFXVFJLY1hOMVVGUkliM2h6TDNsMWEwUlRWMWg1UzBsNlJsQjJVMnBuWjBWeVRVbEpRa3A2UVU5Q1owNVdTRkU0UWtGbU9FVkNRVTFEUWpSQmR3cEZkMWxFVmxJd2JFSkJkM2REWjFsSlMzZFpRa0pSVlVoQmQwMTNSRUZaUkZaU01GUkJVVWd2UWtGSmQwRkVRV1JDWjA1V1NGRTBSVVpuVVZWWVJXaEtDbWxMZEhoM1RFdGlNbUpuZFVKblZ6RkNPUzlIS3pkVmQwaDNXVVJXVWpCcVFrSm5kMFp2UVZWNVRWVmtRVVZIWVVwRGEzbFZVMVJ5UkdFMVN6ZFZiMGNLTUN0M2QyZFpNRWREUTNOSFFWRlZSa0ozUlVKQ1NVZEJUVWcwZDJaQldVbExkMWxDUWxGVlNFMUJTMGRqUjJnd1pFaEJOa3g1T1hkamJXd3lXVmhTYkFwWk1rVjBXVEk1ZFdSSFZuVmtRekF5VFVST2JWcFVaR3hPZVRCM1RVUkJkMHhVU1hsTmFtTjBXVzFaTTA1VE1XMU9SMWt4V2xSbmQxcEVTVFZPVkZGMUNtTXpVblpqYlVadVdsTTFibUl5T1c1aVIxWm9ZMGRzZWt4dFRuWmlVemxxV1ZSTk1sbFVSbXhQVkZsNVRrUkthVTlYV21wWmFrVXdUbWs1YWxsVE5Xb0tZMjVSZDBsbldVUldVakJTUVZGSUwwSkNaM2RHYjBWVldrZEdOa3h1WkhCaVIzUndZbXRDYm1KWFJuQmlRelZxWWpJd2QwTm5XVWxMYjFwSmVtb3dSUXBCZDAxRVdtZEJkMWwzU1hWaE5VWnhiM0IzZDNWUU5tTlBaVFpPVjNnd1dEbHZTM3BEYVhaemJrRjNNRmQwUW5OME4xbzFUREpOVW5abVVXcENUR3RXQ2tVclZYcHhWbXQwTlVGSmVFRktjbE5zTDFkRGFWUlFVRTFsTWtwcFQzZHJhelJ6TVhVeFNGcFFkRlpLUms1NlVrWXlLMUJsWlZWbkx6TllVWGx2V0VnS2Qza3JUemROUTJaNlpHa3ZVbEU5UFFvdExTMHRMVVZPUkNCRFJWSlVTVVpKUTBGVVJTMHRMUzB0Q2c9PSJ9fX19&#34;</span>,
-    <span style="color:#f92672">&#34;integratedTime&#34;: </span><span style="color:#ae81ff">1633712934</span>,
-    <span style="color:#f92672">&#34;logID&#34;: </span><span style="color:#e6db74">&#34;c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d&#34;</span>,
-    <span style="color:#f92672">&#34;logIndex&#34;: </span><span style="color:#ae81ff">756105</span>,
-    <span style="color:#f92672">&#34;verification&#34;: </span>{
-      <span style="color:#f92672">&#34;inclusionProof&#34;: </span>{
-        <span style="color:#f92672">&#34;hashes&#34;: </span>[
-          <span style="color:#e6db74">&#34;006812c3095f5d083c9bcc8c573e9db9584e91dfa908bbef19167e30cffd9cdf&#34;</span>,
-          <span style="color:#e6db74">&#34;550cd509eaa97e96d9cf44703632a673ff175d5e6b98870d847a4c961da93ac9&#34;</span>,
-          <span style="color:#e6db74">&#34;10db3794f9f019ba1fc2b6560f7d993e2bd02a3e4b54d67be8fe644e217a189a&#34;</span>,
-          <span style="color:#e6db74">&#34;65a805fc55816f86ed29e8e139807d1960510a399afda63a4c1d8857c7d358c6&#34;</span>,
-          <span style="color:#e6db74">&#34;209c0ce6aeccadda61032cf6cbe912fa965cf4a89cfbe9d966ed22033b123308&#34;</span>,
-          <span style="color:#e6db74">&#34;a8a2efe94a2ae7c6540522698386047114b1fe19c12f91c1c251250f3015c56d&#34;</span>,
-          <span style="color:#e6db74">&#34;a2636f8b39c0c818328dd2493f59e37856fac4debc097dd0b4f13edb838659eb&#34;</span>,
-          <span style="color:#e6db74">&#34;b8daf922c57bebca0f54949b214c357d370e8e12d83c83dcb2bc0405738ce59e&#34;</span>,
-          <span style="color:#e6db74">&#34;9d277d4bf3ac931e150fdf73f76e298938aeb126bdfb86fa133d824c8853f735&#34;</span>,
-          <span style="color:#e6db74">&#34;481d804401569f892f2b60a5f229317f5b9ed9c4ae0d57254a50619ae5762616&#34;</span>,
-          <span style="color:#e6db74">&#34;2889aef73a822720fe7e24777693eb068aa96ea47dd6190c3b5a083a676bf919&#34;</span>,
-          <span style="color:#e6db74">&#34;e84e4a360c277f04ef77f4e2df00f7cc8ae8d858758e51273f1271bc05a65704&#34;</span>,
-          <span style="color:#e6db74">&#34;bdca084d1848968ab9224eff1467a95f2d93f88da455a60d37fb377da061dcc8&#34;</span>,
-          <span style="color:#e6db74">&#34;12e6affe06f6187293ca7b8cceefcef938243e3657a547b9e6400d68db2b5f3b&#34;</span>,
-          <span style="color:#e6db74">&#34;80b19ade3d5598a8b1c944783a53feaad0384589dc75baeac351142c4c620b14&#34;</span>
-        ],
-        <span style="color:#f92672">&#34;logIndex&#34;: </span><span style="color:#ae81ff">756105</span>,
-        <span style="color:#f92672">&#34;rootHash&#34;: </span><span style="color:#e6db74">&#34;f646f5f028421de1337057a283986e48110e4e0cfeb118de53e5fc9d401d6489&#34;</span>,
-        <span style="color:#f92672">&#34;treeSize&#34;: </span><span style="color:#ae81ff">756642</span>
-      },
-      <span style="color:#f92672">&#34;signedEntryTimestamp&#34;: </span><span style="color:#e6db74">&#34;MEYCIQCSN+jpJL2txESSEKIvCU7l/10cAIdyqqtJ0rNFF2y9swIhAIoudmx6JAEdw+SO7MBF3YR+WuJO2dCTkz2MZ1h/3I5U&#34;</span>
-    }
-  }
-}
-</code></pre></div><p>I&rsquo;ll update this post as I learn more.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>rekor-cli get <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--uuid<span style="color:#f92672">=</span>f9bfb33439ed512126658a1354999b5be662da3e3d69c732fc72e09de492ce60 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r .
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;RekordObj&#34;: </span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;data&#34;: </span>{
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;hash&#34;: </span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;algorithm&#34;: </span><span style="color:#e6db74">&#34;sha256&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;value&#34;: </span><span style="color:#e6db74">&#34;6da5b4f75eeffd0d594c207bb4244da436c91582043eda4127eaa5ad13b349b0&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;signature&#34;: </span>{
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;content&#34;: </span><span style="color:#e6db74">&#34;MEQCIH8VA3Yul38uPvlr7L3ytwjMNqiNqDqJdk9I4pQjorRbAiBrIa7mb6YFUgW+njijF00beyZAgUCEvPuC612/zn1rjA==&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;format&#34;: </span><span style="color:#e6db74">&#34;x509&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;publicKey&#34;: </span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;content&#34;: </span><span style="color:#e6db74">&#34;LS0tLS1C...&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Rekor exposes a REST API, we can perform the above command using it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Accept: application/json&#34;</span>  <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://rekor.sigstore.dev/api/v1/log/entries/f9bfb33439ed512126658a1354999b5be662da3e3d69c732fc72e09de492ce60 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq .
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;f9bfb33439ed512126658a1354999b5be662da3e3d69c732fc72e09de492ce60&#34;: </span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;attestation&#34;: </span>{},
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;body&#34;: </span><span style="color:#e6db74">&#34;eyJhcGlWZXJzaW9uIjoiMC4wLjEiLCJraW5kIjoicmVrb3JkIiwic3BlYyI6eyJkYXRhIjp7Imhhc2giOnsiYWxnb3JpdGhtIjoic2hhMjU2IiwidmFsdWUiOiI2ZGE1YjRmNzVlZWZmZDBkNTk0YzIwN2JiNDI0NGRhNDM2YzkxNTgyMDQzZWRhNDEyN2VhYTVhZDEzYjM0OWIwIn19LCJzaWduYXR1cmUiOnsiY29udGVudCI6Ik1FUUNJSDhWQTNZdWwzOHVQdmxyN0wzeXR3ak1OcWlOcURxSmRrOUk0cFFqb3JSYkFpQnJJYTdtYjZZRlVnVytuamlqRjAwYmV5WkFnVUNFdlB1QzYxMi96bjFyakE9PSIsImZvcm1hdCI6Ing1MDkiLCJwdWJsaWNLZXkiOnsiY29udGVudCI6IkxTMHRMUzFDUlVkSlRpQkRSVkpVU1VaSlEwRlVSUzB0TFMwdENrMUpTVU5rYWtORFFXWTJaMEYzU1VKQlowbFVWM1p6Vm1sME0xWnphSHBqTTBWd2JqSnlUREpqUlRsQ1NYcEJTMEpuWjNGb2EycFBVRkZSUkVGNlFYRUtUVkpWZDBWM1dVUldVVkZMUlhkNGVtRlhaSHBrUnpsNVdsTTFhMXBZV1hoRlZFRlFRbWRPVmtKQlRWUkRTRTV3V2pOT01HSXpTbXhOUWpSWVJGUkplQXBOVkVGM1QwUkZNMDFFWnpGTk1XOVlSRlJKZUUxVVFYZFBSRVV6VFdwbk1VMXNiM2RCUkVKYVRVSk5SMEo1Y1VkVFRUUTVRV2RGUjBORGNVZFRUVFE1Q2tGM1JVaEJNRWxCUWtKSlozTkhTbEpOV1N0UGVraFRlR1JsTDBOa1IwTjRaMnRuYldwaU9EWkJOMmsyTWxCRk1WRklUVUpaVkZsSFZrVnNVV1JyV2pRS016SlFXVFJLY1hOMVVGUkliM2h6TDNsMWEwUlRWMWg1UzBsNlJsQjJVMnBuWjBWeVRVbEpRa3A2UVU5Q1owNVdTRkU0UWtGbU9FVkNRVTFEUWpSQmR3cEZkMWxFVmxJd2JFSkJkM2REWjFsSlMzZFpRa0pSVlVoQmQwMTNSRUZaUkZaU01GUkJVVWd2UWtGSmQwRkVRV1JDWjA1V1NGRTBSVVpuVVZWWVJXaEtDbWxMZEhoM1RFdGlNbUpuZFVKblZ6RkNPUzlIS3pkVmQwaDNXVVJXVWpCcVFrSm5kMFp2UVZWNVRWVmtRVVZIWVVwRGEzbFZVMVJ5UkdFMVN6ZFZiMGNLTUN0M2QyZFpNRWREUTNOSFFWRlZSa0ozUlVKQ1NVZEJUVWcwZDJaQldVbExkMWxDUWxGVlNFMUJTMGRqUjJnd1pFaEJOa3g1T1hkamJXd3lXVmhTYkFwWk1rVjBXVEk1ZFdSSFZuVmtRekF5VFVST2JWcFVaR3hPZVRCM1RVUkJkMHhVU1hsTmFtTjBXVzFaTTA1VE1XMU9SMWt4V2xSbmQxcEVTVFZPVkZGMUNtTXpVblpqYlVadVdsTTFibUl5T1c1aVIxWm9ZMGRzZWt4dFRuWmlVemxxV1ZSTk1sbFVSbXhQVkZsNVRrUkthVTlYV21wWmFrVXdUbWs1YWxsVE5Xb0tZMjVSZDBsbldVUldVakJTUVZGSUwwSkNaM2RHYjBWVldrZEdOa3h1WkhCaVIzUndZbXRDYm1KWFJuQmlRelZxWWpJd2QwTm5XVWxMYjFwSmVtb3dSUXBCZDAxRVdtZEJkMWwzU1hWaE5VWnhiM0IzZDNWUU5tTlBaVFpPVjNnd1dEbHZTM3BEYVhaemJrRjNNRmQwUW5OME4xbzFUREpOVW5abVVXcENUR3RXQ2tVclZYcHhWbXQwTlVGSmVFRktjbE5zTDFkRGFWUlFVRTFsTWtwcFQzZHJhelJ6TVhVeFNGcFFkRlpLUms1NlVrWXlLMUJsWlZWbkx6TllVWGx2V0VnS2Qza3JUemROUTJaNlpHa3ZVbEU5UFFvdExTMHRMVVZPUkNCRFJWSlVTVVpKUTBGVVJTMHRMUzB0Q2c9PSJ9fX19&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;integratedTime&#34;: </span><span style="color:#ae81ff">1633712934</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;logID&#34;: </span><span style="color:#e6db74">&#34;c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;logIndex&#34;: </span><span style="color:#ae81ff">756105</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;verification&#34;: </span>{
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;inclusionProof&#34;: </span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;hashes&#34;: </span>[
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;006812c3095f5d083c9bcc8c573e9db9584e91dfa908bbef19167e30cffd9cdf&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;550cd509eaa97e96d9cf44703632a673ff175d5e6b98870d847a4c961da93ac9&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;10db3794f9f019ba1fc2b6560f7d993e2bd02a3e4b54d67be8fe644e217a189a&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;65a805fc55816f86ed29e8e139807d1960510a399afda63a4c1d8857c7d358c6&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;209c0ce6aeccadda61032cf6cbe912fa965cf4a89cfbe9d966ed22033b123308&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;a8a2efe94a2ae7c6540522698386047114b1fe19c12f91c1c251250f3015c56d&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;a2636f8b39c0c818328dd2493f59e37856fac4debc097dd0b4f13edb838659eb&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;b8daf922c57bebca0f54949b214c357d370e8e12d83c83dcb2bc0405738ce59e&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;9d277d4bf3ac931e150fdf73f76e298938aeb126bdfb86fa133d824c8853f735&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;481d804401569f892f2b60a5f229317f5b9ed9c4ae0d57254a50619ae5762616&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;2889aef73a822720fe7e24777693eb068aa96ea47dd6190c3b5a083a676bf919&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;e84e4a360c277f04ef77f4e2df00f7cc8ae8d858758e51273f1271bc05a65704&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;bdca084d1848968ab9224eff1467a95f2d93f88da455a60d37fb377da061dcc8&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;12e6affe06f6187293ca7b8cceefcef938243e3657a547b9e6400d68db2b5f3b&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;80b19ade3d5598a8b1c944783a53feaad0384589dc75baeac351142c4c620b14&#34;</span>
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;logIndex&#34;: </span><span style="color:#ae81ff">756105</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;rootHash&#34;: </span><span style="color:#e6db74">&#34;f646f5f028421de1337057a283986e48110e4e0cfeb118de53e5fc9d401d6489&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;treeSize&#34;: </span><span style="color:#ae81ff">756642</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;signedEntryTimestamp&#34;: </span><span style="color:#e6db74">&#34;MEYCIQCSN+jpJL2txESSEKIvCU7l/10cAIdyqqtJ0rNFF2y9swIhAIoudmx6JAEdw+SO7MBF3YR+WuJO2dCTkz2MZ1h/3I5U&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I&rsquo;ll update this post as I learn more.</p>
 <section class="footnotes" role="doc-endnotes">
 <hr>
 <ol>

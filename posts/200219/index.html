@@ -7,7 +7,7 @@
     <title>FreeTSA &amp; Digitorus&#39; Timestamp SDK | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Golang and FreeTSA and its trusted timestamping service">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -202,118 +202,118 @@ if (!doNotTrack) {
 <h3 id="bash">Bash</h3>
 <p>The FreeTSA provides a command-line example.</p>
 <p>Here&rsquo;s my spin on it (with minimal tweaks) that uses a simple string rather than a file to mirror my OriginStamp examples:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># The message to Timestamp</span>
-MESG<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Frederik Jack is a bubbly Border Collie&#34;</span>
-
-<span style="color:#75715e"># Filename for Timestamp Request (/tmp/${FILE}.tsq) and Response (/tmp/${FILE}.tsr)</span>
-FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;file&#34;</span>
-
-<span style="color:#75715e"># Create a Timestamp Request and persist it</span>
-DIGEST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  printf <span style="color:#e6db74">${</span>MESG<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  | sha256sum <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  | head --bytes 64<span style="color:#66d9ef">)</span>
-
-openssl ts -query <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -digest <span style="color:#e6db74">${</span>DIGEST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -sha256 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -no_nonce <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -cert <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -out /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.tsq
-
-<span style="color:#75715e"># Submit the Request to FreeTSA and persist the Response</span>
-curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Content-Type: application/timestamp-query&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--data-binary <span style="color:#e6db74">&#34;@/tmp/</span><span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">.tsq&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>https://freetsa.org/tsr <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>&gt; /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.tsr
-
-<span style="color:#75715e"># Download the FreeTSA certs to /tmp</span>
-wget <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --output-document<span style="color:#f92672">=</span>/tmp/tsa.crt <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  https://freetsa.org/files/tsa.crt
-
-wget <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --output-document<span style="color:#f92672">=</span>/tmp/cacert.pem <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  https://freetsa.org/files/cacert.pem
-
-<span style="color:#75715e"># Validate that the certs&#39; hashes match the published hashes</span>
-GOT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>openssl x509 -noout -modulus -in /tmp/tsa.crt <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  | sha256sum <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  | head --bytes 64<span style="color:#66d9ef">)</span>
-WANT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;899ba3d9f777e2a74bdd34302bc06cb3f7a46ac1f565ee128f79fd5dab99d68b&#34;</span>
-<span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">${</span>GOT<span style="color:#e6db74">}</span> !<span style="color:#f92672">=</span> <span style="color:#e6db74">${</span>WANT<span style="color:#e6db74">}</span> <span style="color:#f92672">]</span>
-<span style="color:#66d9ef">then</span>
-    echo <span style="color:#e6db74">&#34;hashes don&#39;t match!&#34;</span>
-    exit <span style="color:#ae81ff">1</span>
-<span style="color:#66d9ef">fi</span>
-
-GOT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>openssl x509 -noout -modulus -in /tmp/cacert.pem <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  | sha256sum <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  | head --bytes 64<span style="color:#66d9ef">)</span>
-WANT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;a4b1a0a81aef68be1cc985d0f83bd6539cfe84174587f900e15ffe3f65433056&#34;</span>
-<span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">${</span>GOT<span style="color:#e6db74">}</span> !<span style="color:#f92672">=</span> <span style="color:#e6db74">${</span>WANT<span style="color:#e6db74">}</span> <span style="color:#f92672">]</span>
-<span style="color:#66d9ef">then</span>
-    echo <span style="color:#e6db74">&#34;hashes don&#39;t match!&#34;</span>
-    exit <span style="color:#ae81ff">1</span>
-<span style="color:#66d9ef">fi</span>
-
-<span style="color:#75715e"># Use OpenSSL Timestamp tool to verify the Request|Response</span>
-openssl ts -verify <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-in /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.tsr <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-queryfile /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.tsq <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-CAfile /tmp/cacert.pem <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-untrusted /tmp/tsa.crt
-
-<span style="color:#75715e"># Tidy</span>
-rm /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.ts? /tmp/cacert.pem /tmp/tsa.crt
-</code></pre></div><p>You&rsquo;re looking for &ldquo;Verification: OK&rdquo;</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># The message to Timestamp</span>
+</span></span><span style="display:flex;"><span>MESG<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Frederik Jack is a bubbly Border Collie&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Filename for Timestamp Request (/tmp/${FILE}.tsq) and Response (/tmp/${FILE}.tsr)</span>
+</span></span><span style="display:flex;"><span>FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;file&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create a Timestamp Request and persist it</span>
+</span></span><span style="display:flex;"><span>DIGEST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  printf <span style="color:#e6db74">${</span>MESG<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | sha256sum <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | head --bytes 64<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>openssl ts -query <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -digest <span style="color:#e6db74">${</span>DIGEST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -sha256 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -no_nonce <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -cert <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -out /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.tsq
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Submit the Request to FreeTSA and persist the Response</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Content-Type: application/timestamp-query&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--data-binary <span style="color:#e6db74">&#34;@/tmp/</span><span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">.tsq&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://freetsa.org/tsr <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>&gt; /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.tsr
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Download the FreeTSA certs to /tmp</span>
+</span></span><span style="display:flex;"><span>wget <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output-document<span style="color:#f92672">=</span>/tmp/tsa.crt <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  https://freetsa.org/files/tsa.crt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>wget <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output-document<span style="color:#f92672">=</span>/tmp/cacert.pem <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  https://freetsa.org/files/cacert.pem
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Validate that the certs&#39; hashes match the published hashes</span>
+</span></span><span style="display:flex;"><span>GOT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>openssl x509 -noout -modulus -in /tmp/tsa.crt <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | sha256sum <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | head --bytes 64<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>WANT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;899ba3d9f777e2a74bdd34302bc06cb3f7a46ac1f565ee128f79fd5dab99d68b&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">${</span>GOT<span style="color:#e6db74">}</span> !<span style="color:#f92672">=</span> <span style="color:#e6db74">${</span>WANT<span style="color:#e6db74">}</span> <span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;hashes don&#39;t match!&#34;</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>GOT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>openssl x509 -noout -modulus -in /tmp/cacert.pem <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | sha256sum <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | head --bytes 64<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>WANT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;a4b1a0a81aef68be1cc985d0f83bd6539cfe84174587f900e15ffe3f65433056&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">${</span>GOT<span style="color:#e6db74">}</span> !<span style="color:#f92672">=</span> <span style="color:#e6db74">${</span>WANT<span style="color:#e6db74">}</span> <span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;hashes don&#39;t match!&#34;</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Use OpenSSL Timestamp tool to verify the Request|Response</span>
+</span></span><span style="display:flex;"><span>openssl ts -verify <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-in /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.tsr <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-queryfile /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.tsq <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-CAfile /tmp/cacert.pem <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-untrusted /tmp/tsa.crt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Tidy</span>
+</span></span><span style="display:flex;"><span>rm /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.ts? /tmp/cacert.pem /tmp/tsa.crt
+</span></span></code></pre></div><p>You&rsquo;re looking for &ldquo;Verification: OK&rdquo;</p>
 <h3 id="golang">Golang</h3>
 <p>I was surprised to find only a couple of Golang implementations of the RFC.</p>
-<p>Digitorus' <a href="https://github.com/digitorus/timestamp">SDK</a> appears (!?) legit and I used that.</p>
+<p>Digitorus&rsquo; <a href="https://github.com/digitorus/timestamp">SDK</a> appears (!?) legit and I used that.</p>
 <p>See: <a href="https://github.com/DazWilkin/FreeTSA">https://github.com/DazWilkin/FreeTSA</a></p>
 <p>The Digtorus Timestamp SDK makes it trivial to create Timestamp Requests:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#a6e22e">tsq</span>,<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">timestamp</span>.<span style="color:#a6e22e">CreateRequest</span>(
-    <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">NewReader</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">mesg</span>),
-    <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">timestamp</span>.<span style="color:#a6e22e">RequestOptions</span>{
-		<span style="color:#a6e22e">Hash</span>: <span style="color:#a6e22e">crypto</span>.<span style="color:#a6e22e">SHA256</span>,
-    },
-)
-</code></pre></div><p>Which may then be <code>POST</code>ed to the FreeTSA service to generate a DER-endoded Response (<code>resp</code>), that may be parsed back into a Timestamp struct:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#a6e22e">ts</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">timestamp</span>.<span style="color:#a6e22e">ParseResponse</span>(<span style="color:#a6e22e">tsr</span>)
-</code></pre></div><p>You may test this implementation:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># The message to Timestamp</span>
-MESG<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Frederik Jack is a bubbly Border Collie&#34;</span>
-
-<span style="color:#75715e"># Filename for Timestamp Request and Response</span>
-FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;file&#34;</span>
-
-<span style="color:#75715e"># Create a Timestamp Request and persist it</span>
-<span style="color:#75715e"># Submit it to FreeTSA and persist the Response</span>
-go run github.com/DazWilkin/FreeTSA <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --mesg<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>MESG<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --file<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>
-
-<span style="color:#75715e"># Download the FreeTSA certs to /tmp</span>
-wget <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --output-document<span style="color:#f92672">=</span>/tmp/tsa.crt <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  https://freetsa.org/files/tsa.crt
-
-wget <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --output-document<span style="color:#f92672">=</span>/tmp/cacert.pem <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  https://freetsa.org/files/cacert.pem
-
-<span style="color:#75715e"># Use OpenSSL Timestamp tool to verify the Request|Response</span>
-openssl ts -verify <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -in /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.tsr <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -queryfile /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.tsq <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -CAfile /tmp/cacert.pem <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  -untrusted /tmp/tsa.crt
-
-<span style="color:#75715e"># Tidy</span>
-rm /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.ts? /tmp/cacert.pem /tmp/tsa.crt
-</code></pre></div><p>That&rsquo;s all!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#a6e22e">tsq</span>,<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">timestamp</span>.<span style="color:#a6e22e">CreateRequest</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">NewReader</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">mesg</span>),
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">timestamp</span>.<span style="color:#a6e22e">RequestOptions</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Hash</span>: <span style="color:#a6e22e">crypto</span>.<span style="color:#a6e22e">SHA256</span>,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>)
+</span></span></code></pre></div><p>Which may then be <code>POST</code>ed to the FreeTSA service to generate a DER-endoded Response (<code>resp</code>), that may be parsed back into a Timestamp struct:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#a6e22e">ts</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">timestamp</span>.<span style="color:#a6e22e">ParseResponse</span>(<span style="color:#a6e22e">tsr</span>)
+</span></span></code></pre></div><p>You may test this implementation:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># The message to Timestamp</span>
+</span></span><span style="display:flex;"><span>MESG<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Frederik Jack is a bubbly Border Collie&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Filename for Timestamp Request and Response</span>
+</span></span><span style="display:flex;"><span>FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;file&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create a Timestamp Request and persist it</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Submit it to FreeTSA and persist the Response</span>
+</span></span><span style="display:flex;"><span>go run github.com/DazWilkin/FreeTSA <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --mesg<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>MESG<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --file<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Download the FreeTSA certs to /tmp</span>
+</span></span><span style="display:flex;"><span>wget <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output-document<span style="color:#f92672">=</span>/tmp/tsa.crt <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  https://freetsa.org/files/tsa.crt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>wget <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output-document<span style="color:#f92672">=</span>/tmp/cacert.pem <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  https://freetsa.org/files/cacert.pem
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Use OpenSSL Timestamp tool to verify the Request|Response</span>
+</span></span><span style="display:flex;"><span>openssl ts -verify <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -in /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.tsr <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -queryfile /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.tsq <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -CAfile /tmp/cacert.pem <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -untrusted /tmp/tsa.crt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Tidy</span>
+</span></span><span style="display:flex;"><span>rm /tmp/<span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span>.ts? /tmp/cacert.pem /tmp/tsa.crt
+</span></span></code></pre></div><p>That&rsquo;s all!</p>
 <ul class="pa0">
   
    <li class="list di">

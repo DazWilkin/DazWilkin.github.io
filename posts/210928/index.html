@@ -7,7 +7,7 @@
     <title>Golang Structured Logging w/ Google Cloud Logging | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Emitting structured logs from Golang containers for Google Cloud Logging">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -196,33 +196,33 @@ if (!doNotTrack) {
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve multiple components in an app and these are deployed across multiple Google Cloud Platform (GCP) services: Kubernetes Engine, Cloud Functions, Cloud Run, etc. Almost everything is written in Golang and I started the project using <a href="https://github.com/go-logr/logr"><code>go-logr</code></a>.</p>
 <p><code>logr</code> is in two parts: a <code>Logger</code> that you use to write log entries; a <code>LogSink</code> (adaptor) that consumes log entries and outputs them to a specific log implementation.</p>
 <p>Initially, I defaulted to using <code>stdr</code> which is a <code>LogSink</code> for Go&rsquo;s standard logging implementation. Something similar to the module&rsquo;s <a href="https://github.com/go-logr/stdr/blob/master/example/main.go">example</a>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
-
-<span style="color:#f92672">import</span> (
-	<span style="color:#a6e22e">stdlog</span> <span style="color:#e6db74">&#34;log&#34;</span>
-	<span style="color:#e6db74">&#34;os&#34;</span>
-
-	<span style="color:#e6db74">&#34;github.com/go-logr/logr&#34;</span>
-	<span style="color:#e6db74">&#34;github.com/go-logr/stdr&#34;</span>
-)
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-	<span style="color:#a6e22e">log</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">stdr</span>.<span style="color:#a6e22e">NewWithOptions</span>(
-        <span style="color:#a6e22e">stdlog</span>.<span style="color:#a6e22e">New</span>(
-            <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Stdout</span>,
-            <span style="color:#e6db74">&#34;&#34;</span>,
-            <span style="color:#a6e22e">stdlog</span>.<span style="color:#a6e22e">LstdFlags</span>,
-        ),
-        <span style="color:#a6e22e">stdr</span>.<span style="color:#a6e22e">Options</span>{
-            <span style="color:#a6e22e">LogCaller</span>: <span style="color:#a6e22e">stdr</span>.<span style="color:#a6e22e">All</span>,
-        })
-	<span style="color:#a6e22e">log</span> = <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;MyName&#34;</span>)
-
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;something&#34;</span>,
-        <span style="color:#e6db74">&#34;k1&#34;</span>, <span style="color:#e6db74">&#34;v1&#34;</span>,
-        <span style="color:#e6db74">&#34;k2&#34;</span>, <span style="color:#e6db74">&#34;v2&#34;</span>,
-    )
-</code></pre></div><p>See: <a href="https://play.golang.org/p/m5QQbJqFMKc">https://play.golang.org/p/m5QQbJqFMKc</a></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">stdlog</span> <span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/go-logr/logr&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/go-logr/stdr&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">stdr</span>.<span style="color:#a6e22e">NewWithOptions</span>(
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">stdlog</span>.<span style="color:#a6e22e">New</span>(
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Stdout</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">stdlog</span>.<span style="color:#a6e22e">LstdFlags</span>,
+</span></span><span style="display:flex;"><span>        ),
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">stdr</span>.<span style="color:#a6e22e">Options</span>{
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">LogCaller</span>: <span style="color:#a6e22e">stdr</span>.<span style="color:#a6e22e">All</span>,
+</span></span><span style="display:flex;"><span>        })
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span> = <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;MyName&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;something&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;k1&#34;</span>, <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;k2&#34;</span>, <span style="color:#e6db74">&#34;v2&#34;</span>,
+</span></span><span style="display:flex;"><span>    )
+</span></span></code></pre></div><p>See: <a href="https://play.golang.org/p/m5QQbJqFMKc">https://play.golang.org/p/m5QQbJqFMKc</a></p>
 <blockquote>
 <p><strong>NOTE</strong> Using <code>os.Stdout</code> avoids sending everything to stderr and having Cloud Logging mark all log lines with <code>severity: &quot;ERROR&quot;</code></p>
 </blockquote>
@@ -230,31 +230,31 @@ if (!doNotTrack) {
 <p><strong>NOTE</strong> I&rsquo;m using strings but the key values are <code>interface{}</code> and slices, maps and structs all work too.</p>
 </blockquote>
 <p>Outputs:</p>
-<pre tabindex="0"><code>2021/09/28 17:37:45 MyName: &quot;caller&quot;={&quot;file&quot;:&quot;prog.go&quot;,&quot;line&quot;:22} &quot;level&quot;=0 &quot;msg&quot;=&quot;something&quot; &quot;k1&quot;=&quot;v1&quot; &quot;k2&quot;=&quot;v2&quot;
+<pre tabindex="0"><code>2021/09/28 17:37:45 MyName: &#34;caller&#34;={&#34;file&#34;:&#34;prog.go&#34;,&#34;line&#34;:22} &#34;level&#34;=0 &#34;msg&#34;=&#34;something&#34; &#34;k1&#34;=&#34;v1&#34; &#34;k2&#34;=&#34;v2&#34;
 </code></pre><p>It works very well. However, log entries are encapsulated as <code>textPayload</code> (i.e. text strings not parsed JSON) values in Google Cloud Logging, something similar to:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">insertId</span>: <span style="color:#e6db74">&#34;&#34;</span>
-<span style="color:#f92672">labels</span>:
-  <span style="color:#f92672">compute.googleapis.com/resource_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
-  <span style="color:#f92672">k8s-pod/run</span>: <span style="color:#e6db74">&#34;&#34;</span>
-<span style="color:#f92672">logName</span>: <span style="color:#ae81ff">logs/stdout</span>
-<span style="color:#f92672">receiveTimestamp</span>: <span style="color:#e6db74">&#39;2021-09-28T17:37:45.727687564Z&#39;</span>
-<span style="color:#f92672">resource</span>:
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">cluster_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
-    <span style="color:#f92672">container_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
-    <span style="color:#f92672">location</span>: <span style="color:#e6db74">&#34;&#34;</span>
-    <span style="color:#f92672">namespace_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
-    <span style="color:#f92672">pod_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
-    <span style="color:#f92672">project_id</span>: <span style="color:#e6db74">&#34;&#34;</span>
-  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">k8s_container</span>
-<span style="color:#f92672">severity</span>: <span style="color:#ae81ff">INFO</span>
-<span style="color:#f92672">textPayload</span>: &gt;<span style="color:#e6db74">
-</span><span style="color:#e6db74">    2021/09/28 17:37:45 MyName 
-</span><span style="color:#e6db74">    &#34;caller&#34;={&#34;file&#34;:&#34;prog.go&#34;,&#34;line&#34;:22} 
-</span><span style="color:#e6db74">    &#34;level&#34;=0 
-</span><span style="color:#e6db74">    &#34;msg&#34;=&#34;something&#34; &#34;k1&#34;=&#34;v1&#34; &#34;k2&#34;=&#34;v2&#34;</span>    
-<span style="color:#f92672">timestamp</span>: <span style="color:#e6db74">&#34;2021-09-28T17:37:45.009974311Z&#34;</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">insertId</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">compute.googleapis.com/resource_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">k8s-pod/run</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">logName</span>: <span style="color:#ae81ff">logs/stdout</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">receiveTimestamp</span>: <span style="color:#e6db74">&#39;2021-09-28T17:37:45.727687564Z&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">resource</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">cluster_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">location</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">namespace_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">pod_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">project_id</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">k8s_container</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">severity</span>: <span style="color:#ae81ff">INFO</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">textPayload</span>: &gt;<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    2021/09/28 17:37:45 MyName 
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;caller&#34;={&#34;file&#34;:&#34;prog.go&#34;,&#34;line&#34;:22} 
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;level&#34;=0 
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;msg&#34;=&#34;something&#34; &#34;k1&#34;=&#34;v1&#34; &#34;k2&#34;=&#34;v2&#34;</span>    
+</span></span><span style="display:flex;"><span><span style="color:#f92672">timestamp</span>: <span style="color:#e6db74">&#34;2021-09-28T17:37:45.009974311Z&#34;</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> Yes, I&rsquo;m talking about JSON and then presenting log entries as YAML. This is the default format used by <code>gcloud logging</code> and is easier to read. When we get to the conclusion, using YAML for the log helps highlight what&rsquo;s possible.</p>
 </blockquote>
 <p>With the exception of Cloud Functions, my other app components are deployed as containers and Google Cloud Platform uses a <a href="https://cloud.google.com/logging/docs/agent/logging">logging agent</a> (built upon <a href="https://www.fluentd.org/">fluentd</a>) to obtain container logs and ship these to Cloud Logging. In order to get the logs parsed as JSON, they need to:</p>
@@ -264,135 +264,135 @@ if (!doNotTrack) {
 </ul>
 <p><code>logr</code> includes a LogSink <a href="https://github.com/go-logr/zerologr"><code>zerologr</code></a> which uses <a href="https://github.com/rs/zerolog"><code>zerolog</code></a> and <code>zerolog</code> &ldquo;provides a fast and simple logger dedicated to JSON output.&rdquo;</p>
 <p>We can revise the code to use <code>zerologr</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
-
-<span style="color:#f92672">import</span> (
-	<span style="color:#e6db74">&#34;os&#34;</span>
-
-	<span style="color:#e6db74">&#34;github.com/go-logr/logr&#34;</span>
-	<span style="color:#e6db74">&#34;github.com/go-logr/zerologr&#34;</span>
-	<span style="color:#e6db74">&#34;github.com/rs/zerolog&#34;</span>
-)
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-  <span style="color:#a6e22e">zerologr</span>.<span style="color:#a6e22e">NameFieldName</span> = <span style="color:#e6db74">&#34;logger&#34;</span>
-  <span style="color:#a6e22e">zerologr</span>.<span style="color:#a6e22e">NameSeparator</span> = <span style="color:#e6db74">&#34;/&#34;</span>
-
-  <span style="color:#a6e22e">zl</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">zerolog</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Stdout</span>).<span style="color:#a6e22e">With</span>().<span style="color:#a6e22e">Caller</span>().<span style="color:#a6e22e">Timestamp</span>().<span style="color:#a6e22e">Logger</span>()
-  <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">log</span> <span style="color:#a6e22e">logr</span>.<span style="color:#a6e22e">Logger</span> = <span style="color:#a6e22e">zerologr</span>.<span style="color:#a6e22e">New</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">zl</span>)
-	<span style="color:#a6e22e">log</span> = <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;MyName&#34;</span>)
-
-  <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;something&#34;</span>,
-    <span style="color:#e6db74">&#34;k1&#34;</span>, <span style="color:#e6db74">&#34;v1&#34;</span>,
-    <span style="color:#e6db74">&#34;k2&#34;</span>, <span style="color:#e6db74">&#34;v2&#34;</span>,
-  )
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/go-logr/logr&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/go-logr/zerologr&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/rs/zerolog&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">zerologr</span>.<span style="color:#a6e22e">NameFieldName</span> = <span style="color:#e6db74">&#34;logger&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">zerologr</span>.<span style="color:#a6e22e">NameSeparator</span> = <span style="color:#e6db74">&#34;/&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">zl</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">zerolog</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Stdout</span>).<span style="color:#a6e22e">With</span>().<span style="color:#a6e22e">Caller</span>().<span style="color:#a6e22e">Timestamp</span>().<span style="color:#a6e22e">Logger</span>()
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">log</span> <span style="color:#a6e22e">logr</span>.<span style="color:#a6e22e">Logger</span> = <span style="color:#a6e22e">zerologr</span>.<span style="color:#a6e22e">New</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">zl</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span> = <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;MyName&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;something&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;k1&#34;</span>, <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;k2&#34;</span>, <span style="color:#e6db74">&#34;v2&#34;</span>,
+</span></span><span style="display:flex;"><span>  )
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The use of <a href="https://pkg.go.dev/github.com/rs/zerolog#Logger.With"><code>With()</code></a> followed by <a href="https://pkg.go.dev/github.com/rs/zerolog#Context.Caller"><code>Caller()</code></a> which adds the file and line number of the log&rsquo;s caller and <a href="https://pkg.go.dev/github.com/rs/zerolog#Context.Timestamp"><code>Timestamp()</code></a>.</p>
 </blockquote>
 <p>See: <a href="https://play.golang.org/p/pQEfBA0mAco">https://play.golang.org/p/pQEfBA0mAco</a></p>
 <p>Outputs (formatted for ease of viewing):</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
-    <span style="color:#f92672">&#34;v&#34;</span>:<span style="color:#ae81ff">0</span>,
-    <span style="color:#f92672">&#34;logger&#34;</span>:<span style="color:#e6db74">&#34;MyName&#34;</span>,
-    <span style="color:#f92672">&#34;k1&#34;</span>:<span style="color:#e6db74">&#34;v1&#34;</span>,
-    <span style="color:#f92672">&#34;k2&#34;</span>:<span style="color:#e6db74">&#34;v2&#34;</span>,
-    <span style="color:#f92672">&#34;caller&#34;</span>:<span style="color:#e6db74">&#34;/path/to/main.go:68&#34;</span>,
-    <span style="color:#f92672">&#34;time&#34;</span>:<span style="color:#e6db74">&#34;2021-09-28T00:00:00-07:00&#34;</span>,
-    <span style="color:#f92672">&#34;message&#34;</span>:<span style="color:#e6db74">&#34;something&#34;</span>
-}
-</code></pre></div><p>This triggers the Cloud Logging agent and Cloud Logging to consume the log entries as JSON, use <code>jsonPayload</code> rather than <code>textPayload</code> but, most importantly, surface our user-defined log entry keys as values by which we can query logs. Before we try that, let&rsquo;s apply the <a href="https://cloud.google.com/logging/docs/structured-logging#special-payload-fields">special fields</a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;v&#34;</span>:<span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;logger&#34;</span>:<span style="color:#e6db74">&#34;MyName&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;k1&#34;</span>:<span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;k2&#34;</span>:<span style="color:#e6db74">&#34;v2&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;caller&#34;</span>:<span style="color:#e6db74">&#34;/path/to/main.go:68&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;time&#34;</span>:<span style="color:#e6db74">&#34;2021-09-28T00:00:00-07:00&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;message&#34;</span>:<span style="color:#e6db74">&#34;something&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This triggers the Cloud Logging agent and Cloud Logging to consume the log entries as JSON, use <code>jsonPayload</code> rather than <code>textPayload</code> but, most importantly, surface our user-defined log entry keys as values by which we can query logs. Before we try that, let&rsquo;s apply the <a href="https://cloud.google.com/logging/docs/structured-logging#special-payload-fields">special fields</a>.</p>
 <p>We&rsquo;re going to use <a href="https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#FIELDS.labels">logging.googleapis.com/labels</a> which is a simple map of key:value pairs and <a href="https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogEntrySourceLocation">logging.googleapis.com/sourceLocation</a> which is a simple struct:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
-
-<span style="color:#f92672">import</span> (
-	<span style="color:#e6db74">&#34;os&#34;</span>
-
-	<span style="color:#e6db74">&#34;github.com/go-logr/logr&#34;</span>
-	<span style="color:#e6db74">&#34;github.com/go-logr/zerologr&#34;</span>
-	<span style="color:#e6db74">&#34;github.com/rs/zerolog&#34;</span>
-)
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-	<span style="color:#a6e22e">zerologr</span>.<span style="color:#a6e22e">NameFieldName</span> = <span style="color:#e6db74">&#34;logger&#34;</span>
-	<span style="color:#a6e22e">zerologr</span>.<span style="color:#a6e22e">NameSeparator</span> = <span style="color:#e6db74">&#34;/&#34;</span>
-
-	<span style="color:#a6e22e">zl</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">zerolog</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Stdout</span>).<span style="color:#a6e22e">With</span>().<span style="color:#a6e22e">Caller</span>().<span style="color:#a6e22e">Timestamp</span>().<span style="color:#a6e22e">Logger</span>()
-	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">log</span> <span style="color:#a6e22e">logr</span>.<span style="color:#a6e22e">Logger</span> = <span style="color:#a6e22e">zerologr</span>.<span style="color:#a6e22e">New</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">zl</span>)
-	<span style="color:#a6e22e">log</span> = <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;MyName&#34;</span>)
-
-	<span style="color:#a6e22e">labels</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{
-		<span style="color:#e6db74">&#34;foo&#34;</span>: <span style="color:#e6db74">&#34;bar&#34;</span>,
-		<span style="color:#e6db74">&#34;dog&#34;</span>: <span style="color:#e6db74">&#34;Freddie&#34;</span>,
-	}
-
-	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;something&#34;</span>,
-		<span style="color:#e6db74">&#34;logging.googleapis.com/labels&#34;</span>, <span style="color:#a6e22e">labels</span>,
-		<span style="color:#e6db74">&#34;k1&#34;</span>, <span style="color:#e6db74">&#34;v1&#34;</span>,
-		<span style="color:#e6db74">&#34;k2&#34;</span>, <span style="color:#e6db74">&#34;v2&#34;</span>,
-	)
-}
-</code></pre></div><p>See: <a href="https://play.golang.org/p/xTyYwP0DumS">https://play.golang.org/p/xTyYwP0DumS</a></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/go-logr/logr&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/go-logr/zerologr&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/rs/zerolog&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">zerologr</span>.<span style="color:#a6e22e">NameFieldName</span> = <span style="color:#e6db74">&#34;logger&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">zerologr</span>.<span style="color:#a6e22e">NameSeparator</span> = <span style="color:#e6db74">&#34;/&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">zl</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">zerolog</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Stdout</span>).<span style="color:#a6e22e">With</span>().<span style="color:#a6e22e">Caller</span>().<span style="color:#a6e22e">Timestamp</span>().<span style="color:#a6e22e">Logger</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">log</span> <span style="color:#a6e22e">logr</span>.<span style="color:#a6e22e">Logger</span> = <span style="color:#a6e22e">zerologr</span>.<span style="color:#a6e22e">New</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">zl</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span> = <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;MyName&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">labels</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;foo&#34;</span>: <span style="color:#e6db74">&#34;bar&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;dog&#34;</span>: <span style="color:#e6db74">&#34;Freddie&#34;</span>,
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;something&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;logging.googleapis.com/labels&#34;</span>, <span style="color:#a6e22e">labels</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;k1&#34;</span>, <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;k2&#34;</span>, <span style="color:#e6db74">&#34;v2&#34;</span>,
+</span></span><span style="display:flex;"><span>	)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>See: <a href="https://play.golang.org/p/xTyYwP0DumS">https://play.golang.org/p/xTyYwP0DumS</a></p>
 <p>Outputs (formatted for ease of viewing):</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
-    <span style="color:#f92672">&#34;v&#34;</span>:<span style="color:#ae81ff">0</span>,
-    <span style="color:#f92672">&#34;logger&#34;</span>:<span style="color:#e6db74">&#34;MyName&#34;</span>,
-    <span style="color:#f92672">&#34;logging.googleapis.com/labels&#34;</span>:{
-        <span style="color:#f92672">&#34;dog&#34;</span>:<span style="color:#e6db74">&#34;Freddie&#34;</span>,
-        <span style="color:#f92672">&#34;foo&#34;</span>:<span style="color:#e6db74">&#34;bar&#34;</span>
-    },
-    <span style="color:#f92672">&#34;k1&#34;</span>:<span style="color:#e6db74">&#34;v1&#34;</span>,
-    <span style="color:#f92672">&#34;k2&#34;</span>:<span style="color:#e6db74">&#34;v2&#34;</span>,
-    <span style="color:#f92672">&#34;caller&#34;</span>:<span style="color:#e6db74">&#34;/path/to/main.go:68&#34;</span>,
-    <span style="color:#f92672">&#34;time&#34;</span>:<span style="color:#e6db74">&#34;2021-09-28T00:00:00-07:00&#34;</span>,
-    <span style="color:#f92672">&#34;message&#34;</span>:<span style="color:#e6db74">&#34;something&#34;</span>
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;v&#34;</span>:<span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;logger&#34;</span>:<span style="color:#e6db74">&#34;MyName&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;logging.googleapis.com/labels&#34;</span>:{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;dog&#34;</span>:<span style="color:#e6db74">&#34;Freddie&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;foo&#34;</span>:<span style="color:#e6db74">&#34;bar&#34;</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;k1&#34;</span>:<span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;k2&#34;</span>:<span style="color:#e6db74">&#34;v2&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;caller&#34;</span>:<span style="color:#e6db74">&#34;/path/to/main.go:68&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;time&#34;</span>:<span style="color:#e6db74">&#34;2021-09-28T00:00:00-07:00&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;message&#34;</span>:<span style="color:#e6db74">&#34;something&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> This example demonstrates the use of a map and a struct as label values too.</p>
 </blockquote>
 <p>But, the magic happens when we deploy this code to e.g. Google Kubernetes Engine. Now we get log entries of the form:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">insertId</span>: <span style="color:#ae81ff">iqz96zqax8g7f32x</span>
-<span style="color:#f92672">jsonPayload</span>:
-  <span style="color:#f92672">logger</span>: <span style="color:#ae81ff">MyName</span>
-  <span style="color:#f92672">message</span>: <span style="color:#ae81ff">something</span>
-  <span style="color:#f92672">k1</span>: <span style="color:#ae81ff">v1</span>
-  <span style="color:#f92672">k2</span>: <span style="color:#ae81ff">v2</span>
-  <span style="color:#f92672">v</span>: <span style="color:#ae81ff">0</span>
-  <span style="color:#f92672">caller</span>: <span style="color:#e6db74">&#34;/path/to/main.go:68&#34;</span>
-  <span style="color:#f92672">time</span>: <span style="color:#e6db74">&#34;2021-09-28T00:00:00-07:00&#34;</span>
-<span style="color:#f92672">labels</span>:
-  <span style="color:#f92672">compute.googleapis.com/resource_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
-  <span style="color:#f92672">dog</span>: <span style="color:#ae81ff">Freddie</span>
-  <span style="color:#f92672">foo</span>: <span style="color:#ae81ff">bar</span>
-  <span style="color:#f92672">k8s-pod/run</span>: <span style="color:#e6db74">&#34;&#34;</span>
-<span style="color:#f92672">logName</span>: <span style="color:#ae81ff">logs/stdout</span>
-<span style="color:#f92672">receiveTimestamp</span>: <span style="color:#e6db74">&#34;2021-09-28T00:00:00.000000000Z&#34;</span>
-<span style="color:#f92672">resource</span>:
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">cluster_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
-    <span style="color:#f92672">container_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
-    <span style="color:#f92672">location</span>: <span style="color:#e6db74">&#34;&#34;</span>
-    <span style="color:#f92672">namespace_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
-    <span style="color:#f92672">pod_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
-    <span style="color:#f92672">project_id</span>: <span style="color:#e6db74">&#34;&#34;</span>
-  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">k8s_container</span>
-<span style="color:#f92672">severity</span>: <span style="color:#ae81ff">INFO</span>
-<span style="color:#f92672">timestamp</span>: <span style="color:#e6db74">&#34;2021-09-28T00:00:00.000000000Z&#34;</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">insertId</span>: <span style="color:#ae81ff">iqz96zqax8g7f32x</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">jsonPayload</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">logger</span>: <span style="color:#ae81ff">MyName</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">message</span>: <span style="color:#ae81ff">something</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">k1</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">k2</span>: <span style="color:#ae81ff">v2</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">v</span>: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">caller</span>: <span style="color:#e6db74">&#34;/path/to/main.go:68&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">time</span>: <span style="color:#e6db74">&#34;2021-09-28T00:00:00-07:00&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">compute.googleapis.com/resource_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">dog</span>: <span style="color:#ae81ff">Freddie</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">foo</span>: <span style="color:#ae81ff">bar</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">k8s-pod/run</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">logName</span>: <span style="color:#ae81ff">logs/stdout</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">receiveTimestamp</span>: <span style="color:#e6db74">&#34;2021-09-28T00:00:00.000000000Z&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">resource</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">cluster_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">location</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">namespace_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">pod_name</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">project_id</span>: <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">k8s_container</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">severity</span>: <span style="color:#ae81ff">INFO</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">timestamp</span>: <span style="color:#e6db74">&#34;2021-09-28T00:00:00.000000000Z&#34;</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> See how <code>&quot;logging.googleapis.com/labels&quot;</code> is added to the root&rsquo;s <code>labels</code>.</p>
 </blockquote>
 <p>Not only does this look useful but it is useful because we can now use the Cloud Console&rsquo;s log viewer to query by these values or:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;resource.type=\&#34;k8s_container\&#34; &#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;resource.labels.namespace_name=\&#34;</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34; &#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;resource.labels.pod_name=\&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34; &#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;labels.dog=\&#34;Freddie\&#34; &#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;jsonPayload.logger=\&#34;MyName\&#34;&#34;</span>
-
-gcloud logging read <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--limit<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
-</code></pre></div><p>Which I used to return the previous result ;-)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;resource.type=\&#34;k8s_container\&#34; &#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;resource.labels.namespace_name=\&#34;</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34; &#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;resource.labels.pod_name=\&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34; &#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;labels.dog=\&#34;Freddie\&#34; &#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;jsonPayload.logger=\&#34;MyName\&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud logging read <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--limit<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><p>Which I used to return the previous result ;-)</p>
 <p>How good is that!?</p>
 <ul class="pa0">
   

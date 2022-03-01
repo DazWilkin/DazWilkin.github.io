@@ -7,7 +7,7 @@
     <title>Remotely invoking WASM functions using gRPC and waPC | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Remotely invoking WASM functions using gRPC and waPC">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -199,127 +199,127 @@ if (!doNotTrack) {
 <p>The <code>complex.proto</code> protobuf was described in the previous post but should be self-explanatory. For the <code>mul</code> (multiplication) method, we need 2 complex numbers (protobuf <code>ComplexRequest</code> includes fields <code>a</code> and <code>b</code> which are both <code>Complex</code>). The client generates random messages corresponding to <code>ComplexRequest</code> (itself comprising <code>Complex</code>). This explains why the log shows <code>random:New</code> for 2 messages each of which contains 2 <code>float32</code>s.</p>
 <p>The client marshals the generated <code>dynamicpb.Message</code> (corresponding to the <code>ComplexRequest</code>) into <code>anypb.Any</code> (effectively bytes) as a way to envelope arbitrary message types, and ships this off to the server.</p>
 <p>I should add better logging to output the randomly generated message but, the result of the multiplication is a <code>ComplexResponse</code> (<code>{real:-0.22... imag:0.26..}</code>).</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">[main:loop:dynamic-invoke] Method: mul
-[random:New] Message
-[random:New] Float32
-[random:New] Float32
-[random:New] Message
-[random:New] Float32
-[random:New] Float32
-[Client:Invoke] Metadata: complex.wasm
-[main:loop:dynamic-invoke] Success: result:{real:-0.22081086  imag:0.26051167}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>[main:loop:dynamic-invoke] Method: mul
+</span></span><span style="display:flex;"><span>[random:New] Message
+</span></span><span style="display:flex;"><span>[random:New] Float32
+</span></span><span style="display:flex;"><span>[random:New] Float32
+</span></span><span style="display:flex;"><span>[random:New] Message
+</span></span><span style="display:flex;"><span>[random:New] Float32
+</span></span><span style="display:flex;"><span>[random:New] Float32
+</span></span><span style="display:flex;"><span>[Client:Invoke] Metadata: complex.wasm
+</span></span><span style="display:flex;"><span>[main:loop:dynamic-invoke] Success: result:{real:-0.22081086  imag:0.26051167}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> a partial implementation for generating random protobuf message is in <a href="https://github.com/DazWilkin/go-protobuf-extras">go-protobuf-extras</a></p>
 </blockquote>
 <p>Server:</p>
 <p>A client must have previously added <code>complex.wasm</code> to the server along with a protobuf descriptor defining the input (parameters) and output (result). When the server receives the invoke request, it determines which WASM binary (in this case <code>complex.wasm</code>) is required and it loads it from storage if it has not already cached an instance of it. It then uses waPC to invoke the <code>mul</code> function on the binary passing it the request bytes returning a result. The server ships the bytes back to the client.</p>
 <p>Because the server associates protobuf descriptors with the WASM binaries, it could deal with the request|response bytes as concrete messages but this would require the client to have concrete implementations of these types too. This may be useful in practice but, for testing, a generic client is able to invoke arbitrary WASM functions because it can use <code>dynamicpb</code> to create arbitrary messages using the descriptors.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">[Server:Invoke] Metadata: complex.wasm
-[File:Open] Module: complex.wasm
-[File:Filename] /wasm-cache/complex.wasm
-[hash:Tee] Entered
-[hash:Tee:go] 608c40aee5bda76aa6f43e55ea237a5b69e72536bdd33fb3e99b4f41fba63983
-[Server:Invoke] Cacheing Instance: complex.wasm
-[wapc:Function:Invoke] Entered
-[Server:Invoke] Metadata: complex.wasm
-[wapc:callback] binding: b namespace: complex::any operation: mul payload: 0.13414463+0.58088475i, 0.3424287+0.45920613i
-[wapc:callback] binding: b namespace: complex::any operation: mul payload: 0.13414463+0.58088475i, 0.3424287+0.45920613i
-[wapc:callback] binding: b namespace: complex::any operation: mul payload: -0.22081086+0.26051167i
-[wapc:callback] binding: b namespace: complex::any operation: mul payload: -0.22081086+0.26051167i
-</code></pre></div><h2 id="motivation">Motivation</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>[Server:Invoke] Metadata: complex.wasm
+</span></span><span style="display:flex;"><span>[File:Open] Module: complex.wasm
+</span></span><span style="display:flex;"><span>[File:Filename] /wasm-cache/complex.wasm
+</span></span><span style="display:flex;"><span>[hash:Tee] Entered
+</span></span><span style="display:flex;"><span>[hash:Tee:go] 608c40aee5bda76aa6f43e55ea237a5b69e72536bdd33fb3e99b4f41fba63983
+</span></span><span style="display:flex;"><span>[Server:Invoke] Cacheing Instance: complex.wasm
+</span></span><span style="display:flex;"><span>[wapc:Function:Invoke] Entered
+</span></span><span style="display:flex;"><span>[Server:Invoke] Metadata: complex.wasm
+</span></span><span style="display:flex;"><span>[wapc:callback] binding: b namespace: complex::any operation: mul payload: 0.13414463+0.58088475i, 0.3424287+0.45920613i
+</span></span><span style="display:flex;"><span>[wapc:callback] binding: b namespace: complex::any operation: mul payload: 0.13414463+0.58088475i, 0.3424287+0.45920613i
+</span></span><span style="display:flex;"><span>[wapc:callback] binding: b namespace: complex::any operation: mul payload: -0.22081086+0.26051167i
+</span></span><span style="display:flex;"><span>[wapc:callback] binding: b namespace: complex::any operation: mul payload: -0.22081086+0.26051167i
+</span></span></code></pre></div><h2 id="motivation">Motivation</h2>
 <p>I&rsquo;m exploring a solution in which arbitrary (gRPC-based) clients can ship WASM binaries and then remotely invoke functions in the binaries. The concept is similar to a simple chaincode. In order to define the input (parameters) and output (results) of the WASM functions, these are defined using protobufs.</p>
 <h2 id="implementation">Implementation</h2>
 <p>I&rsquo;m using Rust and waPC to implement the WASM functions. waPC provides a mechanism by which arbitrary binary blobs may be transferred between the host runtime and the guest (WASM) runtime. When testing these implementations, I&rsquo;ve been using Rust and waPC for the host runtime too. But, for this implementation, I&rsquo;ve been using Go(lang) as the waPC host runtime. This is partly because of the well-documented Golang Protobuf APIv2 that I wrote about <a href="/posts/200630/">recently</a>. The waPC Host for Go repo is <a href="https://github.com/wapc/wapc-go">here</a>. The API is straightforward and, I&rsquo;ve implemented this as an implementation of 3 interfaces in my solution:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Runtime</span> <span style="color:#66d9ef">interface</span> {
-	<span style="color:#a6e22e">Create</span>([]<span style="color:#66d9ef">byte</span>) (<span style="color:#a6e22e">Instance</span>, <span style="color:#66d9ef">error</span>)
-	<span style="color:#a6e22e">Delete</span>() <span style="color:#66d9ef">error</span>
-}
-
-<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Instance</span> <span style="color:#66d9ef">interface</span> {
-	<span style="color:#a6e22e">Delete</span>() <span style="color:#66d9ef">error</span>
-	<span style="color:#a6e22e">Function</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">Function</span>, <span style="color:#66d9ef">error</span>)
-}
-<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Function</span> <span style="color:#66d9ef">interface</span> {
-	<span style="color:#a6e22e">Invoke</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>, <span style="color:#66d9ef">error</span>)
-}
-</code></pre></div><p>For example, for <code>complex.wasm</code>, we must <code>Create</code> an <code>Instance</code> from the WASM binary bytes. With an <code>Instance</code>, we may then grab a reference to a specific <code>Function</code> (matching the WASM binary&rsquo;s exported functions which also correspond to the protobuf Service names) and then, we can <code>Invoke</code> the function with the bytes corresponding to the marshaled protobuf Input message which results in bytes corresponding to the marshaled protobuf Output message.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Runtime</span> <span style="color:#66d9ef">interface</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Create</span>([]<span style="color:#66d9ef">byte</span>) (<span style="color:#a6e22e">Instance</span>, <span style="color:#66d9ef">error</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Delete</span>() <span style="color:#66d9ef">error</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Instance</span> <span style="color:#66d9ef">interface</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Delete</span>() <span style="color:#66d9ef">error</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Function</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">Function</span>, <span style="color:#66d9ef">error</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Function</span> <span style="color:#66d9ef">interface</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Invoke</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>, <span style="color:#66d9ef">error</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>For example, for <code>complex.wasm</code>, we must <code>Create</code> an <code>Instance</code> from the WASM binary bytes. With an <code>Instance</code>, we may then grab a reference to a specific <code>Function</code> (matching the WASM binary&rsquo;s exported functions which also correspond to the protobuf Service names) and then, we can <code>Invoke</code> the function with the bytes corresponding to the marshaled protobuf Input message which results in bytes corresponding to the marshaled protobuf Output message.</p>
 <p>Currently (!) the server uses the file system to persist the WASM binaries that have been <code>Add</code>(ed) to it.</p>
 <p>The plan is to use Google Trillian as an alternative storage mechanism. I will describe this in my next post. Trillian will provide tamperproof storage for the WASM binaries.</p>
 <p>So, for a <code>Server</code> that has the following type:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Server</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">host</span> <span style="color:#a6e22e">wasm</span>.<span style="color:#a6e22e">Runtime</span>
-	<span style="color:#a6e22e">repo</span> <span style="color:#a6e22e">wasm</span>.<span style="color:#a6e22e">Repository</span>
-
-	<span style="color:#75715e">// Instances cache
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">instance</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">wasm</span>.<span style="color:#a6e22e">Instance</span>
-}
-</code></pre></div><p>The <code>Invoke</code> method is simply:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeRequest</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>, <span style="color:#66d9ef">error</span>) {
-	<span style="color:#a6e22e">meta</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">GetMetadata</span>()
-	<span style="color:#a6e22e">id</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">GetId</span>()
-	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[Server:Invoke] Metadata: %s&#34;</span>, <span style="color:#a6e22e">id</span>)
-
-	<span style="color:#a6e22e">rdr</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">repo</span>.<span style="color:#a6e22e">Open</span>(<span style="color:#a6e22e">wasm</span>.<span style="color:#a6e22e">ToMetadata</span>(<span style="color:#a6e22e">meta</span>))
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{}, <span style="color:#a6e22e">err</span>
-	}
-
-	<span style="color:#75715e">// Cache WASM instances
-</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">instance</span>[<span style="color:#a6e22e">id</span>] <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadAll</span>(<span style="color:#a6e22e">rdr</span>)
-		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-			<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{}, <span style="color:#66d9ef">nil</span>
-		}
-
-		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[Server:Invoke] Cacheing Instance: %s&#34;</span>, <span style="color:#a6e22e">id</span>)
-		<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">instance</span>[<span style="color:#a6e22e">id</span>], <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">host</span>.<span style="color:#a6e22e">Create</span>(<span style="color:#a6e22e">b</span>)
-		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-			<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{}, <span style="color:#a6e22e">err</span>
-		}
-	}
-
-	<span style="color:#a6e22e">name</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">GetRequest</span>().<span style="color:#a6e22e">GetName</span>()
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">name</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;&#34;</span> {
-		<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;WASM function name cannot be null&#34;</span>)
-		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{}, <span style="color:#a6e22e">err</span>
-	}
-
-	<span style="color:#75715e">// Invoke Function on cached Instance
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">f</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">instance</span>[<span style="color:#a6e22e">id</span>].<span style="color:#a6e22e">Function</span>(<span style="color:#a6e22e">name</span>)
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{}, <span style="color:#a6e22e">err</span>
-	}
-
-	<span style="color:#a6e22e">params</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">GetRequest</span>().<span style="color:#a6e22e">GetParameters</span>()
-	<span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">params</span>)
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{}, <span style="color:#a6e22e">err</span>
-	}
-
-	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{
-		<span style="color:#a6e22e">Response</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">FunctionResponse</span>{
-			<span style="color:#a6e22e">Result</span>: <span style="color:#a6e22e">result</span>,
-		},
-	}, <span style="color:#66d9ef">nil</span>
-}
-</code></pre></div><p>And, the waPC runtime is implemented around a type:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Runtime</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">m</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">wapc</span>.<span style="color:#a6e22e">Module</span>
-}
-</code></pre></div><p>That has an <code>Invoke</code> method:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#a6e22e">Function</span>) <span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">any</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>, <span style="color:#66d9ef">error</span>) {
-	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[wapc:Function:Invoke] Entered&#34;</span>)
-	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
-	<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">i</span>.<span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">op</span>, <span style="color:#a6e22e">any</span>.<span style="color:#a6e22e">GetValue</span>())
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>{}, <span style="color:#a6e22e">err</span>
-	}
-	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>{
-		<span style="color:#a6e22e">TypeUrl</span>: <span style="color:#e6db74">&#34;&#34;</span>,
-		<span style="color:#a6e22e">Value</span>:   <span style="color:#a6e22e">b</span>,
-	}, <span style="color:#66d9ef">nil</span>
-}
-</code></pre></div><p>And this, of course, calls the waPC <code>Invoke</code> function that does the heavy-lifting in invoking the call on the guest&rsquo;s WASM function and returning the result.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Server</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">host</span> <span style="color:#a6e22e">wasm</span>.<span style="color:#a6e22e">Runtime</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">repo</span> <span style="color:#a6e22e">wasm</span>.<span style="color:#a6e22e">Repository</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Instances cache
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">instance</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">wasm</span>.<span style="color:#a6e22e">Instance</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>Invoke</code> method is simply:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeRequest</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">meta</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">GetMetadata</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">id</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">GetId</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[Server:Invoke] Metadata: %s&#34;</span>, <span style="color:#a6e22e">id</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rdr</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">repo</span>.<span style="color:#a6e22e">Open</span>(<span style="color:#a6e22e">wasm</span>.<span style="color:#a6e22e">ToMetadata</span>(<span style="color:#a6e22e">meta</span>))
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Cache WASM instances
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">instance</span>[<span style="color:#a6e22e">id</span>] <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadAll</span>(<span style="color:#a6e22e">rdr</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[Server:Invoke] Cacheing Instance: %s&#34;</span>, <span style="color:#a6e22e">id</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">instance</span>[<span style="color:#a6e22e">id</span>], <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">host</span>.<span style="color:#a6e22e">Create</span>(<span style="color:#a6e22e">b</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">name</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">GetRequest</span>().<span style="color:#a6e22e">GetName</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">name</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;&#34;</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;WASM function name cannot be null&#34;</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Invoke Function on cached Instance
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">f</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">instance</span>[<span style="color:#a6e22e">id</span>].<span style="color:#a6e22e">Function</span>(<span style="color:#a6e22e">name</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">params</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">GetRequest</span>().<span style="color:#a6e22e">GetParameters</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">params</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">InvokeResponse</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Response</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">FunctionResponse</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Result</span>: <span style="color:#a6e22e">result</span>,
+</span></span><span style="display:flex;"><span>		},
+</span></span><span style="display:flex;"><span>	}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And, the waPC runtime is implemented around a type:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Runtime</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">m</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">wapc</span>.<span style="color:#a6e22e">Module</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>That has an <code>Invoke</code> method:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#a6e22e">Function</span>) <span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">any</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[wapc:Function:Invoke] Entered&#34;</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">i</span>.<span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">op</span>, <span style="color:#a6e22e">any</span>.<span style="color:#a6e22e">GetValue</span>())
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">TypeUrl</span>: <span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Value</span>:   <span style="color:#a6e22e">b</span>,
+</span></span><span style="display:flex;"><span>	}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And this, of course, calls the waPC <code>Invoke</code> function that does the heavy-lifting in invoking the call on the guest&rsquo;s WASM function and returning the result.</p>
 <ul class="pa0">
   
    <li class="list di">

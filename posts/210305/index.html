@@ -7,7 +7,7 @@
     <title>Prometheus VPA Recommendations | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Visualizing VPA Recommendations with Prometheus">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -208,196 +208,196 @@ if (!doNotTrack) {
 <h2 id="kubernetes-resources">Kubernetes Resources</h2>
 <p>Visual Studio Code has begun to bug me (reasonably) to add <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/"><code>resources</code></a> to Kubernetes manifests.</p>
 <p>E.g.:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">resources</span>:
-  <span style="color:#f92672">limits</span>:
-    <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;1&#34;</span>
-    <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;512Mi&#34;</span>
-</code></pre></div><p>I&rsquo;ve been spending time with Deislab&rsquo;s <a href="https://github.com/deislabs/akri">Akri</a> and decided to determine whether Akri&rsquo;s primary resources (Agent, Controller) and some of my creations HTTP Device and Discovery, were being suitably constrained.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">limits</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;1&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;512Mi&#34;</span>
+</span></span></code></pre></div><p>I&rsquo;ve been spending time with Deislab&rsquo;s <a href="https://github.com/deislabs/akri">Akri</a> and decided to determine whether Akri&rsquo;s primary resources (Agent, Controller) and some of my creations HTTP Device and Discovery, were being suitably constrained.</p>
 <p>None of them are.</p>
 <p>The immediate question is, what CPU and memory requests and limits should I use?</p>
 <h2 id="kubectl-top"><code>kubectl top</code></h2>
 <p><code>kubectl top</code> is proposed:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl top pods <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>akri-system
-
-NAME                        CPU<span style="color:#f92672">(</span>cores<span style="color:#f92672">)</span>   MEMORY<span style="color:#f92672">(</span>bytes<span style="color:#f92672">)</span>   
-akri-agent-dhm4s            0m           14Mi            
-akri-controller-vlvvv       0m           5Mi             
-akri-http-discovery-v4dfn   0m           4Mi             
-akri-http-0d65a6-pod        1m           6Mi             
-akri-http-1daa25-pod        1m           7Mi             
-akri-http-286fb9-pod        1m           6Mi             
-akri-http-31f1eb-pod        1m           5Mi             
-akri-http-464fa2-pod        1m           6Mi             
-</code></pre></div><h2 id="metrics-server"><code>metrics-server</code></h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl top pods <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>akri-system
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>NAME                        CPU<span style="color:#f92672">(</span>cores<span style="color:#f92672">)</span>   MEMORY<span style="color:#f92672">(</span>bytes<span style="color:#f92672">)</span>   
+</span></span><span style="display:flex;"><span>akri-agent-dhm4s            0m           14Mi            
+</span></span><span style="display:flex;"><span>akri-controller-vlvvv       0m           5Mi             
+</span></span><span style="display:flex;"><span>akri-http-discovery-v4dfn   0m           4Mi             
+</span></span><span style="display:flex;"><span>akri-http-0d65a6-pod        1m           6Mi             
+</span></span><span style="display:flex;"><span>akri-http-1daa25-pod        1m           7Mi             
+</span></span><span style="display:flex;"><span>akri-http-286fb9-pod        1m           6Mi             
+</span></span><span style="display:flex;"><span>akri-http-31f1eb-pod        1m           5Mi             
+</span></span><span style="display:flex;"><span>akri-http-464fa2-pod        1m           6Mi             
+</span></span></code></pre></div><h2 id="metrics-server"><code>metrics-server</code></h2>
 <p>To get instrumentation for <code>kubectl top</code>, you must be running <a href="https://github.com/kubernetes-sigs/metrics-server"><code>metrics-server</code></a></p>
 <p>I&rsquo;m using <a href="https://microk8s.io">MicroK8s</a> and installing <code>metrics-server</code> is as simple as:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">microk8s enable metrics-server
-</code></pre></div><p>Check the <code>metrics-server</code> <a href="https://github.com/kubernetes-sigs/metrics-server">repo</a> for installation instructions if you&rsquo;re not use MicroK8s.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>microk8s enable metrics-server
+</span></span></code></pre></div><p>Check the <code>metrics-server</code> <a href="https://github.com/kubernetes-sigs/metrics-server">repo</a> for installation instructions if you&rsquo;re not use MicroK8s.</p>
 <h2 id="vertical-pod-autoscaler-vpa">Vertical Pod Autoscaler (VPA)</h2>
 <p>Daniel&rsquo;s <a href="https://medium.com/infrastructure-adventures/vertical-pod-autoscaler-deep-dive-limitations-and-real-world-examples-9195f8422724">Vertical Pod Autoscaler deep dive</a> is very helpful. I recommend it.</p>
 <p>I was unfamiliar with this tool.</p>
 <p>I&rsquo;m becoming reacquainted with Helm (partly through the Akri project) and, while still find the tool a little over-wrought, dropping the cluster-side tiller has been good and, I will admit, it&rsquo;s probably the best way to deploy applications to clusters.</p>
 <p>MicroK8s (1.20) includes an older version of Helm so I&rsquo;ve switched to aliasing <code>helm3</code> to the Helm team&rsquo;s container image:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">microk8s.helm3 version
-version.BuildInfo<span style="color:#f92672">{</span>Version:<span style="color:#e6db74">&#34;v3.0.2&#34;</span>, GitCommit:<span style="color:#e6db74">&#34;19e47ee3283ae98139d98460de796c1be1e3975f&#34;</span>, GitTreeState:<span style="color:#e6db74">&#34;clean&#34;</span>, GoVersion:<span style="color:#e6db74">&#34;go1.13.5&#34;</span><span style="color:#f92672">}</span>
-
-VERS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;3.5.2&#34;</span>
-alias helm3<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;docker run \
-</span><span style="color:#e6db74">--interactive --tty --rm \
-</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.kube:/root/.kube \
-</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.helm:/root/.helm \
-</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.config/helm:/root/.config/helm \
-</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cache/helm:/root/.cache/helm \
-</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/akri/deployment:/apps \
-</span><span style="color:#e6db74">alpine/helm:</span><span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-</code></pre></div><p>There&rsquo;s a Helm chart (for everything) including VPA thanks to the <a href="https://www.fairwinds.com/">Fairwinds</a> team:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>microk8s.helm3 version
+</span></span><span style="display:flex;"><span>version.BuildInfo<span style="color:#f92672">{</span>Version:<span style="color:#e6db74">&#34;v3.0.2&#34;</span>, GitCommit:<span style="color:#e6db74">&#34;19e47ee3283ae98139d98460de796c1be1e3975f&#34;</span>, GitTreeState:<span style="color:#e6db74">&#34;clean&#34;</span>, GoVersion:<span style="color:#e6db74">&#34;go1.13.5&#34;</span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>VERS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;3.5.2&#34;</span>
+</span></span><span style="display:flex;"><span>alias helm3<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;docker run \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">--interactive --tty --rm \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.kube:/root/.kube \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.helm:/root/.helm \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.config/helm:/root/.config/helm \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cache/helm:/root/.cache/helm \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/akri/deployment:/apps \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">alpine/helm:</span><span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span></code></pre></div><p>There&rsquo;s a Helm chart (for everything) including VPA thanks to the <a href="https://www.fairwinds.com/">Fairwinds</a> team:</p>
 <p><a href="https://github.com/FairwindsOps/charts/tree/master/stable/vpa">https://github.com/FairwindsOps/charts/tree/master/stable/vpa</a></p>
 <blockquote>
 <p><strong>NOTE</strong> Fairwinds provides a tool called <a href="https://www.fairwinds.com/blog/introducing-goldilocks-a-tool-for-recommending-resource-requests">Goldilocks</a> which is VPA plus some UI tooling.</p>
 </blockquote>
 <p>You can:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">helm3 repo add fairwinds-stable https://charts.fairwinds.com/stable
-<span style="color:#e6db74">&#34;fairwinds-stable&#34;</span> has been added to your repositories
-
-helm3 repo update
-
-NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;vpa-system&#34;</span>
-helm3 install vpa fairwinds-stable/vpa <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--create-namespace
-</code></pre></div><p>Once VPA is installed, it&rsquo;s configured by creating <code>VerticalPodAutoscaler</code> Kinds.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>helm3 repo add fairwinds-stable https://charts.fairwinds.com/stable
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;fairwinds-stable&#34;</span> has been added to your repositories
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>helm3 repo update
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;vpa-system&#34;</span>
+</span></span><span style="display:flex;"><span>helm3 install vpa fairwinds-stable/vpa <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--create-namespace
+</span></span></code></pre></div><p>Once VPA is installed, it&rsquo;s configured by creating <code>VerticalPodAutoscaler</code> Kinds.</p>
 <p>Since I mentioned Akri, here are two <code>VerticalPodAutoscaler</code> manifests (<a href="https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#example-vpa-configuration">Example</a>). The first for Akri&rsquo;s Agent (DaemonSet) and the second for Akri&rsquo;s Controller (Deployment). <code>VerticalPodAutoscaler</code>s are created in the Namespace where the resources reside. In this case, where I&rsquo;ve deployed Akri in the <code>akri-system</code> namespace.</p>
 <p>These are defined with <code>UpdateMode: &quot;Off&quot;</code> because I want them to calculate recommendations but not enforce them:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#39;
-</span><span style="color:#e6db74">apiVersion: autoscaling.k8s.io/v1
-</span><span style="color:#e6db74">kind: VerticalPodAutoscaler
-</span><span style="color:#e6db74">metadata:
-</span><span style="color:#e6db74">  name: akri-agent
-</span><span style="color:#e6db74">spec:
-</span><span style="color:#e6db74">  targetRef:
-</span><span style="color:#e6db74">    apiVersion: &#34;apps/v1&#34;
-</span><span style="color:#e6db74">    kind:       DaemonSet
-</span><span style="color:#e6db74">    name:       akri-agent-daemonset
-</span><span style="color:#e6db74">  updatePolicy:
-</span><span style="color:#e6db74">    updateMode: &#34;Off&#34; 
-</span><span style="color:#e6db74">&#39;</span> | kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span>akri-system
- 
-echo <span style="color:#e6db74">&#39;
-</span><span style="color:#e6db74">apiVersion: autoscaling.k8s.io/v1
-</span><span style="color:#e6db74">kind: VerticalPodAutoscaler
-</span><span style="color:#e6db74">metadata:
-</span><span style="color:#e6db74">  name: akri-controller
-</span><span style="color:#e6db74">spec:
-</span><span style="color:#e6db74">  targetRef:
-</span><span style="color:#e6db74">    apiVersion: &#34;apps/v1&#34;
-</span><span style="color:#e6db74">    kind:       Deployment
-</span><span style="color:#e6db74">    name:       akri-controller-deployment
-</span><span style="color:#e6db74">  updatePolicy:
-</span><span style="color:#e6db74">    updateMode: &#34;Off&#34; 
-</span><span style="color:#e6db74">&#39;</span> | kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span>akri-system
-</code></pre></div><p>After a short time, you can query these to see what recommendations have been calculated:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get vpa <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>akri-system <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.items[*].status.recommendation}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq -r .
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
-  <span style="color:#f92672">&#34;containerRecommendations&#34;</span>: [
-    {
-      <span style="color:#f92672">&#34;containerName&#34;</span>: <span style="color:#e6db74">&#34;akri-agent&#34;</span>,
-      <span style="color:#f92672">&#34;lowerBound&#34;</span>: {
-        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
-        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
-      },
-      <span style="color:#f92672">&#34;target&#34;</span>: {
-        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
-        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
-      },
-      <span style="color:#f92672">&#34;uncappedTarget&#34;</span>: {
-        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
-        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
-      },
-      <span style="color:#f92672">&#34;upperBound&#34;</span>: {
-        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;521m&#34;</span>,
-        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;1118671679&#34;</span>
-      }
-    }
-  ]
-}
-{
-  <span style="color:#f92672">&#34;containerRecommendations&#34;</span>: [
-    {
-      <span style="color:#f92672">&#34;containerName&#34;</span>: <span style="color:#e6db74">&#34;akri-controller&#34;</span>,
-      <span style="color:#f92672">&#34;lowerBound&#34;</span>: {
-        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
-        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
-      },
-      <span style="color:#f92672">&#34;target&#34;</span>: {
-        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
-        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
-      },
-      <span style="color:#f92672">&#34;uncappedTarget&#34;</span>: {
-        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
-        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
-      },
-      <span style="color:#f92672">&#34;upperBound&#34;</span>: {
-        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;521m&#34;</span>,
-        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;545693548&#34;</span>
-      }
-    }
-  ]
-}
-</code></pre></div><p>Very useful!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>echo <span style="color:#e6db74">&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">apiVersion: autoscaling.k8s.io/v1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">kind: VerticalPodAutoscaler
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">metadata:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  name: akri-agent
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">spec:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  targetRef:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    apiVersion: &#34;apps/v1&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    kind:       DaemonSet
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    name:       akri-agent-daemonset
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  updatePolicy:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    updateMode: &#34;Off&#34; 
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#39;</span> | kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span>akri-system
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">apiVersion: autoscaling.k8s.io/v1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">kind: VerticalPodAutoscaler
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">metadata:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  name: akri-controller
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">spec:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  targetRef:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    apiVersion: &#34;apps/v1&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    kind:       Deployment
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    name:       akri-controller-deployment
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  updatePolicy:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    updateMode: &#34;Off&#34; 
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#39;</span> | kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span>akri-system
+</span></span></code></pre></div><p>After a short time, you can query these to see what recommendations have been calculated:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get vpa <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>akri-system <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.items[*].status.recommendation}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r .
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;containerRecommendations&#34;</span>: [
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;containerName&#34;</span>: <span style="color:#e6db74">&#34;akri-agent&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;lowerBound&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;target&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;uncappedTarget&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;upperBound&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;521m&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;1118671679&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;containerRecommendations&#34;</span>: [
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;containerName&#34;</span>: <span style="color:#e6db74">&#34;akri-controller&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;lowerBound&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;target&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;uncappedTarget&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;15m&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;104857600&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;upperBound&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;cpu&#34;</span>: <span style="color:#e6db74">&#34;521m&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;memory&#34;</span>: <span style="color:#e6db74">&#34;545693548&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Very useful!</p>
 <p>So, I got to thinking, can I monitor these in Prometheus?</p>
 <p>Why, yes, you can but&hellip;</p>
 <h2 id="digression-podmonitor">Digression: PodMonitor</h2>
 <p>Daniel&rsquo;s blog mentions that the <code>recommender</code> exposes (Prometheus) metrics.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get deployment/vpa-recommender <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>vpa-system <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.template.spec.containers[?(@.name==&#39;vpa&#39;)].ports}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq .
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">[
-  {
-    <span style="color:#f92672">&#34;containerPort&#34;</span>: <span style="color:#ae81ff">8942</span>,
-    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;metrics&#34;</span>,
-    <span style="color:#f92672">&#34;protocol&#34;</span>: <span style="color:#e6db74">&#34;TCP&#34;</span>
-  }
-]
-</code></pre></div><p>And, if you <code>port-forward</code> to this, you can indeed see Prometheus metrics:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl port-forward deployment/vpa-recommender <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>vpa-system <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>8942:8942
-</code></pre></div><p>And then:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl --silent localhost:8942/metrics <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| grep <span style="color:#e6db74">&#34;TYPE vpa_recommender[_a-z]*&#34;</span>
-<span style="color:#75715e"># TYPE vpa_recommender_aggregate_container_states_count gauge</span>
-<span style="color:#75715e"># TYPE vpa_recommender_execution_latency_seconds histogram</span>
-<span style="color:#75715e"># TYPE vpa_recommender_recommendation_latency_seconds histogram</span>
-<span style="color:#75715e"># TYPE vpa_recommender_vpa_objects_count gauge</span>
-</code></pre></div><p>But, after digressing on this for a while, I realized this isn&rsquo;t what I want. There&rsquo;s insufficient detail here.</p>
-<p>I did learn about the Prometheus Operator&rsquo;s [PodMonitor]s though. I discovered that you can create these to surface resources in Prometheus' service discovery which is very clever:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get podmonitor/vpa-recommender <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>vpa-system <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>yaml
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">monitoring.coreos.com/v1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PodMonitor</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">vpa-recommender</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">podMetricsEndpoints</span>:
-  - <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/metrics</span>
-    <span style="color:#f92672">port</span>: <span style="color:#ae81ff">metrics</span>
-  <span style="color:#f92672">selector</span>:
-    <span style="color:#f92672">matchLabels</span>:
-      <span style="color:#f92672">app.kubernetes.io/component</span>: <span style="color:#ae81ff">recommender</span>
-      <span style="color:#f92672">app.kubernetes.io/instance</span>: <span style="color:#ae81ff">vpa</span>
-</code></pre></div><h3 id="prometheus">Prometheus</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get deployment/vpa-recommender <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>vpa-system <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.template.spec.containers[?(@.name==&#39;vpa&#39;)].ports}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq .
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>[
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;containerPort&#34;</span>: <span style="color:#ae81ff">8942</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;metrics&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;protocol&#34;</span>: <span style="color:#e6db74">&#34;TCP&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>]
+</span></span></code></pre></div><p>And, if you <code>port-forward</code> to this, you can indeed see Prometheus metrics:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl port-forward deployment/vpa-recommender <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>vpa-system <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>8942:8942
+</span></span></code></pre></div><p>And then:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl --silent localhost:8942/metrics <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| grep <span style="color:#e6db74">&#34;TYPE vpa_recommender[_a-z]*&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE vpa_recommender_aggregate_container_states_count gauge</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE vpa_recommender_execution_latency_seconds histogram</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE vpa_recommender_recommendation_latency_seconds histogram</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE vpa_recommender_vpa_objects_count gauge</span>
+</span></span></code></pre></div><p>But, after digressing on this for a while, I realized this isn&rsquo;t what I want. There&rsquo;s insufficient detail here.</p>
+<p>I did learn about the Prometheus Operator&rsquo;s [PodMonitor]s though. I discovered that you can create these to surface resources in Prometheus&rsquo; service discovery which is very clever:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get podmonitor/vpa-recommender <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>vpa-system <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>yaml
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">monitoring.coreos.com/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PodMonitor</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">vpa-recommender</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">podMetricsEndpoints</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/metrics</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">port</span>: <span style="color:#ae81ff">metrics</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">app.kubernetes.io/component</span>: <span style="color:#ae81ff">recommender</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">app.kubernetes.io/instance</span>: <span style="color:#ae81ff">vpa</span>
+</span></span></code></pre></div><h3 id="prometheus">Prometheus</h3>
 <p>For what follows, we will need Prometheus. I highly recommend the Prometheus Operator and, if you&rsquo;re using MicroK8s, you can deploy this trivially using:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">microk8s enable prometheus
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>microk8s enable prometheus
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> This includes Grafana and &ndash; as I learned after another digression &ndash; <code>kube-state-metrics</code>. If only I&rsquo;d looked more closely at the service discovery page (see below) and noticed the <code>monitoring/kube-state-metrics</code> entries!</p>
 </blockquote>
 <p><img src="/images/210305.prometheus.sd.png" alt="Prometheus: Service Discovery"></p>
@@ -417,56 +417,56 @@ echo <span style="color:#e6db74">&#39;
 </blockquote>
 <p><code>kube-state-metrics</code> includes metrics for Vertical Pod Autoscaler (<a href="https://github.com/kubernetes/kube-state-metrics#enabling-verticalpodautoscalers">note</a>). The documentation states that these are disabled by default <strong>and</strong> require a specific version (<code>v1beta2</code>) of the VPA CRDs.</p>
 <p>Fortunately, I was good on the CRD versions:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get crd/verticalpodautoscalers.autoscaling.k8s.io <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.versions[*].name}&#34;</span>
-v1beta1 v1beta2 v1
-</code></pre></div><p>But:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs deployment/kube-state-metrics <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>kube-state-metrics
-
-...
-Active resources:
-  certificatesigningrequests,configmaps,cronjobs,
-  daemonsets,deployments,endpoints,horizontalpodautoscalers,
-  ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,
-  namespaces,networkpolicies,nodes,persistentvolumeclaims,
-  persistentvolumes,poddisruptionbudgets,pods,replicasets,
-  replicationcontrollers,resourcequotas,secrets,services,
-  statefulsets,storageclasses,validatingwebhookconfigurations,
-  volumeattachments
-...
-</code></pre></div><p>The list of <code>Active resources</code> does not include <code>verticalpodautoscalers</code> probably because these are disabled by default (per the docs).</p>
-<p>Double-checking on Prometheus' UI (<code>:9090</code>) expression browser, I was able to enumerate some <code>kube_</code> metrics from <code>kube-state-metrics</code> but none <code>kube_verticalpodautoscaler_</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get crd/verticalpodautoscalers.autoscaling.k8s.io <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.versions[*].name}&#34;</span>
+</span></span><span style="display:flex;"><span>v1beta1 v1beta2 v1
+</span></span></code></pre></div><p>But:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl logs deployment/kube-state-metrics <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>kube-state-metrics
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>Active resources:
+</span></span><span style="display:flex;"><span>  certificatesigningrequests,configmaps,cronjobs,
+</span></span><span style="display:flex;"><span>  daemonsets,deployments,endpoints,horizontalpodautoscalers,
+</span></span><span style="display:flex;"><span>  ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,
+</span></span><span style="display:flex;"><span>  namespaces,networkpolicies,nodes,persistentvolumeclaims,
+</span></span><span style="display:flex;"><span>  persistentvolumes,poddisruptionbudgets,pods,replicasets,
+</span></span><span style="display:flex;"><span>  replicationcontrollers,resourcequotas,secrets,services,
+</span></span><span style="display:flex;"><span>  statefulsets,storageclasses,validatingwebhookconfigurations,
+</span></span><span style="display:flex;"><span>  volumeattachments
+</span></span><span style="display:flex;"><span>...
+</span></span></code></pre></div><p>The list of <code>Active resources</code> does not include <code>verticalpodautoscalers</code> probably because these are disabled by default (per the docs).</p>
+<p>Double-checking on Prometheus&rsquo; UI (<code>:9090</code>) expression browser, I was able to enumerate some <code>kube_</code> metrics from <code>kube-state-metrics</code> but none <code>kube_verticalpodautoscaler_</code>.</p>
 <p>The issue is that the <code>kube-state-metrics</code> Deployment as deployed by the Operator is not configured to use <code>verticalpodautoscalers</code>; it does not include <code>verticalpodautoscalers</code> in its <code>resources</code> flag as defined by the <a href="https://github.com/kubernetes/kube-state-metrics/blob/master/docs/cli-arguments.md">CLI</a>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get deployment/kube-state-metrics <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.template.spec.containers[?(@.name==&#39;kube-state-metrics&#39;)]}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq .
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
-  <span style="color:#f92672">&#34;args&#34;</span>: [
-    <span style="color:#e6db74">&#34;--host=127.0.0.1&#34;</span>,
-    <span style="color:#e6db74">&#34;--port=8081&#34;</span>,
-    <span style="color:#e6db74">&#34;--telemetry-host=127.0.0.1&#34;</span>,
-    <span style="color:#e6db74">&#34;--telemetry-port=8082&#34;</span>,
-  ],
-  <span style="color:#f92672">&#34;image&#34;</span>: <span style="color:#e6db74">&#34;.../kube-state-metrics:v1.9.7&#34;</span>,
-  <span style="color:#f92672">&#34;imagePullPolicy&#34;</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>,
-  <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;kube-state-metrics&#34;</span>,
-  <span style="color:#f92672">&#34;resources&#34;</span>: {},
-  <span style="color:#f92672">&#34;terminationMessagePath&#34;</span>: <span style="color:#e6db74">&#34;/dev/termination-log&#34;</span>,
-  <span style="color:#f92672">&#34;terminationMessagePolicy&#34;</span>: <span style="color:#e6db74">&#34;File&#34;</span>
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get deployment/kube-state-metrics <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.template.spec.containers[?(@.name==&#39;kube-state-metrics&#39;)]}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq .
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;args&#34;</span>: [
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--host=127.0.0.1&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--port=8081&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--telemetry-host=127.0.0.1&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--telemetry-port=8082&#34;</span>,
+</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;image&#34;</span>: <span style="color:#e6db74">&#34;.../kube-state-metrics:v1.9.7&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;imagePullPolicy&#34;</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;kube-state-metrics&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;resources&#34;</span>: {},
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;terminationMessagePath&#34;</span>: <span style="color:#e6db74">&#34;/dev/termination-log&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;terminationMessagePolicy&#34;</span>: <span style="color:#e6db74">&#34;File&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The Operator doesn&rsquo;t specify Pod <code>&quot;resources&quot;: {}</code> either :-)</p>
 </blockquote>
 <p>I don&rsquo;t understand why but the Operator deploys sidecars with this container too which complicates the next step:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get deployment/kube-state-metrics <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.template.spec.containers[*].name}&#34;</span>
-kube-state-metrics kube-rbac-proxy-main kube-rbac-proxy-self
-</code></pre></div><h2 id="kubectl-patch"><code>kubectl patch</code></h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get deployment/kube-state-metrics <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.template.spec.containers[*].name}&#34;</span>
+</span></span><span style="display:flex;"><span>kube-state-metrics kube-rbac-proxy-main kube-rbac-proxy-self
+</span></span></code></pre></div><h2 id="kubectl-patch"><code>kubectl patch</code></h2>
 <p>Ideally, we want to jam a <code>--resource=...</code> flag into that <code>args</code> list and re-apply the Deployment.</p>
 <p>The easiest way to do this if you can get it to work is to use <code>kubectl patch</code> and, though the documentation is <a href="https://kubernetes.io/docs/tasks/manage-kubernetes-objects/update-api-object-kubectl-patch/">confusing</a>, I&rsquo;ve previously used [JSON Patch] and find this the most powerful.</p>
 <p>Starting with the JSONPath above (plus the bit for Args):</p>
@@ -481,56 +481,56 @@ kube-state-metrics kube-rbac-proxy-main kube-rbac-proxy-self
 </ol>
 </blockquote>
 <p>We need only provide the value that we wish to add. This will be all the resources that were available by default <strong>plus</strong> <code>verticalpodautoscalers</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">RESOURCES<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;certificatesigningrequests,configmaps,cronjobs,&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;daemonsets,deployments,endpoints,horizontalpodautoscalers,&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;namespaces,networkpolicies,nodes,persistentvolumeclaims,&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;persistentvolumes,poddisruptionbudgets,pods,replicasets,&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;replicationcontrollers,resourcequotas,secrets,services,&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;statefulsets,storageclasses,validatingwebhookconfigurations,&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;verticalpodautoscalers,volumeattachments&#34;</span>
-
-PATCH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[{&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;&#39;op&#39;: &#39;add&#39;,&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;&#39;path&#39;:&#39;/spec/template/spec/containers/0/args/-&#39;,&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;&#39;value&#39;:\&#34;--resources=</span><span style="color:#e6db74">${</span>RESOURCES<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;}]&#34;</span>
-
-
-kubectl patch deployment/kube-state-metrics <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--patch<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>PATCH<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>RESOURCES<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;certificatesigningrequests,configmaps,cronjobs,&#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;daemonsets,deployments,endpoints,horizontalpodautoscalers,&#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,&#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;namespaces,networkpolicies,nodes,persistentvolumeclaims,&#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;persistentvolumes,poddisruptionbudgets,pods,replicasets,&#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;replicationcontrollers,resourcequotas,secrets,services,&#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;statefulsets,storageclasses,validatingwebhookconfigurations,&#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;verticalpodautoscalers,volumeattachments&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PATCH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[{&#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;&#39;op&#39;: &#39;add&#39;,&#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;&#39;path&#39;:&#39;/spec/template/spec/containers/0/args/-&#39;,&#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;&#39;value&#39;:\&#34;--resources=</span><span style="color:#e6db74">${</span>RESOURCES<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;}]&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl patch deployment/kube-state-metrics <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--patch<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>PATCH<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> I was unable to get <code>--dry-run=...</code> to work :-(</p>
 </blockquote>
 <p>And then:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get deployment/kube-state-metrics <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.template.spec.containers[0]}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq .
-</code></pre></div><p>This time yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
-  <span style="color:#f92672">&#34;args&#34;</span>: [
-    <span style="color:#e6db74">&#34;--host=127.0.0.1&#34;</span>,
-    <span style="color:#e6db74">&#34;--port=8081&#34;</span>,
-    <span style="color:#e6db74">&#34;--telemetry-host=127.0.0.1&#34;</span>,
-    <span style="color:#e6db74">&#34;--telemetry-port=8082&#34;</span>,
-    <span style="color:#e6db74">&#34;--resources=...,verticalpodautoscalers,...&#34;</span>
-  ],
-  <span style="color:#f92672">&#34;image&#34;</span>: <span style="color:#e6db74">&#34;.../kube-state-metrics:v1.9.7&#34;</span>,
-  <span style="color:#f92672">&#34;imagePullPolicy&#34;</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>,
-  <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;kube-state-metrics&#34;</span>,
-  <span style="color:#f92672">&#34;resources&#34;</span>: {},
-  <span style="color:#f92672">&#34;terminationMessagePath&#34;</span>: <span style="color:#e6db74">&#34;/dev/termination-log&#34;</span>,
-  <span style="color:#f92672">&#34;terminationMessagePolicy&#34;</span>: <span style="color:#e6db74">&#34;File&#34;</span>
-}
-</code></pre></div><p>And&hellip;</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get deployment/kube-state-metrics <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.template.spec.containers[0]}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq .
+</span></span></code></pre></div><p>This time yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;args&#34;</span>: [
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--host=127.0.0.1&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--port=8081&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--telemetry-host=127.0.0.1&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--telemetry-port=8082&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--resources=...,verticalpodautoscalers,...&#34;</span>
+</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;image&#34;</span>: <span style="color:#e6db74">&#34;.../kube-state-metrics:v1.9.7&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;imagePullPolicy&#34;</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;kube-state-metrics&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;resources&#34;</span>: {},
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;terminationMessagePath&#34;</span>: <span style="color:#e6db74">&#34;/dev/termination-log&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;terminationMessagePolicy&#34;</span>: <span style="color:#e6db74">&#34;File&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And&hellip;</p>
 <h2 id="graph">Graph</h2>
 <p><img src="/images/210305.prometheus.graph.png" alt="Prometheus: Graph"></p>
 <p>With PromQL:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">kube_verticalpodautoscaler_status_recommendation_containerrecommendations_lowerbound{resource=&#34;cpu&#34;}
-kube_verticalpodautoscaler_status_recommendation_containerrecommendations_upperbound{resource=&#34;cpu&#34;}
-</code></pre></div><p>Which is excellent, if not terribly interesting; I should probably now put some load on the system to give it an opportunity to find some realistic values.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>kube_verticalpodautoscaler_status_recommendation_containerrecommendations_lowerbound{resource=&#34;cpu&#34;}
+</span></span><span style="display:flex;"><span>kube_verticalpodautoscaler_status_recommendation_containerrecommendations_upperbound{resource=&#34;cpu&#34;}
+</span></span></code></pre></div><p>Which is excellent, if not terribly interesting; I should probably now put some load on the system to give it an opportunity to find some realistic values.</p>
 <p>That&rsquo;s all!</p>
 <h2 id="references">References</h2>
 <ul>

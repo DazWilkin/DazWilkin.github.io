@@ -7,7 +7,7 @@
     <title>Dapr | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="dapr exploration using MicroK8s with some Golang gRPC">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -198,205 +198,204 @@ if (!doNotTrack) {
 <p>I started with the <a href="https://github.com/dapr/quickstarts/tree/v1.0.0/hello-kubernetes">hello-kubernetes</a> quickstart. You&rsquo;ll either need to clone this repo <strong>or</strong> replaces references <code>./deploy</code> with <code>https://raw.githubusercontent.com/dapr/quickstarts/master/hello-kubernetes/deploy</code> in the <code>kubectl apply --filename=./deploy</code> commands below.</p>
 <p>I like <a href="https://microk8s.io">MicroK8s</a> and used it in the following. I&rsquo;m also trying to be more disciplined in using non-<code>default</code> namespaces in my clusters to ensure that apps work  outside of the <code>default</code> namespace and, more importantly, because non-<code>default</code> namespaces can be deleted thereby cleaning up.</p>
 <p>Dapr requires a more recent version of Helm (version?) than is shipped with MicroK8s 1.20.0 and so I found it easiest to use Helm in a container.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;dapr-system&#34;</span>
-
-kubectl create namespace <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-</code></pre></div><p>And then, something of the form:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">alias helm3<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;docker run \
-</span><span style="color:#e6db74">--interactive --tty --rm \
-</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.kube:/root/.kube \
-</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.helm:/root/.helm \
-</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.config/helm:/root/.config/helm \
-</span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cache/helm:/root/.cache/helm \
-</span><span style="color:#e6db74">alpine/helm:3.5.2&#34;</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;dapr-system&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl create namespace <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>And then, something of the form:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>alias helm3<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;docker run \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">--interactive --tty --rm \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/.kube:/root/.kube \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.helm:/root/.helm \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.config/helm:/root/.config/helm \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">--volume=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/.cache/helm:/root/.cache/helm \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">alpine/helm:3.5.2&#34;</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> Curiously, I&rsquo;ve been having issues with Dapr not functioning and, when e.g. checking <code>dapr-sidecar-injector</code> logs, receiving TLS handshake errors (always on <code>10.0.0.226</code>!?). Unfortunately,this issue only arises when you try to deploy a Dapr app (e.g. a Deployment with the Dapr annotations). Uninstalling and reinstalling Dapr appears to overcome (!?) this issue.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs deployment/dapr-sidecar-injector <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-2021/02/20 19:21:18 http: TLS handshake error from 10.0.0.226:46102: remote error: tls: bad certificate
-</code></pre></div><p>What&rsquo;s also curious is that error is always for <code>10.0.0.226</code> and there&rsquo;s nothing running on that IP:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get endpoints <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-</code></pre></div></blockquote>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">helm3 repo list
-helm3 repo add dapr https://dapr.github.io/helm-charts/
-helm3 repo update
-helm3 install dapr dapr/dapr --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> --wait
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl logs deployment/dapr-sidecar-injector <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>2021/02/20 19:21:18 http: TLS handshake error from 10.0.0.226:46102: remote error: tls: bad certificate
+</span></span></code></pre></div><p>What&rsquo;s also curious is that error is always for <code>10.0.0.226</code> and there&rsquo;s nothing running on that IP:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get endpoints <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div></blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>helm3 repo list
+</span></span><span style="display:flex;"><span>helm3 repo add dapr https://dapr.github.io/helm-charts/
+</span></span><span style="display:flex;"><span>helm3 repo update
+</span></span><span style="display:flex;"><span>helm3 install dapr dapr/dapr --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> --wait
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The above command mounts your <code>KUBECONFIG</code> file and 3 Helm-specific directorties (<code>.helm</code>, <code>.config/helm</code>, <code>.cache/helm</code>) into the container. These permit Helm to deploy to your cluster and to persist its state (e.g. repos) across invocations.</p>
 </blockquote>
 <p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">NAME: dapr
-LAST DEPLOYED: Thu Feb 19 12:00:00 2021
-NAMESPACE: dapr-system
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-Thank you for installing Dapr: High-performance, lightweight serverless runtime for cloud and edge
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>Your release is named dapr.
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>To get started with Dapr, we recommend using our quickstarts:
-https://github.com/dapr/quickstarts
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>For more information on running Dapr, visit:
-https://dapr.io
-<span style="color:#960050;background-color:#1e0010">
-</span></code></pre></div><p>Then you can:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get all --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-NAME                                         READY   STATUS
-pod/dapr-dashboard-65cc964bdd-ckv8h          1/1     Running
-pod/dapr-operator-754ffcd-cx7sk              1/1     Running
-pod/dapr-placement-server-0                  1/1     Running
-pod/dapr-sentry-f4fd59d65-v89jk              1/1     Running
-pod/dapr-sidecar-injector-5cd4454dcc-h5445   1/1     Running
-
-NAME                            TYPE        PORT<span style="color:#f92672">(</span>S<span style="color:#f92672">)</span>
-service/dapr-api                ClusterIP   80/TCP
-service/dapr-dashboard          ClusterIP   8080/TCP
-service/dapr-placement-server   ClusterIP   50005/TCP,8201/TCP
-service/dapr-sentry             ClusterIP   80/TCP
-service/dapr-sidecar-injector   ClusterIP   443/TCP
-
-NAME                                    READY   UP-TO-DATE   AVAIL
-deployment.apps/dapr-dashboard          1/1     <span style="color:#ae81ff">1</span>            <span style="color:#ae81ff">1</span>
-deployment.apps/dapr-operator           1/1     <span style="color:#ae81ff">1</span>            <span style="color:#ae81ff">1</span>
-deployment.apps/dapr-sentry             1/1     <span style="color:#ae81ff">1</span>            <span style="color:#ae81ff">1</span>
-deployment.apps/dapr-sidecar-injector   1/1     <span style="color:#ae81ff">1</span>            <span style="color:#ae81ff">1</span>
-
-NAME                                               DESIRED
-replicaset.apps/dapr-dashboard-65cc964bdd          <span style="color:#ae81ff">1</span>
-replicaset.apps/dapr-operator-754ffcd              <span style="color:#ae81ff">1</span>
-replicaset.apps/dapr-sentry-f4fd59d65              <span style="color:#ae81ff">1</span>
-replicaset.apps/dapr-sidecar-injector-5cd4454dcc   <span style="color:#ae81ff">1</span>
-
-NAME                                     READY
-statefulset.apps/dapr-placement-server   1/1
-
-NAME
-configuration.dapr.io/daprsystem
-</code></pre></div><p>Then install Redis:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">helm3 repo add bitnami https://charts.bitnami.com/bitnami
-helm3 repo update
-helm3 install redis bitnami/redis --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>NAME: dapr
+</span></span><span style="display:flex;"><span>LAST DEPLOYED: Thu Feb 19 12:00:00 2021
+</span></span><span style="display:flex;"><span>NAMESPACE: dapr-system
+</span></span><span style="display:flex;"><span>STATUS: deployed
+</span></span><span style="display:flex;"><span>REVISION: 1
+</span></span><span style="display:flex;"><span>TEST SUITE: None
+</span></span><span style="display:flex;"><span>NOTES:
+</span></span><span style="display:flex;"><span>Thank you for installing Dapr: High-performance, lightweight serverless runtime for cloud and edge
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>Your release is named dapr.
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>To get started with Dapr, we recommend using our quickstarts:
+</span></span><span style="display:flex;"><span>https://github.com/dapr/quickstarts
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>For more information on running Dapr, visit:
+</span></span><span style="display:flex;"><span>https://dapr.io
+</span></span></code></pre></div><p>Then you can:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get all --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>NAME                                         READY   STATUS
+</span></span><span style="display:flex;"><span>pod/dapr-dashboard-65cc964bdd-ckv8h          1/1     Running
+</span></span><span style="display:flex;"><span>pod/dapr-operator-754ffcd-cx7sk              1/1     Running
+</span></span><span style="display:flex;"><span>pod/dapr-placement-server-0                  1/1     Running
+</span></span><span style="display:flex;"><span>pod/dapr-sentry-f4fd59d65-v89jk              1/1     Running
+</span></span><span style="display:flex;"><span>pod/dapr-sidecar-injector-5cd4454dcc-h5445   1/1     Running
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>NAME                            TYPE        PORT<span style="color:#f92672">(</span>S<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>service/dapr-api                ClusterIP   80/TCP
+</span></span><span style="display:flex;"><span>service/dapr-dashboard          ClusterIP   8080/TCP
+</span></span><span style="display:flex;"><span>service/dapr-placement-server   ClusterIP   50005/TCP,8201/TCP
+</span></span><span style="display:flex;"><span>service/dapr-sentry             ClusterIP   80/TCP
+</span></span><span style="display:flex;"><span>service/dapr-sidecar-injector   ClusterIP   443/TCP
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>NAME                                    READY   UP-TO-DATE   AVAIL
+</span></span><span style="display:flex;"><span>deployment.apps/dapr-dashboard          1/1     <span style="color:#ae81ff">1</span>            <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>deployment.apps/dapr-operator           1/1     <span style="color:#ae81ff">1</span>            <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>deployment.apps/dapr-sentry             1/1     <span style="color:#ae81ff">1</span>            <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>deployment.apps/dapr-sidecar-injector   1/1     <span style="color:#ae81ff">1</span>            <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>NAME                                               DESIRED
+</span></span><span style="display:flex;"><span>replicaset.apps/dapr-dashboard-65cc964bdd          <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>replicaset.apps/dapr-operator-754ffcd              <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>replicaset.apps/dapr-sentry-f4fd59d65              <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>replicaset.apps/dapr-sidecar-injector-5cd4454dcc   <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>NAME                                     READY
+</span></span><span style="display:flex;"><span>statefulset.apps/dapr-placement-server   1/1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>NAME
+</span></span><span style="display:flex;"><span>configuration.dapr.io/daprsystem
+</span></span></code></pre></div><p>Then install Redis:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>helm3 repo add bitnami https://charts.bitnami.com/bitnami
+</span></span><span style="display:flex;"><span>helm3 repo update
+</span></span><span style="display:flex;"><span>helm3 install redis bitnami/redis --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The instructions were unclear but I installed Redis into the same namespace (<code>${NAMESPACE}</code>) as Dapr. It&rsquo;s likely this isn&rsquo;t required.</p>
 </blockquote>
 <p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">NAME: redis
-LAST DEPLOYED: Thu Feb 19 12:00:00 2021
-NAMESPACE: dapr-system
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-** Please be patient while the chart is being deployed **
-Redis(TM) can be accessed via port 6379 on the following DNS names from within your cluster:
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>redis-master.dapr-system.svc.cluster.local for read/write operations
-redis-slave.dapr-system.svc.cluster.local for read-only operations
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>To get your password run:
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>export REDIS_PASSWORD=$(\
-  kubectl get secret redis \
-  --namespace=dapr-system \
-  --output=jsonpath=&#34;{.data.redis-password}&#34; \
-| base64 --decode)
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>To connect to your Redis(TM) server:
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>1. Run a Redis(TM) pod that you can use as a client:
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>kubectl run redis-client --rm --tty -i --restart=&#39;Never&#39; \
---namespace dapr-system \
---env REDIS_PASSWORD=$REDIS_PASSWORD \
---image docker.io/bitnami/redis:6.0.10-debian-10-r19 \
--- bash
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>2. Connect using the Redis(TM) CLI:
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>redis-cli -h redis-master -a $REDIS_PASSWORD
-redis-cli -h redis-slave -a $REDIS_PASSWORD
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>To connect to your database from outside the cluster execute the following commands:
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>kubectl port-forward service/redis-master\
---namespace=dapr-system 6379:6379 &amp;
-    redis-cli -h 127.0.0.1 -p 6379 -a $REDIS_PASSWORD
-</code></pre></div><p>The Helm install for Redis creates a Secret (<code>redis</code>) containing the Redis password. You need only update the <code>redis-master</code>&rsquo;s DNS in the <code>hello-kubernetes</code> quickstart&rsquo;s <code>redis.yaml</code> file in the <code>deploy</code> directory. You can:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">sed <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;s|redis-master:6379|redis-master.</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">.svc.cluster.local:6379|g&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>./deploy/redis.yaml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>- <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-</code></pre></div><p>This manifest creates a Dapr <code>Component</code> CRD called <code>statestore</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get component/statestore <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>yaml
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">dapr.io/v1alpha1</span>
-<span style="color:#f92672">auth</span>:
-  <span style="color:#f92672">secretStore</span>: <span style="color:#ae81ff">kubernetes</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Component</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">statestore</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">dapr-system</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">metadata</span>:
-  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">redisHost</span>
-    <span style="color:#f92672">value</span>: <span style="color:#ae81ff">redis-master.dapr-system.svc.cluster.local:6379</span>
-  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">redisPassword</span>
-    <span style="color:#f92672">secretKeyRef</span>:
-      <span style="color:#f92672">key</span>: <span style="color:#ae81ff">redis-password</span>
-      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">redis</span>
-  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">state.redis</span>
-  <span style="color:#f92672">version</span>: <span style="color:#ae81ff">v1</span>
-</code></pre></div><p>Another CRD that&rsquo;s created by Dapr is <code>Configurations</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get configuration/daprsystem <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>yaml
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">dapr.io/v1alpha1</span>
-<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Configuration</span>
-<span style="color:#f92672">metadata</span>:
-  <span style="color:#f92672">annotations</span>:
-    <span style="color:#f92672">meta.helm.sh/release-name</span>: <span style="color:#ae81ff">dapr</span>
-    <span style="color:#f92672">meta.helm.sh/release-namespace</span>: <span style="color:#ae81ff">dapr-system</span>
-  <span style="color:#f92672">labels</span>:
-    <span style="color:#f92672">app.kubernetes.io/managed-by</span>: <span style="color:#ae81ff">Helm</span>
-  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">daprsystem</span>
-  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">dapr-system</span>
-<span style="color:#f92672">spec</span>:
-  <span style="color:#f92672">metric</span>:
-    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
-  <span style="color:#f92672">mtls</span>:
-    <span style="color:#f92672">allowedClockSkew</span>: <span style="color:#ae81ff">15m</span>
-    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
-    <span style="color:#f92672">workloadCertTTL</span>: <span style="color:#ae81ff">24h</span>
-</code></pre></div><p>Dapr includes a web-based dashboard that I found quite useful. You can port-forward to it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl port-forward service/dapr-dashboard <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> 8080:8080
-</code></pre></div><p>And then browse <code>http://localhost:8080</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>NAME: redis
+</span></span><span style="display:flex;"><span>LAST DEPLOYED: Thu Feb 19 12:00:00 2021
+</span></span><span style="display:flex;"><span>NAMESPACE: dapr-system
+</span></span><span style="display:flex;"><span>STATUS: deployed
+</span></span><span style="display:flex;"><span>REVISION: 1
+</span></span><span style="display:flex;"><span>TEST SUITE: None
+</span></span><span style="display:flex;"><span>NOTES:
+</span></span><span style="display:flex;"><span>** Please be patient while the chart is being deployed **
+</span></span><span style="display:flex;"><span>Redis(TM) can be accessed via port 6379 on the following DNS names from within your cluster:
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>redis-master.dapr-system.svc.cluster.local for read/write operations
+</span></span><span style="display:flex;"><span>redis-slave.dapr-system.svc.cluster.local for read-only operations
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>To get your password run:
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>export REDIS_PASSWORD=$(\
+</span></span><span style="display:flex;"><span>  kubectl get secret redis \
+</span></span><span style="display:flex;"><span>  --namespace=dapr-system \
+</span></span><span style="display:flex;"><span>  --output=jsonpath=&#34;{.data.redis-password}&#34; \
+</span></span><span style="display:flex;"><span>| base64 --decode)
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>To connect to your Redis(TM) server:
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>1. Run a Redis(TM) pod that you can use as a client:
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>kubectl run redis-client --rm --tty -i --restart=&#39;Never&#39; \
+</span></span><span style="display:flex;"><span>--namespace dapr-system \
+</span></span><span style="display:flex;"><span>--env REDIS_PASSWORD=$REDIS_PASSWORD \
+</span></span><span style="display:flex;"><span>--image docker.io/bitnami/redis:6.0.10-debian-10-r19 \
+</span></span><span style="display:flex;"><span>-- bash
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>2. Connect using the Redis(TM) CLI:
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>redis-cli -h redis-master -a $REDIS_PASSWORD
+</span></span><span style="display:flex;"><span>redis-cli -h redis-slave -a $REDIS_PASSWORD
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>To connect to your database from outside the cluster execute the following commands:
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>kubectl port-forward service/redis-master\
+</span></span><span style="display:flex;"><span>--namespace=dapr-system 6379:6379 &amp;
+</span></span><span style="display:flex;"><span>    redis-cli -h 127.0.0.1 -p 6379 -a $REDIS_PASSWORD
+</span></span></code></pre></div><p>The Helm install for Redis creates a Secret (<code>redis</code>) containing the Redis password. You need only update the <code>redis-master</code>&rsquo;s DNS in the <code>hello-kubernetes</code> quickstart&rsquo;s <code>redis.yaml</code> file in the <code>deploy</code> directory. You can:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;s|redis-master:6379|redis-master.</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">.svc.cluster.local:6379|g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>./deploy/redis.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>- <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>This manifest creates a Dapr <code>Component</code> CRD called <code>statestore</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get component/statestore <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>yaml
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">dapr.io/v1alpha1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">auth</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">secretStore</span>: <span style="color:#ae81ff">kubernetes</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Component</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">statestore</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">dapr-system</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">redisHost</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">value</span>: <span style="color:#ae81ff">redis-master.dapr-system.svc.cluster.local:6379</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">redisPassword</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">secretKeyRef</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">key</span>: <span style="color:#ae81ff">redis-password</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">redis</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">state.redis</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">version</span>: <span style="color:#ae81ff">v1</span>
+</span></span></code></pre></div><p>Another CRD that&rsquo;s created by Dapr is <code>Configurations</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get configuration/daprsystem <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>yaml
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">dapr.io/v1alpha1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Configuration</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">meta.helm.sh/release-name</span>: <span style="color:#ae81ff">dapr</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">meta.helm.sh/release-namespace</span>: <span style="color:#ae81ff">dapr-system</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app.kubernetes.io/managed-by</span>: <span style="color:#ae81ff">Helm</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">daprsystem</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">dapr-system</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">metric</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">mtls</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">allowedClockSkew</span>: <span style="color:#ae81ff">15m</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">workloadCertTTL</span>: <span style="color:#ae81ff">24h</span>
+</span></span></code></pre></div><p>Dapr includes a web-based dashboard that I found quite useful. You can port-forward to it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl port-forward service/dapr-dashboard <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> 8080:8080
+</span></span></code></pre></div><p>And then browse <code>http://localhost:8080</code></p>
 <p><img src="/images/210222.dapr.dashboard.png" alt="Dashboard"></p>
 <p>The Quickstart then has you install a Node.JS &ldquo;server&rdquo; app:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--filename<span style="color:#f92672">=</span>./deploy/node.yaml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--filename<span style="color:#f92672">=</span>./deploy/node.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> Before proceeding, I recommend you check the <code>dapr-sidecar-injector</code> logs at this point to determine whether you&rsquo;re receiving the certificate error I mentioned above. If you are, delete <code>node.yaml</code>, (helm) uninstall Dapr and try installing them both again. You do not need to delete Redis.</p>
 </blockquote>
 <p>To confirm that the Deployment has succeeded including that Dapr has injected a sidecar into the Deployment&rsquo;s Pods, you can:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl get pods <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--selector<span style="color:#f92672">=</span>app<span style="color:#f92672">=</span>node <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.items[*].spec.containers[*].image}&#34;</span>
-</code></pre></div><p>You should gets 2 containers in the result (albeit output on one line):</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">dapriosamples/hello-k8s-node:latest
-docker.io/daprio/daprd:1.0.0
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get pods <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--selector<span style="color:#f92672">=</span>app<span style="color:#f92672">=</span>node <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.items[*].spec.containers[*].image}&#34;</span>
+</span></span></code></pre></div><p>You should gets 2 containers in the result (albeit output on one line):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>dapriosamples/hello-k8s-node:latest
+</span></span><span style="display:flex;"><span>docker.io/daprio/daprd:1.0.0
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> A side-effect of the injector is that the Deployment will not include <code>daprd</code>; you can&rsquo;t <code>kubectl get</code> or <code>kubectl describe</code> the Deployment to see the <code>daprd</code> added.</p>
 </blockquote>
 <p>The server has a simple API:</p>
@@ -427,103 +426,103 @@ docker.io/daprio/daprd:1.0.0
 </tbody>
 </table>
 <p>Because the app&rsquo;s Deployment includes Dapr annotations (see below), when applied to the cluster, Dapr detected the Deployment and injected a sidecar into the Pods:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">annotations</span>:
-  <span style="color:#f92672">dapr.io/enabled</span>: <span style="color:#e6db74">&#34;true&#34;</span>
-  <span style="color:#f92672">dapr.io/app-id</span>: <span style="color:#e6db74">&#34;nodeapp&#34;</span>
-  <span style="color:#f92672">dapr.io/app-port</span>: <span style="color:#e6db74">&#34;3000&#34;</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">dapr.io/enabled</span>: <span style="color:#e6db74">&#34;true&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">dapr.io/app-id</span>: <span style="color:#e6db74">&#34;nodeapp&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">dapr.io/app-port</span>: <span style="color:#e6db74">&#34;3000&#34;</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> In the above <code>appi-id</code> of <code>nodeapp</code> just so happens to be the same name as the Kubernetes Deployment but it could be something entirely different. The <code>app-port</code> tells Dapr which port it should route traffic to (see below).</p>
 </blockquote>
 <p>We can gets logs for the NodeJS app:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs deployment/nodeapp <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>node <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-
-Node App listening on port 3000!
-</code></pre></div><p>And, logs for the Dapr (daemon) sidecar with:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs deployment/nodeapp <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>daprd <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;starting Dapr Runtime -- version 1.0.0 -- commit 6314733&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;log level set to: info&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metrics server started on :9090/&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;loading default configuration&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;kubernetes mode configured&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;app id: foo&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;mTLS enabled. creating sidecar authenticator&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;trust anchors and cert chain extracted successfully&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;authenticator created&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Initialized name resolution to kubernetes&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;component loaded. name: kubernetes, type: secretstores.kubernetes/v1&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;waiting for all outstanding components to be processed&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;all outstanding components processed&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled gRPC tracing middleware&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled gRPC metrics middleware&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;API gRPC server is running on port 50001&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled metrics http middleware&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled tracing http middleware&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http server is running on port 3500&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;The request body size parameter is: 4&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled gRPC tracing middleware&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled gRPC metrics middleware&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;sending workload csr request to sentry&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;certificate signed successfully&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;internal gRPC server is running on port 50002&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;application protocol: http. waiting on port 3000.  This will block until the app is listening on that port.&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;starting workload cert expiry watcher. current cert expires on: 2021-02-20 19:01:33 +0000 UTC&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;application discovered on port 3000&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;application configuration loaded&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;actor runtime started. actor idle timeout: 1h0m0s. actor scan interval: 30s&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;dapr initialized. Status: Running. Init Elapsed 28.082543ms&#34;</span>
-msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;placement tables updated, version: 0&#34;</span>
-</code></pre></div><p>What isn&rsquo;t clear from the Quickstart, is that the Dapr daemon (<code>daprd</code>) is the conduit through which an application (in one Pod) talks to the Dapr system.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl logs deployment/nodeapp <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>node <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Node App listening on port 3000!
+</span></span></code></pre></div><p>And, logs for the Dapr (daemon) sidecar with:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl logs deployment/nodeapp <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>daprd <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;starting Dapr Runtime -- version 1.0.0 -- commit 6314733&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;log level set to: info&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metrics server started on :9090/&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;loading default configuration&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;kubernetes mode configured&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;app id: foo&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;mTLS enabled. creating sidecar authenticator&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;trust anchors and cert chain extracted successfully&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;authenticator created&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Initialized name resolution to kubernetes&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;component loaded. name: kubernetes, type: secretstores.kubernetes/v1&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;waiting for all outstanding components to be processed&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;all outstanding components processed&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled gRPC tracing middleware&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled gRPC metrics middleware&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;API gRPC server is running on port 50001&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled metrics http middleware&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled tracing http middleware&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http server is running on port 3500&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;The request body size parameter is: 4&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled gRPC tracing middleware&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;enabled gRPC metrics middleware&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;sending workload csr request to sentry&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;certificate signed successfully&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;internal gRPC server is running on port 50002&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;application protocol: http. waiting on port 3000.  This will block until the app is listening on that port.&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;starting workload cert expiry watcher. current cert expires on: 2021-02-20 19:01:33 +0000 UTC&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;application discovered on port 3000&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;application configuration loaded&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;actor runtime started. actor idle timeout: 1h0m0s. actor scan interval: 30s&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;dapr initialized. Status: Running. Init Elapsed 28.082543ms&#34;</span>
+</span></span><span style="display:flex;"><span>msg<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;placement tables updated, version: 0&#34;</span>
+</span></span></code></pre></div><p>What isn&rsquo;t clear from the Quickstart, is that the Dapr daemon (<code>daprd</code>) is the conduit through which an application (in one Pod) talks to the Dapr system.</p>
 <p>Here&rsquo;s a simple proof:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#39;
-</span><span style="color:#e6db74">apiVersion: apps/v1
-</span><span style="color:#e6db74">kind: Deployment
-</span><span style="color:#e6db74">metadata:
-</span><span style="color:#e6db74">  name: debug
-</span><span style="color:#e6db74">  labels:
-</span><span style="color:#e6db74">    app: debug
-</span><span style="color:#e6db74">spec:
-</span><span style="color:#e6db74">  replicas: 1
-</span><span style="color:#e6db74">  selector:
-</span><span style="color:#e6db74">    matchLabels:
-</span><span style="color:#e6db74">      app: debug
-</span><span style="color:#e6db74">  template:
-</span><span style="color:#e6db74">    metadata:
-</span><span style="color:#e6db74">      labels:
-</span><span style="color:#e6db74">        app: debug
-</span><span style="color:#e6db74">      annotations:
-</span><span style="color:#e6db74">        dapr.io/enabled: &#34;true&#34;
-</span><span style="color:#e6db74">        dapr.io/app-id: &#34;debug&#34;
-</span><span style="color:#e6db74">    spec:
-</span><span style="color:#e6db74">      containers:
-</span><span style="color:#e6db74">        - name: busybox
-</span><span style="color:#e6db74">          image: radial/busyboxplus:curl
-</span><span style="color:#e6db74">          command:
-</span><span style="color:#e6db74">            - ash
-</span><span style="color:#e6db74">            - -c
-</span><span style="color:#e6db74">            - &#34;while true; do sleep 30; done&#34;
-</span><span style="color:#e6db74">&#39;</span> | kubectl apply --filename<span style="color:#f92672">=</span>- <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-</code></pre></div><p>This creates a Pod for us that we can use to evaluate Dapr&rsquo;s API:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl exec deployment/debug <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--stdin --tty <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--container busybox <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-- ash
-</code></pre></div><p>And then from within the shell:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>echo <span style="color:#e6db74">&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">apiVersion: apps/v1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">kind: Deployment
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">metadata:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  name: debug
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  labels:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    app: debug
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">spec:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  replicas: 1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  selector:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    matchLabels:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      app: debug
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  template:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    metadata:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      labels:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        app: debug
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      annotations:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        dapr.io/enabled: &#34;true&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        dapr.io/app-id: &#34;debug&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    spec:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      containers:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        - name: busybox
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          image: radial/busyboxplus:curl
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          command:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - ash
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - -c
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - &#34;while true; do sleep 30; done&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#39;</span> | kubectl apply --filename<span style="color:#f92672">=</span>- <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>This creates a Pod for us that we can use to evaluate Dapr&rsquo;s API:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl exec deployment/debug <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--stdin --tty <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--container busybox <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-- ash
+</span></span></code></pre></div><p>And then from within the shell:</p>
 <pre tabindex="0"><code class="language-ash" data-lang="ash">curl \
 --request GET \
 http://localhost:3500/v1.0/invoke/nodeapp/method/ports
-{&quot;DAPR_HTTP_PORT&quot;:&quot;3500&quot;,&quot;DAPR_GRPC_PORT&quot;:&quot;50001&quot;}
+{&#34;DAPR_HTTP_PORT&#34;:&#34;3500&#34;,&#34;DAPR_GRPC_PORT&#34;:&#34;50001&#34;}
 
 curl \
 --request GET \
 http://localhost:3500/v1.0/metadata
-{&quot;id&quot;:&quot;ashapp&quot;,&quot;actors&quot;:[],&quot;extended&quot;:{},&quot;components&quot;:[{&quot;name&quot;:&quot;statestore&quot;,&quot;type&quot;:&quot;state.redis&quot;,&quot;version&quot;:&quot;v1&quot;}]}
+{&#34;id&#34;:&#34;ashapp&#34;,&#34;actors&#34;:[],&#34;extended&#34;:{},&#34;components&#34;:[{&#34;name&#34;:&#34;statestore&#34;,&#34;type&#34;:&#34;state.redis&#34;,&#34;version&#34;:&#34;v1&#34;}]}
 </code></pre><p>The API is documented <a href="https://docs.dapr.io/reference/api/">here</a></p>
 <blockquote>
 <p><strong>NOTE</strong> The references to <code>localhost</code> that we&rsquo;re using refer to the network namespace <strong>within</strong> the Pod. You&rsquo;ll see that the <code>DAPR_HTTP_PORT</code> was returned as <code>3500</code> helps us understand that we&rsquo;re talking to the <code>daprd</code> container (Dapr) within the Pod to access this API. And it is able to access (proxy) e.g. other services (<code>nodeapp</code>) on our behalf.</p>
@@ -532,13 +531,13 @@ http://localhost:3500/v1.0/metadata
 <p><strong>NOTE</strong> I&rsquo;m deploying <code>debug</code> to Namespace <code>${NAMESPACE}</code> but, if you deploy <code>debug</code> to a different namespace (e.g. <code>test</code>), you will need to postfix <code>nodeapp</code> with the namespace (e.g. <code>/invoke/nodeapp.dapr-system/...</code>) in order to access it with the API.</p>
 </blockquote>
 <p>Per the Node.JS app&rsquo;s API, we can also add a <code>neworder</code> using:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--request POST <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Content-type: application/json&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#39;{&#34;data&#34;:{&#34;orderId&#34;:1000}}&#39;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--write-out <span style="color:#e6db74">&#39;%{response_code}&#39;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>http://localhost:3500/v1.0/invoke/nodeapp/method/neworder
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request POST <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Content-type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#39;{&#34;data&#34;:{&#34;orderId&#34;:1000}}&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--write-out <span style="color:#e6db74">&#39;%{response_code}&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>http://localhost:3500/v1.0/invoke/nodeapp/method/neworder
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> Because we&rsquo;re POST&rsquo;ing JSON to the endpoint, we must include the header</p>
 </blockquote>
 <blockquote>
@@ -548,187 +547,187 @@ http://localhost:3500/v1.0/metadata
 <p>After deploying the Node.JS app, the Dapr dashboard will include the app on it&rsquo;s homepage and you can check its metadata, configurations, logs etc.</p>
 <p><img src="/images/210222.dashboard.nodepython.png" alt="Dashboard running NodeJS|Python"></p>
 <p>There&rsquo;s a Python app included in the Quickstart which repeatedly POSTs <code>neworder</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl apply --filename<span style="color:#f92672">=</span>./deploy/python.yaml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-</code></pre></div><p>Initially, the Python app may log an error <code>failed to establish connection</code> but, it should soon connect via Dapr (!) to the Node.JS app:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl logs deployment/pythonapp <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>python <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-
-HTTPConnectionPool<span style="color:#f92672">(</span>host<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;localhost&#39;</span>, port<span style="color:#f92672">=</span>3500<span style="color:#f92672">)</span>: Max retries exceeded with url: /v1.0/invoke/nodeapp/method/neworder <span style="color:#f92672">(</span>Caused by NewConnectionError<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;&lt;urllib3.connection.HTTPConnection object at 0x7f1935152cd0&gt;: Failed to establish a new connection: [Errno 111] Connection refused&#39;</span><span style="color:#f92672">))</span>
-HTTP 500 <span style="color:#f92672">=</span>&gt; <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;errorCode&#34;</span>:<span style="color:#e6db74">&#34;ERR_DIRECT_INVOKE&#34;</span>,<span style="color:#e6db74">&#34;message&#34;</span>:<span style="color:#e6db74">&#34;invoke API is not ready&#34;</span><span style="color:#f92672">}</span>
-
-kubectl logs deployment/nodeapp <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>node <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-
-Node App listening on port 3000!
-DAPR_HTTP_PORT: <span style="color:#ae81ff">3500</span>
-DAPR_GRPC_PORT: <span style="color:#ae81ff">50001</span>
-Got a new order! Order ID: <span style="color:#ae81ff">1000</span>
-Successfully persisted state.
-Got a new order! Order ID: <span style="color:#ae81ff">3</span>
-Successfully persisted state.
-Got a new order! Order ID: <span style="color:#ae81ff">4</span>
-Successfully persisted state.
-Got a new order! Order ID: <span style="color:#ae81ff">5</span>
-Successfully persisted state.
-...
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply --filename<span style="color:#f92672">=</span>./deploy/python.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>Initially, the Python app may log an error <code>failed to establish connection</code> but, it should soon connect via Dapr (!) to the Node.JS app:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl logs deployment/pythonapp <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>python <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>HTTPConnectionPool<span style="color:#f92672">(</span>host<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;localhost&#39;</span>, port<span style="color:#f92672">=</span>3500<span style="color:#f92672">)</span>: Max retries exceeded with url: /v1.0/invoke/nodeapp/method/neworder <span style="color:#f92672">(</span>Caused by NewConnectionError<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;&lt;urllib3.connection.HTTPConnection object at 0x7f1935152cd0&gt;: Failed to establish a new connection: [Errno 111] Connection refused&#39;</span><span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>HTTP 500 <span style="color:#f92672">=</span>&gt; <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;errorCode&#34;</span>:<span style="color:#e6db74">&#34;ERR_DIRECT_INVOKE&#34;</span>,<span style="color:#e6db74">&#34;message&#34;</span>:<span style="color:#e6db74">&#34;invoke API is not ready&#34;</span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl logs deployment/nodeapp <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>node <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Node App listening on port 3000!
+</span></span><span style="display:flex;"><span>DAPR_HTTP_PORT: <span style="color:#ae81ff">3500</span>
+</span></span><span style="display:flex;"><span>DAPR_GRPC_PORT: <span style="color:#ae81ff">50001</span>
+</span></span><span style="display:flex;"><span>Got a new order! Order ID: <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>Successfully persisted state.
+</span></span><span style="display:flex;"><span>Got a new order! Order ID: <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>Successfully persisted state.
+</span></span><span style="display:flex;"><span>Got a new order! Order ID: <span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span>Successfully persisted state.
+</span></span><span style="display:flex;"><span>Got a new order! Order ID: <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>Successfully persisted state.
+</span></span><span style="display:flex;"><span>...
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The Python app is hard-coded to point to the Node.JS server in the same namespace:</p>
 </blockquote>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python">dapr_port <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>getenv(<span style="color:#e6db74">&#34;DAPR_HTTP_PORT&#34;</span>, <span style="color:#ae81ff">3500</span>)
-dapr_url <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;http://localhost:</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">/v1.0/invoke/nodeapp/method/neworder&#34;</span><span style="color:#f92672">.</span>format(dapr_port)
-</code></pre></div><p>We can show cross-namespacing using the <code>ash</code> app:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;different&#34;</span>
-kubectl create namespace <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-
-echo <span style="color:#e6db74">&#39;
-</span><span style="color:#e6db74">apiVersion: apps/v1
-</span><span style="color:#e6db74">kind: Deployment
-</span><span style="color:#e6db74">metadata:
-</span><span style="color:#e6db74">  name: debug
-</span><span style="color:#e6db74">  labels:
-</span><span style="color:#e6db74">    app: debug
-</span><span style="color:#e6db74">spec:
-</span><span style="color:#e6db74">  replicas: 1
-</span><span style="color:#e6db74">  selector:
-</span><span style="color:#e6db74">    matchLabels:
-</span><span style="color:#e6db74">      app: debug
-</span><span style="color:#e6db74">  template:
-</span><span style="color:#e6db74">    metadata:
-</span><span style="color:#e6db74">      labels:
-</span><span style="color:#e6db74">        app: debug
-</span><span style="color:#e6db74">      annotations:
-</span><span style="color:#e6db74">        dapr.io/enabled: &#34;true&#34;
-</span><span style="color:#e6db74">        dapr.io/app-id: &#34;debug&#34;
-</span><span style="color:#e6db74">    spec:
-</span><span style="color:#e6db74">      containers:
-</span><span style="color:#e6db74">        - name: busybox
-</span><span style="color:#e6db74">          image: radial/busyboxplus:curl
-</span><span style="color:#e6db74">          command:
-</span><span style="color:#e6db74">            - ash
-</span><span style="color:#e6db74">            - -c
-</span><span style="color:#e6db74">            - &#34;while true; do sleep 30; done&#34;
-</span><span style="color:#e6db74">&#39;</span> | kubectl apply --filename<span style="color:#f92672">=</span>- <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-
-kubectl exec deployment/debug <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--stdin --tty <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--container busybox <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-- ash
-</code></pre></div><p>For completeness, let&rsquo;s call the Dapr API through this Pod&rsquo;s <code>daprd</code>. Remember we&rsquo;re in a <code>${DIFFERENT}</code> namespace:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl localhost:3500/v1.0/metadata
-<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;id&#34;</span>:<span style="color:#e6db74">&#34;debug&#34;</span>,<span style="color:#e6db74">&#34;actors&#34;</span>:<span style="color:#f92672">[]</span>,<span style="color:#e6db74">&#34;extended&#34;</span>:<span style="color:#f92672">{}</span>,<span style="color:#e6db74">&#34;components&#34;</span>:<span style="color:#f92672">[{</span><span style="color:#e6db74">&#34;name&#34;</span>:<span style="color:#e6db74">&#34;statestore&#34;</span>,<span style="color:#e6db74">&#34;type&#34;</span>:<span style="color:#e6db74">&#34;state.redis&#34;</span>,<span style="color:#e6db74">&#34;version&#34;</span>:<span style="color:#e6db74">&#34;v1&#34;</span><span style="color:#f92672">}]}</span>
-</code></pre></div><p>That still works.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Python" data-lang="Python"><span style="display:flex;"><span>dapr_port <span style="color:#f92672">=</span> os<span style="color:#f92672">.</span>getenv(<span style="color:#e6db74">&#34;DAPR_HTTP_PORT&#34;</span>, <span style="color:#ae81ff">3500</span>)
+</span></span><span style="display:flex;"><span>dapr_url <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;http://localhost:</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">/v1.0/invoke/nodeapp/method/neworder&#34;</span><span style="color:#f92672">.</span>format(dapr_port)
+</span></span></code></pre></div><p>We can show cross-namespacing using the <code>ash</code> app:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;different&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl create namespace <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">apiVersion: apps/v1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">kind: Deployment
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">metadata:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  name: debug
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  labels:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    app: debug
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">spec:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  replicas: 1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  selector:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    matchLabels:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      app: debug
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  template:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    metadata:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      labels:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        app: debug
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      annotations:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        dapr.io/enabled: &#34;true&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        dapr.io/app-id: &#34;debug&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    spec:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      containers:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        - name: busybox
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          image: radial/busyboxplus:curl
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          command:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - ash
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - -c
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - &#34;while true; do sleep 30; done&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#39;</span> | kubectl apply --filename<span style="color:#f92672">=</span>- <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl exec deployment/debug <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--stdin --tty <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--container busybox <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-- ash
+</span></span></code></pre></div><p>For completeness, let&rsquo;s call the Dapr API through this Pod&rsquo;s <code>daprd</code>. Remember we&rsquo;re in a <code>${DIFFERENT}</code> namespace:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl localhost:3500/v1.0/metadata
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span><span style="color:#e6db74">&#34;id&#34;</span>:<span style="color:#e6db74">&#34;debug&#34;</span>,<span style="color:#e6db74">&#34;actors&#34;</span>:<span style="color:#f92672">[]</span>,<span style="color:#e6db74">&#34;extended&#34;</span>:<span style="color:#f92672">{}</span>,<span style="color:#e6db74">&#34;components&#34;</span>:<span style="color:#f92672">[{</span><span style="color:#e6db74">&#34;name&#34;</span>:<span style="color:#e6db74">&#34;statestore&#34;</span>,<span style="color:#e6db74">&#34;type&#34;</span>:<span style="color:#e6db74">&#34;state.redis&#34;</span>,<span style="color:#e6db74">&#34;version&#34;</span>:<span style="color:#e6db74">&#34;v1&#34;</span><span style="color:#f92672">}]}</span>
+</span></span></code></pre></div><p>That still works.</p>
 <p>Now let&rsquo;s try our original (now incorrect) call against the Node.JS server&rsquo;s API:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl localhost:3500/v1.0/invoke/nodeapp/method/ports <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--max-time <span style="color:#ae81ff">2</span>
-
-curl: <span style="color:#f92672">(</span>28<span style="color:#f92672">)</span> Operation timed out after <span style="color:#ae81ff">2000</span> milliseconds with <span style="color:#ae81ff">0</span> bytes received
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl localhost:3500/v1.0/invoke/nodeapp/method/ports <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--max-time <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>curl: <span style="color:#f92672">(</span>28<span style="color:#f92672">)</span> Operation timed out after <span style="color:#ae81ff">2000</span> milliseconds with <span style="color:#ae81ff">0</span> bytes received
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The <code>--max-time</code> is to ensure you don&rsquo;t wait too long for what we know won&rsquo;t work</p>
 </blockquote>
 <p>This is because, <code>nodeapp</code> is not present in the <code>${DIFFERENT}</code> namespace and thus inaccessible.</p>
 <p>So, how do we access <code>nodeapp</code> in the <code>${NAMESPACE}==dapr-system</code> namespace? We append the app&rsquo;s namespace to its name: <code>nodeapp</code> &ndash;&gt; <code>nodeapp.dapr-system</code></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl localhost:3500/v1.0/invoke/nodeapp.dapr-system/method/ports <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--max-time <span style="color:#ae81ff">2</span>
-<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;DAPR_HTTP_PORT&#34;</span>:<span style="color:#e6db74">&#34;3500&#34;</span>,<span style="color:#e6db74">&#34;DAPR_GRPC_PORT&#34;</span>:<span style="color:#e6db74">&#34;50001&#34;</span><span style="color:#f92672">}</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl localhost:3500/v1.0/invoke/nodeapp.dapr-system/method/ports <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--max-time <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span><span style="color:#e6db74">&#34;DAPR_HTTP_PORT&#34;</span>:<span style="color:#e6db74">&#34;3500&#34;</span>,<span style="color:#e6db74">&#34;DAPR_GRPC_PORT&#34;</span>:<span style="color:#e6db74">&#34;50001&#34;</span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> We don&rsquo;t use the namespace when we Deploy(ment) the app only when we reference it.</p>
 </blockquote>
 <p>The Node.JS app&rsquo;s <code>neworder</code> function persists the data received (i.e. <code>{&quot;orderId&quot;:1000}</code>) to the Dapr-configured state store (in this example, Redis). When we applied <code>redis.yaml</code>, this created a <code>Component</code> CRD called <code>statestore</code> that was configured to point to the Redis deployment that we <code>helm install</code>&lsquo;ed.</p>
 <p>Now, from within Dapr applications (like the Node.JS app), we can use the Dapr API to persist (application) state.</p>
 <p>This isn&rsquo;t as easy to test using the Dapr API becuase state is scoped to the app.</p>
 <p>Using the Debug Deployment:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># POST foo=bar</span>
-curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--request POST <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Content-type: application/json&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#39;[{&#34;key&#34;:&#34;foo&#34;,&#34;value&#34;:&#34;bar&#34;}]&#39;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>http://localhost:3500/v1.0/state/statestore
-
-<span style="color:#75715e"># GET foo</span>
-curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>http://localhost:3500/v1.0/state/statestore/foo
-<span style="color:#e6db74">&#34;bar&#34;</span>
-</code></pre></div><p>And, accessing the Redis CLI (using the instructions provided by way of output from the Helm install command):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># POST foo=bar</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request POST <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Content-type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#39;[{&#34;key&#34;:&#34;foo&#34;,&#34;value&#34;:&#34;bar&#34;}]&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>http://localhost:3500/v1.0/state/statestore
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># GET foo</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>http://localhost:3500/v1.0/state/statestore/foo
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;bar&#34;</span>
+</span></span></code></pre></div><p>And, accessing the Redis CLI (using the instructions provided by way of output from the Helm install command):</p>
 <pre tabindex="0"><code class="language-command" data-lang="command">HGETALL debug||foo
-1) &quot;data&quot;
-2) &quot;\&quot;bar\&quot;&quot;
-3) &quot;version&quot;
-4) &quot;2&quot;
+1) &#34;data&#34;
+2) &#34;\&#34;bar\&#34;&#34;
+3) &#34;version&#34;
+4) &#34;2&#34;
 </code></pre><blockquote>
 <p><strong>NOTE</strong> The key value (<code>foo</code>) is prefixed by the app&rsquo;s name <code>debug</code></p>
 </blockquote>
 <p>From the Redis client, I can get the Node.JS (<code>nodeapp</code>) <code>order</code> key value too:</p>
 <pre tabindex="0"><code class="language-command" data-lang="command">HGETALL nodeapp||order
-1) &quot;data&quot;
-2) &quot;{\&quot;orderId\&quot;:3531}&quot;
-3) &quot;version&quot;
-4) &quot;3531&quot;
+1) &#34;data&#34;
+2) &#34;{\&#34;orderId\&#34;:3531}&#34;
+3) &#34;version&#34;
+4) &#34;3531&#34;
 </code></pre><p>Lastly, I wanted to experiment with the gRPC mechanism. I used the Dapr GO SDK&rsquo;s example code to write an even simpler server and client.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;example&#34;</span>
-
-kubectl apply <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--filename<span style="color:#f92672">=</span>./kubernetes/server.yaml 
---namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-
-kubectl apply <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--filename<span style="color:#f92672">=</span>./kubernetes/client.yaml
---namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-
-kubectl logs deployment/server <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>app <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-
-2021/02/22 21:28:26 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Entered <span style="color:#f92672">(</span>port: 50051<span style="color:#f92672">)</span>
-2021/02/22 21:28:26 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Start gRPC service: :50051
-2021/02/22 21:28:45 <span style="color:#f92672">[</span>main:echo<span style="color:#f92672">]</span> Entered
-2021/02/22 21:28:45 <span style="color:#f92672">[</span>main:echo<span style="color:#f92672">]</span> ContentType:text/plain, Verb:POST, QueryString:map<span style="color:#f92672">[]</span>, DataTypeURL:, Hello Freddie
-2021/02/22 21:28:50 <span style="color:#f92672">[</span>main:echo<span style="color:#f92672">]</span> Entered
-2021/02/22 21:28:50 <span style="color:#f92672">[</span>main:echo<span style="color:#f92672">]</span> ContentType:text/plain, Verb:POST, QueryString:map<span style="color:#f92672">[]</span>, DataTypeURL:, Hello Freddie
-
-kubectl logs deployment/client <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>app <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
-
-2021/02/22 21:28:45 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Entered <span style="color:#f92672">(</span>appID: server<span style="color:#f92672">)</span>
-dapr client initializing <span style="color:#66d9ef">for</span>: 127.0.0.1:50001
-<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
-<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
-<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
-<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
-<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
-<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
-<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
-</code></pre></div><p>In this example, even though the server is created generically <code>server, err := daprd.NewService(endpoint)</code>, the Kubernetes manifest annotation includes <code>dapr.io/app-protocol: &quot;grpc&quot;</code> and this configures Dapr to use gRPC for communication with the service. The server must be implemented to support gRPC messages:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">AddServiceInvocationHandler</span>(<span style="color:#e6db74">&#34;echo&#34;</span>,
-  <span style="color:#a6e22e">echo</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">in</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">common</span>.<span style="color:#a6e22e">InvocationEvent</span>) (<span style="color:#a6e22e">out</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">common</span>.<span style="color:#a6e22e">Content</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>) {
-  <span style="color:#f92672">...</span>
-}
-</code></pre></div><p>But, the client need only make generic call invocations:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">InvokeMethodWithContent</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">appID</span>, <span style="color:#e6db74">&#34;echo&#34;</span>, <span style="color:#e6db74">&#34;post&#34;</span>, <span style="color:#a6e22e">content</span>)
-</code></pre></div><p>And, we can therefore invoke the server&rsquo;s method (<code>echo</code>) via REST too:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--request POST <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#39;Hello Freddie!&#39;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>localhost:3500/v1.0/invoke/server/method/echo
-</code></pre></div><p>Yields:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">Hello Freddie!
-</code></pre></div><p>While you&rsquo;re running a debug shell, you can check Dapr&rsquo;s (Prometheus) metrics:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;example&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl apply <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--filename<span style="color:#f92672">=</span>./kubernetes/server.yaml 
+</span></span><span style="display:flex;"><span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl apply <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--filename<span style="color:#f92672">=</span>./kubernetes/client.yaml
+</span></span><span style="display:flex;"><span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl logs deployment/server <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>app <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>2021/02/22 21:28:26 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Entered <span style="color:#f92672">(</span>port: 50051<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>2021/02/22 21:28:26 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Start gRPC service: :50051
+</span></span><span style="display:flex;"><span>2021/02/22 21:28:45 <span style="color:#f92672">[</span>main:echo<span style="color:#f92672">]</span> Entered
+</span></span><span style="display:flex;"><span>2021/02/22 21:28:45 <span style="color:#f92672">[</span>main:echo<span style="color:#f92672">]</span> ContentType:text/plain, Verb:POST, QueryString:map<span style="color:#f92672">[]</span>, DataTypeURL:, Hello Freddie
+</span></span><span style="display:flex;"><span>2021/02/22 21:28:50 <span style="color:#f92672">[</span>main:echo<span style="color:#f92672">]</span> Entered
+</span></span><span style="display:flex;"><span>2021/02/22 21:28:50 <span style="color:#f92672">[</span>main:echo<span style="color:#f92672">]</span> ContentType:text/plain, Verb:POST, QueryString:map<span style="color:#f92672">[]</span>, DataTypeURL:, Hello Freddie
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl logs deployment/client <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--container<span style="color:#f92672">=</span>app <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>2021/02/22 21:28:45 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Entered <span style="color:#f92672">(</span>appID: server<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>dapr client initializing <span style="color:#66d9ef">for</span>: 127.0.0.1:50001
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> Response: Hello Freddie
+</span></span></code></pre></div><p>In this example, even though the server is created generically <code>server, err := daprd.NewService(endpoint)</code>, the Kubernetes manifest annotation includes <code>dapr.io/app-protocol: &quot;grpc&quot;</code> and this configures Dapr to use gRPC for communication with the service. The server must be implemented to support gRPC messages:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">AddServiceInvocationHandler</span>(<span style="color:#e6db74">&#34;echo&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">echo</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">in</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">common</span>.<span style="color:#a6e22e">InvocationEvent</span>) (<span style="color:#a6e22e">out</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">common</span>.<span style="color:#a6e22e">Content</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>But, the client need only make generic call invocations:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">InvokeMethodWithContent</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">appID</span>, <span style="color:#e6db74">&#34;echo&#34;</span>, <span style="color:#e6db74">&#34;post&#34;</span>, <span style="color:#a6e22e">content</span>)
+</span></span></code></pre></div><p>And, we can therefore invoke the server&rsquo;s method (<code>echo</code>) via REST too:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request POST <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#39;Hello Freddie!&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>localhost:3500/v1.0/invoke/server/method/echo
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>Hello Freddie!
+</span></span></code></pre></div><p>While you&rsquo;re running a debug shell, you can check Dapr&rsquo;s (Prometheus) metrics:</p>
 <blockquote>
 <p><strong>NOTE</strong> By default, metrics are exposed on <code>:9090</code> but you can configure the port using one of Dapr&rsquo;s Pod <a href="https://docs.dapr.io/operations/hosting/kubernetes/kubernetes-annotations/">annotations</a>, namely <code>dapr.io/metrics-port</code>.</p>
 </blockquote>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl --request GET <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>http://localhost:9090/metrics
-</code></pre></div><p>Or, if you&rsquo;d prefer you can <code>port-forward</code> to a <code>daprd</code> in <code>${NAMESPACE}</code> and view the metrics in a browser:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">kubectl port-forward deployment/server <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>9090:9090
-</code></pre></div><p>That&rsquo;s all!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl --request GET <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>http://localhost:9090/metrics
+</span></span></code></pre></div><p>Or, if you&rsquo;d prefer you can <code>port-forward</code> to a <code>daprd</code> in <code>${NAMESPACE}</code> and view the metrics in a browser:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl port-forward deployment/server <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>9090:9090
+</span></span></code></pre></div><p>That&rsquo;s all!</p>
 <ul class="pa0">
   
    <li class="list di">

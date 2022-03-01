@@ -7,7 +7,7 @@
     <title>Cloud Firestore Triggers in Golang | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Using Cloud Firestore Triggers in Golang">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -201,112 +201,112 @@ if (!doNotTrack) {
 <p>So, for example, if you had a path <code>/customers/{customerId}</code> and let&rsquo;s suppose, you changed a <code>customer</code> document property, the event would be triggered and <code>e.Value.Name</code> would be something of the form <code>/customers/12348378e41bf59b06d062f9c93ae0b246ad7e1c418c0557ab2dfcbb</code>. So, you could extract <code>1234...</code> from the <code>Name</code> to determine the value of <code>{customerId}</code> for this event.</p>
 <p>Second, the explanation for the structure of the Firestore document object was confusing. It&rsquo;s described as part of the Firebase <a href="https://firebase.google.com/docs/firestore/reference/rest/v1beta1/projects.databases.documents">Document</a> object but it wasn&rsquo;t obvious from Google&rsquo;s example, how I&rsquo;d map what I had to what I wanted (even after logging <code>interface{}</code>).</p>
 <p>In my very simple case, I have a Golang <code>Customer</code> struct that I&rsquo;m adding to Firestore:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Customer</span> <span style="color:#66d9ef">struct</span> {
-  <span style="color:#a6e22e">Name</span>   <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`firestore:&#34;name&#34;`</span>
-  <span style="color:#a6e22e">Domain</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`firestore:&#34;domain&#34;`</span>
-  <span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`firestore:&#34;created&#34;`</span>
-  <span style="color:#a6e22e">Updated</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`firestore:&#34;updated,omitempty&#34;`</span>
-}
-</code></pre></div><p>The equivalent struct for <code>Fields</code> in my Cloud Functions trigger is:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Customer</span> <span style="color:#66d9ef">struct</span> {
-  <span style="color:#a6e22e">Name</span> <span style="color:#66d9ef">struct</span> {
-    <span style="color:#a6e22e">StringValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;stringValue&#34;`</span>
-  } <span style="color:#e6db74">`json:&#34;Name&#34;`</span>
-  <span style="color:#a6e22e">Domain</span> <span style="color:#66d9ef">struct</span> {
-    <span style="color:#a6e22e">StringValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;stringValue&#34;`</span>
-  } <span style="color:#e6db74">`json:&#34;Domain&#34;`</span>
-}
-</code></pre></div><p>Obviously, each property from the source is mapped to the destination struct. But, each scalar property becomes a struct and the property of the struct is the type per <a href="https://firebase.google.com/docs/firestore/reference/rest/v1beta1/Value"><code>Value</code></a>. In my simple case of using on <code>string</code>, I have properties called <code>StringValue</code> of type <code>string</code> with the <code>json</code> annotation.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Customer</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Name</span>   <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`firestore:&#34;name&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Domain</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`firestore:&#34;domain&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`firestore:&#34;created&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Updated</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`firestore:&#34;updated,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The equivalent struct for <code>Fields</code> in my Cloud Functions trigger is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Customer</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Name</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">StringValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;stringValue&#34;`</span>
+</span></span><span style="display:flex;"><span>  } <span style="color:#e6db74">`json:&#34;Name&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Domain</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">StringValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;stringValue&#34;`</span>
+</span></span><span style="display:flex;"><span>  } <span style="color:#e6db74">`json:&#34;Domain&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Obviously, each property from the source is mapped to the destination struct. But, each scalar property becomes a struct and the property of the struct is the type per <a href="https://firebase.google.com/docs/firestore/reference/rest/v1beta1/Value"><code>Value</code></a>. In my simple case of using on <code>string</code>, I have properties called <code>StringValue</code> of type <code>string</code> with the <code>json</code> annotation.</p>
 <p>Here&rsquo;s the source in its entirety:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">f</span>
-
-<span style="color:#f92672">import</span> (
-  <span style="color:#e6db74">&#34;context&#34;</span>
-  <span style="color:#a6e22e">stdlog</span> <span style="color:#e6db74">&#34;log&#34;</span>
-  <span style="color:#e6db74">&#34;os&#34;</span>
-  <span style="color:#e6db74">&#34;time&#34;</span>
-
-  <span style="color:#e6db74">&#34;cloud.google.com/go/functions/metadata&#34;</span>
-
-  <span style="color:#e6db74">&#34;github.com/go-logr/logr&#34;</span>
-  <span style="color:#e6db74">&#34;github.com/go-logr/stdr&#34;</span>
-)
-
-<span style="color:#75715e">// CustomerEvent is the payload of a Firestore event triggered by Customer change.
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerEvent</span> <span style="color:#66d9ef">struct</span> {
-  <span style="color:#a6e22e">OldValue</span>   <span style="color:#a6e22e">CustomerValue</span> <span style="color:#e6db74">`json:&#34;oldValue&#34;`</span>
-  <span style="color:#a6e22e">Value</span>      <span style="color:#a6e22e">CustomerValue</span> <span style="color:#e6db74">`json:&#34;value&#34;`</span>
-  <span style="color:#a6e22e">UpdateMask</span> <span style="color:#66d9ef">struct</span> {
-    <span style="color:#a6e22e">FieldPaths</span> []<span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;fieldPaths&#34;`</span>
-  } <span style="color:#e6db74">`json:&#34;updateMask&#34;`</span>
-}
-
-<span style="color:#75715e">// CustomerValue holds Customer fields.
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerValue</span> <span style="color:#66d9ef">struct</span> {
-  <span style="color:#a6e22e">Name</span>       <span style="color:#66d9ef">string</span>          <span style="color:#e6db74">`json:&#34;name&#34;`</span>
-  <span style="color:#a6e22e">Fields</span>     <span style="color:#a6e22e">CustomerFields</span>  <span style="color:#e6db74">`json:&#34;fields&#34;`</span>
-  <span style="color:#a6e22e">CreateTime</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>       <span style="color:#e6db74">`json:&#34;createTime&#34;`</span>
-  <span style="color:#a6e22e">UpdateTime</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>       <span style="color:#e6db74">`json:&#34;updateTime&#34;`</span>
-}
-
-<span style="color:#75715e">// CustomerFields is a mapping of the type of Firestore Customer record
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerFields</span> <span style="color:#66d9ef">struct</span> {
-  <span style="color:#a6e22e">Name</span> <span style="color:#66d9ef">struct</span> {
-    <span style="color:#a6e22e">StringValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;stringValue&#34;`</span>
-  } <span style="color:#e6db74">`json:&#34;Name&#34;`</span>
-  <span style="color:#a6e22e">Domain</span> <span style="color:#66d9ef">struct</span> {
-    <span style="color:#a6e22e">StringValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;stringValue&#34;`</span>
-  } <span style="color:#e6db74">`json:&#34;Domain&#34;`</span>
-}
-
-<span style="color:#66d9ef">var</span> (
-  <span style="color:#a6e22e">log</span> <span style="color:#a6e22e">logr</span>.<span style="color:#a6e22e">Logger</span>
-)
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">init</span>() {
-  <span style="color:#a6e22e">std</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">stdlog</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Stderr</span>, <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#a6e22e">stdlog</span>.<span style="color:#a6e22e">LstdFlags</span>)
-  <span style="color:#a6e22e">opts</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">stdr</span>.<span style="color:#a6e22e">Options</span>{<span style="color:#a6e22e">LogCaller</span>: <span style="color:#a6e22e">stdr</span>.<span style="color:#a6e22e">All</span>}
-  <span style="color:#a6e22e">log</span> = <span style="color:#a6e22e">stdr</span>.<span style="color:#a6e22e">NewWithOptions</span>(<span style="color:#a6e22e">std</span>, <span style="color:#a6e22e">opts</span>)
-}
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CreateCustomerResource</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">e</span> <span style="color:#a6e22e">CustomerEvent</span>) <span style="color:#66d9ef">error</span> {
-  <span style="color:#a6e22e">log</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">WithValues</span>(<span style="color:#e6db74">&#34;CreateCustomerResource&#34;</span>)
-
-  <span style="color:#a6e22e">meta</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">FromContext</span>(<span style="color:#a6e22e">ctx</span>)
-  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-    <span style="color:#a6e22e">msg</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;failed to get metadata&#34;</span>
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>, <span style="color:#a6e22e">msg</span>)
-  }
-  <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Trigger&#34;</span>,
-    <span style="color:#e6db74">&#34;event&#34;</span>, <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">EventID</span>,
-    <span style="color:#e6db74">&#34;type&#34;</span>, <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">EventType</span>,
-    <span style="color:#e6db74">&#34;resource&#34;</span>, <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">Resource</span>,
-    <span style="color:#e6db74">&#34;name&#34;</span>, <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">Resource</span>.<span style="color:#a6e22e">Name</span>,
-  )
-
-  <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Triggered&#34;</span>,
-    <span style="color:#e6db74">&#34;name&#34;</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">Value</span>.<span style="color:#a6e22e">Name</span>,
-  )
-
-  <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Triggered&#34;</span>,
-    <span style="color:#e6db74">&#34;old.name&#34;</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">OldValue</span>.<span style="color:#a6e22e">Fields</span>.<span style="color:#a6e22e">Name</span>.<span style="color:#a6e22e">StringValue</span>,
-    <span style="color:#e6db74">&#34;old.domain&#34;</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">OldValue</span>.<span style="color:#a6e22e">Fields</span>.<span style="color:#a6e22e">Domain</span>.<span style="color:#a6e22e">StringValue</span>,
-    <span style="color:#e6db74">&#34;new.name&#34;</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">Value</span>.<span style="color:#a6e22e">Fields</span>.<span style="color:#a6e22e">Name</span>.<span style="color:#a6e22e">StringValue</span>,
-    <span style="color:#e6db74">&#34;new.domain&#34;</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">Value</span>.<span style="color:#a6e22e">Fields</span>.<span style="color:#a6e22e">Domain</span>.<span style="color:#a6e22e">StringValue</span>,
-  )
-
-  <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
-}
-</code></pre></div><h2 id="deploy">Deploy</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud functions deploy <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--source<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--entry-point<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;CreateCustomerResource&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--runtime<span style="color:#f92672">=</span>go113 <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--trigger-event<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;providers/cloud.firestore/eventTypes/document.write&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--trigger-resource<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">/databases/(default)/documents/customers/{customerId}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-</code></pre></div><p>The <code>trigger-event</code> is well described in <a href="https://cloud.google.com/functions/docs/calling/cloud-firestore#event_types">Event Types</a>. I&rsquo;m choosing to trigger the Fucntion on creates, updates and deletes for <code>trigger-resource</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">f</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">stdlog</span> <span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;cloud.google.com/go/functions/metadata&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;github.com/go-logr/logr&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;github.com/go-logr/stdr&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// CustomerEvent is the payload of a Firestore event triggered by Customer change.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerEvent</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">OldValue</span>   <span style="color:#a6e22e">CustomerValue</span> <span style="color:#e6db74">`json:&#34;oldValue&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Value</span>      <span style="color:#a6e22e">CustomerValue</span> <span style="color:#e6db74">`json:&#34;value&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">UpdateMask</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">FieldPaths</span> []<span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;fieldPaths&#34;`</span>
+</span></span><span style="display:flex;"><span>  } <span style="color:#e6db74">`json:&#34;updateMask&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// CustomerValue holds Customer fields.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerValue</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Name</span>       <span style="color:#66d9ef">string</span>          <span style="color:#e6db74">`json:&#34;name&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Fields</span>     <span style="color:#a6e22e">CustomerFields</span>  <span style="color:#e6db74">`json:&#34;fields&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">CreateTime</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>       <span style="color:#e6db74">`json:&#34;createTime&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">UpdateTime</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>       <span style="color:#e6db74">`json:&#34;updateTime&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// CustomerFields is a mapping of the type of Firestore Customer record
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerFields</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Name</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">StringValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;stringValue&#34;`</span>
+</span></span><span style="display:flex;"><span>  } <span style="color:#e6db74">`json:&#34;Name&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Domain</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">StringValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;stringValue&#34;`</span>
+</span></span><span style="display:flex;"><span>  } <span style="color:#e6db74">`json:&#34;Domain&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> (
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">log</span> <span style="color:#a6e22e">logr</span>.<span style="color:#a6e22e">Logger</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">init</span>() {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">std</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">stdlog</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Stderr</span>, <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#a6e22e">stdlog</span>.<span style="color:#a6e22e">LstdFlags</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">opts</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">stdr</span>.<span style="color:#a6e22e">Options</span>{<span style="color:#a6e22e">LogCaller</span>: <span style="color:#a6e22e">stdr</span>.<span style="color:#a6e22e">All</span>}
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">log</span> = <span style="color:#a6e22e">stdr</span>.<span style="color:#a6e22e">NewWithOptions</span>(<span style="color:#a6e22e">std</span>, <span style="color:#a6e22e">opts</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CreateCustomerResource</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">e</span> <span style="color:#a6e22e">CustomerEvent</span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">log</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">WithValues</span>(<span style="color:#e6db74">&#34;CreateCustomerResource&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">meta</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">FromContext</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">msg</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;failed to get metadata&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>, <span style="color:#a6e22e">msg</span>)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Trigger&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;event&#34;</span>, <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">EventID</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;type&#34;</span>, <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">EventType</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;resource&#34;</span>, <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">Resource</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;name&#34;</span>, <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">Resource</span>.<span style="color:#a6e22e">Name</span>,
+</span></span><span style="display:flex;"><span>  )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Triggered&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;name&#34;</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">Value</span>.<span style="color:#a6e22e">Name</span>,
+</span></span><span style="display:flex;"><span>  )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Triggered&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;old.name&#34;</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">OldValue</span>.<span style="color:#a6e22e">Fields</span>.<span style="color:#a6e22e">Name</span>.<span style="color:#a6e22e">StringValue</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;old.domain&#34;</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">OldValue</span>.<span style="color:#a6e22e">Fields</span>.<span style="color:#a6e22e">Domain</span>.<span style="color:#a6e22e">StringValue</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;new.name&#34;</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">Value</span>.<span style="color:#a6e22e">Fields</span>.<span style="color:#a6e22e">Name</span>.<span style="color:#a6e22e">StringValue</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;new.domain&#34;</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">Value</span>.<span style="color:#a6e22e">Fields</span>.<span style="color:#a6e22e">Domain</span>.<span style="color:#a6e22e">StringValue</span>,
+</span></span><span style="display:flex;"><span>  )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="deploy">Deploy</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud functions deploy <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--source<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--entry-point<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;CreateCustomerResource&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--runtime<span style="color:#f92672">=</span>go113 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--trigger-event<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;providers/cloud.firestore/eventTypes/document.write&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--trigger-resource<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">/databases/(default)/documents/customers/{customerId}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>The <code>trigger-event</code> is well described in <a href="https://cloud.google.com/functions/docs/calling/cloud-firestore#event_types">Event Types</a>. I&rsquo;m choosing to trigger the Fucntion on creates, updates and deletes for <code>trigger-resource</code>.</p>
 <p>The <code>trigger-resource</code> as explained above has a fixed prefix <code>projects/${PROJECT}/databases/(default)/documents</code> and then I want to focus on <code>/customers</code> and I want to capture the <code>{customerId}</code>.</p>
 <blockquote>
 <p><strong>NOTE</strong> I&rsquo;m unsure why <code>default</code> is <code>(default)</code>.</p>
@@ -318,17 +318,17 @@ if (!doNotTrack) {
 <p>I&rsquo;ve been using the <a href="https://console.cloud.google.com/firestore/data/">Firestore Console</a> and editing a <code>customers</code> document to trigger the Cloud Function.</p>
 <p>And then using the Logs to see what&rsquo;s happened (since my code merely logs that it&rsquo;s been called).</p>
 <h2 id="logs">Logs</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;resource.type=\&#34;cloud_function\&#34; &#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;resource.labels.function_name=\&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34; &#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;resource.labels.region=\&#34;</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;&#34;</span>
-
-gcloud logging read <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--freshness<span style="color:#f92672">=</span>5m <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.[]|.textPayload&#39;</span>
-</code></pre></div><ul class="pa0">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;resource.type=\&#34;cloud_function\&#34; &#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;resource.labels.function_name=\&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34; &#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;resource.labels.region=\&#34;</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud logging read <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--freshness<span style="color:#f92672">=</span>5m <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.[]|.textPayload&#39;</span>
+</span></span></code></pre></div><ul class="pa0">
   
    <li class="list di">
      <a href="/tags/gcp" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">gcp</a>

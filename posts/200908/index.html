@@ -7,7 +7,7 @@
     <title>Trillian Map Mode | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="An example using Google Trillian Map Mode">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -199,167 +199,167 @@ if (!doNotTrack) {
 <p>I uncovered use of Trillian Map Mode through Trillian&rsquo;s integration <a href="https://github.com/google/trillian/blob/master/integration/maptest/map.go">tests</a>. I&rsquo;m unclear on the distinction between <code>TrillianMapClient</code> and <code>TrillianMapWriteClient</code> but the latter served most of my needs.</p>
 <p>Trillian includes sample deployment examples for Docker Compose and Kubernetes. This repo includes both.</p>
 <p>First, we need a Map.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">GRPC<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;50051&#34;</span>
-MAPID<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>go run github.com/google/trillian/cmd/createtree <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--admin_server<span style="color:#f92672">=</span>:<span style="color:#e6db74">${</span>GRPC<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--tree_type<span style="color:#f92672">=</span>MAP <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--hash_strategy<span style="color:#f92672">=</span>CONIKS_SHA512_256<span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>MAPID<span style="color:#e6db74">}</span>
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>GRPC<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;50051&#34;</span>
+</span></span><span style="display:flex;"><span>MAPID<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>go run github.com/google/trillian/cmd/createtree <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--admin_server<span style="color:#f92672">=</span>:<span style="color:#e6db74">${</span>GRPC<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--tree_type<span style="color:#f92672">=</span>MAP <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--hash_strategy<span style="color:#f92672">=</span>CONIKS_SHA512_256<span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>MAPID<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> we must override defaults values for <code>--tree_type</code> and <code>--hash_strategy</code> to create a Map</p>
 </blockquote>
 <p>The example is trivial but demonstrates writing and getting data from the Map.</p>
 <p>One (of the) aspect(s) that I don&rsquo;t grok with Maps is the concept of revisions. I suspect (and need to determine whether) I can try getting leaves from any revision (see <a href="https://github.com/DazWilkin/go-trillian-map/issues/2">Issue #2</a>)</p>
 <p>The example uses a trivial map of key-value pairs that are used to create <code>Leaves</code> for the Map.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">Examples</span> = <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{
-	<span style="color:#e6db74">&#34;Freddie&#34;</span>:  <span style="color:#e6db74">&#34;Border Collie&#34;</span>,
-	<span style="color:#e6db74">&#34;Noisette&#34;</span>: <span style="color:#e6db74">&#34;Australian Shepherd&#34;</span>,
-	<span style="color:#e6db74">&#34;Artie&#34;</span>:    <span style="color:#e6db74">&#34;Weimeraner&#34;</span>,
-	<span style="color:#e6db74">&#34;Louie&#34;</span>:    <span style="color:#e6db74">&#34;Formosan Mountain Dog&#34;</span>,
-	<span style="color:#e6db74">&#34;Luna&#34;</span>:     <span style="color:#e6db74">&#34;Yorkiepoo&#34;</span>,
-	<span style="color:#e6db74">&#34;Bertie&#34;</span>:   <span style="color:#e6db74">&#34;Cockapoo&#34;</span>,
-	<span style="color:#e6db74">&#34;Mr Magoo&#34;</span>: <span style="color:#e6db74">&#34;Scottish Terrier&#34;</span>,
-}
-</code></pre></div><p>The <code>Add</code> section batches the leaves into an <code>[]*trillian.MapLeaf</code> that is added in a single <code>WriteLeaves</code> request (using a single revision).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">Examples</span> = <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;Freddie&#34;</span>:  <span style="color:#e6db74">&#34;Border Collie&#34;</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;Noisette&#34;</span>: <span style="color:#e6db74">&#34;Australian Shepherd&#34;</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;Artie&#34;</span>:    <span style="color:#e6db74">&#34;Weimeraner&#34;</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;Louie&#34;</span>:    <span style="color:#e6db74">&#34;Formosan Mountain Dog&#34;</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;Luna&#34;</span>:     <span style="color:#e6db74">&#34;Yorkiepoo&#34;</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;Bertie&#34;</span>:   <span style="color:#e6db74">&#34;Cockapoo&#34;</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;Mr Magoo&#34;</span>: <span style="color:#e6db74">&#34;Scottish Terrier&#34;</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>Add</code> section batches the leaves into an <code>[]*trillian.MapLeaf</code> that is added in a single <code>WriteLeaves</code> request (using a single revision).</p>
 <p><code>MapLeaf</code> comprise an <code>Index</code> and a <code>LeafValue</code>. Both are <code>[]byte</code> and <code>Index</code> is a hash value in the Trillian uses. In the following, <code>key</code> and <code>value</code> correspond to entries in the above map:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">hasher</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sha256</span>.<span style="color:#a6e22e">New</span>()
-<span style="color:#a6e22e">hasher</span>.<span style="color:#a6e22e">Write</span>([]byte(<span style="color:#a6e22e">key</span>))
-<span style="color:#a6e22e">index</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">hasher</span>.<span style="color:#a6e22e">Sum</span>(<span style="color:#66d9ef">nil</span>)
-
-<span style="color:#a6e22e">leaf</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">trillian</span>.<span style="color:#a6e22e">MapLeaf</span>{
-	<span style="color:#a6e22e">Index</span>:     <span style="color:#a6e22e">index</span>,
-	<span style="color:#a6e22e">LeafValue</span>: []byte(<span style="color:#a6e22e">value</span>),
-}
-</code></pre></div><p>An evolution of the code that would mainly be for intellectual curiosity, would be to replace the simple string values with a protobuf or <a href="https://msgpack.org/">MessagePack</a> marshaled value (see <a href="https://github.com/DazWilkin/go-trillian-map/issues/3">Issues #3</a>)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">hasher</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sha256</span>.<span style="color:#a6e22e">New</span>()
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hasher</span>.<span style="color:#a6e22e">Write</span>([]byte(<span style="color:#a6e22e">key</span>))
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">index</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">hasher</span>.<span style="color:#a6e22e">Sum</span>(<span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">leaf</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">trillian</span>.<span style="color:#a6e22e">MapLeaf</span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Index</span>:     <span style="color:#a6e22e">index</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">LeafValue</span>: []byte(<span style="color:#a6e22e">value</span>),
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>An evolution of the code that would mainly be for intellectual curiosity, would be to replace the simple string values with a protobuf or <a href="https://msgpack.org/">MessagePack</a> marshaled value (see <a href="https://github.com/DazWilkin/go-trillian-map/issues/3">Issues #3</a>)</p>
 <p>Then to write the leaves, simply:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">Add</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">leaves</span> []<span style="color:#f92672">*</span><span style="color:#a6e22e">trillian</span>.<span style="color:#a6e22e">MapLeaf</span>, <span style="color:#a6e22e">revision</span> <span style="color:#66d9ef">int64</span>) <span style="color:#66d9ef">error</span> {
-    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Print</span>(<span style="color:#e6db74">&#34;[Client:Add] Entered&#34;</span>)
-	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">trillian</span>.<span style="color:#a6e22e">WriteMapLeavesRequest</span>{
-		<span style="color:#a6e22e">MapId</span>:          <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">mapID</span>,
-		<span style="color:#a6e22e">Leaves</span>:         <span style="color:#a6e22e">leaves</span>,
-		<span style="color:#a6e22e">ExpectRevision</span>: <span style="color:#a6e22e">revision</span>,
-	}
-	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">WriteLeaves</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
-	}
-
-	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[Client:Add] %+v&#34;</span>, <span style="color:#a6e22e">resp</span>)
-	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
-}
-</code></pre></div><p>The <code>Get</code> section gets each leaf in turn for the revision. As before, we hash the key value to create the index and then create the request with a singular index. We iterate over the leaves in the response and print them:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">indexes</span> <span style="color:#f92672">:=</span> [][]<span style="color:#66d9ef">byte</span>{
-	<span style="color:#a6e22e">index</span>,
-}
-<span style="color:#a6e22e">leaves</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">indexes</span>, <span style="color:#a6e22e">rev</span>)
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-}
-<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">leaf</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">leaves</span> {
-	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[main:get] Leaf #%02d: %s&#34;</span>, <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">toString</span>(<span style="color:#a6e22e">leaf</span>))
-}
-</code></pre></div><p>The leaf retrieval uses Trillian&rsquo;s <code>GetMapLeavesByRevisionRequest</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">indexes</span> [][]<span style="color:#66d9ef">byte</span>, <span style="color:#a6e22e">revision</span> <span style="color:#66d9ef">int64</span>) ([]<span style="color:#f92672">*</span><span style="color:#a6e22e">trillian</span>.<span style="color:#a6e22e">MapLeaf</span>, <span style="color:#66d9ef">error</span>) {
-	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Print</span>(<span style="color:#e6db74">&#34;[Client:Get] Entered&#34;</span>)
-	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">trillian</span>.<span style="color:#a6e22e">GetMapLeavesByRevisionRequest</span>{
-		<span style="color:#a6e22e">MapId</span>:    <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">mapID</span>,
-		<span style="color:#a6e22e">Index</span>:    <span style="color:#a6e22e">indexes</span>,
-		<span style="color:#a6e22e">Revision</span>: <span style="color:#a6e22e">revision</span>,
-	}
-	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">GetLeavesByRevision</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
-	}
-
-	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[Client:Get] %+v&#34;</span>, <span style="color:#a6e22e">resp</span>)
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">GetLeaves</span>(), <span style="color:#66d9ef">nil</span>
-}
-</code></pre></div><p>Running the server against the Kubernetes deployment involves determining the code&rsquo;s (Kubernetes) Service endpoint:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">ENDPOINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  kubectl get service/map-server <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span>trillian <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.clusterIP}:{.spec.ports[?(@.name==\&#34;grpc\&#34;)].port}&#34;</span><span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>
-</code></pre></div><p>Then invoking the binary:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">go run ./cmd/server <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--tmap_endpoint<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--tmap_id<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>MAPID<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--tmap_rev<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
-</code></pre></div><p>Yielding:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">[main:add] Bertie
-[main:add] Bertie: 2eed8f9879977565d3037e6363b505ff2ca35a2227083de91d198ebfcde76b3d
-[main:add] Leaf #00: Index: 2eed8f9879977565d3037e6363b505ff2ca35a2227083de91d198ebfcde76b3d, Value: Cockapoo
-[main:add] Mr Magoo
-[main:add] Mr Magoo: cec7fa35beed1c12b44f1bab965fc47ebe8c590510a7eb774d10b440f68c8355
-[main:add] Leaf #01: Index: cec7fa35beed1c12b44f1bab965fc47ebe8c590510a7eb774d10b440f68c8355, Value: Scottish Terrier
-[main:add] Freddie
-[main:add] Freddie: b146ae2a1fb1d772cbe9c16fd9ae30eb11ebef7c948829167bb04fae541aa5f5
-[main:add] Leaf #02: Index: b146ae2a1fb1d772cbe9c16fd9ae30eb11ebef7c948829167bb04fae541aa5f5, Value: Border Collie
-[main:add] Noisette
-[main:add] Noisette: 12bb631807ea32865a0611e72a65e2b33ec9ad8b9600e9db4d29837481e45b38
-[main:add] Leaf #03: Index: 12bb631807ea32865a0611e72a65e2b33ec9ad8b9600e9db4d29837481e45b38, Value: Australian Shepherd
-[main:add] Artie
-[main:add] Artie: d69c866405c582529c4c74fe474575a62c0db4fa8e5321f62fb197cbb7bc8fe7
-[main:add] Leaf #04: Index: d69c866405c582529c4c74fe474575a62c0db4fa8e5321f62fb197cbb7bc8fe7, Value: Weimeraner
-[main:add] Louie
-[main:add] Louie: 7435d5755367c07fd592e3210fe0db424a9278b255faab470c96324809d1a773
-[main:add] Leaf #05: Index: 7435d5755367c07fd592e3210fe0db424a9278b255faab470c96324809d1a773, Value: Formosan Mountain Dog
-[main:add] Luna
-[main:add] Luna: 9d77a24d0f4c91a2e968ca607e49dd3b15d5489f66a5bc81fa72803b32443419
-[main:add] Leaf #06: Index: 9d77a24d0f4c91a2e968ca607e49dd3b15d5489f66a5bc81fa72803b32443419, Value: Yorkiepoo
-[main:add] Add&#39;ing
-[Client:Add] Entered
-[Client:Add] revision:7
-[main:get] Freddie
-[main:get] Freddie: b146ae2a1fb1d772cbe9c16fd9ae30eb11ebef7c948829167bb04fae541aa5f5
-[main:get] Get&#39;ing Freddie
-[Client:Get] Entered
-[Client:Get] leaves:{index:&#34;\xb1F\xae*\x1f\xb1\xd7r\xcb\xe9\xc1oٮ0\xeb\x11\xeb\xef|\x94\x88)\x16{\xb0O\xaeT\x1a\xa5\xf5&#34;  leaf_value:&#34;Border Collie&#34;}
-[main:get] Leaf #00: Index: b146ae2a1fb1d772cbe9c16fd9ae30eb11ebef7c948829167bb04fae541aa5f5, Value: Border Collie
-[main:get] Sleeping 1 second
-[main:get] Noisette
-[main:get] Noisette: 12bb631807ea32865a0611e72a65e2b33ec9ad8b9600e9db4d29837481e45b38
-[main:get] Get&#39;ing Noisette
-[Client:Get] Entered
-[Client:Get] leaves:{index:&#34;\x12\xbbc\x18\x07\xea2\x86Z\x06\x11\xe7*e\xe2\xb3&gt;ɭ\x8b\x96\x00\xe9\xdbM)\x83t\x81\xe4[8&#34;  leaf_value:&#34;Australian Shepherd&#34;}
-[main:get] Leaf #00: Index: 12bb631807ea32865a0611e72a65e2b33ec9ad8b9600e9db4d29837481e45b38, Value: Australian Shepherd
-[main:get] Sleeping 1 second
-[main:get] Artie
-[main:get] Artie: d69c866405c582529c4c74fe474575a62c0db4fa8e5321f62fb197cbb7bc8fe7
-[main:get] Get&#39;ing Artie
-[Client:Get] Entered
-[Client:Get] leaves:{index:&#34;֜\x86d\x05łR\x9cLt\xfeGEu\xa6,\r\xb4\xfa\x8eS!\xf6/\xb1\x97˷\xbc\x8f\xe7&#34;  leaf_value:&#34;Weimeraner&#34;}
-[main:get] Leaf #00: Index: d69c866405c582529c4c74fe474575a62c0db4fa8e5321f62fb197cbb7bc8fe7, Value: Weimeraner
-[main:get] Sleeping 1 second
-[main:get] Louie
-[main:get] Louie: 7435d5755367c07fd592e3210fe0db424a9278b255faab470c96324809d1a773
-[main:get] Get&#39;ing Louie
-[Client:Get] Entered
-[Client:Get] leaves:{index:&#34;t5\xd5uSg\xc0Ւ\xe3!\x0f\xe0\xdbBJ\x92x\xb2U\xfa\xabG\x0c\x962H\tѧs&#34;  leaf_value:&#34;Formosan Mountain Dog&#34;}
-[main:get] Leaf #00: Index: 7435d5755367c07fd592e3210fe0db424a9278b255faab470c96324809d1a773, Value: Formosan Mountain Dog
-[main:get] Sleeping 1 second
-[main:get] Luna
-[main:get] Luna: 9d77a24d0f4c91a2e968ca607e49dd3b15d5489f66a5bc81fa72803b32443419
-[main:get] Get&#39;ing Luna
-[Client:Get] Entered
-[Client:Get] leaves:{index:&#34;\x9dw\xa2M\x0fL\x91\xa2\xe9h\xca`~I\xdd;\x15\xd5H\x9ff\xa5\xbc\x81\xfar\x80;2D4\x19&#34;  leaf_value:&#34;Yorkiepoo&#34;}
-[main:get] Leaf #00: Index: 9d77a24d0f4c91a2e968ca607e49dd3b15d5489f66a5bc81fa72803b32443419, Value: Yorkiepoo
-[main:get] Sleeping 1 second
-[main:get] Bertie
-[main:get] Bertie: 2eed8f9879977565d3037e6363b505ff2ca35a2227083de91d198ebfcde76b3d
-[main:get] Get&#39;ing Bertie
-[Client:Get] Entered
-[Client:Get] leaves:{index:&#34;.폘y\x97ue\xd3\x03~cc\xb5\x05\xff,\xa3Z\&#34;&#39;\x08=\xe9\x1d\x19\x8e\xbf\xcd\xe7k=&#34;  leaf_value:&#34;Cockapoo&#34;}
-[main:get] Leaf #00: Index: 2eed8f9879977565d3037e6363b505ff2ca35a2227083de91d198ebfcde76b3d, Value: Cockapoo
-[main:get] Sleeping 1 second
-[main:get] Mr Magoo
-[main:get] Mr Magoo: cec7fa35beed1c12b44f1bab965fc47ebe8c590510a7eb774d10b440f68c8355
-[main:get] Get&#39;ing Mr Magoo
-[Client:Get] Entered
-[Client:Get] leaves:{index:&#34;\xce\xc7\xfa5\xbe\xed\x1c\x12\xb4O\x1b\xab\x96_\xc4~\xbe\x8cY\x05\x10\xa7\xebwM\x10\xb4@\xf6\x8c\x83U&#34;  leaf_value:&#34;Scottish Terrier&#34;}
-[main:get] Leaf #00: Index: cec7fa35beed1c12b44f1bab965fc47ebe8c590510a7eb774d10b440f68c8355, Value: Scottish Terrier
-[main:get] Sleeping 1 second
-</code></pre></div><p>That&rsquo;s all (for now)!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">Add</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">leaves</span> []<span style="color:#f92672">*</span><span style="color:#a6e22e">trillian</span>.<span style="color:#a6e22e">MapLeaf</span>, <span style="color:#a6e22e">revision</span> <span style="color:#66d9ef">int64</span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Print</span>(<span style="color:#e6db74">&#34;[Client:Add] Entered&#34;</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">trillian</span>.<span style="color:#a6e22e">WriteMapLeavesRequest</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">MapId</span>:          <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">mapID</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Leaves</span>:         <span style="color:#a6e22e">leaves</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">ExpectRevision</span>: <span style="color:#a6e22e">revision</span>,
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">WriteLeaves</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[Client:Add] %+v&#34;</span>, <span style="color:#a6e22e">resp</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>Get</code> section gets each leaf in turn for the revision. As before, we hash the key value to create the index and then create the request with a singular index. We iterate over the leaves in the response and print them:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">indexes</span> <span style="color:#f92672">:=</span> [][]<span style="color:#66d9ef">byte</span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">index</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">leaves</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">indexes</span>, <span style="color:#a6e22e">rev</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">leaf</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">leaves</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[main:get] Leaf #%02d: %s&#34;</span>, <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">toString</span>(<span style="color:#a6e22e">leaf</span>))
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The leaf retrieval uses Trillian&rsquo;s <code>GetMapLeavesByRevisionRequest</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">indexes</span> [][]<span style="color:#66d9ef">byte</span>, <span style="color:#a6e22e">revision</span> <span style="color:#66d9ef">int64</span>) ([]<span style="color:#f92672">*</span><span style="color:#a6e22e">trillian</span>.<span style="color:#a6e22e">MapLeaf</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Print</span>(<span style="color:#e6db74">&#34;[Client:Get] Entered&#34;</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">trillian</span>.<span style="color:#a6e22e">GetMapLeavesByRevisionRequest</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">MapId</span>:    <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">mapID</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Index</span>:    <span style="color:#a6e22e">indexes</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Revision</span>: <span style="color:#a6e22e">revision</span>,
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">GetLeavesByRevision</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[Client:Get] %+v&#34;</span>, <span style="color:#a6e22e">resp</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">GetLeaves</span>(), <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Running the server against the Kubernetes deployment involves determining the code&rsquo;s (Kubernetes) Service endpoint:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  kubectl get service/map-server <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span>trillian <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.clusterIP}:{.spec.ports[?(@.name==\&#34;grpc\&#34;)].port}&#34;</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>Then invoking the binary:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go run ./cmd/server <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--tmap_endpoint<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--tmap_id<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>MAPID<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--tmap_rev<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><p>Yielding:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>[main:add] Bertie
+</span></span><span style="display:flex;"><span>[main:add] Bertie: 2eed8f9879977565d3037e6363b505ff2ca35a2227083de91d198ebfcde76b3d
+</span></span><span style="display:flex;"><span>[main:add] Leaf #00: Index: 2eed8f9879977565d3037e6363b505ff2ca35a2227083de91d198ebfcde76b3d, Value: Cockapoo
+</span></span><span style="display:flex;"><span>[main:add] Mr Magoo
+</span></span><span style="display:flex;"><span>[main:add] Mr Magoo: cec7fa35beed1c12b44f1bab965fc47ebe8c590510a7eb774d10b440f68c8355
+</span></span><span style="display:flex;"><span>[main:add] Leaf #01: Index: cec7fa35beed1c12b44f1bab965fc47ebe8c590510a7eb774d10b440f68c8355, Value: Scottish Terrier
+</span></span><span style="display:flex;"><span>[main:add] Freddie
+</span></span><span style="display:flex;"><span>[main:add] Freddie: b146ae2a1fb1d772cbe9c16fd9ae30eb11ebef7c948829167bb04fae541aa5f5
+</span></span><span style="display:flex;"><span>[main:add] Leaf #02: Index: b146ae2a1fb1d772cbe9c16fd9ae30eb11ebef7c948829167bb04fae541aa5f5, Value: Border Collie
+</span></span><span style="display:flex;"><span>[main:add] Noisette
+</span></span><span style="display:flex;"><span>[main:add] Noisette: 12bb631807ea32865a0611e72a65e2b33ec9ad8b9600e9db4d29837481e45b38
+</span></span><span style="display:flex;"><span>[main:add] Leaf #03: Index: 12bb631807ea32865a0611e72a65e2b33ec9ad8b9600e9db4d29837481e45b38, Value: Australian Shepherd
+</span></span><span style="display:flex;"><span>[main:add] Artie
+</span></span><span style="display:flex;"><span>[main:add] Artie: d69c866405c582529c4c74fe474575a62c0db4fa8e5321f62fb197cbb7bc8fe7
+</span></span><span style="display:flex;"><span>[main:add] Leaf #04: Index: d69c866405c582529c4c74fe474575a62c0db4fa8e5321f62fb197cbb7bc8fe7, Value: Weimeraner
+</span></span><span style="display:flex;"><span>[main:add] Louie
+</span></span><span style="display:flex;"><span>[main:add] Louie: 7435d5755367c07fd592e3210fe0db424a9278b255faab470c96324809d1a773
+</span></span><span style="display:flex;"><span>[main:add] Leaf #05: Index: 7435d5755367c07fd592e3210fe0db424a9278b255faab470c96324809d1a773, Value: Formosan Mountain Dog
+</span></span><span style="display:flex;"><span>[main:add] Luna
+</span></span><span style="display:flex;"><span>[main:add] Luna: 9d77a24d0f4c91a2e968ca607e49dd3b15d5489f66a5bc81fa72803b32443419
+</span></span><span style="display:flex;"><span>[main:add] Leaf #06: Index: 9d77a24d0f4c91a2e968ca607e49dd3b15d5489f66a5bc81fa72803b32443419, Value: Yorkiepoo
+</span></span><span style="display:flex;"><span>[main:add] Add&#39;ing
+</span></span><span style="display:flex;"><span>[Client:Add] Entered
+</span></span><span style="display:flex;"><span>[Client:Add] revision:7
+</span></span><span style="display:flex;"><span>[main:get] Freddie
+</span></span><span style="display:flex;"><span>[main:get] Freddie: b146ae2a1fb1d772cbe9c16fd9ae30eb11ebef7c948829167bb04fae541aa5f5
+</span></span><span style="display:flex;"><span>[main:get] Get&#39;ing Freddie
+</span></span><span style="display:flex;"><span>[Client:Get] Entered
+</span></span><span style="display:flex;"><span>[Client:Get] leaves:{index:&#34;\xb1F\xae*\x1f\xb1\xd7r\xcb\xe9\xc1oٮ0\xeb\x11\xeb\xef|\x94\x88)\x16{\xb0O\xaeT\x1a\xa5\xf5&#34;  leaf_value:&#34;Border Collie&#34;}
+</span></span><span style="display:flex;"><span>[main:get] Leaf #00: Index: b146ae2a1fb1d772cbe9c16fd9ae30eb11ebef7c948829167bb04fae541aa5f5, Value: Border Collie
+</span></span><span style="display:flex;"><span>[main:get] Sleeping 1 second
+</span></span><span style="display:flex;"><span>[main:get] Noisette
+</span></span><span style="display:flex;"><span>[main:get] Noisette: 12bb631807ea32865a0611e72a65e2b33ec9ad8b9600e9db4d29837481e45b38
+</span></span><span style="display:flex;"><span>[main:get] Get&#39;ing Noisette
+</span></span><span style="display:flex;"><span>[Client:Get] Entered
+</span></span><span style="display:flex;"><span>[Client:Get] leaves:{index:&#34;\x12\xbbc\x18\x07\xea2\x86Z\x06\x11\xe7*e\xe2\xb3&gt;ɭ\x8b\x96\x00\xe9\xdbM)\x83t\x81\xe4[8&#34;  leaf_value:&#34;Australian Shepherd&#34;}
+</span></span><span style="display:flex;"><span>[main:get] Leaf #00: Index: 12bb631807ea32865a0611e72a65e2b33ec9ad8b9600e9db4d29837481e45b38, Value: Australian Shepherd
+</span></span><span style="display:flex;"><span>[main:get] Sleeping 1 second
+</span></span><span style="display:flex;"><span>[main:get] Artie
+</span></span><span style="display:flex;"><span>[main:get] Artie: d69c866405c582529c4c74fe474575a62c0db4fa8e5321f62fb197cbb7bc8fe7
+</span></span><span style="display:flex;"><span>[main:get] Get&#39;ing Artie
+</span></span><span style="display:flex;"><span>[Client:Get] Entered
+</span></span><span style="display:flex;"><span>[Client:Get] leaves:{index:&#34;֜\x86d\x05łR\x9cLt\xfeGEu\xa6,\r\xb4\xfa\x8eS!\xf6/\xb1\x97˷\xbc\x8f\xe7&#34;  leaf_value:&#34;Weimeraner&#34;}
+</span></span><span style="display:flex;"><span>[main:get] Leaf #00: Index: d69c866405c582529c4c74fe474575a62c0db4fa8e5321f62fb197cbb7bc8fe7, Value: Weimeraner
+</span></span><span style="display:flex;"><span>[main:get] Sleeping 1 second
+</span></span><span style="display:flex;"><span>[main:get] Louie
+</span></span><span style="display:flex;"><span>[main:get] Louie: 7435d5755367c07fd592e3210fe0db424a9278b255faab470c96324809d1a773
+</span></span><span style="display:flex;"><span>[main:get] Get&#39;ing Louie
+</span></span><span style="display:flex;"><span>[Client:Get] Entered
+</span></span><span style="display:flex;"><span>[Client:Get] leaves:{index:&#34;t5\xd5uSg\xc0Ւ\xe3!\x0f\xe0\xdbBJ\x92x\xb2U\xfa\xabG\x0c\x962H\tѧs&#34;  leaf_value:&#34;Formosan Mountain Dog&#34;}
+</span></span><span style="display:flex;"><span>[main:get] Leaf #00: Index: 7435d5755367c07fd592e3210fe0db424a9278b255faab470c96324809d1a773, Value: Formosan Mountain Dog
+</span></span><span style="display:flex;"><span>[main:get] Sleeping 1 second
+</span></span><span style="display:flex;"><span>[main:get] Luna
+</span></span><span style="display:flex;"><span>[main:get] Luna: 9d77a24d0f4c91a2e968ca607e49dd3b15d5489f66a5bc81fa72803b32443419
+</span></span><span style="display:flex;"><span>[main:get] Get&#39;ing Luna
+</span></span><span style="display:flex;"><span>[Client:Get] Entered
+</span></span><span style="display:flex;"><span>[Client:Get] leaves:{index:&#34;\x9dw\xa2M\x0fL\x91\xa2\xe9h\xca`~I\xdd;\x15\xd5H\x9ff\xa5\xbc\x81\xfar\x80;2D4\x19&#34;  leaf_value:&#34;Yorkiepoo&#34;}
+</span></span><span style="display:flex;"><span>[main:get] Leaf #00: Index: 9d77a24d0f4c91a2e968ca607e49dd3b15d5489f66a5bc81fa72803b32443419, Value: Yorkiepoo
+</span></span><span style="display:flex;"><span>[main:get] Sleeping 1 second
+</span></span><span style="display:flex;"><span>[main:get] Bertie
+</span></span><span style="display:flex;"><span>[main:get] Bertie: 2eed8f9879977565d3037e6363b505ff2ca35a2227083de91d198ebfcde76b3d
+</span></span><span style="display:flex;"><span>[main:get] Get&#39;ing Bertie
+</span></span><span style="display:flex;"><span>[Client:Get] Entered
+</span></span><span style="display:flex;"><span>[Client:Get] leaves:{index:&#34;.폘y\x97ue\xd3\x03~cc\xb5\x05\xff,\xa3Z\&#34;&#39;\x08=\xe9\x1d\x19\x8e\xbf\xcd\xe7k=&#34;  leaf_value:&#34;Cockapoo&#34;}
+</span></span><span style="display:flex;"><span>[main:get] Leaf #00: Index: 2eed8f9879977565d3037e6363b505ff2ca35a2227083de91d198ebfcde76b3d, Value: Cockapoo
+</span></span><span style="display:flex;"><span>[main:get] Sleeping 1 second
+</span></span><span style="display:flex;"><span>[main:get] Mr Magoo
+</span></span><span style="display:flex;"><span>[main:get] Mr Magoo: cec7fa35beed1c12b44f1bab965fc47ebe8c590510a7eb774d10b440f68c8355
+</span></span><span style="display:flex;"><span>[main:get] Get&#39;ing Mr Magoo
+</span></span><span style="display:flex;"><span>[Client:Get] Entered
+</span></span><span style="display:flex;"><span>[Client:Get] leaves:{index:&#34;\xce\xc7\xfa5\xbe\xed\x1c\x12\xb4O\x1b\xab\x96_\xc4~\xbe\x8cY\x05\x10\xa7\xebwM\x10\xb4@\xf6\x8c\x83U&#34;  leaf_value:&#34;Scottish Terrier&#34;}
+</span></span><span style="display:flex;"><span>[main:get] Leaf #00: Index: cec7fa35beed1c12b44f1bab965fc47ebe8c590510a7eb774d10b440f68c8355, Value: Scottish Terrier
+</span></span><span style="display:flex;"><span>[main:get] Sleeping 1 second
+</span></span></code></pre></div><p>That&rsquo;s all (for now)!</p>
 <ul class="pa0">
   
    <li class="list di">

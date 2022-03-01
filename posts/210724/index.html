@@ -7,7 +7,7 @@
     <title>gRPC Interceptors and in-memory gRPC connections | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="a gRPC Interceptor that uses a client to an in-memory gRPC service">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -199,7 +199,7 @@ if (!doNotTrack) {
 <li>Shiju&rsquo;s <a href="https://shijuvar.medium.com/writing-grpc-interceptors-in-go-bf3e7671fe48">&ldquo;Writing gRPC Interceptors in Go&rdquo;</a> is great</li>
 <li>This Stack overflow <a href="https://stackoverflow.com/a/52080545/609290">answer</a> ostensibly for writing unit tests for gRPC got me an in-process server</li>
 </ul>
-<p>What follows stands on these folks' shoulders&hellip;</p>
+<p>What follows stands on these folks&rsquo; shoulders&hellip;</p>
 <p>A key motivator for me to write blog posts is that helps me ensure that I understand things. Writing this post, I realized I&rsquo;d not researched gRPC Interceptors and, as luck would have it, I found some interesting content, not on <a href="https://grpc.io"><code>grpc.io</code></a> but on the <a href="https://github.com/grpc-ecosystem"><code>grpc-ecosystem</code></a> repo, specifically <a href="https://github.com/grpc-ecosystem/go-grpc-middleware">Go gRPC middleware</a>. But, I refer again to Shiju&rsquo;s clear and helpful <a href="https://shijuvar.medium.com/writing-grpc-interceptors-in-go-bf3e7671fe48">&ldquo;Writing gRPC Interceptors in Go&rdquo;</a></p>
 <p>Interceptors, intercept gRPC requests and, in my case, I&rsquo;m intercepting every request to ensure that the request is authorized. The <a href="https://github.com/grpc-ecosystem/go-grpc-middleware"><code>go-grpc-middleware</code></a> page says &ldquo;[Interceptors are] a perfect way to implement common patterns: auth, logging, message, validation, retries or monitoring&rdquo;. In this case, I assume &ldquo;auth&rdquo; refers to authentication but it is often used to refer both to authentication and authorization.</p>
 <p>In my case, authentication is performed by <a href="https://firebase.google.com/products/auth">Firebase Auth</a> as discussed <a href="/posts/210614/">here</a> and <a href="/posts/210618/">here</a>. In addition to Firebase Auth, I&rsquo;m using <a href="https://cloud.google.com/endpoints">Cloud Endpoints</a>, in part, to authenticate users to the gRPC service (see <a href="https://cloud.google.com/endpoints/docs/grpc/authenticating-users">Cloud Endpoints: Auth</a>). This adds a metadata key to gRPC requests representing a JWT-like JSON structure that can be used to extract user details.</p>
@@ -208,159 +208,159 @@ if (!doNotTrack) {
 <li>Extract user &ldquo;claims&rdquo; (properties) from incoming requests</li>
 <li>Authorize the user with some subset of the claims</li>
 </ul>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">SomeInterceptor</span>(
-		<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
-		<span style="color:#a6e22e">rqst</span> <span style="color:#66d9ef">interface</span>{},
-		<span style="color:#a6e22e">info</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryServerInfo</span>,
-		<span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryHandler</span>,
-) (<span style="color:#66d9ef">interface</span>{}, <span style="color:#66d9ef">error</span>) {
-
-    <span style="color:#a6e22e">md</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">FromIncomingContext</span>(<span style="color:#a6e22e">ctx</span>)
-    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {}
-
-
-    <span style="color:#a6e22e">claims</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">extractor</span>(<span style="color:#a6e22e">md</span>)
-
-    <span style="color:#a6e22e">authorized</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">authorizer</span>(<span style="color:#a6e22e">claims</span>)
-
-    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">authorized</span> {
-        <span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">handler</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
-        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">err</span>
-    }
-
-    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">status</span>.<span style="color:#a6e22e">Errorf</span>(
-        <span style="color:#a6e22e">codes</span>.<span style="color:#a6e22e">PermissionDenied</span>,
-        <span style="color:#e6db74">&#34;permission denied&#34;</span>,
-    )
-}
-</code></pre></div><p>The function signature for gRPC (UnaryServer)Interceptors is complex but straightforward. We receive some context (<code>ctx</code>), the incoming request (<code>rqst</code>), accompanying info (<code>info</code>), and the intended gRPC method (<code>handler</code>).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">SomeInterceptor</span>(
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">rqst</span> <span style="color:#66d9ef">interface</span>{},
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">info</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryServerInfo</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryHandler</span>,
+</span></span><span style="display:flex;"><span>) (<span style="color:#66d9ef">interface</span>{}, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">md</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">FromIncomingContext</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">claims</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">extractor</span>(<span style="color:#a6e22e">md</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">authorized</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">authorizer</span>(<span style="color:#a6e22e">claims</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">authorized</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">handler</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">status</span>.<span style="color:#a6e22e">Errorf</span>(
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">codes</span>.<span style="color:#a6e22e">PermissionDenied</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;permission denied&#34;</span>,
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The function signature for gRPC (UnaryServer)Interceptors is complex but straightforward. We receive some context (<code>ctx</code>), the incoming request (<code>rqst</code>), accompanying info (<code>info</code>), and the intended gRPC method (<code>handler</code>).</p>
 <p>In my case, I&rsquo;m extracting <code>claims</code> from the <code>metadata</code> pulled from the incoming context (<code>ctx</code>) and I use these claims to authorize the user.</p>
 <p>In order to test my Interceptor, I&rsquo;m applying <code>extractor</code> and <code>authorizer</code> methods through a closure that returns a suitably-configured Interceptor:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Extractor</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">md</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">MD</span>) (<span style="color:#a6e22e">Claims</span>, <span style="color:#66d9ef">error</span>)
-<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Authorizer</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">email</span> <span style="color:#66d9ef">string</span>) (<span style="color:#66d9ef">bool</span>, <span style="color:#66d9ef">error</span>)
-
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">AuthorizationInterceptorGenerator</span>(
-    <span style="color:#a6e22e">extractor</span> <span style="color:#a6e22e">Extractor</span>,
-    <span style="color:#a6e22e">authorizer</span> <span style="color:#a6e22e">Authorizer</span>.
-) <span style="color:#66d9ef">func</span>(
-    <span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
-    <span style="color:#a6e22e">rqst</span> <span style="color:#66d9ef">interface</span>{},
-    <span style="color:#a6e22e">info</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryServerInfo</span>,
-    <span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryHandler</span>,
-) (
-    <span style="color:#66d9ef">interface</span>{},
-    <span style="color:#66d9ef">error</span>
-) {
-	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">func</span>(
-		<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
-		<span style="color:#a6e22e">rqst</span> <span style="color:#66d9ef">interface</span>{},
-		<span style="color:#a6e22e">info</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryServerInfo</span>,
-		<span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryHandler</span>,
-	) (<span style="color:#66d9ef">interface</span>{}, <span style="color:#66d9ef">error</span>) {}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Extractor</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">md</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">MD</span>) (<span style="color:#a6e22e">Claims</span>, <span style="color:#66d9ef">error</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Authorizer</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">email</span> <span style="color:#66d9ef">string</span>) (<span style="color:#66d9ef">bool</span>, <span style="color:#66d9ef">error</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">AuthorizationInterceptorGenerator</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">extractor</span> <span style="color:#a6e22e">Extractor</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">authorizer</span> <span style="color:#a6e22e">Authorizer</span>.
+</span></span><span style="display:flex;"><span>) <span style="color:#66d9ef">func</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">rqst</span> <span style="color:#66d9ef">interface</span>{},
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">info</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryServerInfo</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryHandler</span>,
+</span></span><span style="display:flex;"><span>) (
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">interface</span>{},
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">error</span>
+</span></span><span style="display:flex;"><span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">func</span>(
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">rqst</span> <span style="color:#66d9ef">interface</span>{},
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">info</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryServerInfo</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">UnaryHandler</span>,
+</span></span><span style="display:flex;"><span>	) (<span style="color:#66d9ef">interface</span>{}, <span style="color:#66d9ef">error</span>) {}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> I hope that layout makes sense, the <code>Generator</code> takes the 2 functions (<code>Extractor</code> and <code>Authorizer</code>) and returns an Interceptor function.</p>
 </blockquote>
 <p>I can then create an Interceptor:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">interceptor</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">AuthorizationInterceptorGenerator</span>(
-    <span style="color:#a6e22e">extractor</span>,
-    <span style="color:#a6e22e">authorizer</span>,
-)
-</code></pre></div><p>The gRPC server configuration is straightforward:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">opts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">ServerOption</span>{
-    <span style="color:#a6e22e">gprc</span>.<span style="color:#a6e22e">WithUnaryInterceptor</span>(<span style="color:#a6e22e">interceptor</span>),
-}
-<span style="color:#a6e22e">grcpServer</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">NewServer</span>(<span style="color:#a6e22e">opts</span>)
-</code></pre></div><p>First problem solved.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">interceptor</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">AuthorizationInterceptorGenerator</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">extractor</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">authorizer</span>,
+</span></span><span style="display:flex;"><span>)
+</span></span></code></pre></div><p>The gRPC server configuration is straightforward:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">opts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">ServerOption</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">gprc</span>.<span style="color:#a6e22e">WithUnaryInterceptor</span>(<span style="color:#a6e22e">interceptor</span>),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">grcpServer</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">NewServer</span>(<span style="color:#a6e22e">opts</span>)
+</span></span></code></pre></div><p>First problem solved.</p>
 <p>The second problem was more challenging for me. I want the aforementioned <code>authorizer</code> to itself be a gRPC client and its server must be running in the same process.</p>
 <p>This requirement is partly because I don&rsquo;t want to incur network (and deployment) overhead of going over a network to a remote service, and partly because, using Cloud Run, I&rsquo;m unable to run this service as a sidecar. So, in-memory it is.</p>
 <p>This Stack overflow <a href="https://stackoverflow.com/a/52080545/609290">answer</a> is great and should be part of the gRPC documentation. The repo doesn&rsquo;t include a specific example of how to do this either.</p>
 <p>Honestly, I find the Golang client-server gRPC configuration difficult to remember because it&rsquo;s asymmetric:</p>
 <p>server:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">lis</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Listen</span>(<span style="color:#e6db74">&#34;tcp&#34;</span>, <span style="color:#a6e22e">port</span>)
-
-<span style="color:#a6e22e">server</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">NewServer</span>()
-<span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">RegisterSomeServer</span>(<span style="color:#a6e22e">s</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">server</span>{})
-
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">Serve</span>(<span style="color:#a6e22e">lis</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {}
-</code></pre></div><p>client:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
-
-<span style="color:#a6e22e">dialOpts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">DialOption</span>{
-    <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithInsecure</span>(),
-}
-<span style="color:#a6e22e">conn</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">Dial</span>(<span style="color:#a6e22e">address</span>, <span style="color:#a6e22e">dialOpts</span><span style="color:#f92672">...</span>)
-<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">conn</span>.<span style="color:#a6e22e">Close</span>()
-
-<span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">NewSomeClient</span>(<span style="color:#a6e22e">conn</span>)
-
-<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">SomeMethodRequest</span>{}
-<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">SomeMethod</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
-</code></pre></div><p>The connection between the two is some underlying network. The client uses <code>grpc.Dial</code> to dial the server&rsquo;s address (<code>host:port</code>) and the server on <code>host</code> uses <code>net.Listen</code> to listen on the <code>port</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">lis</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Listen</span>(<span style="color:#e6db74">&#34;tcp&#34;</span>, <span style="color:#a6e22e">port</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">server</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">NewServer</span>()
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">RegisterSomeServer</span>(<span style="color:#a6e22e">s</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">server</span>{})
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">Serve</span>(<span style="color:#a6e22e">lis</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {}
+</span></span></code></pre></div><p>client:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dialOpts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">DialOption</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithInsecure</span>(),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">conn</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">Dial</span>(<span style="color:#a6e22e">address</span>, <span style="color:#a6e22e">dialOpts</span><span style="color:#f92672">...</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">conn</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">NewSomeClient</span>(<span style="color:#a6e22e">conn</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">SomeMethodRequest</span>{}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">SomeMethod</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
+</span></span></code></pre></div><p>The connection between the two is some underlying network. The client uses <code>grpc.Dial</code> to dial the server&rsquo;s address (<code>host:port</code>) and the server on <code>host</code> uses <code>net.Listen</code> to listen on the <code>port</code>.</p>
 <p>The Stack overflow answers shows how to use <code>bufconn.Listener</code> with a shared buffer to connect the two:</p>
 <p>shared:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">bufSize</span> = <span style="color:#ae81ff">1024</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">1024</span>
-
-<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">lis</span> = <span style="color:#a6e22e">bufconn</span>.<span style="color:#a6e22e">Listen</span>(<span style="color:#a6e22e">bufSize</span>)
-</code></pre></div><p>server:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">server</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">NewServer</span>()
-<span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">RegisterServer</span>(<span style="color:#a6e22e">s</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">server</span>{})
-
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">Serve</span>(<span style="color:#a6e22e">lis</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {}
-</code></pre></div><p>client:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
-
-<span style="color:#a6e22e">d</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Conn</span>, <span style="color:#66d9ef">error</span>) {
-    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">lis</span>.<span style="color:#a6e22e">Dial</span>()
-    }
-
-<span style="color:#a6e22e">dialOpts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">DialOption</span>{
-    <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithContextDialer</span>(<span style="color:#a6e22e">d</span>),
-    <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithInsecure</span>(),
-}
-<span style="color:#a6e22e">conn</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">DialContext</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;in-memory&#34;</span>, <span style="color:#a6e22e">dialOpts</span><span style="color:#f92672">...</span>)
-<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">conn</span>.<span style="color:#a6e22e">Close</span>()
-
-<span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">NewSomeClient</span>(<span style="color:#a6e22e">conn</span>)
-
-<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">SomeMethodRequest</span>{}
-<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">SomeMethod</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">bufSize</span> = <span style="color:#ae81ff">1024</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">1024</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">lis</span> = <span style="color:#a6e22e">bufconn</span>.<span style="color:#a6e22e">Listen</span>(<span style="color:#a6e22e">bufSize</span>)
+</span></span></code></pre></div><p>server:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">server</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">NewServer</span>()
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">RegisterServer</span>(<span style="color:#a6e22e">s</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">server</span>{})
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">Serve</span>(<span style="color:#a6e22e">lis</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {}
+</span></span></code></pre></div><p>client:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">d</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Conn</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">lis</span>.<span style="color:#a6e22e">Dial</span>()
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dialOpts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">DialOption</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithContextDialer</span>(<span style="color:#a6e22e">d</span>),
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithInsecure</span>(),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">conn</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">DialContext</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;in-memory&#34;</span>, <span style="color:#a6e22e">dialOpts</span><span style="color:#f92672">...</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">conn</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">NewSomeClient</span>(<span style="color:#a6e22e">conn</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">SomeMethodRequest</span>{}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">SomeMethod</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> I&rsquo;ve laid out the code to try to make it as easy as possible to compare the 2 sets of code. In practice, of course, you can&rsquo;t share a listener across two distinct processes (two <code>main</code> functions) and so I created a struct to share the listener with 2 methods: <code>Serve()</code> (that runs the server in a Go routine); and <code>GetClient()</code> that returns a client methods on it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Foo</span> <span style="color:#66d9ef">struct</span> {
-   <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">size</span> <span style="color:#66d9ef">int</span> = <span style="color:#ae81ff">1024</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">1024</span>
-   <span style="color:#a6e22e">lis</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">bufconn</span>.<span style="color:#a6e22e">Listener</span>
-}
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewFoo</span>() <span style="color:#f92672">*</span><span style="color:#a6e22e">Foo</span> {
-   <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">size</span> <span style="color:#66d9ef">int</span> = <span style="color:#ae81ff">1024</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">1024</span>
-   <span style="color:#a6e22e">lis</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">bufconn</span>.<span style="color:#a6e22e">Listen</span>(<span style="color:#a6e22e">size</span>)
-
-   <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Authorization</span>{
-      <span style="color:#a6e22e">lis</span>: <span style="color:#a6e22e">lis</span>,
-   }
-}
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">GetClient</span>() <span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">SomeClient</span> {
-   <span style="color:#f92672">...</span>
-   <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">NewSomeClient</span>(<span style="color:#a6e22e">conn</span>)
-}
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Server</span>() {
-   <span style="color:#f92672">...</span>
-   <span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>() {
-      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">Serve</span>(<span style="color:#a6e22e">lis</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {}
-   }()
-}
-</code></pre></div></blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Foo</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>   <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">size</span> <span style="color:#66d9ef">int</span> = <span style="color:#ae81ff">1024</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">1024</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#a6e22e">lis</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">bufconn</span>.<span style="color:#a6e22e">Listener</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewFoo</span>() <span style="color:#f92672">*</span><span style="color:#a6e22e">Foo</span> {
+</span></span><span style="display:flex;"><span>   <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">size</span> <span style="color:#66d9ef">int</span> = <span style="color:#ae81ff">1024</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">1024</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#a6e22e">lis</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">bufconn</span>.<span style="color:#a6e22e">Listen</span>(<span style="color:#a6e22e">size</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>   <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Authorization</span>{
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">lis</span>: <span style="color:#a6e22e">lis</span>,
+</span></span><span style="display:flex;"><span>   }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">GetClient</span>() <span style="color:#f92672">*</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">SomeClient</span> {
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">NewSomeClient</span>(<span style="color:#a6e22e">conn</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Server</span>() {
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>() {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">Serve</span>(<span style="color:#a6e22e">lis</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {}
+</span></span><span style="display:flex;"><span>   }()
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div></blockquote>
 <p>My Authorization service is straightforward. It has a single method <code>Authorized</code>. One I&rsquo;m running an Authorization gRPC server in-memory, I create a client and pass its <code>Authorized</code> method (!) to the Interceptor function generator:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#a6e22e">extractor</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">some</span>.<span style="color:#a6e22e">Extract</span>
-
-<span style="color:#a6e22e">f</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewFoo</span>()
-<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">Serve</span>()
-<span style="color:#a6e22e">authorizer</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">GetClient</span>().<span style="color:#a6e22e">Authorized</span>
-
-<span style="color:#a6e22e">interceptor</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">AuthorizationInterceptorGenerator</span>(
-    <span style="color:#a6e22e">extractor</span>,
-    <span style="color:#a6e22e">authorizer</span>,
-)
-</code></pre></div><p>That&rsquo;s all!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">extractor</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">some</span>.<span style="color:#a6e22e">Extract</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">f</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewFoo</span>()
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">Serve</span>()
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">authorizer</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">GetClient</span>().<span style="color:#a6e22e">Authorized</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">interceptor</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">AuthorizationInterceptorGenerator</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">extractor</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">authorizer</span>,
+</span></span><span style="display:flex;"><span>)
+</span></span></code></pre></div><p>That&rsquo;s all!</p>
 <ul class="pa0">
   
    <li class="list di">

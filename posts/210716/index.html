@@ -7,7 +7,7 @@
     <title>Stripe | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="An extended tour through Stripe world">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -203,189 +203,189 @@ if (!doNotTrack) {
 <p><strong>NOTE</strong> Since I began with the guide, they&rsquo;ve simplified the solution (for the better) and updated the Go module references. The guide that I encountered used a JavaScript client to programmatically call the backend (Golang) handlers. This has now been simplified to use e.g. <code>FORM</code> <code>POST</code>ing which makes the guide more comprehensible. However, I think the programmatic approach is more realistic in practice. In my case, I need to make other service calls to get the e.g. user email address from the authentication service and, while these values could be <code>hidden</code> in <code>FORM</code>&rsquo;s, I think it&rsquo;s probably cleaner (albeit more complex) to consider the client entirely in JavaScript. Now that the documentation has been updated (see <strong>NOTE</strong> above), I won&rsquo;t labor the fact that, when I reviewed the guide, it contained minor errors and the Golang server code referenced an outdated module.</p>
 </blockquote>
 <p>Given the above, I was slightly confused by the guide&rsquo;s use of JavaScript and e.g. Golang (one of the language options and my preference). Now that this has been simplified through the use of <code>FORM</code> <code>POST</code>ing, this is much less confusing but, back then, the example would include, e.g.:&quot;</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JavaScript" data-lang="JavaScript"><span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fetch</span>(<span style="color:#e6db74">&#34;/create-checkout-session&#34;</span>, {
-    <span style="color:#a6e22e">method</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;POST&#34;</span>,
-    <span style="color:#a6e22e">headers</span><span style="color:#f92672">:</span> {
-        <span style="color:#e6db74">&#34;Content-Type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;application/json&#34;</span>
-    },
-    <span style="color:#a6e22e">body</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">body</span>,
-}).<span style="color:#a6e22e">then</span>((<span style="color:#a6e22e">resp</span>) =&gt; {
-}).<span style="color:#66d9ef">catch</span>((<span style="color:#a6e22e">error</span>) =&gt; {
-});
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JavaScript" data-lang="JavaScript"><span style="display:flex;"><span><span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fetch</span>(<span style="color:#e6db74">&#34;/create-checkout-session&#34;</span>, {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">method</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;POST&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">headers</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;Content-Type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;application/json&#34;</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">body</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">body</span>,
+</span></span><span style="display:flex;"><span>}).<span style="color:#a6e22e">then</span>((<span style="color:#a6e22e">resp</span>) =&gt; {
+</span></span><span style="display:flex;"><span>}).<span style="color:#66d9ef">catch</span>((<span style="color:#a6e22e">error</span>) =&gt; {
+</span></span><span style="display:flex;"><span>});
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> This is now replaced with a simple <code>FORM</code> <code>POST</code> to <code>/create-checkout-session</code></p>
 </blockquote>
 <p>And there&rsquo;d be a corresponding backend handler:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CreateCheckoutSession</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Method</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;POST&#34;</span> {
-		<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Error</span>(
-            <span style="color:#a6e22e">w</span>,
-            <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusText</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusMethodNotAllowed</span>),
-            <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusMethodNotAllowed</span>,
-        )
-		<span style="color:#66d9ef">return</span>
-	}
-
-    <span style="color:#f92672">...</span>
-}
-</code></pre></div><p>Not having developed in JavaScript for some time, I found this approach confusing.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CreateCheckoutSession</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Method</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;POST&#34;</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Error</span>(
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">w</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusText</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusMethodNotAllowed</span>),
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusMethodNotAllowed</span>,
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Not having developed in JavaScript for some time, I found this approach confusing.</p>
 <h2 id="golang-sdk">Golang SDK</h2>
 <p>The guide referenced an outdated Golang module (<a href="https://pkg.go.dev/github.com/stripe/stripe-go">https://pkg.go.dev/github.com/stripe/stripe-go</a>) and it took me a little time to realize that the latest version includes a version path (<a href="https://pkg.go.dev/github.com/stripe/stripe-go/v72)">https://pkg.go.dev/github.com/stripe/stripe-go/v72)</a>. There are, of course, considerable changes between the versions and I spent some time determining the mapping from the guide&rsquo;s old uses to the new.</p>
 <p>The guide uses an (anti-pattern?) of function-local and unnamed struct types, e.g.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CreateCheckoutSession</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
-    <span style="color:#f92672">...</span>
-    <span style="color:#a6e22e">req</span> : = <span style="color:#66d9ef">struct</span> {
-        <span style="color:#a6e22e">PriceID</span>     <span style="color:#e6db74">`json:&#34;priceId&#34;`</span>
-    }
-    <span style="color:#f92672">...</span>
-    <span style="color:#a6e22e">writeJSON</span>(<span style="color:#a6e22e">w</span>, <span style="color:#66d9ef">struct</span> {
-        <span style="color:#a6e22e">ErrorData</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;error&#34;`</span>
-    }{
-        <span style="color:#a6e22e">ErrorData</span>: <span style="color:#e6db74">&#34;something&#34;</span>,
-    }, <span style="color:#a6e22e">err</span>)
-}
-</code></pre></div><p>This combined, with the unstructured types in the JavaScript client made initial debugging very challenging. I suspect the Golang code may be a consequence of lack of familiarity with Golang (although <code>writeJSON</code> takes an <code>interface{}</code> and so the intent is to genericise the code and overcome a challenge in Golang).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CreateCheckoutSession</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">req</span> : = <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">PriceID</span>     <span style="color:#e6db74">`json:&#34;priceId&#34;`</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">writeJSON</span>(<span style="color:#a6e22e">w</span>, <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">ErrorData</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;error&#34;`</span>
+</span></span><span style="display:flex;"><span>    }{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">ErrorData</span>: <span style="color:#e6db74">&#34;something&#34;</span>,
+</span></span><span style="display:flex;"><span>    }, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This combined, with the unstructured types in the JavaScript client made initial debugging very challenging. I suspect the Golang code may be a consequence of lack of familiarity with Golang (although <code>writeJSON</code> takes an <code>interface{}</code> and so the intent is to genericise the code and overcome a challenge in Golang).</p>
 <p>In my Golang code, I refactored structs out to be package-scoped and added field descriptions:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#75715e">// CreateCheckoutSessionRequest is the request type of the CreateCheckoutSession handler
-</span><span style="color:#75715e">// Correponds to `CreateCheckSessionRequest` class in script.js
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CreateCheckoutSessionRequest</span> <span style="color:#66d9ef">struct</span> {
-    <span style="color:#a6e22e">CustomerID</span>    <span style="color:#e6db74">`json:&#34;customerId,omitempty&#34; description:&#34;Stripe Customer identifier&#34;`</span>
-    <span style="color:#a6e22e">CustomerEmail</span> <span style="color:#e6db74">`json:&#34;customerEmail,omitempty&#34; description:&#34;Email address of Customer&#34;`</span>
-    <span style="color:#a6e22e">PriceID</span>       <span style="color:#e6db74">`json:&#34;priceId&#34; description:&#34;Stripe Price identifier`</span>
-}
-</code></pre></div><p>In my JavaScript code, I attempted something similar for the <code>fetch</code> body:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JavaScript" data-lang="JavaScript">    <span style="color:#75715e">/**
-</span><span style="color:#75715e">     * Corresponds to `CreateCheckoutSessionRequest` struct in stripe.go
-</span><span style="color:#75715e">     * @param {string} priceId
-</span><span style="color:#75715e">     * @param {string} (optional) customerId
-</span><span style="color:#75715e">     * @param {string} customerEmail
-</span><span style="color:#75715e">     */</span>
-    <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CreateCheckoutSessionRequest</span> {
-        <span style="color:#75715e">/**
-</span><span style="color:#75715e">         * There will always be `priceId` and `customerEmail`
-</span><span style="color:#75715e">         * `customerId` is optional
-</span><span style="color:#75715e">         * @param {string} priceId the Stripe Price ID
-</span><span style="color:#75715e">         * @param {string} customerEmail the User&#39;s email address
-</span><span style="color:#75715e">         */</span>
-        <span style="color:#a6e22e">constructor</span>(<span style="color:#a6e22e">priceId</span>, <span style="color:#a6e22e">customerEmail</span>) {
-            <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">priceId</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">priceId</span>;
-            <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">customerEmail</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">customerEmail</span>;
-        }
-        <span style="color:#75715e">/**
-</span><span style="color:#75715e">         * 
-</span><span style="color:#75715e">         * @returns string
-</span><span style="color:#75715e">         */</span>
-        <span style="color:#a6e22e">JSON</span>() {
-            <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">JSON</span>.<span style="color:#a6e22e">stringify</span>(<span style="color:#66d9ef">this</span>);
-        }
-    }
-</code></pre></div><h2 id="golang-testing">Golang testing</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#75715e">// CreateCheckoutSessionRequest is the request type of the CreateCheckoutSession handler
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Correponds to `CreateCheckSessionRequest` class in script.js
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CreateCheckoutSessionRequest</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">CustomerID</span>    <span style="color:#e6db74">`json:&#34;customerId,omitempty&#34; description:&#34;Stripe Customer identifier&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">CustomerEmail</span> <span style="color:#e6db74">`json:&#34;customerEmail,omitempty&#34; description:&#34;Email address of Customer&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">PriceID</span>       <span style="color:#e6db74">`json:&#34;priceId&#34; description:&#34;Stripe Price identifier`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>In my JavaScript code, I attempted something similar for the <code>fetch</code> body:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JavaScript" data-lang="JavaScript"><span style="display:flex;"><span>    <span style="color:#75715e">/**
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">     * Corresponds to `CreateCheckoutSessionRequest` struct in stripe.go
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">     * @param {string} priceId
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">     * @param {string} (optional) customerId
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">     * @param {string} customerEmail
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">     */</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CreateCheckoutSessionRequest</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">/**
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         * There will always be `priceId` and `customerEmail`
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         * `customerId` is optional
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         * @param {string} priceId the Stripe Price ID
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         * @param {string} customerEmail the User&#39;s email address
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         */</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">constructor</span>(<span style="color:#a6e22e">priceId</span>, <span style="color:#a6e22e">customerEmail</span>) {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">priceId</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">priceId</span>;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">customerEmail</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">customerEmail</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">/**
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         * 
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         * @returns string
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         */</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">JSON</span>() {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">JSON</span>.<span style="color:#a6e22e">stringify</span>(<span style="color:#66d9ef">this</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><h2 id="golang-testing">Golang testing</h2>
 <p>I&rsquo;m more familiar with Golang than JavaScript and found it easier to write unit tests for the majority of the Golang code. I initially struggled wondering how to test the Golang HTTP handlers and then I discovered the Golang standard library&rsquo;s <a href="https://pkg.go.dev/net/http/httptest"><code>httptest</code></a>&hellip; It&rsquo;s excellent, e.g.:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestCheckoutSession</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
-	<span style="color:#75715e">// Used to thread the tests together
-</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">sessionID</span> <span style="color:#66d9ef">string</span>
-
-	<span style="color:#75715e">// CreateCheckoutSession
-</span><span style="color:#75715e"></span>	{
-		<span style="color:#75715e">// Create body with valid customerId and priceId
-</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">body</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">NewReader</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#a6e22e">formatCreateCheckoutSessionRequest</span>, <span style="color:#a6e22e">customerID</span>, <span style="color:#a6e22e">priceID</span>))
-		<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">NewRequest</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">MethodPost</span>, <span style="color:#e6db74">&#34;/create-checkout-session&#34;</span>, <span style="color:#a6e22e">body</span>)
-		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-		}
-
-		<span style="color:#75715e">// ResponseRecorder
-</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">rr</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">httptest</span>.<span style="color:#a6e22e">NewRecorder</span>()
-
-		<span style="color:#75715e">// Specify the handler
-</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">handler</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">HandlerFunc</span>(<span style="color:#a6e22e">CreateCheckoutSession</span>)
-		<span style="color:#a6e22e">handler</span>.<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">rr</span>, <span style="color:#a6e22e">req</span>)
-
-		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">status</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rr</span>.<span style="color:#a6e22e">Code</span>; <span style="color:#a6e22e">status</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusOK</span> {
-			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;got: %v; want: %v&#34;</span>, <span style="color:#a6e22e">status</span>, <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusOK</span>)
-		}
-
-		<span style="color:#75715e">// Check the response body
-</span><span style="color:#75715e"></span>		<span style="color:#75715e">// Unable to determine a priori what the `sessionId` value will be
-</span><span style="color:#75715e"></span>		<span style="color:#75715e">// But we know what it should look like
-</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">got</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rr</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Bytes</span>()
-
-		<span style="color:#75715e">// The structure of the JSON returned by CreateCheckoutSession
-</span><span style="color:#75715e"></span>		<span style="color:#75715e">// Pattern includes a submatch `(...)` for the sessionId value
-</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">pattern</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;{\&#34;sessionId\&#34;:\&#34;(cs_test_[a-zA-Z0-9]{58})\&#34;}\n&#34;</span>
-		<span style="color:#a6e22e">re</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">regexp</span>.<span style="color:#a6e22e">MustCompile</span>(<span style="color:#a6e22e">pattern</span>)
-
-		<span style="color:#a6e22e">result</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">re</span>.<span style="color:#a6e22e">FindSubmatch</span>(<span style="color:#a6e22e">got</span>)
-
-		<span style="color:#75715e">// Unable to find the submatch pattern in the response body
-</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">result</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
-			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;got:\n%v\nwant:\n%v&#34;</span>, <span style="color:#a6e22e">got</span>, <span style="color:#a6e22e">pattern</span>)
-		}
-
-		<span style="color:#75715e">// Returns the entire string (0) and the submatch (1)
-</span><span style="color:#75715e"></span>		<span style="color:#75715e">// Want only the submatch == sessionId
-</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">result</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">2</span> {
-			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;Expected a submatch containing `sessionId`&#34;</span>)
-		}
-
-		<span style="color:#75715e">// Otherwise, result contains the sessionId
-</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">sessionID</span> = string(<span style="color:#a6e22e">result</span>[<span style="color:#ae81ff">1</span>])
-		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Retrieved Session ID&#34;</span>,
-			<span style="color:#e6db74">&#34;sessionId&#34;</span>, <span style="color:#a6e22e">sessionID</span>,
-		)
-	}
-
-    <span style="color:#75715e">// CheckoutSession
-</span><span style="color:#75715e"></span>    <span style="color:#f92672">...</span>
-
-    <span style="color:#75715e">// CustomerPortal
-</span><span style="color:#75715e"></span>    <span style="color:#f92672">...</span>
-}
-</code></pre></div><h2 id="golang-depsdevhttpsdepsdev">Golang <a href="https://deps.dev"><code>deps.dev</code></a></h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestCheckoutSession</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Used to thread the tests together
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">sessionID</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// CreateCheckoutSession
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	{
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Create body with valid customerId and priceId
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">body</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">NewReader</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#a6e22e">formatCreateCheckoutSessionRequest</span>, <span style="color:#a6e22e">customerID</span>, <span style="color:#a6e22e">priceID</span>))
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">NewRequest</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">MethodPost</span>, <span style="color:#e6db74">&#34;/create-checkout-session&#34;</span>, <span style="color:#a6e22e">body</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// ResponseRecorder
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">rr</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">httptest</span>.<span style="color:#a6e22e">NewRecorder</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Specify the handler
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">handler</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">HandlerFunc</span>(<span style="color:#a6e22e">CreateCheckoutSession</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">handler</span>.<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">rr</span>, <span style="color:#a6e22e">req</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">status</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rr</span>.<span style="color:#a6e22e">Code</span>; <span style="color:#a6e22e">status</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusOK</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;got: %v; want: %v&#34;</span>, <span style="color:#a6e22e">status</span>, <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusOK</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Check the response body
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#75715e">// Unable to determine a priori what the `sessionId` value will be
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#75715e">// But we know what it should look like
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">got</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rr</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Bytes</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// The structure of the JSON returned by CreateCheckoutSession
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#75715e">// Pattern includes a submatch `(...)` for the sessionId value
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">pattern</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;{\&#34;sessionId\&#34;:\&#34;(cs_test_[a-zA-Z0-9]{58})\&#34;}\n&#34;</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">re</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">regexp</span>.<span style="color:#a6e22e">MustCompile</span>(<span style="color:#a6e22e">pattern</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">result</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">re</span>.<span style="color:#a6e22e">FindSubmatch</span>(<span style="color:#a6e22e">got</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Unable to find the submatch pattern in the response body
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">result</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;got:\n%v\nwant:\n%v&#34;</span>, <span style="color:#a6e22e">got</span>, <span style="color:#a6e22e">pattern</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Returns the entire string (0) and the submatch (1)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#75715e">// Want only the submatch == sessionId
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">result</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">2</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;Expected a submatch containing `sessionId`&#34;</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Otherwise, result contains the sessionId
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">sessionID</span> = string(<span style="color:#a6e22e">result</span>[<span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Retrieved Session ID&#34;</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;sessionId&#34;</span>, <span style="color:#a6e22e">sessionID</span>,
+</span></span><span style="display:flex;"><span>		)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CheckoutSession
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CustomerPortal
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="golang-depsdevhttpsdepsdev">Golang <a href="https://deps.dev"><code>deps.dev</code></a></h2>
 <p>A new and very useful Google tool that helps developers understand module dependencies and vulns. For example, here&rsquo;s the output for Stripe&rsquo;s Golang library:</p>
 <p><a href="https://deps.dev/go/github.com%2Fstripe%2Fstripe-go%2Fv72">https://deps.dev/go/github.com%2Fstripe%2Fstripe-go%2Fv72</a></p>
 <h2 id="golang-http-server">Golang HTTP Server</h2>
 <p>For simplicity (and partly as a result of just wanting to get going), I wrote everything using a Golang HTTP server:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
-
-	<span style="color:#75715e">// Use gorilla/mux for better sub-path handling (see scripts)
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">NewRouter</span>()
-	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Host</span>(<span style="color:#a6e22e">domain</span>)
-
-	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">Root</span>)
-
-<span style="color:#75715e">// `/success` and `/canceled` are referenced by server.go#CreateCheckoutSession
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/success&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">Success</span>)
-	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/canceled&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">Canceled</span>)
-
-<span style="color:#75715e">// `/tos` and `/privacy` are required by Stripe customer portal
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/tos&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">TermsOfService</span>)
-	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/privacy&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">Privacy</span>)
-
-	<span style="color:#75715e">// Stripe server-side (Golang) handlers
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/create-checkout-session&#34;</span>, <span style="color:#a6e22e">CreateCheckoutSession</span>)
-	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/checkout-session&#34;</span>, <span style="color:#a6e22e">CheckoutSession</span>)
-	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/customer-portal&#34;</span>, <span style="color:#a6e22e">CustomerPortal</span>)
-	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/retrieve-subscription&#34;</span>, <span style="color:#a6e22e">RetrieveSubscription</span>)
-
-    <span style="color:#75715e">// Stripe Webhook handler
-</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/webhook&#34;</span>, <span style="color:#a6e22e">Webhook</span>)
-
-	<span style="color:#75715e">// Serve scripts
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">Scripts</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">FileServer</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Dir</span>(<span style="color:#a6e22e">dirScripts</span>))
-	<span style="color:#75715e">// See Gorilla [Static Files](https://github.com/gorilla/mux#static-files)
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">PathPrefix</span>(<span style="color:#e6db74">&#34;/scripts/&#34;</span>).<span style="color:#a6e22e">Handler</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StripPrefix</span>(<span style="color:#e6db74">&#34;/scripts/&#34;</span>, <span style="color:#a6e22e">Scripts</span>))
-
-	<span style="color:#75715e">// Prometheus
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Handle</span>(<span style="color:#e6db74">&#34;/metrics&#34;</span>, <span style="color:#a6e22e">promhttp</span>.<span style="color:#a6e22e">Handler</span>())
-
-	<span style="color:#75715e">// Attach router to http
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Handle</span>(<span style="color:#e6db74">&#34;/&#34;</span>, <span style="color:#a6e22e">r</span>)
-
-	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ListenAndServe</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">endpoint</span>, <span style="color:#66d9ef">nil</span>), <span style="color:#e6db74">&#34;unable to serve&#34;</span>)
-}
-</code></pre></div><p>I&rsquo;ve removed error handling, logging and some other non-relevant functionality to convey the point. E.g. <code>create-checkout-session</code> is handled by <code>CreateCheckoutSession</code> and is a function that was included as part of the Stripe guide; <code>/success</code> is handled by <code>www.Success</code> and is a Golang templated handler that generates (templated) HTML output. My intent here was to keep it simple. In practice, of course, the Golang handlers would be self-contained and would be routed to e.g. Envoy|Caddy also handling the HTML|JavaScript.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Use gorilla/mux for better sub-path handling (see scripts)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">NewRouter</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Host</span>(<span style="color:#a6e22e">domain</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">Root</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// `/success` and `/canceled` are referenced by server.go#CreateCheckoutSession
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/success&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">Success</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/canceled&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">Canceled</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// `/tos` and `/privacy` are required by Stripe customer portal
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/tos&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">TermsOfService</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/privacy&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">Privacy</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Stripe server-side (Golang) handlers
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/create-checkout-session&#34;</span>, <span style="color:#a6e22e">CreateCheckoutSession</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/checkout-session&#34;</span>, <span style="color:#a6e22e">CheckoutSession</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/customer-portal&#34;</span>, <span style="color:#a6e22e">CustomerPortal</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/retrieve-subscription&#34;</span>, <span style="color:#a6e22e">RetrieveSubscription</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Stripe Webhook handler
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/webhook&#34;</span>, <span style="color:#a6e22e">Webhook</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Serve scripts
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">Scripts</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">FileServer</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Dir</span>(<span style="color:#a6e22e">dirScripts</span>))
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// See Gorilla [Static Files](https://github.com/gorilla/mux#static-files)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">PathPrefix</span>(<span style="color:#e6db74">&#34;/scripts/&#34;</span>).<span style="color:#a6e22e">Handler</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StripPrefix</span>(<span style="color:#e6db74">&#34;/scripts/&#34;</span>, <span style="color:#a6e22e">Scripts</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Prometheus
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Handle</span>(<span style="color:#e6db74">&#34;/metrics&#34;</span>, <span style="color:#a6e22e">promhttp</span>.<span style="color:#a6e22e">Handler</span>())
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Attach router to http
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Handle</span>(<span style="color:#e6db74">&#34;/&#34;</span>, <span style="color:#a6e22e">r</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ListenAndServe</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">endpoint</span>, <span style="color:#66d9ef">nil</span>), <span style="color:#e6db74">&#34;unable to serve&#34;</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I&rsquo;ve removed error handling, logging and some other non-relevant functionality to convey the point. E.g. <code>create-checkout-session</code> is handled by <code>CreateCheckoutSession</code> and is a function that was included as part of the Stripe guide; <code>/success</code> is handled by <code>www.Success</code> and is a Golang templated handler that generates (templated) HTML output. My intent here was to keep it simple. In practice, of course, the Golang handlers would be self-contained and would be routed to e.g. Envoy|Caddy also handling the HTML|JavaScript.</p>
 <p>One useful feature of <a href="https://github.com/gorilla/mux"><code>gorillia/mux</code></a> that&rsquo;s described on its repo&rsquo;s homepage is serving <a href="https://github.com/gorilla/mux#static-files">static files</a> and I&rsquo;m using this to serve the JavaScripts.</p>
 <h2 id="javascript">JavaScript</h2>
 <p>I spent the vast (80%) of  my time developing this solution trying to optimize the JavaScript. The first few iterations of my solution didn&rsquo;t feel right. Eventually, I settled on a model that&rsquo;s better but I still am not happy with.</p>
@@ -400,80 +400,80 @@ if (!doNotTrack) {
 <h2 id="asynchronous-hell">Asynchronous hell</h2>
 <p>Ugh :-)</p>
 <p>Whenever I return to JavaScript after an asbence, I always forget how to deal with Promises and end up with code of the form:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JavaScript" data-lang="JavaScript"><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">DoesSomething</span>().<span style="color:#a6e22e">then</span>(()=&gt;{
-    ...
-    <span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">DoesSomethingElse</span>().<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">foo</span>).<span style="color:#66d9ef">catch</span>(<span style="color:#a6e22e">bar</span>);
-    ...
-}).<span style="color:#66d9ef">catch</span>(<span style="color:#a6e22e">bar</span>);
-</code></pre></div><p>And, of course, <code>DoesSomething</code>&rsquo;s <code>then</code> rolls right over <code>app.DoesSomethingElse</code> and I spend time wondering what&rsquo;s going on.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JavaScript" data-lang="JavaScript"><span style="display:flex;"><span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">DoesSomething</span>().<span style="color:#a6e22e">then</span>(()=&gt;{
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">DoesSomethingElse</span>().<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">foo</span>).<span style="color:#66d9ef">catch</span>(<span style="color:#a6e22e">bar</span>);
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span>}).<span style="color:#66d9ef">catch</span>(<span style="color:#a6e22e">bar</span>);
+</span></span></code></pre></div><p>And, of course, <code>DoesSomething</code>&rsquo;s <code>then</code> rolls right over <code>app.DoesSomethingElse</code> and I spend time wondering what&rsquo;s going on.</p>
 <p>My JavaScript coding rules that I began as part of this Stripe integration, now include a rule that says &lsquo;return Promises&rsquo;. By this I mean, don&rsquo;t let the hang as I&rsquo;ve done above but always try to:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JavaScript" data-lang="JavaScript"><span style="color:#a6e22e">then</span>(()=&gt;{
-    ...
-    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">DoesSomethingElse</span>().<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">foo</span>).<span style="color:#66d9ef">catch</span>(<span style="color:#a6e22e">bar</span>);
-});
-</code></pre></div><p>Of course, this then means, that the Promise returning function must be the last statement in the block but, generally, this is what it should be; calling <code>DoesSomethingElse</code> results in some follow-on asynchronous behavior that necessarily should affect my code&rsquo;s flow.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JavaScript" data-lang="JavaScript"><span style="display:flex;"><span><span style="color:#a6e22e">then</span>(()=&gt;{
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">DoesSomethingElse</span>().<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">foo</span>).<span style="color:#66d9ef">catch</span>(<span style="color:#a6e22e">bar</span>);
+</span></span><span style="display:flex;"><span>});
+</span></span></code></pre></div><p>Of course, this then means, that the Promise returning function must be the last statement in the block but, generally, this is what it should be; calling <code>DoesSomethingElse</code> results in some follow-on asynchronous behavior that necessarily should affect my code&rsquo;s flow.</p>
 <p>In Golang, it&rsquo;s conventional (and I think the linters complain) at using redundant (!) <code>else</code> blocks if the <code>then</code> block returns, i.e.:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">condition</span> {
-    <span style="color:#f92672">...</span>
-    <span style="color:#66d9ef">return</span> <span style="color:#f92672">...</span>
-} <span style="color:#66d9ef">else</span> {
-    <span style="color:#f92672">...</span>
-    <span style="color:#66d9ef">return</span> <span style="color:#f92672">...</span>
-}
-</code></pre></div><p>Is better written:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Golang" data-lang="Golang"><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">condition</span> {
-    <span style="color:#f92672">...</span>
-    <span style="color:#66d9ef">return</span> <span style="color:#f92672">...</span>
-}
-<span style="color:#f92672">...</span>
-<span style="color:#66d9ef">return</span> <span style="color:#f92672">...</span>
-}
-</code></pre></div><p>This is easier to read, keeps life simpler if there are many <code>if</code> blocks, and ends functions|methods with a (otherwise) <code>return</code> statement.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">condition</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>} <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Is better written:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">condition</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">return</span> <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This is easier to read, keeps life simpler if there are many <code>if</code> blocks, and ends functions|methods with a (otherwise) <code>return</code> statement.</p>
 <p>I&rsquo;m unclear whether this is considered a best practice in JavaScript. I felt compelled to add <code>else</code> statements particularly with the prevalence of <code>catch</code> callbacks but, I dislike the complexity that results:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JavaScript" data-lang="JavaScript"><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">DoesSomething</span>().<span style="color:#a6e22e">then</span>(()=&gt;{
-    <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">condition</span>) <span style="color:#a6e22e">then</span> {
-        ...
-    } <span style="color:#66d9ef">else</span> {
-        ...
-    }
-}).<span style="color:#66d9ef">catch</span>(()=&gt;{
-    <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">condition</span>) <span style="color:#a6e22e">then</span> {
-        ...
-    } <span style="color:#66d9ef">else</span> {
-        ...
-    }
-});
-</code></pre></div><h2 id="debugging">Debugging</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JavaScript" data-lang="JavaScript"><span style="display:flex;"><span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">DoesSomething</span>().<span style="color:#a6e22e">then</span>(()=&gt;{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">condition</span>) <span style="color:#a6e22e">then</span> {
+</span></span><span style="display:flex;"><span>        ...
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>        ...
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}).<span style="color:#66d9ef">catch</span>(()=&gt;{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">condition</span>) <span style="color:#a6e22e">then</span> {
+</span></span><span style="display:flex;"><span>        ...
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>        ...
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>});
+</span></span></code></pre></div><h2 id="debugging">Debugging</h2>
 <p>I really enjoy debugging JavaScript and (Chrome&rsquo;s) DevTools are excellent. My only gripe is that, with my frequent code changes and page refreshes, breakpoints stick to line numbers rather than code and so I was forever moving breakpoints to stick to e.g. the first statement after <code>then</code> and <code>catch</code> blocks:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JavaScript" data-lang="JavaScript"><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">DoesSomething</span>().<span style="color:#a6e22e">then</span>((<span style="color:#a6e22e">data</span>)=&gt;{
-    ... <span style="color:#75715e">// &lt;== I want a sticky breakpoint here
-</span><span style="color:#75715e"></span>}).<span style="color:#66d9ef">catch</span>((<span style="color:#a6e22e">error</span>)=&gt;{
-    ... <span style="color:#75715e">// &lt;== I want a sticky breakpoint here
-</span><span style="color:#75715e"></span>});
-</code></pre></div><h2 id="testing">Testing</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JavaScript" data-lang="JavaScript"><span style="display:flex;"><span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">DoesSomething</span>().<span style="color:#a6e22e">then</span>((<span style="color:#a6e22e">data</span>)=&gt;{
+</span></span><span style="display:flex;"><span>    ... <span style="color:#75715e">// &lt;== I want a sticky breakpoint here
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}).<span style="color:#66d9ef">catch</span>((<span style="color:#a6e22e">error</span>)=&gt;{
+</span></span><span style="display:flex;"><span>    ... <span style="color:#75715e">// &lt;== I want a sticky breakpoint here
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>});
+</span></span></code></pre></div><h2 id="testing">Testing</h2>
 <p>Unlike with Golang, the JavaScript testing is mostly non-existent and this gives me pause. Because it depends on the Golang backend handlers, the Golang server will need to be available for the JavaScript tests.</p>
 <p>Interestingly, considering how to unit test, was what helped me identify how better to structure the code. As described above, I renamed scripts to reflect the hosting HTML page (i.e. <code>root.js</code> in <code>root.html</code>) and then I realized that <code>root.js</code> should not contain <code>CreateCheckoutSession</code> since this functionality was app (not page) functionality. This got me to the point where I could only test the JavaScript <code>CreateCheckoutSession</code> function. Assuming I had a server though, I&rsquo;d still want to establish Stripe Price, Customer resources.</p>
 <p>This is where I&rsquo;ve currently given up but I know I need to return here.</p>
 <h2 id="stripe-cli-excellent">Stripe CLI (Excellent)</h2>
 <p>I think formative years using Windows and fighting anxiety whenever I installed apps and being uncertain how much pollution was being added to the registry and wondering where all the files were that the app had created, means that, even today using Linux (which is much cleaner and clearer), I&rsquo;m still reluctant to install apps onto my regular file system. I says this because, I do use Snaps when I can (though I&rsquo;m still uncertain how to prove their provenance) and generally prefer to use Docker when I can.</p>
 <p>Fortunately, Stripe&rsquo;s excellent CLI is packaged as a container image (<a href="https://hub.docker.com/r/stripe/stripe-cli"><code>stripe/stripe-cli</code></a>). What was less clear is how to manage its configuration. I&rsquo;ve settled on and continue to try to be more diligent about never using <code>:latest</code> (or any other tags really), hence the <code>DIGEST</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">DIGEST<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;sha256:2c89715f325b1ec80b5742c50f0bb6f6844e49da73aa7d87effe4a992f09927f&#34;</span> <span style="color:#75715e"># v1.6.4</span>
-
-docker run <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span>/.config/stripe/config.toml:/root/.config/stripe/config.toml <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>stripe/stripe-cli@<span style="color:#e6db74">${</span>DIGEST<span style="color:#e6db74">}</span>
-</code></pre></div><p>One small trick is to use the flag <code>--color=off</code> in order to get it to generate valid JSON output that can be filtered through e.g. <code>jq</code></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># By default stripe&#39;s CLI does not output valid JSON</span>
-stripe products list  <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq .data<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.id
-parse error: Invalid numeric literal at line 2, column <span style="color:#ae81ff">4</span>
-
-<span style="color:#75715e"># Using the flag `--color=off` results in valid JSON</span>
-stripe products list --color<span style="color:#f92672">=</span>off <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>| jq .data<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.id
-<span style="color:#e6db74">&#34;prod_...&#34;</span>
-</code></pre></div><h2 id="stripe-dashboard-and-test-data-excellent">Stripe Dashboard and Test data (Excellent)</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>DIGEST<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;sha256:2c89715f325b1ec80b5742c50f0bb6f6844e49da73aa7d87effe4a992f09927f&#34;</span> <span style="color:#75715e"># v1.6.4</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span>/.config/stripe/config.toml:/root/.config/stripe/config.toml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>stripe/stripe-cli@<span style="color:#e6db74">${</span>DIGEST<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>One small trick is to use the flag <code>--color=off</code> in order to get it to generate valid JSON output that can be filtered through e.g. <code>jq</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># By default stripe&#39;s CLI does not output valid JSON</span>
+</span></span><span style="display:flex;"><span>stripe products list  <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq .data<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.id
+</span></span><span style="display:flex;"><span>parse error: Invalid numeric literal at line 2, column <span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Using the flag `--color=off` results in valid JSON</span>
+</span></span><span style="display:flex;"><span>stripe products list --color<span style="color:#f92672">=</span>off <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq .data<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.id
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;prod_...&#34;</span>
+</span></span></code></pre></div><h2 id="stripe-dashboard-and-test-data-excellent">Stripe Dashboard and Test data (Excellent)</h2>
 <p>Stripe&rsquo;s developer <a href="https://dashboard.stripe.com/test/">test</a><a href="https://dashboard.stripe.com/">dashboard</a> is really excellent, fully functional and mostly intuitive.</p>
 <p>I <strong>really</strong> like that Stripe provides production (live) and test data. What an excellent idea! I&rsquo;m totally going to try to steal this approach and use it within my application.</p>
 <p>Stripe provides 2 sets of developer credentials (test and production).</p>

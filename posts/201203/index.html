@@ -7,7 +7,7 @@
     <title>webmention | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Indieweb&#39;s Webmention with Google Cloud Functions">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -195,33 +195,33 @@ if (!doNotTrack) {
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>Let&rsquo;s see if this works!?</p>
 <p>I&rsquo;ve added the following link to this site&rsquo;s <code>baseof.html</code> so that it is now rendered for each page:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-HTML" data-lang="HTML">&lt;<span style="color:#f92672">link</span>
-  <span style="color:#a6e22e">href</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://us-central1-webmention.cloudfunctions.net/webmention&#34;</span>
-  <span style="color:#a6e22e">rel</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;webmention&#34;</span> /&gt;
-</code></pre></div><p>I discovered <a href="https://indieweb.org/">indieweb</a> yesterday reading about <a href="https://aaronparecki.com/2018/06/30/11/your-first-webmention">webmention</a>. Who knows what got me to webmention!?</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-HTML" data-lang="HTML"><span style="display:flex;"><span>&lt;<span style="color:#f92672">link</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">href</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://us-central1-webmention.cloudfunctions.net/webmention&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">rel</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;webmention&#34;</span> /&gt;
+</span></span></code></pre></div><p>I discovered <a href="https://indieweb.org/">indieweb</a> yesterday reading about <a href="https://aaronparecki.com/2018/06/30/11/your-first-webmention">webmention</a>. Who knows what got me to webmention!?</p>
 <p>The principles of both are sound. Instead of relying on come-go behemoths to run our digital world, indieweb seeks to provide technologies that enable us to achieve things without them. webmention is a cross-walled-garden mechanism to perform an evolved form of pingbacks. If X references one of Y&rsquo;s posts, X&rsquo;s server notifies Y&rsquo;s server during publication through a webmention service and, Y can then decide to add reference counts of copies of the referring link to their page. Clever.</p>
 <p>There&rsquo;s a services <a href="https://webmention.io"><code>Webmention.io</code></a> that does this all for you but I thought I&rsquo;d write a simple Golang-based Google Cloud Function to do some of the basics.</p>
 <p><a href="https://github.com/DazWilkin/webmention">webmention</a> repo.</p>
 <p>Using Aaron&rsquo;s exemplar but replaced with my target:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">POST /webmention-endpoint HTTP/1.1
-Host: aaronpk.example
-Content-Type: application/x-www-form-urlencoded
-<span style="color:#960050;background-color:#1e0010">
-</span><span style="color:#960050;background-color:#1e0010"></span>source=https://waterpigs.example/post-by-barnaby
-target=https://pretired.dazwilkin.com/posts/201203
-</code></pre></div><p>The idea is that the author of <code>https://waterpigs.example/post-by-barnaby</code> included a reference (link) to <code>https://pretired.dazwilkin.com/posts/201203</code>. When <code>post-by-barnaby</code> is published, some service looks for links in the page and then, for each external link (e.g. <code>https://pretired.dazwilkin.com/posts/201203</code>), it GETs the page, looks for a <code>rel=&quot;webmention&quot;</code> link. In this case, it will find the link shown above (<code>https://us-central1-webmention.cloudfunctions.net/webmention</code>). It then POSTs to the given endpoint with the headers including the <code>source</code> and <code>target</code> values.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>POST /webmention-endpoint HTTP/1.1
+</span></span><span style="display:flex;"><span>Host: aaronpk.example
+</span></span><span style="display:flex;"><span>Content-Type: application/x-www-form-urlencoded
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>source=https://waterpigs.example/post-by-barnaby
+</span></span><span style="display:flex;"><span>target=https://pretired.dazwilkin.com/posts/201203
+</span></span></code></pre></div><p>The idea is that the author of <code>https://waterpigs.example/post-by-barnaby</code> included a reference (link) to <code>https://pretired.dazwilkin.com/posts/201203</code>. When <code>post-by-barnaby</code> is published, some service looks for links in the page and then, for each external link (e.g. <code>https://pretired.dazwilkin.com/posts/201203</code>), it GETs the page, looks for a <code>rel=&quot;webmention&quot;</code> link. In this case, it will find the link shown above (<code>https://us-central1-webmention.cloudfunctions.net/webmention</code>). It then POSTs to the given endpoint with the headers including the <code>source</code> and <code>target</code> values.</p>
 <p>The Google Cloud Function (hopefully) accepts the POST, reads the headers, finds the <code>source</code> and <code>target</code> and then it adds this data with a timestamp value to Firestore.</p>
 <p><img src="/images/201203.firestore.png" alt="Firestore"></p>
 <p>It takes advantage of Firestore&rsquo;s document hierarchy to create a tree:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">pretired.dazwilkin.com/
-└── 201203
-    └── waterpigs.example
-        └── post-by-barnaby
-</code></pre></div><p>The root <code>pretired.dazwilkin.com</code> is my site and <code>201203</code> is the post which was mentioned.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>pretired.dazwilkin.com/
+</span></span><span style="display:flex;"><span>└── 201203
+</span></span><span style="display:flex;"><span>    └── waterpigs.example
+</span></span><span style="display:flex;"><span>        └── post-by-barnaby
+</span></span></code></pre></div><p>The root <code>pretired.dazwilkin.com</code> is my site and <code>201203</code> is the post which was mentioned.</p>
 <p><code>waterpigs.example</code> is the site and <code>post-by-barnaby</code> is the post on that site that mentioned it.</p>
 <p>The document at the leaf currently simply contains a timestamp for when the mention was detected.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-console" data-lang="console">Datetime: December 3, 2020 at 11:02:41 AM UTC-8
-</code></pre></div><p>But, of course, could be enhanced to include additional metadata.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>Datetime: December 3, 2020 at 11:02:41 AM UTC-8
+</span></span></code></pre></div><p>But, of course, could be enhanced to include additional metadata.</p>
 <p>That&rsquo;s all!</p>
 <ul class="pa0">
   

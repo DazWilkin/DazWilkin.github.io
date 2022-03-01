@@ -7,7 +7,7 @@
     <title>Firebase Authentication, Cloud Endpoints and gRPC (1of2) | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Using Firebase Auth to authentication gRPC service behind Cloud Endpoints">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.93.0" />
     
     
     
@@ -205,7 +205,7 @@ if (!doNotTrack) {
 <p>Firebase was acquired by Google several years ago and enabled Google to capitalize on the then somewhat nascent model of mobile apps tightly-coupled with a database. The Firebase database has been combined with Google&rsquo;s then Datastore and spawned a child called Firestore. I&rsquo;m using Firestore throughout my service for its simplicity (JSON document-oriented storage), flexibility (Firestore triggers) and power.</p>
 <p>Firebase appears as something of a smorgasbord of functionality that is both distint and overlapping with Google Cloud Platform. The Firebase console remains a distinct Google Console but, the aforementioned Firestore, Cloud Functions etc. are being unified.</p>
 <p>Coming from a Google Cloud Platform, Golang, Datastore background, it&rsquo;s slightly difficult to grok Firebase. But Firebase Authentication is unique.</p>
-<p>Essentially it enables authentication against multiple providers. In my case, I want to reduce my customers' impedance on the platform by enabling them to use their existing (preferred) credentials. Be those Google, Microsoft, GitHub, Facebook or Twitter. None of us wants to have to create and manage usernames|passwords for every site we use. And, as a developer, I don&rsquo;t want to have to do any more authentication than the bare minimum. Firebase Authentication is an excellent solution for my customers and for me.</p>
+<p>Essentially it enables authentication against multiple providers. In my case, I want to reduce my customers&rsquo; impedance on the platform by enabling them to use their existing (preferred) credentials. Be those Google, Microsoft, GitHub, Facebook or Twitter. None of us wants to have to create and manage usernames|passwords for every site we use. And, as a developer, I don&rsquo;t want to have to do any more authentication than the bare minimum. Firebase Authentication is an excellent solution for my customers and for me.</p>
 <p>FirebaseUI makes Firebase Authentication even more straightforward by providing canned UI elements.</p>
 <p>I now need only:</p>
 <ul>
@@ -221,102 +221,102 @@ if (!doNotTrack) {
 <p>However, this process is somewhat standardized. Each OAuth app will have some form of unique identifier (Client ID, App ID etc.) and a secret (Client Secret, App Secret etc) that Firebase uses to authenticate its request for authentication. Firebase provides a redirect URI of the form: <code>https://${FIREBASE_PROJECT_ID}.firebaseapp.com/__/auth/handler</code> that the provider&rsquo;s apps use to call back to Firebase (with the JWT).</p>
 <p>This step is something of a one-and-done unless you change the list of OAuth providers or your change an app as defined at the provider.</p>
 <p>The FirebaseUI <a href="https://firebase.google.com/docs/auth/web/firebaseui">content</a> provides a good overview of the JavaScript you need to implement the authentication flow:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JavaScript" data-lang="JavaScript"><span style="color:#75715e">// Initialize Firebase
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">firebaseConfig</span> <span style="color:#f92672">=</span> {{.<span style="color:#a6e22e">FirebaseConfig</span> }};
-<span style="color:#a6e22e">firebase</span>.<span style="color:#a6e22e">initializeApp</span>(<span style="color:#a6e22e">firebaseConfig</span>);
-
-<span style="color:#75715e">// Initialize the FirebaseUI Widget using Firebase.
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">ui</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">firebaseui</span>.<span style="color:#a6e22e">auth</span>.<span style="color:#a6e22e">AuthUI</span>(<span style="color:#a6e22e">firebase</span>.<span style="color:#a6e22e">auth</span>());
-
-<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">uiConfig</span> <span style="color:#f92672">=</span> {
-	<span style="color:#a6e22e">callbacks</span><span style="color:#f92672">:</span> {
-		<span style="color:#a6e22e">signInSuccessWithAuthResult</span><span style="color:#f92672">:</span> (<span style="color:#a6e22e">authResult</span>, <span style="color:#a6e22e">redirectUrl</span>) =&gt; {
-			<span style="color:#75715e">// User successfully signed in.
-</span><span style="color:#75715e"></span>			<span style="color:#75715e">// Return type determines whether we continue the redirect automatically
-</span><span style="color:#75715e"></span>			<span style="color:#75715e">// or whether we leave that to developer to handle.
-</span><span style="color:#75715e"></span>			<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>;
-		},
-		<span style="color:#a6e22e">uiShown</span><span style="color:#f92672">:</span> () =&gt; {
-			<span style="color:#75715e">// The widget is rendered.
-</span><span style="color:#75715e"></span>			<span style="color:#75715e">// Hide the loader.
-</span><span style="color:#75715e"></span>			document.<span style="color:#a6e22e">getElementById</span>(<span style="color:#e6db74">&#39;loader&#39;</span>).<span style="color:#a6e22e">style</span>.<span style="color:#a6e22e">display</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;none&#39;</span>;
-		}
-	},
-	<span style="color:#75715e">// Will use popup for IDP Providers sign-in flow instead of the default, redirect.
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">signInFlow</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;popup&#39;</span>,
-	<span style="color:#a6e22e">signInSuccessUrl</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;/app&#39;</span>,
-	<span style="color:#a6e22e">signInOptions</span><span style="color:#f92672">:</span> [
-		<span style="color:#75715e">// List of enabled OAuth providers
-</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">firebase</span>.<span style="color:#a6e22e">auth</span>.<span style="color:#a6e22e">GoogleAuthProvider</span>.<span style="color:#a6e22e">PROVIDER_ID</span>,
-		<span style="color:#a6e22e">firebase</span>.<span style="color:#a6e22e">auth</span>.<span style="color:#a6e22e">GithubAuthProvider</span>.<span style="color:#a6e22e">PROVIDER_ID</span>,
-		<span style="color:#e6db74">&#34;microsoft.com&#34;</span>,
-	],
-	<span style="color:#a6e22e">tosUrl</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;/tos&#34;</span>,
-	<span style="color:#a6e22e">privatePolicyUrl</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;/privacy&#34;</span>,
-};
-
-<span style="color:#a6e22e">ui</span>.<span style="color:#a6e22e">start</span>(<span style="color:#e6db74">&#39;#firebaseui-auth-container&#39;</span>, <span style="color:#a6e22e">uiConfig</span>);
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JavaScript" data-lang="JavaScript"><span style="display:flex;"><span><span style="color:#75715e">// Initialize Firebase
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">firebaseConfig</span> <span style="color:#f92672">=</span> {{.<span style="color:#a6e22e">FirebaseConfig</span> }};
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">firebase</span>.<span style="color:#a6e22e">initializeApp</span>(<span style="color:#a6e22e">firebaseConfig</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Initialize the FirebaseUI Widget using Firebase.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">ui</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">firebaseui</span>.<span style="color:#a6e22e">auth</span>.<span style="color:#a6e22e">AuthUI</span>(<span style="color:#a6e22e">firebase</span>.<span style="color:#a6e22e">auth</span>());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">uiConfig</span> <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">callbacks</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">signInSuccessWithAuthResult</span><span style="color:#f92672">:</span> (<span style="color:#a6e22e">authResult</span>, <span style="color:#a6e22e">redirectUrl</span>) =&gt; {
+</span></span><span style="display:flex;"><span>			<span style="color:#75715e">// User successfully signed in.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#75715e">// Return type determines whether we continue the redirect automatically
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#75715e">// or whether we leave that to developer to handle.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>;
+</span></span><span style="display:flex;"><span>		},
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">uiShown</span><span style="color:#f92672">:</span> () =&gt; {
+</span></span><span style="display:flex;"><span>			<span style="color:#75715e">// The widget is rendered.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#75715e">// Hide the loader.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			document.<span style="color:#a6e22e">getElementById</span>(<span style="color:#e6db74">&#39;loader&#39;</span>).<span style="color:#a6e22e">style</span>.<span style="color:#a6e22e">display</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;none&#39;</span>;
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	},
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Will use popup for IDP Providers sign-in flow instead of the default, redirect.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">signInFlow</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;popup&#39;</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">signInSuccessUrl</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;/app&#39;</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">signInOptions</span><span style="color:#f92672">:</span> [
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// List of enabled OAuth providers
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">firebase</span>.<span style="color:#a6e22e">auth</span>.<span style="color:#a6e22e">GoogleAuthProvider</span>.<span style="color:#a6e22e">PROVIDER_ID</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">firebase</span>.<span style="color:#a6e22e">auth</span>.<span style="color:#a6e22e">GithubAuthProvider</span>.<span style="color:#a6e22e">PROVIDER_ID</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;microsoft.com&#34;</span>,
+</span></span><span style="display:flex;"><span>	],
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">tosUrl</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;/tos&#34;</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">privatePolicyUrl</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;/privacy&#34;</span>,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ui</span>.<span style="color:#a6e22e">start</span>(<span style="color:#e6db74">&#39;#firebaseui-auth-container&#39;</span>, <span style="color:#a6e22e">uiConfig</span>);
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The configuration for Microsoft&rsquo;s OAuth provider was less well explained. There is no <code>firebase.auth.MicrosoftAuthProvider.PROVIDER_ID</code> and this threw me for a while. Microsoft is <a href="https://firebase.google.com/docs/auth/web/microsoft-oauth">documented</a> by Firebase and there&rsquo;s a <a href="https://firebase.googleblog.com/2019/03/microsoft-and-yahoo-identity-auth.html">blog</a> announcing support for Microsoft OAuth but Microsoft does not appear in the examples. I discovered that using <code>&quot;microsoft.com&quot;</code> works.</p>
 </blockquote>
 <p>A successful signin redirects to <code>/app</code> which simply outputs the returned token details:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JavaScript" data-lang="JavaScript"><span style="color:#75715e">// Initialize Firebase
-</span><span style="color:#75715e">// Use Golang Template value FirebaseConfig
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">firebaseConfig</span> <span style="color:#f92672">=</span> {{.<span style="color:#a6e22e">FirebaseConfig</span> }};
-<span style="color:#a6e22e">firebase</span>.<span style="color:#a6e22e">initializeApp</span>(<span style="color:#a6e22e">firebaseConfig</span>);
-
-<span style="color:#75715e">// Function that updates an HTML id with value
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">display</span> <span style="color:#f92672">=</span> (<span style="color:#a6e22e">id</span>, <span style="color:#a6e22e">value</span>) =&gt; {
-	document.<span style="color:#a6e22e">getElementById</span>(<span style="color:#a6e22e">id</span>).<span style="color:#a6e22e">innerText</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">value</span>;
-};
-
-<span style="color:#75715e">// const user = firebase.auth().currentUser;
-</span><span style="color:#75715e"></span>
-<span style="color:#a6e22e">firebase</span>.<span style="color:#a6e22e">auth</span>().<span style="color:#a6e22e">onAuthStateChanged</span>((<span style="color:#a6e22e">user</span>) =&gt; {
-	<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">user</span>) {
-		<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">name</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">displayName</span>;
-		<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">email</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">email</span>;
-		<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">photoURL</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">photoURL</span>;
-		<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">emailVerified</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">emailVerified</span>;
-
-		<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">uid</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">uid</span>;
-
-		<span style="color:#a6e22e">display</span>(<span style="color:#e6db74">&#34;name&#34;</span>, <span style="color:#a6e22e">name</span>);
-		<span style="color:#a6e22e">display</span>(<span style="color:#e6db74">&#34;email&#34;</span>, <span style="color:#a6e22e">email</span>);
-		<span style="color:#a6e22e">display</span>(<span style="color:#e6db74">&#34;photo&#34;</span>, <span style="color:#a6e22e">photo</span>);
-		<span style="color:#a6e22e">display</span>(<span style="color:#e6db74">&#34;uid&#34;</span>, <span style="color:#a6e22e">uid</span>);
-
-		<span style="color:#75715e">// Function returns a Promise
-</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">getIdToken</span>()
-        .<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">idToken</span> =&gt; {
-            <span style="color:#75715e">// Can&#39;t use template literal because Golang templates require back-ticks
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">// Unable to escape back-tickets in Golang
-</span><span style="color:#75715e"></span>            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;JWT: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idToken</span>);
-            <span style="color:#a6e22e">display</span>(<span style="color:#e6db74">&#34;id_token&#34;</span>, <span style="color:#a6e22e">idToken</span>);
-        })
-        .<span style="color:#66d9ef">catch</span>(<span style="color:#a6e22e">exception</span> =&gt; {
-            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#a6e22e">exception</span>);
-        });
-
-		<span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">getIdTokenResult</span>()
-        .<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">idTokenResult</span> =&gt; {
-            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;idTokenResult: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>);
-
-            <span style="color:#75715e">// Stringify idTokenResult
-</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">result</span> <span style="color:#f92672">=</span> [
-                <span style="color:#e6db74">&#34;authtime: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>.<span style="color:#a6e22e">authTime</span>,
-                <span style="color:#e6db74">&#34;claims: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>.<span style="color:#a6e22e">claims</span>,
-                <span style="color:#e6db74">&#34;expirationTime: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>.<span style="color:#a6e22e">expirationTime</span>,
-                <span style="color:#e6db74">&#34;issuedAtTime: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>.<span style="color:#a6e22e">issuedAtTime</span>,
-                <span style="color:#e6db74">&#34;Provider:&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>.<span style="color:#a6e22e">signInProvider</span>,
-                <span style="color:#e6db74">&#34;Token: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>.<span style="color:#a6e22e">token</span>,
-            ].<span style="color:#a6e22e">reduce</span>((<span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">item</span>) =&gt; <span style="color:#a6e22e">result</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;\n&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">item</span>);
-
-            <span style="color:#a6e22e">display</span>(<span style="color:#e6db74">&#34;id_tokenresult&#34;</span>, <span style="color:#a6e22e">result</span>);
-        })
-	}
-})
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JavaScript" data-lang="JavaScript"><span style="display:flex;"><span><span style="color:#75715e">// Initialize Firebase
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Use Golang Template value FirebaseConfig
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">firebaseConfig</span> <span style="color:#f92672">=</span> {{.<span style="color:#a6e22e">FirebaseConfig</span> }};
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">firebase</span>.<span style="color:#a6e22e">initializeApp</span>(<span style="color:#a6e22e">firebaseConfig</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Function that updates an HTML id with value
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">display</span> <span style="color:#f92672">=</span> (<span style="color:#a6e22e">id</span>, <span style="color:#a6e22e">value</span>) =&gt; {
+</span></span><span style="display:flex;"><span>	document.<span style="color:#a6e22e">getElementById</span>(<span style="color:#a6e22e">id</span>).<span style="color:#a6e22e">innerText</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">value</span>;
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// const user = firebase.auth().currentUser;
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">firebase</span>.<span style="color:#a6e22e">auth</span>().<span style="color:#a6e22e">onAuthStateChanged</span>((<span style="color:#a6e22e">user</span>) =&gt; {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">user</span>) {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">name</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">displayName</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">email</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">email</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">photoURL</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">photoURL</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">emailVerified</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">emailVerified</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">uid</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">uid</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">display</span>(<span style="color:#e6db74">&#34;name&#34;</span>, <span style="color:#a6e22e">name</span>);
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">display</span>(<span style="color:#e6db74">&#34;email&#34;</span>, <span style="color:#a6e22e">email</span>);
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">display</span>(<span style="color:#e6db74">&#34;photo&#34;</span>, <span style="color:#a6e22e">photo</span>);
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">display</span>(<span style="color:#e6db74">&#34;uid&#34;</span>, <span style="color:#a6e22e">uid</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Function returns a Promise
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">getIdToken</span>()
+</span></span><span style="display:flex;"><span>        .<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">idToken</span> =&gt; {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Can&#39;t use template literal because Golang templates require back-ticks
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#75715e">// Unable to escape back-tickets in Golang
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;JWT: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idToken</span>);
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">display</span>(<span style="color:#e6db74">&#34;id_token&#34;</span>, <span style="color:#a6e22e">idToken</span>);
+</span></span><span style="display:flex;"><span>        })
+</span></span><span style="display:flex;"><span>        .<span style="color:#66d9ef">catch</span>(<span style="color:#a6e22e">exception</span> =&gt; {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#a6e22e">exception</span>);
+</span></span><span style="display:flex;"><span>        });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">getIdTokenResult</span>()
+</span></span><span style="display:flex;"><span>        .<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">idTokenResult</span> =&gt; {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;idTokenResult: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Stringify idTokenResult
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">result</span> <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;authtime: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>.<span style="color:#a6e22e">authTime</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;claims: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>.<span style="color:#a6e22e">claims</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;expirationTime: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>.<span style="color:#a6e22e">expirationTime</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;issuedAtTime: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>.<span style="color:#a6e22e">issuedAtTime</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;Provider:&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>.<span style="color:#a6e22e">signInProvider</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;Token: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">idTokenResult</span>.<span style="color:#a6e22e">token</span>,
+</span></span><span style="display:flex;"><span>            ].<span style="color:#a6e22e">reduce</span>((<span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">item</span>) =&gt; <span style="color:#a6e22e">result</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;\n&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">item</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">display</span>(<span style="color:#e6db74">&#34;id_tokenresult&#34;</span>, <span style="color:#a6e22e">result</span>);
+</span></span><span style="display:flex;"><span>        })
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>})
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The documentation suggests using <code>firebase.auth().currentUser</code> but I was unable to get this to work. Instead <code>firebase.auth().onAuthStateChange(...)</code> works great.</p>
 </blockquote>
 <p>Apologies for my JavaScript, it&rsquo;s not my first language.</p>
@@ -329,38 +329,38 @@ if (!doNotTrack) {
 <p>I&rsquo;ve written about [Cloud Endpoints] with gRPC (<a href="/posts/210608/">Cloud Endpoints, OpenAPI and gRPC&hellip; or not!</a>, <a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a>) and won&rsquo;t redo those discussions. Suffice to say, that it&rsquo;s straightforward but involved and I know it works.</p>
 <p>One perhaps obvious recommendation is that you likely want to <code>gcloud run deploy ...</code> using <code>--no-allow-unauthenticated</code> to ensure that only authenticated users navigate your proxy and that no-one goes around the proxy to the service directly.</p>
 <p>As I&rsquo;ve shown previously, you can then:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Get a JWT from Google</span>
-TOKEN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud auth print-identity-token<span style="color:#66d9ef">)</span>
-
-<span style="color:#75715e"># Authentication using it</span>
-<span style="color:#75715e"># Call the backend service</span>
-grpcurl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{ ... }&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-proto something.proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>SRV_HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>v1alpha1.SomeService/SomeMethod
-
-<span style="color:#75715e"># Authenticate using it</span>
-<span style="color:#75715e"># Go via the ESP proxy</span>
-grpcurl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{ ... }&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-proto something.proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>v1alpha1.SomeService/SomeMethod
-</code></pre></div><p>But, what this shows is that an authorised user can get credentials and call the service.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Get a JWT from Google</span>
+</span></span><span style="display:flex;"><span>TOKEN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud auth print-identity-token<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Authentication using it</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Call the backend service</span>
+</span></span><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{ ... }&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-proto something.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>SRV_HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>v1alpha1.SomeService/SomeMethod
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Authenticate using it</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Go via the ESP proxy</span>
+</span></span><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{ ... }&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-proto something.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>v1alpha1.SomeService/SomeMethod
+</span></span></code></pre></div><p>But, what this shows is that an authorised user can get credentials and call the service.</p>
 <p>It&rsquo;s cool but it&rsquo;s not new bananas.</p>
 <p>What is interesting is that, using a JWT acquired through Firebase Authentication using say Microsoft OAuth, I can also authenticate (but only) through the ESP proxy:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">FIREBASE_TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># JWT received from my the above Firebase Auth implementation</span>
-
-grpcurl <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>FIREBASE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{ ... }&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>-proto something.proto <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>v1alpha1.SomeService/SomeMethod
-</code></pre></div><p>Unfortunately, Cloud Endpoints has no UI for its authentication. Rather the proxy forwards the authentication (the JWT) as a <code>X-Endpoint-API-UserInfo</code> header. The receiving service can then unwrap the authentication and decide how to proceed. I&rsquo;ll explore that in a subsequent post.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>FIREBASE_TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># JWT received from my the above Firebase Auth implementation</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>FIREBASE_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{ ... }&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-proto something.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>v1alpha1.SomeService/SomeMethod
+</span></span></code></pre></div><p>Unfortunately, Cloud Endpoints has no UI for its authentication. Rather the proxy forwards the authentication (the JWT) as a <code>X-Endpoint-API-UserInfo</code> header. The receiving service can then unwrap the authentication and decide how to proceed. I&rsquo;ll explore that in a subsequent post.</p>
 <ul class="pa0">
   
    <li class="list di">
