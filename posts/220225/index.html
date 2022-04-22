@@ -7,7 +7,7 @@
     <title>Prometheus HTTP Service Discovery of Cloud Run services | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="How to use Prometheus HTTP Service Discovery with Google Cloud Run">
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.96.0" />
     
     
     
@@ -16,7 +16,7 @@
     
 
     
-<link rel="stylesheet" href="/ananke/css/main.min.78fa45e151ad028724c4129633b098540d51a57e07e08de90c38dc135b9d3c25.css" >
+<link rel="stylesheet" href="/ananke/css/main.min.b54ce9b5075d36ec06126e6c1f3c9f0100a5fb4e6b46c67eee788bc772225751.css" >
 
 
 
@@ -39,8 +39,8 @@
 <meta itemprop="name" content="Prometheus HTTP Service Discovery of Cloud Run services">
 <meta itemprop="description" content="How to use Prometheus HTTP Service Discovery with Google Cloud Run"><meta itemprop="datePublished" content="2022-02-25T00:00:00-08:00" />
 <meta itemprop="dateModified" content="2022-02-25T00:00:00-08:00" />
-<meta itemprop="wordCount" content="1305">
-<meta itemprop="keywords" content="prometheus,http-service-discovery,cloud-run," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="wordCount" content="1740">
+<meta itemprop="keywords" content="prometheus,service-discovery,cloud-run," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Prometheus HTTP Service Discovery of Cloud Run services"/>
 <meta name="twitter:description" content="How to use Prometheus HTTP Service Discovery with Google Cloud Run"/>
 
@@ -136,6 +136,7 @@ if (!doNotTrack) {
 </span></a>
   
 </div>
+
     </div>
   </div>
 </nav>
@@ -189,8 +190,8 @@ if (!doNotTrack) {
 
       
       
-        <span class="f6 mv4 dib tracked"> - 7 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 1305 words </span>
+        <span class="f6 mv4 dib tracked"> - 9 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 1740 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>Some time ago, I wrote about using <a href="https://pretired.dazwilkin.com/posts/210419/">Prometheus Service Discovery w/ Consul for Cloud Run</a> and also <a href="https://pretired.dazwilkin.com/posts/211005/">Scraping metrics exposed by Google Cloud Run services that require authentication</a>. Both solutions remain viable but they didn&rsquo;t address another use case for Prometheus and Cloud Run services that I have with a &ldquo;thing&rdquo; that I&rsquo;ve been building.</p>
@@ -203,17 +204,20 @@ if (!doNotTrack) {
 <p>These requirements and &ndash; one other &ndash; present several challenges:</p>
 <ol>
 <li>Prometheus Service Discovery alternatives (e.g. <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#file_sd_config"><code>file</code></a> and the new <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#http_sd_config"><code>http</code></a>) are statically configured</li>
-<li>The Service Discovery endpoint <strong>and</strong> the services discovered require authentication</li>
-<li>ID token expire and need to be refreshed (deterministically)</li>
+<li>My Service Discovery endpoint <strong>and</strong> the services discovered require authentication</li>
+<li>ID token expires and need to be refreshed (deterministically)</li>
 <li>My &ldquo;thing&rdquo; expects users to uniquely identify requests</li>
 </ol>
 <p>I&rsquo;ll explore how I solved these challenges in detail below but, for those who are impatient, the solution is:</p>
 <ol>
 <li>Configure Prometheus to use <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#http_sd_config">HTTP-based Service Discovery</a> using a proxy</li>
 <li>The proxy adds dynamically-generated headers to the proxied requests including <code>Authorization</code></li>
-<li>A Cloud Run service that authenticats, enumerates a user&rsquo;s Cloud Run services and returns Prometheus targets</li>
-<li>Cloud Run services that authenticate and serve Prometheus metrics</li>
+<li>A Cloud Run discovery service that authenticates then enumerates a user&rsquo;s Cloud Run services and returns Prometheus targets</li>
+<li>Cloud Run target services that authenticate and serve Prometheus metrics</li>
 </ol>
+<blockquote>
+<p><strong>IMPORTANT</strong> For simplicity, the proxy listens on an insecure (non-TLS) connection (uses <code>http</code>). The proxy bumps outgoing (proxied) requests to secure (TLS) connections (uses <code>https</code>). This is primarily for simplicity. The proxy will be run locally (on the same host in many cases) and there&rsquo;s confidence in its security. Using TLS with the proxy would require management of x509 certificates (possibly self-signed). But, because the proxy needs to add e.g. <code>Authorization</code> header to the proxied request, it would either need to terminate the TLS connection or it would need to operate <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">MITM</a> and neither are good choices.</p>
+</blockquote>
 <p>Let&rsquo;s work from the end-user&rsquo;s perspective forwards:</p>
 <p><img src="/images/220225.prometheus.targets.png" alt="Prometheus: Targets"></p>
 <p>It doesn&rsquo;t look very interesting but the two endpoints <code>node-exporter-XX</code> are Cloud Run services (for testing, they&rsquo;re both <a href="https://github.com/prometheus/node_exporter">Node Exporter</a>s) that are published as <code>allow unauthenticated</code> but (in production) are services that authenticate requests for valid Firebase ID tokens.</p>
@@ -221,79 +225,124 @@ if (!doNotTrack) {
 <p>The service <code>listr</code> uses Google&rsquo;s Cloud Run SDK to enumerate Cloud Run services. It also expects and validates a Firebase ID token provided with an <code>Authorization</code> header.</p>
 <h2 id="prometheus">Prometheus</h2>
 <p>The Prometheus configuration is straightforward:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-YAML" data-lang="YAML"><span style="color:#f92672">global</span>:
-  <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">1m</span>
-  <span style="color:#f92672">evaluation_interval</span>: <span style="color:#ae81ff">1m</span>
-
-<span style="color:#f92672">scrape_configs</span>:
-  - <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;cloudrun&#34;</span>
-    <span style="color:#f92672">scheme</span>: <span style="color:#ae81ff">https</span>
-    <span style="color:#f92672">http_sd_configs</span>:
-    - <span style="color:#f92672">url</span>: <span style="color:#ae81ff">https://test-listr-plsm3l32oa-uw.a.run.app</span>
-      <span style="color:#f92672">proxy_url</span>: <span style="color:#ae81ff">https://0.0.0.0:5555</span>
-      <span style="color:#f92672">tls_config</span>:
-        <span style="color:#f92672">insecure_skip_verify</span>: <span style="color:#66d9ef">true</span>
-</code></pre></div><blockquote>
-<p><strong>NOTE</strong> Although this uses TLS from Prometheus to Cloud Run, the proxy can be run using self-signed certs and &ndash; importantly &ndash; though the proxy technically is <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">MITM</a>, it&rsquo;s not terminating the TLS connection but using HTTP <code>CONNECT</code> and simply relaying the outgoing (request) and incoming (response) streams over TCP to the intended (Cloud Run service) target.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">global</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">1m</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">evaluation_interval</span>: <span style="color:#ae81ff">1m</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">scrape_configs</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;http-proxy&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">scheme</span>: <span style="color:#ae81ff">http</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">proxy_url</span>: <span style="color:#ae81ff">http://0.0.0.0:5555</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">http_sd_configs</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">url</span>: <span style="color:#ae81ff">http://test-listr-plsm3l32oa-uw.a.run.app</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">proxy_url</span>: <span style="color:#ae81ff">http://0.0.0.0:5555</span>
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> The <code>proxy</code> is referenced twice. Prometheus&rsquo; scrape requests must go through it (to be authenticated) and the scrapes of the list of HTTP targets must go through it too (to be authenticated).</p>
 </blockquote>
 <blockquote>
-<p><strong>NOTE</strong> <code>insecure_skip_verify</code> is because the proxy is not verifying the Prometheus server&rsquo;s client credentials. This can be changed to mTLS if Prometheus is configured with certs too.</p>
+<p><strong>NOTE</strong> As explained above, the proxy listens on an insecure (non-TLS) connection and so URL references in <code>prometheus.yml</code> use <code>http</code> not <code>https</code>. Because the proxy upgrades the outgoing request to <code>https</code>, in this example, although <code>http://test-listr-plsm3l32oa-uw.a.run.app</code> is specified, the actual call will be made (correctly) against <code>https://test-listr-plsm3l32oa-uw.a.run.app</code>.</p>
 </blockquote>
 <h2 id="proxy">Proxy</h2>
-<p>I&rsquo;m using Elazar Leibovich&rsquo;s <a href="https://github.com/elazarl/goproxy">goproxy</a>. I&rsquo;d not written a proxy for HTTPS and had a learning curve but <code>goproxy</code> works, appears production-ready and is popular.</p>
-<p>I&rsquo;ve omitted the preamble in the following code but it shows a working configuration of <code>goproxy</code> using TLS, receiving an HTTPS request (<code>CONNECT</code>) implemented by <code>HandleConnectFunc</code> to augment the request headers. In my case, I leverage an existing CLI client to provide a Firebase ID token (refreshing it beforehand if necessary) and a client-specific header both of which are required by the Cloud Run services.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-	<span style="color:#a6e22e">proxy</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">goproxy</span>.<span style="color:#a6e22e">NewProxyHttpServer</span>()
-	<span style="color:#a6e22e">proxy</span>.<span style="color:#a6e22e">Verbose</span> = <span style="color:#66d9ef">true</span>
-
-	<span style="color:#75715e">// For HTTPS requests (which is always true for Prometheus) the proxy will receive an HTTP CONNECT
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">proxy</span>.<span style="color:#a6e22e">OnRequest</span>().<span style="color:#a6e22e">HandleConnectFunc</span>(
-		<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">host</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">ctx</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">goproxy</span>.<span style="color:#a6e22e">ProxyCtx</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">goproxy</span>.<span style="color:#a6e22e">ConnectAction</span>, <span style="color:#66d9ef">string</span>) {
-
-            <span style="color:#a6e22e">key</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;...&#34;</span>
-            <span style="color:#a6e22e">val</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;...&#34;</span>
-            <span style="color:#a6e22e">ctx</span>.<span style="color:#a6e22e">Req</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">val</span>)
-
-			<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">goproxy</span>.<span style="color:#a6e22e">OkConnect</span>, <span style="color:#a6e22e">host</span>
-		},
-	)
-
-	<span style="color:#75715e">// Setting TLSNextProto to a non-nil map disables HTTP/2
-</span><span style="color:#75715e"></span>    <span style="color:#75715e">// HTTP/2 can be problematic to proxy
-</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">srv</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Server</span>{
-		<span style="color:#a6e22e">Addr</span>:         <span style="color:#a6e22e">endpoint</span>,
-		<span style="color:#a6e22e">Handler</span>:      <span style="color:#a6e22e">proxy</span>,
-		<span style="color:#a6e22e">TLSConfig</span>:    <span style="color:#a6e22e">tlsConfig</span>,
-		<span style="color:#a6e22e">TLSNextProto</span>: make(<span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">func</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Server</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Conn</span>, <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Handler</span>)),
-	}
-
-	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">ListenAndServeTLS</span>(<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>))
-}
-</code></pre></div><p>The proxy provides the mechanism by which the static config shown in the Prometheus configuration above is dynamically revised to include necessary headers used to authenticate requests.</p>
+<p>Because the proxy listens on an insecure (non-TLS) connection but, Cloud Run (only) provides secure (TLS) connections, the first tasks of the proxy is to bump the connection to <code>https</code>. The proxy then creates a <code>NewRequest</code> using the incoming (proxied) request&rsquo;s method, body and the upgraded (<code>http://</code>&ndash;&gt;<code>https://</code> URL).</p>
+<p>The motivation for the proxy is that it injects the <code>Authorization</code> header into Cloud Run requests to authenticate them. In my implementation, the proxy uses the ID token produced by Firebase Auth to authenticate users&rsquo; requests. One user can have zero or more (!) Cloud Run services and the implementation ensures that one user can only access its own Cloud Run services. This is achieved (described below) by having the <code>listr</code> (a Cloud Run service that lists the user&rsquo;s Cloud Run services) <strong>and</strong> the Cloud Run services returned by <code>listr</code>, verify the user&rsquo;s ID token. So, the proxy acquires the user&rsquo;s ID token and adds this as a <code>Bearer</code> as an <code>Authorization</code> header.</p>
+<blockquote>
+<p><strong>ASIDE</strong> The <a href="https://github.com/DazWilkin/gcp-oidc-token-proxy">OIDC Token Proxy</a> also authenticates Prometheus scrapes of Cloud Run services but it relies on locally stored credentials (from a Service Account) to generate the appropriate JWT to authenticate a single (!) Cloud Run service. Unfortunately, the JWT audience is service-specific with Cloud Run and this means that the OIDC Token Proxy can only authenticate a single Cloud Run service (target).</p>
+</blockquote>
+<p>In my solution, there are additional headers added by the proxy that are used by the backend to validate users. The proxy adds these too.</p>
+<p>Now the proxy can make (<code>Do</code>) the request. If this errors, this is returned to the caller (Prometheus). Otherwise, the proxy copies the response into the caller&rsquo;s response.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">proxy</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">func</span>() <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">HandlerFunc</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">rqst</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Upgrade request
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">URL</span>.<span style="color:#a6e22e">Scheme</span> = <span style="color:#e6db74">&#34;https&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// URL being proxied
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#a6e22e">url</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">URL</span>.<span style="color:#a6e22e">String</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">pRqst</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">NewRequest</span>(<span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Method</span>, <span style="color:#a6e22e">url</span>, <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Body</span>)
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">msg</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;unable to create proxied request&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">msg</span>, <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusInternalServerError</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Add Authorization header
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#75715e">// Bearer acqusition is defined elsewhere
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#a6e22e">pRqst</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#e6db74">&#34;Authorization&#34;</span>, <span style="color:#a6e22e">getBearer</span>())
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Create Transport
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#75715e">// Use something thant InsecureSkipVerify in production
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#a6e22e">transport</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Transport</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">TLSClientConfig</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Config</span>{
+</span></span><span style="display:flex;"><span>          <span style="color:#a6e22e">InsecureSkipVerify</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Client</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Transport</span>: <span style="color:#a6e22e">transport</span>,
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Invoke proxied request
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#a6e22e">pResp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Do</span>(<span style="color:#a6e22e">pRqst</span>)
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">msg</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;unable to execute proxied request&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">msg</span>, <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusInternalServerError</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">pResp</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Copy the headers
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">dst</span>, <span style="color:#a6e22e">src</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Header</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">k</span>, <span style="color:#a6e22e">vv</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">src</span> {
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">v</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">vv</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">dst</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#a6e22e">k</span>, <span style="color:#a6e22e">v</span>)
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }(<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">Header</span>(), <span style="color:#a6e22e">pResp</span>.<span style="color:#a6e22e">Header</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Use the proxied response code as the caller&#39;s response code
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">pResp</span>.<span style="color:#a6e22e">StatusCode</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// Copy the body
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>      <span style="color:#a6e22e">io</span>.<span style="color:#a6e22e">Copy</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">pResp</span>.<span style="color:#a6e22e">Body</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">srv</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Server</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Addr</span>:    <span style="color:#f92672">*</span><span style="color:#a6e22e">endpoint</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Handler</span>: <span style="color:#a6e22e">proxy</span>,
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Error</span>(
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">ListenAndServe</span>(),
+</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;server error&#34;</span>,
+</span></span><span style="display:flex;"><span>	)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>To reiterate because it&rsquo;s slightly confusing. The proxy is used for 2 purposes in my application and as shown in this post. In both cases, it is used to add <code>Authorization</code> headers to requests that include the user&rsquo;s ID token in order to authenticate these requests. The proxy is used to make requests to the <code>listr</code> service. The <code>listr</code> service returns the user&rsquo;s set of Cloud Run services. It is then applied to each of these targets when Prometheus scrapes them for their metrics.</p>
 <h2 id="cloud-run-services">Cloud Run services</h2>
 <h3 id="authentication">Authentication</h3>
-<p>Authentication (and authoriation) are handled by the Cloud Run services using an interceptor that&rsquo;s applied to all incoming requests that&rsquo;s implemented as any other <code>http.Handler</code>. For this reason, the services must allow unauthenticated traffic (because the service itself is performing the authentication and authorization).</p>
+<p>Authentication (and authoriation) are handled by the Cloud Run services using an interceptor that&rsquo;s applied to all incoming requests and is implemented as an <code>http.Handler</code>. For this reason, the services must allow unauthenticated traffic (because the service itself is performing the authentication and authorization).</p>
 <p>I&rsquo;ve removed extraneous code and error-handling to focus on the intent <code>VerifyIDToken</code> and act upon the result:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
-    <span style="color:#75715e">// Gets first if any Authorization header
-</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">authValue</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;Authorization&#34;</span>)
-
-    <span style="color:#75715e">// Extracts TOKEN from &#34;Bearer TOKEN&#34;
-</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">splitValues</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Split</span>(<span style="color:#a6e22e">authValue</span>, <span style="color:#e6db74">&#34;Bearer &#34;</span>)
-
-    <span style="color:#75715e">// ID token
-</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">idToken</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">splitValues</span>[<span style="color:#ae81ff">1</span>]
-
-    <span style="color:#a6e22e">token</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">authClient</span>.<span style="color:#a6e22e">VerifyIDToken</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">idToken</span>)
-    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-        <span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusUnauthorized</span>)
-        <span style="color:#66d9ef">return</span>
-    }
-
-    <span style="color:#75715e">// Invoke next handler
-</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">next</span>.<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">req</span>)
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Gets first if any Authorization header
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">authValue</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;Authorization&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Extracts TOKEN from &#34;Bearer TOKEN&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">splitValues</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Split</span>(<span style="color:#a6e22e">authValue</span>, <span style="color:#e6db74">&#34;Bearer &#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// ID token
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">idToken</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">splitValues</span>[<span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">token</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">authClient</span>.<span style="color:#a6e22e">VerifyIDToken</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">idToken</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusUnauthorized</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Invoke next handler
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">next</span>.<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">req</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> In my app, once a user has been authenticated (see above), there&rsquo;s another interceptor that determines whether the user is authorized.</p>
 </blockquote>
 <h3 id="prometheus-service-discovery-targets">Prometheus Service Discovery targets</h3>
@@ -303,70 +352,70 @@ if (!doNotTrack) {
 <li><a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#http_sd_config"><code>&lt;http_sd_config&gt;</code></a></li>
 </ul>
 <p>Prometheus expects to receive JSON-formatted (static config) targets in response to its request to the handler:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">[
-  {
-    <span style="color:#f92672">&#34;targets&#34;</span>: [ <span style="color:#e6db74">&#34;&lt;host&gt;&#34;</span>, <span style="color:#960050;background-color:#1e0010">...</span> ],
-    <span style="color:#f92672">&#34;labels&#34;</span>: {
-      <span style="color:#f92672">&#34;&lt;labelname&gt;&#34;</span>: <span style="color:#e6db74">&#34;&lt;labelvalue&gt;&#34;</span>, <span style="color:#960050;background-color:#1e0010">...</span>
-    }
-  },
-  <span style="color:#960050;background-color:#1e0010">...</span>
-]
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>[
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;targets&#34;</span>: [ <span style="color:#e6db74">&#34;&lt;host&gt;&#34;</span>, <span style="color:#960050;background-color:#1e0010">...</span> ],
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;labels&#34;</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;&lt;labelname&gt;&#34;</span>: <span style="color:#e6db74">&#34;&lt;labelvalue&gt;&#34;</span>, <span style="color:#960050;background-color:#1e0010">...</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#960050;background-color:#1e0010">...</span>
+</span></span><span style="display:flex;"><span>]
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> <code>targets</code> is a list (of hosts) while <code>labels</code> is a map (of key:value pairs). There&rsquo;s freedom to associate a set of targets with the same set of labels.</p>
 </blockquote>
 <p>This can be modeled:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#75715e">// StaticConfigs is a type that represents file format of Prometheus File|HTTP Service Dicovery config
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">StaticConfigs</span> []<span style="color:#a6e22e">StaticConfig</span>
-
-<span style="color:#75715e">// NewStaticConfigs is a function that returns a new Configs
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewStaticConfigs</span>() <span style="color:#a6e22e">StaticConfigs</span> {
-	<span style="color:#66d9ef">return</span> []<span style="color:#a6e22e">StaticConfig</span>{}
-}
-
-<span style="color:#75715e">// Add is a method that adds a StaticConfig to StaticConfig
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">StaticConfigs</span>) <span style="color:#a6e22e">Add</span>(<span style="color:#a6e22e">x</span> <span style="color:#a6e22e">StaticConfig</span>) {
-	<span style="color:#f92672">*</span><span style="color:#a6e22e">c</span> = append(<span style="color:#f92672">*</span><span style="color:#a6e22e">c</span>, <span style="color:#a6e22e">x</span>)
-}
-
-<span style="color:#75715e">// JSON is a method that converts Configs to JSON
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">StaticConfigs</span>) <span style="color:#a6e22e">JSON</span>() ([]<span style="color:#66d9ef">byte</span>, <span style="color:#66d9ef">error</span>) {
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">c</span>)
-}
-
-<span style="color:#75715e">// StaticConfig is a type that represents a single entry within the Prometheus File Service discovery config
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">StaticConfig</span> <span style="color:#66d9ef">struct</span> {
-	<span style="color:#a6e22e">Targets</span> []<span style="color:#66d9ef">string</span>          <span style="color:#e6db74">`json:&#34;targets&#34; yaml:&#34;targets&#34;`</span>
-	<span style="color:#a6e22e">Labels</span>  <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;labels&#34; yaml:&#34;labels&#34;`</span>
-}
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// StaticConfigs is a type that represents file format of Prometheus File|HTTP Service Dicovery config
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">StaticConfigs</span> []<span style="color:#a6e22e">StaticConfig</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// NewStaticConfigs is a function that returns a new Configs
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewStaticConfigs</span>() <span style="color:#a6e22e">StaticConfigs</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> []<span style="color:#a6e22e">StaticConfig</span>{}
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Add is a method that adds a StaticConfig to StaticConfig
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">StaticConfigs</span>) <span style="color:#a6e22e">Add</span>(<span style="color:#a6e22e">x</span> <span style="color:#a6e22e">StaticConfig</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#f92672">*</span><span style="color:#a6e22e">c</span> = append(<span style="color:#f92672">*</span><span style="color:#a6e22e">c</span>, <span style="color:#a6e22e">x</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// JSON is a method that converts Configs to JSON
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">StaticConfigs</span>) <span style="color:#a6e22e">JSON</span>() ([]<span style="color:#66d9ef">byte</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">c</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// StaticConfig is a type that represents a single entry within the Prometheus File Service discovery config
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">StaticConfig</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Targets</span> []<span style="color:#66d9ef">string</span>          <span style="color:#e6db74">`json:&#34;targets&#34; yaml:&#34;targets&#34;`</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Labels</span>  <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;labels&#34; yaml:&#34;labels&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> These types (and methods) must be available as part of Prometheus too and it may be better to import them from Prometheus rather than recreate them here.</p>
 </blockquote>
 <p>One noteworthy fact is that the Cloud Run service has region-specific endpoints. Generally to interact with Cloud Run services through the SDKs, it&rsquo;s necessary to first determine which region the service is in. See <a href="https://cloud.google.com/run/docs/reference/rest#service-endpoint">Service endpoint</a>.</p>
 <p>However (!) there is an undocumented method <code>projects.locations.services.list</code> that can be used to enumerate all the services within a project. This <code>list</code> method is used by <code>gcloud</code> and it achieves the enumeration across all regions using <code>-</code> as a wildcard for the <code>locations</code>  components of the method&rsquo;s <code>parent</code> string value (<code>projects/{ProjectID}/locations/-</code>).</p>
 <p>This is the method that I&rsquo;m using to retrieve the list of <code>targets</code> that are then converted to <code>StaticConfig</code>&rsquo;s and <code>Add</code>&lsquo;ed to <code>StaticConfigs</code> per above before converting these to JSON to be returned by the HTTP handler:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#75715e">// List is a method that lists Cloud Run services that match the labelSelector
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">List</span>(<span style="color:#a6e22e">labelSelector</span> <span style="color:#66d9ef">string</span>) ([]<span style="color:#f92672">*</span><span style="color:#a6e22e">run</span>.<span style="color:#a6e22e">Service</span>, <span style="color:#66d9ef">error</span>) {
-	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Service</span>.<span style="color:#a6e22e">Projects</span>.<span style="color:#a6e22e">Locations</span>.<span style="color:#a6e22e">Services</span>.<span style="color:#a6e22e">List</span>(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Parent</span>()).<span style="color:#a6e22e">LabelSelector</span>(<span style="color:#a6e22e">labelSelector</span>)
-	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Do</span>()
-	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
-	}
-
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Items</span>, <span style="color:#66d9ef">nil</span>
-}
-
-<span style="color:#75715e">// Parent is a method that returns a wildcarded (!) parent
-</span><span style="color:#75715e">// gcloud uses an undocumented list method that uses &#34;-&#34; to represent all locations
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">Parent</span>() <span style="color:#66d9ef">string</span> {
-	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;projects/%s/locations/-&#34;</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Project</span>)
-}
-</code></pre></div><h3 id="prometheus-metrics">Prometheus metrics</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// List is a method that lists Cloud Run services that match the labelSelector
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">List</span>(<span style="color:#a6e22e">labelSelector</span> <span style="color:#66d9ef">string</span>) ([]<span style="color:#f92672">*</span><span style="color:#a6e22e">run</span>.<span style="color:#a6e22e">Service</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Service</span>.<span style="color:#a6e22e">Projects</span>.<span style="color:#a6e22e">Locations</span>.<span style="color:#a6e22e">Services</span>.<span style="color:#a6e22e">List</span>(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Parent</span>()).<span style="color:#a6e22e">LabelSelector</span>(<span style="color:#a6e22e">labelSelector</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Do</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Items</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Parent is a method that returns a wildcarded (!) parent
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// gcloud uses an undocumented list method that uses &#34;-&#34; to represent all locations
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">Parent</span>() <span style="color:#66d9ef">string</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;projects/%s/locations/-&#34;</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Project</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="prometheus-metrics">Prometheus metrics</h3>
 <p>Finally, the designated (<code>labelSelector</code>) services are returned by the discovery service to Prometheus where they are scraped and available for querying|graphing etc.</p>
 <p>Calls to these metrics endpoint services are authenticated using the handler described previously.</p>
 <h2 id="conclusion">Conclusion</h2>
 <p>Prometheus&rsquo; <a href="https://prometheus.io/docs/prometheus/latest/http_sd/">HTTP Service Discovery</a> mechanism is a useful and general-purpose way to generate scrape targets dynamically for Prometheus. In addition to HTTP Service Discovery, I implemented <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#file_sd_config">File-based Service Discovery</a> with the addition of a <code>Save</code> method to <code>StaticConfigs</code>.</p>
-<p>If I had no need to include authentciation and other headers, I could have avoided using the proxy. But Prometheus' generic (i.e. File, HTTP) service discovery mechanisms don&rsquo;t provide any mechanism for extending their functionality to achieve this, I am using a proxy. The proxy runs in the client&rsquo;s environment and is able to access a user&rsquo;s credentials and construct the additional headers that are added to the Prometheus service discovery requests.</p>
+<p>If I had no need to include authentciation and other headers, I could have avoided using the proxy. But Prometheus&rsquo; generic (i.e. File, HTTP) service discovery mechanisms don&rsquo;t provide any mechanism for extending their functionality to achieve this, I am using a proxy. The proxy runs in the client&rsquo;s environment and is able to access a user&rsquo;s credentials and construct the additional headers that are added to the Prometheus service discovery requests.</p>
 <p>The result is that users are able to securely (authenticated and authorized) use metrics from their Cloud Run services.</p>
 <ul class="pa0">
   
@@ -375,7 +424,7 @@ if (!doNotTrack) {
    </li>
   
    <li class="list di">
-     <a href="/tags/http-service-discovery" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">http-service-discovery</a>
+     <a href="/tags/service-discovery" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">service-discovery</a>
    </li>
   
    <li class="list di">
@@ -399,19 +448,19 @@ if (!doNotTrack) {
     <ul class="pa0 list">
 	   
 	     <li  class="mb2">
-          <a href="/posts/211005/">Scraping metrics exposed by Google Cloud Run services that require authentication</a>
-        </li>
-	    
-	     <li  class="mb2">
           <a href="/posts/210520/">Consul discovers Google Cloud Run</a>
         </li>
 	    
 	     <li  class="mb2">
-          <a href="/posts/210519/">Multiplexing gRPC and HTTP (Prometheus) endpoints with Cloud Run</a>
+          <a href="/posts/210419/">Prometheus Service Discovery w/ Consul for Cloud Run</a>
         </li>
 	    
 	     <li  class="mb2">
-          <a href="/posts/210419/">Prometheus Service Discovery w/ Consul for Cloud Run</a>
+          <a href="/posts/211005/">Scraping metrics exposed by Google Cloud Run services that require authentication</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210519/">Multiplexing gRPC and HTTP (Prometheus) endpoints with Cloud Run</a>
         </li>
 	    
 	     <li  class="mb2">
@@ -512,7 +561,8 @@ if (!doNotTrack) {
 </svg>
 </span></a>
   
-</div></div>
+</div>
+</div>
   </div>
 </footer>
 
