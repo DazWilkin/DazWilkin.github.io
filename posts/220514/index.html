@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Using Google Monitoring Alerting to send Pushover notifications | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="The GitHub repo is: go-gcp-pushover-notificationchannel
+Logging in to your Pushover account, you will be presented with a summary|dashboard page that includes Your User Key. Copy the value of this key into a variable called PUSHOVER_USER
+Create New Application|API Token
+Pushover API has a Pushing Messages method. The documentation describes the format of the HTTP Request. It must be a POST using TLS (https://) to https://api.pushover.net/1/messages.json. The content-type should be application/json. In the JSON body of the message, we must include token (PUSHOVER_TOKEN), user (PUSHOVER_USER_KEY), device (we&rsquo;ll use cloud-monitoring) and a title and a message">
+    <meta name="generator" content="Hugo 0.96.0" />
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.b54ce9b5075d36ec06126e6c1f3c9f0100a5fb4e6b46c67eee788bc772225751.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+    
+    <meta property="og:title" content="Using Google Monitoring Alerting to send Pushover notifications" />
+<meta property="og:description" content="The GitHub repo is: go-gcp-pushover-notificationchannel
+Logging in to your Pushover account, you will be presented with a summary|dashboard page that includes Your User Key. Copy the value of this key into a variable called PUSHOVER_USER
+Create New Application|API Token
+Pushover API has a Pushing Messages method. The documentation describes the format of the HTTP Request. It must be a POST using TLS (https://) to https://api.pushover.net/1/messages.json. The content-type should be application/json. In the JSON body of the message, we must include token (PUSHOVER_TOKEN), user (PUSHOVER_USER_KEY), device (we&rsquo;ll use cloud-monitoring) and a title and a message" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/220514/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-05-14T00:00:00-07:00" />
+<meta property="article:modified_time" content="2022-05-14T00:00:00-07:00" />
+
+<meta itemprop="name" content="Using Google Monitoring Alerting to send Pushover notifications">
+<meta itemprop="description" content="The GitHub repo is: go-gcp-pushover-notificationchannel
+Logging in to your Pushover account, you will be presented with a summary|dashboard page that includes Your User Key. Copy the value of this key into a variable called PUSHOVER_USER
+Create New Application|API Token
+Pushover API has a Pushing Messages method. The documentation describes the format of the HTTP Request. It must be a POST using TLS (https://) to https://api.pushover.net/1/messages.json. The content-type should be application/json. In the JSON body of the message, we must include token (PUSHOVER_TOKEN), user (PUSHOVER_USER_KEY), device (we&rsquo;ll use cloud-monitoring) and a title and a message"><meta itemprop="datePublished" content="2022-05-14T00:00:00-07:00" />
+<meta itemprop="dateModified" content="2022-05-14T00:00:00-07:00" />
+<meta itemprop="wordCount" content="968">
+<meta itemprop="keywords" content="gcp,cloud-monitoring,webhook,pushover," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Using Google Monitoring Alerting to send Pushover notifications"/>
+<meta name="twitter:description" content="The GitHub repo is: go-gcp-pushover-notificationchannel
+Logging in to your Pushover account, you will be presented with a summary|dashboard page that includes Your User Key. Copy the value of this key into a variable called PUSHOVER_USER
+Create New Application|API Token
+Pushover API has a Pushing Messages method. The documentation describes the format of the HTTP Request. It must be a POST using TLS (https://) to https://api.pushover.net/1/messages.json. The content-type should be application/json. In the JSON body of the message, we must include token (PUSHOVER_TOKEN), user (PUSHOVER_USER_KEY), device (we&rsquo;ll use cloud-monitoring) and a title and a message"/>
+
+      
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-67DZX7M0D1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    <a href="https://github.com/DazWilkin" target="_blank" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" rel="noopener" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://medium.com/@DazWilkin" target="_blank" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+
+
+
+
+
+
+  <div id="sharing" class="mt3 ananke-socials">
+    
+      
+      <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/220514/&amp;title=Using%20Google%20Monitoring%20Alerting%20to%20send%20Pushover%20notifications" class="ananke-social-link linkedin no-underline" aria-label="share on LinkedIn">
+        
+        <span class="icon"> <svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+        
+      </a>
+    
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Using Google Monitoring Alerting to send Pushover notifications</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2022-05-14T00:00:00-07:00">May 14, 2022</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 5 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 968 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>The GitHub repo is: <a href="https://github.com/DazWilkin/go-gcp-pushover-notificationchannel"><code>go-gcp-pushover-notificationchannel</code></a></p>
+<p>Logging in to your <a href="https://pushover.net">Pushover</a> account, you will be presented with a summary|dashboard page that includes <code>Your User Key</code>. Copy the value of this key into a variable called <code>PUSHOVER_USER</code></p>
+<p><a href="https://pushover.net/apps/build">Create New Application|API Token</a></p>
+<p><img src="/images/220514.pushover.app.png" alt="Pushover: New API Token"></p>
+<p>Pushover <a href="https://pushover.net/api">API</a> has a <a href="https://pushover.net/api#messages">Pushing Messages</a> method. The documentation describes the format of the HTTP Request. It must be a <code>POST</code> using TLS (<code>https://</code>) to <code>https://api.pushover.net/1/messages.json</code>. The <code>content-type</code> should be <code>application/json</code>. In the JSON body of the message, we must include <code>token</code> (<code>PUSHOVER_TOKEN</code>), <code>user</code> (<code>PUSHOVER_USER_KEY</code>), <code>device</code> (we&rsquo;ll use <code>cloud-monitoring</code>) and a <code>title</code> and a <code>message</code></p>
+<p>Let&rsquo;s try it before we proceed further:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://api.pushover.net/1/messages.json&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PUSHOVER_USERKEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-PUSHOVER-USER-KEY]&#34;</span>
+</span></span><span style="display:flex;"><span>PUSHOVER_TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-PUSHOVER-API-TOKEN]&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>DATA<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;token\&#34;: \&#34;</span><span style="color:#e6db74">${</span>PUSHOVER_TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;user\&#34;: \&#34;</span><span style="color:#e6db74">${</span>PUSHOVER_USERKEY<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;device\&#34;: \&#34;curl\&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;title\&#34;: \&#34;test\&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;message\&#34;: \&#34;test message\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request POST <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;content-type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--data <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>DATA<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>USR<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>That worked!</p>
+<p><img src="/images/220514.pushover.notification.curl.png" alt="Pushover Notification"></p>
+<blockquote>
+<p><strong>NOTE</strong> In what follows, I document the process that I followed. I learned that it&rsquo;s not possible to use a Cloud Monitoring Channel type of <code>webhook</code> (neither <code>webhook_basicauth</code> nor <code>webhook_tokenauth</code>) because, these appear to permit only configuring a URL (and, in the case of <code>webhook_tokenauth</code> providing the bearer token). For Pushover, it&rsquo;s necessary to construct a message body (this also includes the authentication). I then decided to use a Google <a href="https://cloud.google.com/functions/docs/2nd-gen/overview">Cloud Functions (2nd gen)</a> but realized that, since this deploys an underlying <a href="https://cloud.google.com/run">Cloud Run</a> service, it would be simpler to just use Cloud Run directly. All this to say, if you want to see the end result, please skip ahead to <a href="#cloud-run">Cloud Run</a></p>
+</blockquote>
+<h2 id="cloud-monitoring-webhook">Cloud Monitoring Webhook</h2>
+<blockquote>
+<p><strong>NOTE</strong> This approach is <strong>infeasible</strong>. Please see <a href="#cloud-run">Cloud Run</a> for a working solution</p>
+</blockquote>
+<p>Now, we&rsquo;ll try to configure a (Webhook) Notification Channel in a Google Cloud Monitoring project.</p>
+<p>The documentation is not comprehensive.</p>
+<p>Here&rsquo;s the list of <a href="https://cloud.google.com/monitoring/alerts/using-channels-api#ncd">Channel descriptors</a>. I tried <code>webhook_tokenauth</code>. In hindsight, Pushover&rsquo;s authentication is performed in the message body (using <code>user</code> and <code>token</code> properties) so using token auth (i.e. <code>Authorization: Bearer {token}</code>) isn&rsquo;t appropriate. I&rsquo;d assumed at this point that it would be possible to construct a message body for the Webhook. This is from experience using other Webhook implementations. It appears to be an invalid assumption for Cloud Monitoring&rsquo;s Channels.</p>
+<p>It wasn&rsquo;t obvious to me how to use the <a href="https://cloud.google.com/sdk/gcloud/reference/beta/monitoring/channels/create"><code>gcloud beta monitoring channels create</code></a> command&rsquo;s <code>--channel</code> flags. I realized that this is modeled after <a href="https://cloud.google.com/monitoring/api/ref_v3/rest/v3/projects.notificationChannels"><code>NotificationChannel</code></a> which helped me realize that I could either use <code>--channel-labels</code> for specific properties or pass the entire JSON object using <code>--channel-content-from-file</code> but this would benefit from better documentation.</p>
+<p>As it always the case, I find Google&rsquo;s <a href="https://developers.google.com/apis-explorer">APIs Explorer</a> to be an excellent tool and I tried using the underlying REST method to <a href="https://cloud.google.com/monitoring/api/ref_v3/rest/v3/projects.notificationChannels/create"><code>create</code></a> then <a href="https://cloud.google.com/monitoring/api/ref_v3/rest/v3/projects.notificationChannels/get"><code>get</code></a> channels directly. Here&rsquo;s the message body for the <code>create</code> method that I tried:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;displayName&#34;</span>: <span style="color:#e6db74">&#34;test&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;webhook_tokenauth&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;labels&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;url&#34;</span>: <span style="color:#e6db74">&#34;https://api.pushover.net/1/messages.json&#34;</span>
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;userLabels&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;{token}&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;user&#34;</span>: <span style="color:#e6db74">&#34;{user}&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;test&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;message&#34;</span>: <span style="color:#e6db74">&#34;test&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This was my attempt to construct a message body (required by Pushover) using <code>NotificationChannel</code>&rsquo;s <code>userLabels</code> but this doesn&rsquo;t work. The same command using <code>gcloud</code> is shown below:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>BILLING<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-BILLING-ID]&#34;</span>
+</span></span><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-PROJECT-ID]&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://api.pushover.net/1/messages.json&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PUSHOVER_USERKEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-PUSHOVER-USER-KEY]&#34;</span>
+</span></span><span style="display:flex;"><span>PUSHOVER_TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-PUSHOVER-API-TOKEN]&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud beta billing projects link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud beta monitoring channels create <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--display-name<span style="color:#f92672">=</span>pushover <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>webhook_tokenauth <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--channel-labels<span style="color:#f92672">=</span>url<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>URL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--user-labels<span style="color:#f92672">=</span>token<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PUSHOVER_TOKEN<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--user-labels<span style="color:#f92672">=</span>user<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PUSHOVER_USERKEY<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--user-labels<span style="color:#f92672">=</span>device<span style="color:#f92672">=</span>cloud-monitoring <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--user-labels<span style="color:#f92672">=</span>title<span style="color:#f92672">=</span>test <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--user-labels<span style="color:#f92672">=</span>message<span style="color:#f92672">=</span>test <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>Then:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud beta monitoring channels list --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span>creationRecord:
+</span></span><span style="display:flex;"><span>  mutateTime: <span style="color:#e6db74">&#39;2022-05-14T00:00:00.000000000Z&#39;</span>
+</span></span><span style="display:flex;"><span>displayName: pushover
+</span></span><span style="display:flex;"><span>enabled: true
+</span></span><span style="display:flex;"><span>labels:
+</span></span><span style="display:flex;"><span>  url: https://api.pushover.net/1/messages.json
+</span></span><span style="display:flex;"><span>mutationRecords:
+</span></span><span style="display:flex;"><span>- mutateTime: <span style="color:#e6db74">&#39;2022-05-14T00:00:00.000000000Z&#39;</span>
+</span></span><span style="display:flex;"><span>name: projects/<span style="color:#f92672">{</span>project<span style="color:#f92672">}</span>/notificationChannels/<span style="color:#f92672">{</span>channel-id<span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>type: webhook_tokenauth
+</span></span></code></pre></div><p>So, I abandoned this approach.</p>
+<h2 id="cloud-functions-2nd-gen">Cloud Functions (2nd gen)</h2>
+<blockquote>
+<p><strong>NOTE</strong> This approach works but &ndash; in my opinion &ndash; using <a href="#cloud-run">Cloud Run</a> directly is a better solution.</p>
+</blockquote>
+<p>Google <a href="https://cloud.google.com/functions">Cloud Functions</a> has been my go-to service for quick-hit solutions where I need e.g. Webhooks and so it was a natural next choice. Again, in hindsight, and because I chose to explore Cloud Function (2nd gen), this was a sub-optimal choice.</p>
+<p>First, Google has complicated the develoepr flow. In Go (and we&rsquo;re still stuck with Go 1.16 by the way in May 2022 when Go 1.18 has been available for ~month), it&rsquo;s necessary to add an <code>init</code> function and import a module (and its dependencies).</p>
+<p>Second &ndash; and more importantly &ndash; Cloud Functions (2nd gen) deploys a Cloud Function that uses an underlying Cloud Run service. Why add complexity? I decided to just use Cloud Run directly.</p>
+<p>This solution works but&hellip;</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>BILLING<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-BILLING-ID]&#34;</span>
+</span></span><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-PROJECT-ID]&#34;</span>
+</span></span><span style="display:flex;"><span>REGION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-REGION]&#34;</span>
+</span></span><span style="display:flex;"><span>NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;pushover&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://api.pushover.net/1/messages.json&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PUSHOVER_USERKEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-PUSHOVER-USER-KEY]&#34;</span>
+</span></span><span style="display:flex;"><span>PUSHOVER_TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-PUSHOVER-API-TOKEN]&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud beta billing projects link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> SERVICE in <span style="color:#e6db74">&#34;artifactregistry&#34;</span> <span style="color:#e6db74">&#34;cloudbuild&#34;</span> <span style="color:#e6db74">&#34;cloudfunctions&#34;</span> <span style="color:#e6db74">&#34;run&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  gcloud services enable <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.googleapis.com <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Deploy Cloud Functions</span>
+</span></span><span style="display:flex;"><span>gcloud beta functions deploy <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--gen2 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--runtime<span style="color:#f92672">=</span>go116 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--trigger-http <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--entry-point<span style="color:#f92672">=</span>Webhook <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--set-env-vars<span style="color:#f92672">=</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>PUSHOVER_USERKEY<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PUSHOVER_USERKEY<span style="color:#e6db74">}</span>,<span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>PUSHOVER_TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PUSHOVER_TOKEN<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--source . <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--allow-unauthenticated <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Get (URL)</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># NB The value is URI</span>
+</span></span><span style="display:flex;"><span>URL<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud beta functions describe <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --gen2 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(serviceConfig.uri)&#34;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>echo <span style="color:#e6db74">${</span>URL<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create Notification Channel</span>
+</span></span><span style="display:flex;"><span>gcloud beta monitoring channels create <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--display-name<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>webhook_tokenauth <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--channel-labels<span style="color:#f92672">=</span>url<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>URL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>You can test the channel by editing it within Cloud Console and using the console&rsquo;s test feature <strong>or</strong> of course by using it in an alert.</p>
+<h2 id="cloud-run">Cloud Run</h2>
+<p>Lastly, I created a Dockerfile and deployed the code as a Cloud Run service. Simple. It works. Why not?</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>BILLING<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-BILLING-ID]&#34;</span>
+</span></span><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-PROJECT-ID]&#34;</span>
+</span></span><span style="display:flex;"><span>REGION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-REGION]&#34;</span>
+</span></span><span style="display:flex;"><span>NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;pushover&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://api.pushover.net/1/messages.json&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PUSHOVER_USERKEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-PUSHOVER-USER-KEY]&#34;</span>
+</span></span><span style="display:flex;"><span>PUSHOVER_TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[YOUR-PUSHOVER-API-TOKEN]&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud beta billing projects link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud beta run deploy <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--command<span style="color:#f92672">=</span>/cmd/server <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--args<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;--endpoint=</span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--ingress<span style="color:#f92672">=</span>all <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--set-env-vars<span style="color:#f92672">=</span>PUSHOVER_USERKEY<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PUSHOVER_USERKEY<span style="color:#e6db74">}</span>,<span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>PUSHOVER_TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PUSHOVER_TOKEN<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--source . <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--allow-unauthenticated <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>URL<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud beta run services describe <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.Url)&#34;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>echo <span style="color:#e6db74">${</span>URL<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud beta monitoring channels create <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--display-name<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>webhook_tokenauth <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--channel-labels<span style="color:#f92672">=</span>url<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>URL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>You can test the channel by editing it within Cloud Console and using the console&rsquo;s test feature <strong>or</strong> of course by using it in an alert.</p>
+<p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/gcp" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">gcp</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/cloud-monitoring" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">cloud-monitoring</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/webhook" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">webhook</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/pushover" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">pushover</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+    
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/220506/">Cloud Run custom domain mappings</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/220503/">Automating Scheduled Firestore Exports</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/220421/">Using Google&#39;s Public Certificate Authority with Golang autocert</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210902/">Infrastructure as Code</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210413/">Cloud Firestore Triggers in Golang</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210108/">Kubernetes cert-manager</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201229/">Kubernetes Webhooks</a>
+        </li>
+	    
+    </ul>
+</div>
+
+<br/>
+      <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
+        data-name="bmc-button" data-slug="dazwilkin" data-color="#ffdd00" data-emoji="" data-font="Cookie"
+        data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000"
+        data-coffee-color="#ffffff"></script>
+    </aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2022 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    <a href="https://github.com/DazWilkin" target="_blank" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" rel="noopener" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://medium.com/@DazWilkin" target="_blank" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
