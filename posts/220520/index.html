@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Prometheus Exporters for fly.io and Vultr | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="I&rsquo;ve been on a roll building utilities this week. I developed a Service Health dashboard for my &ldquo;thing&rdquo;, a Prometheus Exporter for Fly.io and today, a Prometheus Exporter for Vultr. This is motivated by the fear that I will forget a deployed Cloud resource and incur a horrible bill.
+I&rsquo;ve no written several Prometheus Exporters for cloud platforms:
+ Prometheus Exporter for GCP Prometheus Exporter for Linode Prometheus Exporter for Fly.">
+    <meta name="generator" content="Hugo 0.96.0" />
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.b54ce9b5075d36ec06126e6c1f3c9f0100a5fb4e6b46c67eee788bc772225751.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+    
+    <meta property="og:title" content="Prometheus Exporters for fly.io and Vultr" />
+<meta property="og:description" content="I&rsquo;ve been on a roll building utilities this week. I developed a Service Health dashboard for my &ldquo;thing&rdquo;, a Prometheus Exporter for Fly.io and today, a Prometheus Exporter for Vultr. This is motivated by the fear that I will forget a deployed Cloud resource and incur a horrible bill.
+I&rsquo;ve no written several Prometheus Exporters for cloud platforms:
+ Prometheus Exporter for GCP Prometheus Exporter for Linode Prometheus Exporter for Fly." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/220520/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-05-20T00:00:00-07:00" />
+<meta property="article:modified_time" content="2022-05-20T00:00:00-07:00" />
+
+<meta itemprop="name" content="Prometheus Exporters for fly.io and Vultr">
+<meta itemprop="description" content="I&rsquo;ve been on a roll building utilities this week. I developed a Service Health dashboard for my &ldquo;thing&rdquo;, a Prometheus Exporter for Fly.io and today, a Prometheus Exporter for Vultr. This is motivated by the fear that I will forget a deployed Cloud resource and incur a horrible bill.
+I&rsquo;ve no written several Prometheus Exporters for cloud platforms:
+ Prometheus Exporter for GCP Prometheus Exporter for Linode Prometheus Exporter for Fly."><meta itemprop="datePublished" content="2022-05-20T00:00:00-07:00" />
+<meta itemprop="dateModified" content="2022-05-20T00:00:00-07:00" />
+<meta itemprop="wordCount" content="867">
+<meta itemprop="keywords" content="prometheus,exporter,metrics,fly.io,vultr,gcp,digitalocean," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Prometheus Exporters for fly.io and Vultr"/>
+<meta name="twitter:description" content="I&rsquo;ve been on a roll building utilities this week. I developed a Service Health dashboard for my &ldquo;thing&rdquo;, a Prometheus Exporter for Fly.io and today, a Prometheus Exporter for Vultr. This is motivated by the fear that I will forget a deployed Cloud resource and incur a horrible bill.
+I&rsquo;ve no written several Prometheus Exporters for cloud platforms:
+ Prometheus Exporter for GCP Prometheus Exporter for Linode Prometheus Exporter for Fly."/>
+
+      
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-67DZX7M0D1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    <a href="https://github.com/DazWilkin" target="_blank" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" rel="noopener" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://medium.com/@DazWilkin" target="_blank" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+
+
+
+
+
+
+  <div id="sharing" class="mt3 ananke-socials">
+    
+      
+      <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/220520/&amp;title=Prometheus%20Exporters%20for%20fly.io%20and%20Vultr" class="ananke-social-link linkedin no-underline" aria-label="share on LinkedIn">
+        
+        <span class="icon"> <svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+        
+      </a>
+    
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Prometheus Exporters for fly.io and Vultr</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2022-05-20T00:00:00-07:00">May 20, 2022</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 5 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 867 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve been on a roll building utilities this week. I developed a Service Health dashboard for my &ldquo;thing&rdquo;, a <a href="https://github.com/DazWilkin/fly-exporter">Prometheus Exporter for Fly.io</a> and today, a <a href="https://github.com/DazWilkin/vultr-exporter">Prometheus Exporter for Vultr</a>. This is motivated by the fear that I will forget a deployed Cloud resource and incur a horrible bill.</p>
+<p>I&rsquo;ve no written several Prometheus Exporters for cloud platforms:</p>
+<ul>
+<li><a href="https://github.com/DazWilkin/gcp-exporter">Prometheus Exporter for GCP</a></li>
+<li><a href="https://github.com/DazWilkin/linode-exporter">Prometheus Exporter for Linode</a></li>
+<li><a href="https://github.com/DazWilkin/fly-exporter">Prometheus Exporter for Fly.io</a></li>
+<li><a href="https://github.com/DazWilkin/vultr-exporter">Prometheus Exporter for Vultr</a></li>
+</ul>
+<p>Each of them monitors resource deployments and produces resource count metrics that can be scraped by Prometheus and alerted with Alertmanager. I have Alertmanager <a href="https://prometheus.io/docs/alerting/latest/configuration/#pushover_config">configured</a> to send notifications to <a href="https://pushover.net">Pushover</a>. Last week I wrote an integration between <a href="https://pretired.dazwilkin.com/posts/220514/">Google Cloud Monitoring to send notifications to Pushover</a> too.</p>
+<p>So, I&rsquo;m confident that I can track my resources across these disparate platforms. Next step, I guess, is to monitor the monitoring the tools. It&rsquo;s turtles all the way down!</p>
+<h2 id="prometheus-exporter-for-flyiohttpsgithubcomdazwilkinfly-exporter"><a href="https://github.com/DazWilkin/fly-exporter">Prometheus Exporter for Fly.io</a></h2>
+<p>This one may be entirely redundant but I was unable to determine how to configure AlertManager to consume the <a href="https://fly.io/blog/measuring-fly/">Fly&rsquo;s Prometheus Metrics</a>]. If I understand correctly, Fly publishes a (virtual) Prometheus API which you can access, by (your) organization (slug): <code>https://api.fly.io/prometheus/$(your-org)</code>. The documentation suggests consuming this endpoint using Grafana which is great but I prefer to use Prometheus and Alertmanager for metrics and Grafana for dashboards.</p>
+<p>I tried to configure a Prometheus server to scrape Fly&rsquo;s Prometheus API as a <code>/federate</code> and a <code>/remote-read</code> but neither (appear to) work(ed).</p>
+<p>What I mostly want to track is apps deployed to Fly to ensure I&rsquo;m not incurring too many $$$.</p>
+<p>Fly&rsquo;s Golang CLI <a href="github.com/superfly/flyctl"><code>flyctl</code></a> includes an <a href="github.com/superfly/flyctl/api">API</a> implementation. It&rsquo;s not well documented but it&rsquo;s trivial to enumerate the apps within an org (slug):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">name</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%s_%s&#34;</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">System</span>.<span style="color:#a6e22e">Namespace</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">System</span>.<span style="color:#a6e22e">Subsystem</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">api</span>.<span style="color:#a6e22e">NewClient</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Token</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">name</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">System</span>.<span style="color:#a6e22e">Version</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">terminal</span>.<span style="color:#a6e22e">DefaultLogger</span>,
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">role</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">apps</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">GetApps</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">role</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Retrieved %d apps&#34;</span>, len(<span style="color:#a6e22e">apps</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">app</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">apps</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Name: %s/%s (%s) [%s]&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">Organization</span>.<span style="color:#a6e22e">Slug</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">Name</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">ID</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">strconv</span>.<span style="color:#a6e22e">FormatBool</span>(<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">Deployed</span>),
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>For this type of data, I&rsquo;m following the Prometheus pattern of having an <code>up</code> metric (alive):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">MustNewConstMetric</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;up&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">CounterValue</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">1.0</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">ID</span>, <span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">Name</span>, <span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">Organization</span>.<span style="color:#a6e22e">Slug</span>, <span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">Status</span>, <span style="color:#a6e22e">strconv</span>.<span style="color:#a6e22e">FormatBool</span>(<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">Deployed</span>),
+</span></span><span style="display:flex;"><span>)
+</span></span></code></pre></div><p>This, without any labels, represents the aggregate number of apps deployed in the org.</p>
+<p>I can alert on this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>- <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fly_exporter</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">alert</span>: <span style="color:#ae81ff">fly_exporter_apps_running</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">expr</span>: <span style="color:#ae81ff">fly_exporter_apps{} &gt; 0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">for</span>: <span style="color:#ae81ff">6h</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">severity</span>: <span style="color:#ae81ff">page</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">summary</span>: <span style="color:#ae81ff">fly.io apps deployed</span>
+</span></span></code></pre></div><p>If there are more than zero apps deployed for a period of 6 hours, notify me!</p>
+<h2 id="prometheus-exporter-for-vultrhttpsgithubcomdazwilkinvultr-exporter"><a href="https://github.com/DazWilkin/vultr-exporter">Prometheus Exporter for Vultr</a></h2>
+<p>I&rsquo;m a sucker for managed Kubernetes offerings. My &ldquo;thing&rdquo; uses Google Kubernetes Engine which is the trailblazing service (as is expected) but I&rsquo;ve used Digital Ocean Kubernetes Engine (DOKE), Linode Kubernetes Engine (LKE) and decided to give Vultr Kubernetes Engine (VKE) a whirl too, yesterday.</p>
+<p>I was compelled by the <a href="https://www.vultr.com/news/Vultr-Kubernetes-Engine-is-Now-Generally-Available/">General Availability of VKE</a> but, I was committed once I saw that there&rsquo;s a Golang-based <a href="https://github.com/vultr/vultr-cli">CLI</a> too. Not only because Golang CLIs aren&rsquo;t Node.JS CLIs (and I dislike running Node.JS) but because, as with Fly, a Golang CLIs generally (!) entails a Golang API SDK too.</p>
+<p>One thing I dislike (!) about Vultr&rsquo;s CLI is that there&rsquo;s no evident way to format command output as anything other than text. And, while my [awk]&rsquo;s improving, I find it curious that a Golang CLI would retrieve (probably JSON but perhaps protobuf) data from its API service, unmarshal it into a Golang struct type and then <strong>not</strong> provide <code>json.Marshal</code> and <code>yaml.Marshal</code> on the way out. I digress. Vote here <a href="https://github.com/vultr/vultr-cli/issues/72">Issue #72</a>.</p>
+<p>The SDK is very easy to use and well-documented:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">oauth2</span>.<span style="color:#a6e22e">Config</span>{}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">token</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">oauth2</span>.<span style="color:#a6e22e">Token</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">AccessToken</span>: <span style="color:#a6e22e">apiKey</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ts</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">TokenSource</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">token</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">govultr</span>.<span style="color:#a6e22e">NewClient</span>(<span style="color:#a6e22e">oauth2</span>.<span style="color:#a6e22e">NewClient</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">ts</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Optional changes
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">SetBaseURL</span>(<span style="color:#e6db74">&#34;https://api.vultr.com&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">SetUserAgent</span>(<span style="color:#a6e22e">name</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">SetRateLimit</span>(<span style="color:#ae81ff">500</span>)
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> <code>apiKey</code> is obtained from Vultr&rsquo;s dashboard (CLI?). Curiously, it appears there&rsquo;s only one API per account which is limiting.</p>
+</blockquote>
+<p>Once you&rsquo;ve an API client, you can, for example, enumerate Kubernetes clusters, node pools and nodes:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">options</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">govultr</span>.<span style="color:#a6e22e">ListOptions</span>{}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">clusters</span>, <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Client</span>.<span style="color:#a6e22e">Kubernetes</span>.<span style="color:#a6e22e">ListClusters</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">options</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">wg</span> <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">WaitGroup</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">cluster</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">clusters</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">cluster</span> <span style="color:#a6e22e">govultr</span>.<span style="color:#a6e22e">Cluster</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Done</span>()
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Cluster: %s (%s) [%s]&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">Label</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">ID</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">Status</span>,
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">nodepool</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">NodePools</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Node Pool (%d): %s (%s) [%s]&#34;</span>,
+</span></span><span style="display:flex;"><span>                len(<span style="color:#a6e22e">nodepool</span>.<span style="color:#a6e22e">Nodes</span>),
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">nodepool</span>.<span style="color:#a6e22e">Label</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">nodepool</span>.<span style="color:#a6e22e">ID</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">nodepool</span>.<span style="color:#a6e22e">Status</span>,
+</span></span><span style="display:flex;"><span>            )
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }(<span style="color:#a6e22e">cluster</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Wait</span>()
+</span></span></code></pre></div><p>Vultr provides various types of resources that would likely be useful to other Vultr developers (Instances, DNS, Objects, Firewalls, Networks and Load Balancers) but, I&rsquo;m currently only using Kubernetes Engine and so I&rsquo;ve only implemented metrics for Kubernetes.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">ch</span> <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">MustNewConstMetric</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;cluster_up&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">CounterValue</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">status</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">result</span> <span style="color:#66d9ef">float64</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">status</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;active&#34;</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">result</span> = <span style="color:#ae81ff">1.0</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">result</span>
+</span></span><span style="display:flex;"><span>    }(<span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">Status</span>),
+</span></span><span style="display:flex;"><span>    []<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">Label</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">Region</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">Version</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">Status</span>,
+</span></span><span style="display:flex;"><span>    }<span style="color:#f92672">...</span>,
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ch</span> <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">MustNewConstMetric</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;node_pools&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">GaugeValue</span>,
+</span></span><span style="display:flex;"><span>    float64(len(<span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">NodePools</span>)),
+</span></span><span style="display:flex;"><span>    []<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">Label</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">Region</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">Version</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">cluster</span>.<span style="color:#a6e22e">Status</span>,
+</span></span><span style="display:flex;"><span>    }<span style="color:#f92672">...</span>,
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ch</span> <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">MustNewConstMetric</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;nodes&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">GaugeValue</span>,
+</span></span><span style="display:flex;"><span>    float64(<span style="color:#a6e22e">nodepool</span>.<span style="color:#a6e22e">NodeQuantity</span>),
+</span></span><span style="display:flex;"><span>    []<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">nodepool</span>.<span style="color:#a6e22e">Label</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">nodepool</span>.<span style="color:#a6e22e">Plan</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">nodepool</span>.<span style="color:#a6e22e">Status</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">nodepool</span>.<span style="color:#a6e22e">Tag</span>,
+</span></span><span style="display:flex;"><span>    }<span style="color:#f92672">...</span>,
+</span></span><span style="display:flex;"><span>)
+</span></span></code></pre></div><p>The <code>cluster_up</code> metric without labels provides an aggregate of the number of Kubernetes clusters deployed.</p>
+<p>I can alert on this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>- <span style="color:#f92672">name</span>: <span style="color:#ae81ff">vultr_exporter</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">alert</span>: <span style="color:#ae81ff">vultr_exporter_kubernetes_cluster_up</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">expr</span>: <span style="color:#ae81ff">vultr_exporter_kubernetes_cluster_up{} &gt; 0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">for</span>: <span style="color:#ae81ff">6h</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">severity</span>: <span style="color:#ae81ff">page</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">summary</span>: <span style="color:#ae81ff">Vultr Kubernetes Engine cluster running</span>
+</span></span></code></pre></div><p>If there are more than zero Kubernetes clusters running for 6h, notify me!</p>
+<p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/prometheus" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">prometheus</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/exporter" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">exporter</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/metrics" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">metrics</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/fly.io" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">fly.io</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/vultr" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">vultr</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/gcp" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">gcp</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/digitalocean" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">digitalocean</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+    
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/210519/">Multiplexing gRPC and HTTP (Prometheus) endpoints with Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201008/">Deploying a Rust HTTP server to DigitalOcean App Platform</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/220514/">Using Google Monitoring Alerting to send Pushover notifications</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/220506/">Cloud Run custom domain mappings</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/220503/">Automating Scheduled Firestore Exports</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/220421/">Using Google&#39;s Public Certificate Authority with Golang autocert</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/220225/">Prometheus HTTP Service Discovery of Cloud Run services</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/211005/">Scraping metrics exposed by Google Cloud Run services that require authentication</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210902/">Infrastructure as Code</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210520/">Consul discovers Google Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210419/">Prometheus Service Discovery w/ Consul for Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210413/">Cloud Firestore Triggers in Golang</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210412/">Fly.io</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210305/">Prometheus VPA Recommendations</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210122/">Krustlet on DO Managed Kubernetes</a>
+        </li>
+	    
+    </ul>
+</div>
+
+<br/>
+      <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
+        data-name="bmc-button" data-slug="dazwilkin" data-color="#ffdd00" data-emoji="" data-font="Cookie"
+        data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000"
+        data-coffee-color="#ffffff"></script>
+    </aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2022 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    <a href="https://github.com/DazWilkin" target="_blank" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" rel="noopener" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" rel="noopener" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://medium.com/@DazWilkin" target="_blank" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" rel="noopener" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" rel="noopener" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
