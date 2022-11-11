@@ -7,7 +7,7 @@
     <title>Prometheus | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="">
-    <meta name="generator" content="Hugo 0.96.0" />
+    <meta name="generator" content="Hugo 0.105.0">
     
     
     
@@ -45,16 +45,16 @@
 <meta name="twitter:description" content=""/>
 
       
-<script type="application/javascript">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-67DZX7M0D1"></script>
+<script>
 var doNotTrack = false;
 if (!doNotTrack) {
-	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-	ga('create', 'G-67DZX7M0D1', 'auto');
-	
-	ga('send', 'pageview');
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-67DZX7M0D1', { 'anonymize_ip': false });
 }
 </script>
-<script async src='https://www.google-analytics.com/analytics.js'></script>
 
     
 	
@@ -171,7 +171,7 @@ if (!doNotTrack) {
     <div class="nested-links f5 lh-copy nested-copy-line-height">
       I&rsquo;ve been on a roll building utilities this week. I developed a Service Health dashboard for my &ldquo;thing&rdquo;, a Prometheus Exporter for Fly.io and today, a Prometheus Exporter for Vultr. This is motivated by the fear that I will forget a deployed Cloud resource and incur a horrible bill.
 I&rsquo;ve no written several Prometheus Exporters for cloud platforms:
- Prometheus Exporter for GCP Prometheus Exporter for Linode Prometheus Exporter for Fly.
+Prometheus Exporter for GCP Prometheus Exporter for Linode Prometheus Exporter for Fly.io Prometheus Exporter for Vultr Each of them monitors resource deployments and produces resource count metrics that can be scraped by Prometheus and alerted with Alertmanager.
     </div>
   </div>
 </div>
@@ -190,7 +190,7 @@ I&rsquo;ve no written several Prometheus Exporters for cloud platforms:
     <div class="nested-links f5 lh-copy nested-copy-line-height">
       Some time ago, I wrote about using Prometheus Service Discovery w/ Consul for Cloud Run and also Scraping metrics exposed by Google Cloud Run services that require authentication. Both solutions remain viable but they didn&rsquo;t address another use case for Prometheus and Cloud Run services that I have with a &ldquo;thing&rdquo; that I&rsquo;ve been building.
 In this scenario, I want to:
- Configure Prometheus to scrape Cloud Run service metrics Discover Cloud Run services dynamically Authenticate to Cloud Run using Firebase Auth ID tokens  These requirements and &ndash; one other &ndash; present several challenges:
+Configure Prometheus to scrape Cloud Run service metrics Discover Cloud Run services dynamically Authenticate to Cloud Run using Firebase Auth ID tokens These requirements and &ndash; one other &ndash; present several challenges:
     </div>
   </div>
 </div>
@@ -210,7 +210,7 @@ In this scenario, I want to:
       I&rsquo;ve written a solution (gcp-oidc-token-proxy) that can be used in conjunction with Prometheus OAuth2 to authenticate requests so that Prometheus can scrape metrics exposed by e.g. Cloud Run services that require authentication. The solution resulted from my question on Stack overflow.
 Problem #1: Endpoint requires authentication
 Given a Cloud Run service URL for which:
-ENDPOINT=&#34;my-server-blahblah-wl.a.run.app&#34;  # Returns 200 when authentication w/ an ID token TOKEN=&#34;$(gcloud auth print-identity-token)&#34; curl \ --silent \ --request GET \ --header &#34;Authorization: Bearer ${TOKEN}&#34; \ --write-out &#34;%{response_code}&#34; \ --output /dev/null \ https://${ENDPOINT}/metrics  # Returns 403 otherwise curl \ --silent \ --request GET \ --write-out &#34;%{response_code}&#34; \ --output /dev/null \ https://${ENDPOINT}/metrics Problem #2: Prometheus OAuth2 configuration is constrained
+ENDPOINT=&#34;my-server-blahblah-wl.a.run.app&#34; # Returns 200 when authentication w/ an ID token TOKEN=&#34;$(gcloud auth print-identity-token)&#34; curl \ --silent \ --request GET \ --header &#34;Authorization: Bearer ${TOKEN}&#34; \ --write-out &#34;%{response_code}&#34; \ --output /dev/null \ https://${ENDPOINT}/metrics # Returns 403 otherwise curl \ --silent \ --request GET \ --write-out &#34;%{response_code}&#34; \ --output /dev/null \ https://${ENDPOINT}/metrics Problem #2: Prometheus OAuth2 configuration is constrained
     </div>
   </div>
 </div>
@@ -229,7 +229,7 @@ ENDPOINT=&#34;my-server-blahblah-wl.a.run.app&#34;  # Returns 200 when authentic
     <div class="nested-links f5 lh-copy nested-copy-line-height">
       I&rsquo;ve written a basic discoverer of Google Cloud Run services. This is for a project and it extends work done in some previous posts to Multiplex gRPC and Prometheus with Cloud Run and to use Consul for Prometheus service discovery.
 This solution:
- Accepts a set of Google Cloud Platform (GCP) projects Trawls them for Cloud Run services Assumes that the services expose Prometheus metrics on :443/metrics Relabels the services Surfaces any discovered Cloud Run services&rsquo; metrics in Prometheus  You&rsquo;ll need Docker and Docker Compose.
+Accepts a set of Google Cloud Platform (GCP) projects Trawls them for Cloud Run services Assumes that the services expose Prometheus metrics on :443/metrics Relabels the services Surfaces any discovered Cloud Run services&rsquo; metrics in Prometheus You&rsquo;ll need Docker and Docker Compose.
     </div>
   </div>
 </div>
@@ -248,7 +248,7 @@ This solution:
     <div class="nested-links f5 lh-copy nested-copy-line-height">
       Google Cloud Run is useful but, each service is limited to exposing a single port. This caused me problems with a gRPC service that serves (non-gRPC) Prometheus metrics because customarily, you would serve gRPC on one port and the Prometheus metrics on another.
 Fortunately, cmux provides a solution by providing a mechanism that multiplexes both services (gRPC and HTTP) on a single port!
- TL;DR See the cmux Limitations and use:
+TL;DR See the cmux Limitations and use:
     </div>
   </div>
 </div>
@@ -267,8 +267,8 @@ Fortunately, cmux provides a solution by providing a mechanism that multiplexes 
     <div class="nested-links f5 lh-copy nested-copy-line-height">
       I&rsquo;m working on a project that will programmatically create Google Cloud Run services and I want to be able to dynamically discover these services using Prometheus.
 This is one solution.
- NOTE Google Cloud Run is the service I&rsquo;m using, but the principle described herein applies to any runtime service that you&rsquo;d wish to use.
- Why is this challenging? IIUC, it&rsquo;s primarily because Prometheus has a limited set of plugins for service discovery, see the sections that include _sd_ in Prometheus Configuration documentation.
+NOTE Google Cloud Run is the service I&rsquo;m using, but the principle described herein applies to any runtime service that you&rsquo;d wish to use.
+Why is this challenging? IIUC, it&rsquo;s primarily because Prometheus has a limited set of plugins for service discovery, see the sections that include _sd_ in Prometheus Configuration documentation.
     </div>
   </div>
 </div>
@@ -288,9 +288,9 @@ This is one solution.
       Phew!
 For Want of a Nail
 I was interested in learning how to Manage Resources for Containers. On the way, I learned and discovered:
- kubectl top Vertical Pod Autoscaler A (valuable) digression through PodMonitor kube-state-metrics `kubectl-patch Created a Graph References  Kubernetes Resources Visual Studio Code has begun to bug me (reasonably) to add resources to Kubernetes manifests.
+kubectl top Vertical Pod Autoscaler A (valuable) digression through PodMonitor kube-state-metrics `kubectl-patch Created a Graph References Kubernetes Resources Visual Studio Code has begun to bug me (reasonably) to add resources to Kubernetes manifests.
 E.g.:
-resources:  limits:  cpu: &#34;1&#34;  memory: &#34;512Mi&#34; I&rsquo;ve been spending time with Deislab&rsquo;s Akri and decided to determine whether Akri&rsquo;s primary resources (Agent, Controller) and some of my creations HTTP Device and Discovery, were being suitably constrained.
+resources: limits: cpu: &#34;1&#34; memory: &#34;512Mi&#34; I&rsquo;ve been spending time with Deislab&rsquo;s Akri and decided to determine whether Akri&rsquo;s primary resources (Agent, Controller) and some of my creations HTTP Device and Discovery, were being suitably constrained.
     </div>
   </div>
 </div>
@@ -370,8 +370,8 @@ Success:
 Configure The process is straightforward although I found the Prometheus (config) documentation slightly unwieldy to navigate :-(
 The overall process is documented.
 Here are the steps I took:
- Configure Prometheus Configure AlertManager Revise Docker Compose  Configure Prometheus Added the following to prometheus.yml:
-rule_files: - &#34;/etc/alertmanager/rules/linode.yml&#34;  alerting:  alertmanagers:  - scheme: http  static_configs:  - targets:  - &#34;alertmanager:9093&#34; Rules must be defined in separate rules files.
+Configure Prometheus Configure AlertManager Revise Docker Compose Configure Prometheus Added the following to prometheus.yml:
+rule_files: - &#34;/etc/alertmanager/rules/linode.yml&#34; alerting: alertmanagers: - scheme: http static_configs: - targets: - &#34;alertmanager:9093&#34; Rules must be defined in separate rules files.
     </div>
   </div>
 </div>
