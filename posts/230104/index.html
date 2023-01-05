@@ -44,7 +44,7 @@ Listening to PromCon EU 2022 videos, I learned that PromLens has been open sourc
 Sometime ago, I tried using PromLens with GMP but GMP&rsquo;s Prometheus HTTP API endpoint requires auth and I&rsquo;ve battled Prometheus&rsquo; somewhat limited auth mechanism before (Scraping metrics exposed by Google Cloud Run services that require authentication).
 Listening to PromCon EU 2022 videos, I learned that PromLens has been open sourced and contributed to the Prometheus project. Eventually, the functionality of PromLens should be combined into the Prometheus UI."><meta itemprop="datePublished" content="2023-01-04T00:00:00-08:00" />
 <meta itemprop="dateModified" content="2023-01-04T00:00:00-08:00" />
-<meta itemprop="wordCount" content="544">
+<meta itemprop="wordCount" content="551">
 <meta itemprop="keywords" content="PromLens,GCP,Google Managed Prometheus,Prometheus," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Authenticate PromLens to Google Managed Prometheus"/>
 <meta name="twitter:description" content="I&rsquo;m using Google Managed Service for Prometheus (GMP) and liking it.
@@ -202,7 +202,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 3 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 544 words </span>
+        <span class="f6 mv4 dib tracked"> - 551 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;m using <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus">Google Managed Service for Prometheus (GMP)</a> and liking it.</p>
@@ -222,15 +222,12 @@ if (!doNotTrack) {
 <p><code>http://0.0.0.0:7777/api/v1/query?query=1</code></p>
 <p>And the proxy will make the request:</p>
 <p><code>https://monitoring.googleapis.com/v1/projects/{project}/location/global/prometheus/api/v1/query?query=1</code></p>
-<p>While also adding the header:</p>
+<p>After copying the headers from the incoming request, the proxy adds an <code>Authorization</code> header if none are present (as expected) in the incoming request:</p>
 <p><code>Authorization: Bearer {token}</code></p>
 <p>Where <code>{token}</code> is an access token obtained from the <code>DefaultTokenSource</code>.</p>
 <p>PromLens occasionally includes a <code>refresh</code> key in the query string that it submits to the Prometheus API. GMP rejects queries that contain this string:</p>
 <p><code>&quot;Invalid JSON payload received. Unknown name \&quot;refresh\&quot;: Cannot bind query parameter. Field 'refresh' could not be found in request message.&quot;</code></p>
 <p>For this reason, the proxy removes occurrencess of <code>refresh</code> from query strings that it receives.</p>
-<p>Lastly, the proxy adds the following header to the response (!) to avoid the browser reporting CORS errors:</p>
-<p><code>Access-Control-Allow-Origin: *</code></p>
-<p>I was unable to determine the correct non-wildcard (<code>*</code>) value to use.</p>
 <p>I use <a href="https://podman.io"><code>podman</code></a> but you may replace <code>podman</code> with e.g. <code>docker</code> in the following. I assume you&rsquo;ve deployed GMP in Google Cloud Project.</p>
 <p>Run the proxy:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
@@ -243,7 +240,7 @@ if (!doNotTrack) {
 </span></span></code></pre></div><p>Or:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>TAG<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;37b44a6e8e6064d9f61214b972bae81581fc53b0&#34;</span>
+</span></span><span style="display:flex;"><span>TAG<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;31161773c854688ef5672c1949e140af42628efb&#34;</span>
 </span></span><span style="display:flex;"><span>IMAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;ghcr.io/dazwilkin/promlens-gmp-token-proxy:</span><span style="color:#e6db74">${</span>TAG<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/path/to/key.json&#34;</span>
@@ -302,11 +299,14 @@ if (!doNotTrack) {
 </span></span></code></pre></div><p>Yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># HELP promlens_gmp_token_proxy_build_info A metric with a constant &#39;1&#39; value labels by build time, git commit, OS and Go versions</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE promlens_gmp_token_proxy_build_info counter</span>
-</span></span><span style="display:flex;"><span>promlens_gmp_token_proxy_build_info<span style="color:#f92672">{</span>build_time<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1672877849&#34;</span>,git_commit<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;a274a1d67829e06451009da72d9299804e86a5db&#34;</span>,go_version<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;go1.20rc2&#34;</span>,os_version<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;5.15.0-1024-azure&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>promlens_gmp_token_proxy_build_info<span style="color:#f92672">{</span>build_time<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&#34;</span>,git_commit<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&#34;</span>,go_version<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;go1.19&#34;</span>,os_version<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># HELP promlens_gmp_token_proxy_proxied_status The total number of proxied requests that returned a status code</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE promlens_gmp_token_proxy_proxied_status counter</span>
+</span></span><span style="display:flex;"><span>promlens_gmp_token_proxy_proxied_status<span style="color:#f92672">{</span>code<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;200&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">30</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># HELP promlens_gmp_token_proxy_proxied_total The total number of proxied requests</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE promlens_gmp_token_proxy_proxied_total counter</span>
-</span></span><span style="display:flex;"><span>promlens_gmp_token_proxy_proxied_total <span style="color:#ae81ff">2</span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># HELP promlens_gmp_token_proxy_tokens_total The total number of Tokens created</span>
+</span></span><span style="display:flex;"><span>promlens_gmp_token_proxy_proxied_total <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># HELP promlens_gmp_token_proxy_tokens_total The total number of token requests</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE promlens_gmp_token_proxy_tokens_total counter</span>
 </span></span><span style="display:flex;"><span>promlens_gmp_token_proxy_tokens_total <span style="color:#ae81ff">1</span>
 </span></span></code></pre></div><p>That&rsquo;s all!</p>
