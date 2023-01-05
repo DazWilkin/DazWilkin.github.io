@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Authenticate PromLens to Google Managed Prometheus | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="I&rsquo;m using Google Managed Service for Prometheus (GMP) and liking it.
+Sometime ago, I tried using PromLens with GMP but GMP&rsquo;s API endpoint requires auth and I&rsquo;ve battled Prometheus&rsquo; somewhat limited auth mechanism before (Scraping metrics exposed by Google Cloud Run services that require authentication).
+Listening to PromCon EU 2022 videos, I learned that PromLens has been open sourced and contributed to the Prometheus project. Eventually, the functionality of PromLens should be combined into the Prometheus UI.">
+    <meta name="generator" content="Hugo 0.109.0">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.b54ce9b5075d36ec06126e6c1f3c9f0100a5fb4e6b46c67eee788bc772225751.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+    
+    <meta property="og:title" content="Authenticate PromLens to Google Managed Prometheus" />
+<meta property="og:description" content="I&rsquo;m using Google Managed Service for Prometheus (GMP) and liking it.
+Sometime ago, I tried using PromLens with GMP but GMP&rsquo;s API endpoint requires auth and I&rsquo;ve battled Prometheus&rsquo; somewhat limited auth mechanism before (Scraping metrics exposed by Google Cloud Run services that require authentication).
+Listening to PromCon EU 2022 videos, I learned that PromLens has been open sourced and contributed to the Prometheus project. Eventually, the functionality of PromLens should be combined into the Prometheus UI." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/230104/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2023-01-04T00:00:00-08:00" />
+<meta property="article:modified_time" content="2023-01-04T00:00:00-08:00" />
+<meta itemprop="name" content="Authenticate PromLens to Google Managed Prometheus">
+<meta itemprop="description" content="I&rsquo;m using Google Managed Service for Prometheus (GMP) and liking it.
+Sometime ago, I tried using PromLens with GMP but GMP&rsquo;s API endpoint requires auth and I&rsquo;ve battled Prometheus&rsquo; somewhat limited auth mechanism before (Scraping metrics exposed by Google Cloud Run services that require authentication).
+Listening to PromCon EU 2022 videos, I learned that PromLens has been open sourced and contributed to the Prometheus project. Eventually, the functionality of PromLens should be combined into the Prometheus UI."><meta itemprop="datePublished" content="2023-01-04T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2023-01-04T00:00:00-08:00" />
+<meta itemprop="wordCount" content="542">
+<meta itemprop="keywords" content="PromLens,GCP,Google Managed Prometheus,Prometheus," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Authenticate PromLens to Google Managed Prometheus"/>
+<meta name="twitter:description" content="I&rsquo;m using Google Managed Service for Prometheus (GMP) and liking it.
+Sometime ago, I tried using PromLens with GMP but GMP&rsquo;s API endpoint requires auth and I&rsquo;ve battled Prometheus&rsquo; somewhat limited auth mechanism before (Scraping metrics exposed by Google Cloud Run services that require authentication).
+Listening to PromCon EU 2022 videos, I learned that PromLens has been open sourced and contributed to the Prometheus project. Eventually, the functionality of PromLens should be combined into the Prometheus UI."/>
+
+      
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-67DZX7M0D1"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-67DZX7M0D1', { 'anonymize_ip': false });
+}
+</script>
+
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+
+
+
+
+
+
+  <div id="sharing" class="mt3 ananke-socials">
+    
+      
+      <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/230104/&amp;title=Authenticate%20PromLens%20to%20Google%20Managed%20Prometheus" class="ananke-social-link linkedin no-underline" aria-label="share on LinkedIn">
+        
+        <span class="icon"> <svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+        
+      </a>
+    
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Authenticate PromLens to Google Managed Prometheus</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2023-01-04T00:00:00-08:00">January 4, 2023</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 3 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 542 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;m using <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus">Google Managed Service for Prometheus (GMP)</a> and liking it.</p>
+<p>Sometime ago, I tried using <a href="https://promlens.com/">PromLens</a> with GMP but GMP&rsquo;s API endpoint requires auth and I&rsquo;ve battled Prometheus&rsquo; somewhat limited auth mechanism before (<a href="https://pretired.dazwilkin.com/posts/211005/">Scraping metrics exposed by Google Cloud Run services that require authentication</a>).</p>
+<p>Listening to <a href="https://promcon.io/2022-munich/schedule/">PromCon EU 2022</a> videos, I learned that PromLens has been <a href="https://promlabs.com/blog/2022/10/25/promlabs-and-chronosphere-open-source-the-promlens-query-builder">open sourced</a> and contributed to the Prometheus project. Eventually, the functionality of PromLens should be combined into the Prometheus UI.</p>
+<p>I decided to mash-up a proxy for PromLens that uses Google&rsquo;s <a href="https://cloud.google.com/docs/authentication/application-default-credentials">Application Default Credentials (ADC)</a> to authenticate to GMP. It&rsquo;s called <a href="https://github.com/DazWilkin/promlens-gmp-token-proxy"><code>promlens-gmp-token-proxy</code></a>.</p>
+<p>Here&rsquo;s a screenshot:</p>
+<p><img src="https://raw.githubusercontent.com/DazWilkin/promlens-gmp-token-proxy/master/images/promlens.compute_googleapis._com.png" alt="PromLens against GMP"></p>
+<p>The code is hacky.</p>
+<p>The proxy <strong>doesn&rsquo;t</strong> expose a TLS-based (HTTP) endpoint to PromLens <strong>but</strong> it does (as it must) use TLS to secure its connection to GMP.</p>
+<p>The proxy uses <a href="https://pkg.go.dev/golang.org/x/oauth2@v0.4.0/google#DefaultTokenSource">DefaultTokenSource</a> to create a token source using ADC. Tokens are minted on-demand to make requests against GMP. Once a token has been minted, it is used until it expires.</p>
+<p>GMP queries are rooted on the endpoint:</p>
+<p><code>https://monitoring.googleapis.com/v1/projects/{project}/location/global/prometheus</code></p>
+<p>Where <code>{project}</code> is the Google Cloud Project in which GMP is deployed.</p>
+<p>PromLens checks the service for liveness using an instand query of <code>1</code>.</p>
+<p>Assuming the proxy is running on <code>0.0.0.0:7777</code>, PromLens will make the request:</p>
+<p><code>http://0.0.0.0:7777/api/v1/query?query=1</code></p>
+<p>And the proxy will make the request:</p>
+<p><code>https://monitoring.googleapis.com/v1/projects/{project}/location/global/prometheus/api/v1/query?query=1</code></p>
+<p>While also adding the header:</p>
+<p><code>Authorization: Bearer {token}</code></p>
+<p>Where <code>{token}</code> is an access token obtained from the <code>DefaultTokenSource</code>.</p>
+<p>PromLens occasionally includes a <code>refresh</code> key in the query string that it submits to the Prometheus API. GMP rejects queries that contain this string:</p>
+<p><code>&quot;Invalid JSON payload received. Unknown name \&quot;refresh\&quot;: Cannot bind query parameter. Field 'refresh' could not be found in request message.&quot;</code></p>
+<p>For this reason, the proxy removes occurrencess of <code>refresh</code> from query strings that it receives.</p>
+<p>Lastly, the proxy adds the following header to the response (!) to avoid the browser reporting CORS errors:</p>
+<p><code>Access-Control-Allow-Origin: *</code></p>
+<p>I was unable to determine the correct non-wildcard (<code>*</code>) value to use.</p>
+<p>I use <a href="https://podman.io"><code>podman</code></a> but you may replace <code>podman</code> with e.g. <code>docker</code> in the following. I assume you&rsquo;ve deployed GMP in Google Cloud Project.</p>
+<p>Run the proxy:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;7777&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>go run ./cmd/proxy <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--remote<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;monitoring.googleapis.com&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--prefix<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/v1/projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">/location/global/prometheus&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proxy<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.0.0.0:</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span></code></pre></div><p>Or:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>TAG<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;37b44a6e8e6064d9f61214b972bae81581fc53b0&#34;</span>
+</span></span><span style="display:flex;"><span>IMAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;ghcr.io/dazwilkin/promlens-gmp-token-proxy:</span><span style="color:#e6db74">${</span>TAG<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/path/to/key.json&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>podman run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--name<span style="color:#f92672">=</span>promlens-gmp-token-proxy <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--env<span style="color:#f92672">=</span>GOOGLE_APPLICATION_CREDENTIALS<span style="color:#f92672">=</span>/secrets/key.json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>KEY<span style="color:#e6db74">}</span>:/secrets/key.json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span>7777:7777/tcp <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>IMAGE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --remote<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;monitoring.googleapis.com&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --prefix<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/v1/projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">/location/global/prometheus&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --proxy<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.0.0.0:7777&#34;</span>
+</span></span></code></pre></div><p>Run PromLens:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>VERS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;v0.3.0&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>podman run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--name<span style="color:#f92672">=</span>promlens <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span>8080:8080 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>prom/promlens:<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>So, let&rsquo;s use <code>curl</code> to make the PromQL query that is shown in the screenshot at the top of this post:</p>
+<p>First, against GMP directly:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>QUERY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;compute_googleapis_com%3Ainstance_cpu_utilization&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>gcloud auth print-access-token<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>REMOTE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://monitoring.googleapis.com/v1/projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">/location/global/prometheus&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--get <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--data-urlencode <span style="color:#e6db74">&#34;query=</span><span style="color:#e6db74">${</span>QUERY<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>REMOTE<span style="color:#e6db74">}</span>/api/v1/query
+</span></span></code></pre></div><p>Second, against the proxy:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>QUERY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;compute_googleapis_com%3Ainstance_cpu_utilization&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;7777&#34;</span>
+</span></span><span style="display:flex;"><span>PROXY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://0.0.0.0:</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--get <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--data-urlencode <span style="color:#e6db74">&#34;query=</span><span style="color:#e6db74">${</span>QUERY<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PROXY<span style="color:#e6db74">}</span>/api/v1/query
+</span></span></code></pre></div><p>The proxy exports Prometheus metrics on <code>/metrics</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;7777&#34;</span>
+</span></span><span style="display:flex;"><span>PROXY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://0.0.0.0:</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--get <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PROXY<span style="color:#e6db74">}</span>/metrics <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| awk <span style="color:#e6db74">&#39;/promlens_gmp_token_proxy/ {print}&#39;</span>
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># HELP promlens_gmp_token_proxy_build_info A metric with a constant &#39;1&#39; value labels by build time, git commit, OS and Go versions</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE promlens_gmp_token_proxy_build_info counter</span>
+</span></span><span style="display:flex;"><span>promlens_gmp_token_proxy_build_info<span style="color:#f92672">{</span>build_time<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1672877849&#34;</span>,git_commit<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;a274a1d67829e06451009da72d9299804e86a5db&#34;</span>,go_version<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;go1.20rc2&#34;</span>,os_version<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;5.15.0-1024-azure&#34;</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># HELP promlens_gmp_token_proxy_proxied_total The total number of proxied requests</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE promlens_gmp_token_proxy_proxied_total counter</span>
+</span></span><span style="display:flex;"><span>promlens_gmp_token_proxy_proxied_total <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># HELP promlens_gmp_token_proxy_tokens_total The total number of Tokens created</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE promlens_gmp_token_proxy_tokens_total counter</span>
+</span></span><span style="display:flex;"><span>promlens_gmp_token_proxy_tokens_total <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/promlens/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">PromLens</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/gcp/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">GCP</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/google-managed-prometheus/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Google Managed Prometheus</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/prometheus/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Prometheus</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+    
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/200617/">WASM Cloud Functions</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200122/">Setting up a GCE Instance as an Inlets Exit Node</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200107/">Google Home Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191220/">Google Cloud Platform (GCP) Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191219/">Prometheus AlertManager</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191218/">Linode Prometheus Exporter</a>
+        </li>
+	    
+    </ul>
+</div>
+
+<br/>
+      <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
+        data-name="bmc-button" data-slug="dazwilkin" data-color="#ffdd00" data-emoji="" data-font="Cookie"
+        data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000"
+        data-coffee-color="#ffffff"></script>
+    </aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2023 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
