@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Kubernetes Operators | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="Ackal uses a Kubernetes Operator to orchestrate the lifecycle of its health checks. Ackal&rsquo;s Operator is written in Go using kubebuilder.
+Yesterday, my interest was piqued by a MetalBear blog post Writing a Kubernetes Operator [in Rust]. I spent some time reimplementing one of Ackal&rsquo;s CRDs (Check) using kube-rs and not only refreshed my Rust knowledge but learned a bunch more about Kubernetes and Operators.
+While rummaging around the Kubernetes documentation, I discovered flant&rsquo;s Shell-operator and spent some time today exploring its potential.">
+    <meta name="generator" content="Hugo 0.111.2">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.e7eb24d4e86966f8bcd5dd198bc521b41a6cbbb3bae6e7c7d36e2270a8841bd7.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+    
+    <meta property="og:title" content="Kubernetes Operators" />
+<meta property="og:description" content="Ackal uses a Kubernetes Operator to orchestrate the lifecycle of its health checks. Ackal&rsquo;s Operator is written in Go using kubebuilder.
+Yesterday, my interest was piqued by a MetalBear blog post Writing a Kubernetes Operator [in Rust]. I spent some time reimplementing one of Ackal&rsquo;s CRDs (Check) using kube-rs and not only refreshed my Rust knowledge but learned a bunch more about Kubernetes and Operators.
+While rummaging around the Kubernetes documentation, I discovered flant&rsquo;s Shell-operator and spent some time today exploring its potential." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/230310/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2023-03-10T00:00:00-08:00" />
+<meta property="article:modified_time" content="2023-03-10T00:00:00-08:00" />
+<meta itemprop="name" content="Kubernetes Operators">
+<meta itemprop="description" content="Ackal uses a Kubernetes Operator to orchestrate the lifecycle of its health checks. Ackal&rsquo;s Operator is written in Go using kubebuilder.
+Yesterday, my interest was piqued by a MetalBear blog post Writing a Kubernetes Operator [in Rust]. I spent some time reimplementing one of Ackal&rsquo;s CRDs (Check) using kube-rs and not only refreshed my Rust knowledge but learned a bunch more about Kubernetes and Operators.
+While rummaging around the Kubernetes documentation, I discovered flant&rsquo;s Shell-operator and spent some time today exploring its potential."><meta itemprop="datePublished" content="2023-03-10T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2023-03-10T00:00:00-08:00" />
+<meta itemprop="wordCount" content="870">
+<meta itemprop="keywords" content="Kubernetes,Operators,Rust,bash,Prometheus," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Kubernetes Operators"/>
+<meta name="twitter:description" content="Ackal uses a Kubernetes Operator to orchestrate the lifecycle of its health checks. Ackal&rsquo;s Operator is written in Go using kubebuilder.
+Yesterday, my interest was piqued by a MetalBear blog post Writing a Kubernetes Operator [in Rust]. I spent some time reimplementing one of Ackal&rsquo;s CRDs (Check) using kube-rs and not only refreshed my Rust knowledge but learned a bunch more about Kubernetes and Operators.
+While rummaging around the Kubernetes documentation, I discovered flant&rsquo;s Shell-operator and spent some time today exploring its potential."/>
+
+      
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-67DZX7M0D1"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-67DZX7M0D1', { 'anonymize_ip': false });
+}
+</script>
+
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+
+
+
+
+
+
+  <div id="sharing" class="mt3 ananke-socials">
+    
+      
+      <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/230310/&amp;title=Kubernetes%20Operators" class="ananke-social-link linkedin no-underline" aria-label="share on LinkedIn">
+        
+        <span class="icon"> <svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+        
+      </a>
+    
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Kubernetes Operators</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2023-03-10T00:00:00-08:00">March 10, 2023</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 5 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 870 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p><a href="https://ack.al">Ackal</a> uses a Kubernetes Operator to orchestrate the lifecycle of its health checks. Ackal&rsquo;s Operator is written in Go using <a href="https://github.com/kubernetes-sigs/kubebuilder"><code>kubebuilder</code></a>.</p>
+<p>Yesterday, my interest was piqued by a <a href="https://metalbear.co">MetalBear</a> blog post <a href="https://metalbear.co/blog/writing-a-kubernetes-operator/">Writing a Kubernetes Operator [in Rust]</a>. I spent some time reimplementing one of Ackal&rsquo;s CRDs (<code>Check</code>) using <a href="https://github.com/kube-rs/kube"><code>kube-rs</code></a> and not only refreshed my Rust knowledge but learned a bunch more about Kubernetes and Operators.</p>
+<p>While rummaging around the Kubernetes documentation, I discovered flant&rsquo;s <a href="https://github.com/flant/shell-operator"><code>Shell-operator</code></a> and spent some time today exploring its potential.</p>
+<p>The purpose of this post is to document my experience using <code>Shell-operator</code> for a very simple hook to log uses of Ackal&rsquo;s <code>Check</code> CRD. Hopefully, a hook for a Custom Resource is useful to others too.</p>
+<p><code>Shell-operator</code> is well-documented and straightforward to use. What&rsquo;s compelling about it is that it provides a mechanism to write bash (or Python etc.) scripts (hooks) that can be bundled into a <code>Shell-operator</code> container that can be deployed to a cluster to quickly extend Operator functionality.</p>
+<p>For example, I wanted to monitor <code>Check</code> mutations (creations, updates and deletes) across namespaces.</p>
+<p>Here&rsquo;s a subset of Ackal&rsquo;s <code>Check</code> CRD config:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apiextensions.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">CustomResourceDefinition</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">checks.ack.al</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">group</span>: <span style="color:#ae81ff">ack.al</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">names</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">categories</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">all</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Check</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">listKind</span>: <span style="color:#ae81ff">CheckList</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">plural</span>: <span style="color:#ae81ff">checks</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">singular</span>: <span style="color:#ae81ff">check</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">scope</span>: <span style="color:#ae81ff">Namespaced</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">versions</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">v1alpha1</span>
+</span></span></code></pre></div><p>The first activity to extend <code>Shell-operator</code> is to write a hook. Here&rsquo;s <code>check.sh</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/env bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[[</span> $1 <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;--config&#34;</span> <span style="color:#f92672">]]</span> ; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>  cat <span style="color:#e6db74">&lt;&lt;EOF
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">configVersion: v1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">kubernetes:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">- name: &#34;Monitor Ackal Checks&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  apiVersion: ack.al/v1alpha1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  kind: Check
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  executeHookOnEvent:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  - Added
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  - Modified
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  - Deleted
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>  checkName<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>jq -r .<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.object.metadata.name <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>BINDING_CONTEXT_PATH<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>  eventName<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>jq -r .<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.watchEvent <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>BINDING_CONTEXT_PATH<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>  printf <span style="color:#e6db74">&#34;Check &#39;%s&#39; %s&#34;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>checkName<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>eventName<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span></code></pre></div><p>I assume (!?) that <code>Shell-operator</code> invokes each shell script (hook) with the <code>--config</code> flag in order to configure itself with the hook. The &ldquo;API&rdquo; for <code>Shell-operator</code> scripts is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[[</span> $1 <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;--config&#34;</span> <span style="color:#f92672">]]</span> ; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span></code></pre></div><p>If the script is run <code>{script} --config</code>, then a heredoc returns the config. Otherwise, the hook performs its task. In this case, it <code>printf</code>&rsquo;s details of the <code>Check</code>.</p>
+<p><code>Shell-operator</code> provides multiple <a href="https://github.com/flant/shell-operator#hook-binding-types">binding types</a>. In this case, I&rsquo;m using <a href="https://github.com/flant/shell-operator#kubernetes"><code>kubernetes</code></a>. The YAML structure of <code>kubernetes</code> is defined <a href="https://github.com/flant/shell-operator/blob/main/HOOKS.md#kubernetes">here</a> and is extensive|powerful.</p>
+<p><code>check.sh</code> is straightforward. It defines Ackal&rsquo;s <code>Check</code> as its monitored resource. It does this by specifying the <code>apiVersion</code> and <code>kind: Check</code> for the CRD. You can see these values defined in <code>Check</code>&rsquo;s CRD. Kubernete&rsquo;s use of <code>group</code>, <code>kind</code>, <code>version</code> is confusing (but consistent).</p>
+<p>The <code>executeHookOnEvent</code> list defines the 3 methods that we want to track for <code>Check</code> resources.</p>
+<p>So, what&rsquo;s with the <code>jq</code> and <code>BINDING_CONTEXT_PATH</code> in the else branch? <code>jq</code> is included in the <code>Shell-operator</code> container and it is used to facilitate (JSON) parsing of <code>Shell-operator</code> responses e.g. when a <code>Check</code> is <code>Added</code>.</p>
+<blockquote>
+<p><strong>NOTE</strong> Although Kubernetes supports JSON and YAML, it is more common to interact with Kubernetes using YAML. The <code>shell-operator</code> container image includes <a href="https://stedolan.github.io/jq/"><code>jq</code></a> for JSON but not <a href="https://github.com/mikefarah/yq"><code>yq</code></a> for YAML.</p>
+</blockquote>
+<p>This information is also well-defined in <a href="https://github.com/flant/shell-operator/blob/main/HOOKS.md#binding-context">Binding Context</a>. Because I&rsquo;m using <code>kubernetes</code> binding type, the hook receives responses that include <code>watchEvent</code> and <code>object</code>. In this case <code>object</code> will be <code>Check</code> resources.</p>
+<p>This hook outputs the type of event (<code>watchEvent</code>) and the <code>Check</code>&rsquo;s <code>name</code>.</p>
+<p>Once the hook script is written, it must be <code>chmod +x {script}</code> and can then be added to the <code>Shell-operator</code> container:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Dockerfile" data-lang="Dockerfile"><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span><span style="color:#e6db74"> docker.io/flant/shell-operator:v1.2.0</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ADD</span> checks.sh /hooks<span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><p>Then <code>build</code>&lsquo;ed and <code>push</code>&lsquo;ed:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>podman build <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--tag<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGISTRY<span style="color:#e6db74">}</span>/shell-operator:check <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--file<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/Dockerfile <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>podman push <span style="color:#e6db74">${</span>REGISTRY<span style="color:#e6db74">}</span>/shell-operator:check
+</span></span></code></pre></div><p>Then the operator can be deployed to a cluster. This involves the creation of several resources:</p>
+<ul>
+<li><code>Pod</code></li>
+<li><code>ServiceAccount</code></li>
+<li><code>ClusterRole</code></li>
+<li><code>ClusterRoleBinding</code></li>
+</ul>
+<p>I found it easiest to aggregate these into a <code>List</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">List</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>: {}
+</span></span><span style="display:flex;"><span><span style="color:#f92672">items</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Pod</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">checks</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">shell-operator</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">image</span>: <span style="color:#ae81ff">${REGISTRY}/shell-operator:checks</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">Always</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">checks</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">serviceAccount</span>: <span style="color:#ae81ff">checks</span>
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ServiceAccount</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">checks</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">shell-operator</span>
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">checks</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">apiGroups</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">ack.al</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">checks</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">verbs</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">get</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">list</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">update</span>
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRoleBinding</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">checks</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">roleRef</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">apiGroup</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">checks</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">subjects</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ServiceAccount</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">checks</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">shell-operator</span>
+</span></span></code></pre></div><p>The <code>ServiceAccount</code> (<code>checks</code>) requires cluster-wide permissions to <code>get</code>, <code>list</code> and <code>update</code> Custom Resources (<code>checks.ack.al</code>).</p>
+<p>Once these Resources are deployed, any of the mutations to <code>Checks</code>, will trigger the hook (and a log entry):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl logs pod/checks <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>shell-operator <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--follow
+</span></span></code></pre></div><p>Yields (edited):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;binding&#34;</span>:<span style="color:#e6db74">&#34;Monitor Ackal Checks&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;event&#34;</span>:<span style="color:#e6db74">&#34;kubernetes&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;hook&#34;</span>:<span style="color:#e6db74">&#34;checks.sh&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;level&#34;</span>:<span style="color:#e6db74">&#34;info&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;msg&#34;</span>:<span style="color:#e6db74">&#34;Check &#39;{ID}&#39; Added&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;output&#34;</span>:<span style="color:#e6db74">&#34;stdout&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;queue&#34;</span>:<span style="color:#e6db74">&#34;main&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;task&#34;</span>:<span style="color:#e6db74">&#34;HookRun&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;time&#34;</span>:<span style="color:#e6db74">&#34;2023-03-10T00:00:00Z&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><code>Shell-operator</code> also publishes Prometheus metrics. The <code>shell-operator</code> container exposes port <code>9115</code> and this can be queried for <code>Shell-operator</code> metrics:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl port-forward pod/check <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>shell-operator <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>9115:9115
+</span></span></code></pre></div><p>And, from another shell:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--get <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>localhost:9115/metrics <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| awk <span style="color:#e6db74">&#39;/^shell_operator_/ {print}&#39;</span>
+</span></span></code></pre></div><p>I forgot to capture example metrics but the log fields <code>binding</code>,<code>hook</code> were included a metric labels.</p>
+<p>There&rsquo;s some snobbishness towards shell scripting but, while I&rsquo;m also happy to write Go code (and Rust and Python 😀), bash is powerful and I particularly value it to script CLIs (<code>gcloud</code>, <code>kubectl</code> etc.) where the equivalent Go|Python code would be considerably more complex.</p>
+<p><code>Shell-operator</code> extends the power of bash scripts to Kubernetes Operators which are challenging to write in Go|Python. I look forward to finding further uses for <code>Shell-operator</code>.</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/kubernetes/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Kubernetes</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/operators/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Operators</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/rust/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Rust</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/bash/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">bash</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/prometheus/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Prometheus</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+    
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/230104/">Authenticate PromLens to Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210902/">Infrastructure as Code</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200207/">Accessing GCR repos from Kubernetes</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200107/">Google Home Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191219/">Prometheus AlertManager</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191218/">Linode Prometheus Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/190930/">PyPi Transparency Client (Rust)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/190924/">Kubernetes Engine and Free Tier</a>
+        </li>
+	    
+    </ul>
+</div>
+
+<br/>
+      <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
+        data-name="bmc-button" data-slug="dazwilkin" data-color="#ffdd00" data-emoji="" data-font="Cookie"
+        data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000"
+        data-coffee-color="#ffffff"></script>
+    </aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2023 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
