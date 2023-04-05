@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Azure Container Apps | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="The majority of Ackal&rsquo;s components are deployed to Google Cloud. However, by its nature, Ackal benefits from deployments that span cloud platforms. I&rsquo;ve deployed Ackal&rsquo;s gRPC health checks to Fly, and managed Kubernetes services on Linode and Vultr.
+Today, I decided to revisit¹ Azure. Ackal uses Azure (Active Directory) for one of its OAuth providers. This time, I wanted to deploy a containerized gRPC service. Azure provides several container-oriented services. I decided to use Azure Container Apps and, in hindsight, find it analogous to Google Cloud Run.">
+    <meta name="generator" content="Hugo 0.111.3">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.e7eb24d4e86966f8bcd5dd198bc521b41a6cbbb3bae6e7c7d36e2270a8841bd7.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+    
+    <meta property="og:title" content="Azure Container Apps" />
+<meta property="og:description" content="The majority of Ackal&rsquo;s components are deployed to Google Cloud. However, by its nature, Ackal benefits from deployments that span cloud platforms. I&rsquo;ve deployed Ackal&rsquo;s gRPC health checks to Fly, and managed Kubernetes services on Linode and Vultr.
+Today, I decided to revisit¹ Azure. Ackal uses Azure (Active Directory) for one of its OAuth providers. This time, I wanted to deploy a containerized gRPC service. Azure provides several container-oriented services. I decided to use Azure Container Apps and, in hindsight, find it analogous to Google Cloud Run." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/230404/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2023-04-04T00:00:00-07:00" />
+<meta property="article:modified_time" content="2023-04-04T00:00:00-07:00" />
+<meta itemprop="name" content="Azure Container Apps">
+<meta itemprop="description" content="The majority of Ackal&rsquo;s components are deployed to Google Cloud. However, by its nature, Ackal benefits from deployments that span cloud platforms. I&rsquo;ve deployed Ackal&rsquo;s gRPC health checks to Fly, and managed Kubernetes services on Linode and Vultr.
+Today, I decided to revisit¹ Azure. Ackal uses Azure (Active Directory) for one of its OAuth providers. This time, I wanted to deploy a containerized gRPC service. Azure provides several container-oriented services. I decided to use Azure Container Apps and, in hindsight, find it analogous to Google Cloud Run."><meta itemprop="datePublished" content="2023-04-04T00:00:00-07:00" />
+<meta itemprop="dateModified" content="2023-04-04T00:00:00-07:00" />
+<meta itemprop="wordCount" content="784">
+<meta itemprop="keywords" content="Ackal,gRPC,Azure,Container Apps," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Azure Container Apps"/>
+<meta name="twitter:description" content="The majority of Ackal&rsquo;s components are deployed to Google Cloud. However, by its nature, Ackal benefits from deployments that span cloud platforms. I&rsquo;ve deployed Ackal&rsquo;s gRPC health checks to Fly, and managed Kubernetes services on Linode and Vultr.
+Today, I decided to revisit¹ Azure. Ackal uses Azure (Active Directory) for one of its OAuth providers. This time, I wanted to deploy a containerized gRPC service. Azure provides several container-oriented services. I decided to use Azure Container Apps and, in hindsight, find it analogous to Google Cloud Run."/>
+
+      
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-67DZX7M0D1"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-67DZX7M0D1', { 'anonymize_ip': false });
+}
+</script>
+
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+
+
+
+
+
+
+  <div id="sharing" class="mt3 ananke-socials">
+    
+      
+      <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/230404/&amp;title=Azure%20Container%20Apps" class="ananke-social-link linkedin no-underline" aria-label="share on LinkedIn">
+        
+        <span class="icon"> <svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+        
+      </a>
+    
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Azure Container Apps</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2023-04-04T00:00:00-07:00">April 4, 2023</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 4 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 784 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>The majority of <a href="https://ack.al">Ackal</a>&rsquo;s components are deployed to <a href="https://cloud.google.com">Google Cloud</a>. However, by its nature, Ackal benefits from deployments that span cloud platforms. I&rsquo;ve deployed Ackal&rsquo;s <a href="https://grpc.io">gRPC</a> <a href="https://github.com/grpc/grpc/blob/master/doc/health-checking.md">health checks</a> to <a href="https://fly.io">Fly</a>, and managed Kubernetes services on <a href="https://linode.com">Linode</a> and <a href="https://vultr.com">Vultr</a>.</p>
+<p>Today, I decided to revisit<a href="#microsoft">¹</a> <a href="https://azure.microsoft.com">Azure</a>. Ackal uses Azure (Active Directory) for one of its OAuth providers. This time, I wanted to deploy a containerized gRPC service. Azure provides <a href="https://azure.microsoft.com/en-us/products/category/containers/">several</a> container-oriented services. I decided to use <a href="https://azure.microsoft.com/en-us/products/container-apps/">Azure Container Apps</a> and, in hindsight, find it analogous to Google <a href="https://cloud.google.com/run">Cloud Run</a>.</p>
+<p><!-- raw HTML omitted -->¹<!-- raw HTML omitted --> &ndash; Many years ago now, I worked at Microsoft during Azure&rsquo;s creation.</p>
+<p>After installing Azure&rsquo;s CLI (<a href="https://learn.microsoft.com/en-us/cli/azure/install-azure-cli"><code>az</code></a>), creating a new Azure subscription and successfully <code>az login</code></p>
+<p>The container image I&rsquo;m using is stored on <a href="https://ghcr.io">GitHub Container Register (GHCR)</a> and so I generated a token (<code>read:packages</code>) to be used (as a <code>secret</code>) when deploying to Container Apps.</p>
+<p>It turned out that I need to understand some of Azure&rsquo;s concepts before I could deploy:</p>
+<ul>
+<li>Locations</li>
+<li>Resource Groups</li>
+<li>Environments</li>
+</ul>
+<p>Determining a deployment location was straightforward:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>az account list-locations <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.[]|select(.name==&#34;westus2&#34;)&#39;</span>
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;displayName&#34;</span>: <span style="color:#e6db74">&#34;West US 2&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;/subscriptions/{subscription}/locations/westus2&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;metadata&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;geographyGroup&#34;</span>: <span style="color:#e6db74">&#34;US&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;latitude&#34;</span>: <span style="color:#e6db74">&#34;47.233&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;longitude&#34;</span>: <span style="color:#e6db74">&#34;-119.852&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;pairedRegion&#34;</span>: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;/subscriptions/{subscription}/locations/westcentralus&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;westcentralus&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;subscriptionId&#34;</span>: <span style="color:#66d9ef">null</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;physicalLocation&#34;</span>: <span style="color:#e6db74">&#34;Washington&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;regionCategory&#34;</span>: <span style="color:#e6db74">&#34;Recommended&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;regionType&#34;</span>: <span style="color:#e6db74">&#34;Physical&#34;</span>
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;westus2&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;regionalDisplayName&#34;</span>: <span style="color:#e6db74">&#34;(US) West US 2&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;subscriptionId&#34;</span>: <span style="color:#66d9ef">null</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The <code>id</code> values are scoped to the <code>{subscription}</code> that I created. The value is redacted here.</p>
+<p>Next, I needed a <a href="https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/manage-resource-groups-portal#what-is-a-resource-group">Resource Group</a>. I found <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-setup-guide/organize-resources#management-levels-and-hierarchy">management levels and hierarchy</a> too and remain unsure as to the distinction between Resource Groups and <a href="https://learn.microsoft.com/en-us/azure/container-apps/environment">(Container Apps) Environments</a>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>GROUP<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>LOCATION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;westus2&#34;</span> <span style="color:#75715e"># From above</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>az group create <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--resource-group<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>GROUP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--location<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>LOCATION<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;/subscriptions/{subscription}/resourceGroups/{group}&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;location&#34;</span>: <span style="color:#e6db74">&#34;westus2&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;managedBy&#34;</span>: <span style="color:#66d9ef">null</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;{group}&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;properties&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;provisioningState&#34;</span>: <span style="color:#e6db74">&#34;Succeeded&#34;</span>
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;tags&#34;</span>: <span style="color:#66d9ef">null</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;Microsoft.Resources/resourceGroups&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And a Container Apps environment:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>az containerapp env create <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--name<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>GROUP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--resource-group<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>GROUP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--logs-destination<span style="color:#f92672">=</span>none
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> <code>log-destination=none</code> is not advised but I learned that it&rsquo;s still possible to view streamed logs in the Azure Console and the streamed logs are sufficient for my testing needs.</p>
+</blockquote>
+<p>All good thus far but then I had real problems trying to construct the <code>az containerapp</code> command to deploy the container. Initially, I tried <a href="https://learn.microsoft.com/en-us/cli/azure/containerapp?view=azure-cli-latest#az-containerapp-up"><code>az containerapp up</code></a> but was perplexed as to why this command doesn&rsquo;t permit specifying <code>--args</code> (I&rsquo;d noticed that <a href="https://learn.microsoft.com/en-us/cli/azure/containerapp?view=azure-cli-latest#az-containerapp-update"><code>az containerapp update</code></a> does support <code>--args</code>). I realized that I should use <a href="https://learn.microsoft.com/en-us/cli/azure/containerapp?view=azure-cli-latest#az-containerapp-create"><code>az containerapp create</code></a>. But, try as I might, I&rsquo;ve been unable to determine how to pass an array of args correctly:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>IMAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;50051&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ARGS<span style="color:#f92672">=(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--flag1=value1&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--flag2=value2&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;--endpoint=0.0.0.0:</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>TAGS<span style="color:#f92672">=(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;key1=value1&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;key2=value2&#34;</span>
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>REGISTRY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;ghcr.io&#34;</span> <span style="color:#75715e"># GitHub Container Registry</span>
+</span></span><span style="display:flex;"><span>USERNAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>     <span style="color:#75715e"># GitHub Username</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>az containerapp create <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--name<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--image<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>IMAGE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--args <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ARGS[@]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--container-name<span style="color:#f92672">=</span>server <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--cpu<span style="color:#f92672">=</span>0.5 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--memory<span style="color:#f92672">=</span>1Gi <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--min-replicas<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--max-replicas<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--ingress<span style="color:#f92672">=</span>external  <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--target-port<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--transport<span style="color:#f92672">=</span>http2 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--registry-password<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;secretref:token&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--secrets<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;token=</span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--registry-server<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGISTRY<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--registry-username<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>USERNAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--resource-group<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>GROUP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--tags <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>TAGS[@]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--environment<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>GROUP<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>This either resulted in errors or a single <code>args</code> value comprising the entire string.</p>
+<p>I was able to avoid the issue because the container only requires the <code>--endpoint</code> flag (the other flags default to values). But, it continues to bug me. Particularly because the <code>TAGS</code> works.</p>
+<p>Once I had the Container App deployed, I was able to:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>HOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  az containerapp show <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --name<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --resource-group<span style="color:#f92672">=</span>ackal <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | jq -r .properties.configuration.ingress.fqdn<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;443&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>grpcurl <span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> list
+</span></span></code></pre></div><p>Yielding</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>grpc.health.v1.Health
+</span></span><span style="display:flex;"><span>grpc.reflection.v1alpha.ServerReflection
+</span></span></code></pre></div><p>And:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>grpcurl <span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> grpc.health.v1.Health/Check
+</span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;SERVING&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>During my adventures, I&rsquo;d noticed that it&rsquo;s possible to provide the configuration via a YAML spec. (I know there&rsquo;s a tool called <a href="https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/overview?tabs=bicep">Bicep</a> too but wanted to walk before running).</p>
+<p>I tweaked the JSON (sic.) produced by successful <code>az containerapp create</code> command removing what I thought were evident output-only values but there were some omissions.</p>
+<p>I found the <a href="https://learn.microsoft.com/en-us/azure/container-apps/azure-resource-manager-api-spec?tabs=yaml#container-app-examples">YAML configuration</a> and tweaked the YAML that I&rsquo;d tweaked to fit the model. This approach makes it easy to define the list of args and so I was able to deploy the Container App as I wanted:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">type</span>: <span style="color:#ae81ff">Microsoft.App/containerApps</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">name</span>: {<span style="color:#ae81ff">name}</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">location</span>: <span style="color:#ae81ff">westus2</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">resourceGroup</span>: {<span style="color:#ae81ff">group}</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">tags</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">application</span>: <span style="color:#ae81ff">ackal</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">system</span>: <span style="color:#ae81ff">healthcheck</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">managedEnvironmentId</span>: <span style="color:#ae81ff">/subscriptions/{subscription}/resourceGroups/{group}/providers/Microsoft.App/managedEnvironments/{group}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">configuration</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ingress</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">external</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">allowInsecure</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">50051</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">transport</span>: <span style="color:#ae81ff">Http2</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">registries</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">passwordSecretRef</span>: <span style="color:#ae81ff">token</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">server</span>: <span style="color:#ae81ff">ghcr.io</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">username</span>: {<span style="color:#ae81ff">username}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">secrets</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">token</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">value</span>: {<span style="color:#ae81ff">token}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">template</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">server</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">image</span>: <span style="color:#ae81ff">ghcr.io/{account}/{image}:{tag}</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">args</span>:
+</span></span><span style="display:flex;"><span>          - --<span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>          - --<span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>          - --<span style="color:#ae81ff">endpoint=0.0.0.0:50051</span>
+</span></span><span style="display:flex;"><span>          - --<span style="color:#ae81ff">services=,grpc.health.v1.Health</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">cpu</span>: <span style="color:#ae81ff">0.5</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">ephemeralStorage</span>: <span style="color:#ae81ff">2Gi</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">memory</span>: <span style="color:#ae81ff">1Gi</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">scale</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">minReplicas</span>: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">maxReplicas</span>: <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> I Googled around to discover that <code>transport: Http2</code> is required for gRPC(&rsquo;s required use of HTTP/2)</p>
+</blockquote>
+<p>Once I was finished with the Container App, I deleted the Ackal health check and then:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>az containerapp delete <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--name<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--resource-group<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>GROUP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--yes
+</span></span></code></pre></div><p>I&rsquo;m assuming (!?) that Resource Groups and Environments incur no costs.</p>
+<p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/ackal/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Ackal</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/grpc/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">gRPC</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/azure/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Azure</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/container-apps/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Container Apps</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/230314/">Access Google Services using gRPC</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210730/">Renewing Firebase Authentication ID tokens with gRPC</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200403/">Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200326/">Google Trillian on Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200320/">Golang gRPC Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/190918/">Cloud Functions Simple(st) HTTP Multi-host Proxy</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/190917/">Cloud Functions Simple(st) HTTP Proxy</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2023 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
