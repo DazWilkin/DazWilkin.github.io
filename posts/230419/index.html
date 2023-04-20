@@ -38,7 +38,7 @@
 <meta itemprop="name" content="Kubernetes metrics, metrics everywhere">
 <meta itemprop="description" content="Kubernetes metrics, metrics everywhere"><meta itemprop="datePublished" content="2023-04-19T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2023-04-19T00:00:00-07:00" />
-<meta itemprop="wordCount" content="964">
+<meta itemprop="wordCount" content="966">
 <meta itemprop="keywords" content="Kubernetes,Prometheus,kubelet,metrics,Google Managed Prometheus," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Kubernetes metrics, metrics everywhere"/>
 <meta name="twitter:description" content="Kubernetes metrics, metrics everywhere"/>
@@ -194,7 +194,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 5 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 964 words </span>
+        <span class="f6 mv4 dib tracked"> - 966 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve been tinkering with ways to &ldquo;unit-test&rdquo; my assumptions when using cloud platforms. I recently wrote about good posts by Google describing achieving cost savings with Cloud Monitoring and Cloud Logging:</p>
@@ -213,7 +213,7 @@ if (!doNotTrack) {
 </ol>
 <p>I am spoiled for choice.</p>
 <p>Initially, I was unable to determine the best way to monitor these metrics.</p>
-<p>For Cloud Logging logs, I&rsquo;ve updated <a href="https://github.com/DazWilkin/gcp-exporter"><code>gcp-exporter</code></a> to capture Cloud Logging. I&rsquo;ve added a rule that alerts when the number of logs for Projects associated with <a href="https://ack.al">Ackal</a> exceed the current (expected) number:</p>
+<p>For Cloud Logging logs, I&rsquo;ve updated <a href="https://github.com/DazWilkin/gcp-exporter"><code>gcp-exporter</code></a> to capture Cloud Logging. I&rsquo;ve added a rule that alerts when the number of logs for Projects associated with <a href="https://ack.al">Ackal</a> exceeds the current (expected) number:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">groups</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ackal</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">rules</span>:
@@ -224,9 +224,10 @@ if (!doNotTrack) {
 </span></span><span style="display:flex;"><span>          <span style="color:#f92672">severity</span>: <span style="color:#ae81ff">page</span>
 </span></span><span style="display:flex;"><span>        <span style="color:#f92672">annotations</span>:
 </span></span><span style="display:flex;"><span>          <span style="color:#f92672">summary</span>: <span style="color:#e6db74">&#34;Ackal Project ({{ $labels.project}}) has {{ $value }} logs&#34;</span>
-</span></span></code></pre></div><p>I&rsquo;m unsure how to alert on changes to the number of <code>prometheus.googleapis.com</code> metrics that are being ingested. Google doesn&rsquo;t appear to support the PromQL that I&rsquo;d customarily want to use for this. Something of the form <code>count by(__name__) ({__name__=~&quot;.+&quot;})</code>.</p>
-<p>I also had quite the challenge trying to alert on the number of Pods (and Containers) deployed to the cluster.</p>
-<p>Kubernetes is renowned for its abundance of metrics. The Kubernetes documentation (now?) has a useful page that lists <a href="https://kubernetes.io/docs/reference/instrumentation/metrics/">Kubernetes Metrics Reference</a> which is useful but it doesn&rsquo;t break these down by components.</p>
+</span></span></code></pre></div><p>I&rsquo;m unsure how to alert on changes to the number of <code>prometheus.googleapis.com</code> metrics that are being ingested. Google doesn&rsquo;t appear to support the PromQL that I&rsquo;d customarily want to use for this. Something of the form:</p>
+<pre tabindex="0"><code>count by(__name__) ({__name__=~&#34;.+&#34;})
+</code></pre><p>I also had quite the challenge trying to alert on the number of Pods (and Containers) deployed to the cluster.</p>
+<p>Kubernetes is renowned for its abundance of metrics. The Kubernetes documentation (now?) has a useful page that lists <a href="https://kubernetes.io/docs/reference/instrumentation/metrics/">Kubernetes Metrics Reference</a> but the table doesn&rsquo;t categorize the metrics by the producing component e.g. Kubelet.</p>
 <p>After Googling (and Openai&rsquo;ing !?) around, I realized I wanted <code>kubelet_running_pods</code> and <code>kubelet_running_containers</code>. A quick check using Google&rsquo;s excellent <a href="https://console.cloud.google.com/monitoring/metrics-explorer">Metrics explorer</a> and the Google-Managed Prometheus (GMP) UI, I realized this metric was missing from my configuration.</p>
 <p>The challenge was in determining how to enable it.</p>
 <p>The challenge is compounded by the fact that GMP uses an operator and so, documentation for enabling Kubelet metrics don&rsquo;t necessarily apply e.g. <a href="https://grafana.com/blog/2023/01/25/monitoring-kubernetes-layers-key-metrics-to-know/">Monitoring Kubernetes layers: key metrics to know</a> and <a href="https://sysdig.com/blog/how-to-monitor-kubelet/">How to Monitor the Kubelet</a>.</p>
@@ -240,7 +241,7 @@ if (!doNotTrack) {
 </span></span><span style="display:flex;"><span>    - <span style="color:#e6db74">&#39;{__name__=~&#34;kubelet_.+&#34;}&#39;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">kubeletScraping</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">interval</span>: <span style="color:#ae81ff">30s</span>
-</span></span></code></pre></div><p>It&rsquo;s possible that the <code>matchOneOf</code> would be better as <code>{job=&quot;kubelete&quot;}</code> rather than including metrics prefixed <code>kubelet_</code> but, as I wrote, this is all rather poorly documented and so&hellip; who knows!</p>
+</span></span></code></pre></div><p>It&rsquo;s possible that the <code>matchOneOf</code> would be better as <code>{job=&quot;kubelet&quot;}</code> rather than including metrics prefixed <code>kubelet_</code> but, as I wrote, this is all rather poorly documented and so&hellip; who knows!</p>
 <p>After <code>PATCH</code>&lsquo;ing the <code>operatorconfig/config</code> with the change, I was able to read <code>kubelet_running_pods</code> and <code>kubelet_running_containers</code>.</p>
 <p>This may seem like a primitive metric upon which to alert but, my cluster should be relative stable and I don&rsquo;t expect there to be any (significant) changes in the number of Pods and Containers and so I&rsquo;m confident this will be a useful &ldquo;unit test&rdquo; for me to monitor changes to the cluster.</p>
 <p>I then had to choose whether to create GMP <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/rules-managed#clusterrules"><code>ClusterRules</code></a> and use GMP <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/rules-managed#managed_alertmanager">Managed alerting</a> but I decided to use Cloud Monitoring <a href="https://console.cloud.google.com/monitoring/alerting">Alerting</a> because I&rsquo;m using this elsewhere in Ackal.</p>
