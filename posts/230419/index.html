@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Kubernetes metrics, metrics everywhere | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="Kubernetes metrics, metrics everywhere">
+    <meta name="generator" content="Hugo 0.111.3">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.e7eb24d4e86966f8bcd5dd198bc521b41a6cbbb3bae6e7c7d36e2270a8841bd7.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+    
+    <meta property="og:title" content="Kubernetes metrics, metrics everywhere" />
+<meta property="og:description" content="Kubernetes metrics, metrics everywhere" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/230419/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2023-04-19T00:00:00-07:00" />
+<meta property="article:modified_time" content="2023-04-19T00:00:00-07:00" />
+<meta itemprop="name" content="Kubernetes metrics, metrics everywhere">
+<meta itemprop="description" content="Kubernetes metrics, metrics everywhere"><meta itemprop="datePublished" content="2023-04-19T00:00:00-07:00" />
+<meta itemprop="dateModified" content="2023-04-19T00:00:00-07:00" />
+<meta itemprop="wordCount" content="964">
+<meta itemprop="keywords" content="Kubernetes,Prometheus,kubelet,metrics,Google Managed Prometheus," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Kubernetes metrics, metrics everywhere"/>
+<meta name="twitter:description" content="Kubernetes metrics, metrics everywhere"/>
+
+      
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-67DZX7M0D1"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-67DZX7M0D1', { 'anonymize_ip': false });
+}
+</script>
+
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+
+
+
+
+
+
+  <div id="sharing" class="mt3 ananke-socials">
+    
+      
+      <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/230419/&amp;title=Kubernetes%20metrics,%20metrics%20everywhere" class="ananke-social-link linkedin no-underline" aria-label="share on LinkedIn">
+        
+        <span class="icon"> <svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+        
+      </a>
+    
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Kubernetes metrics, metrics everywhere</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2023-04-19T00:00:00-07:00">April 19, 2023</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 5 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 964 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve been tinkering with ways to &ldquo;unit-test&rdquo; my assumptions when using cloud platforms. I recently wrote about good posts by Google describing achieving cost savings with Cloud Monitoring and Cloud Logging:</p>
+<ul>
+<li><a href="https://cloud.google.com/blog/products/management-tools/learn-to-understand-and-reduce-cloud-monitoring-costs/">How to identify and reduce costs of your Google Cloud observability in Cloud Monitoring</a></li>
+<li><a href="https://cloud.google.com/blog/topics/cost-management/how-to-approach-cloud-logging-pricing-for-cloud-admins">Cloud Logging pricing for Cloud Admins: How to approach it &amp; save cost</a></li>
+</ul>
+<p>With Cloud Monitoring, I&rsquo;ve restricted the <code>prometheus.googleapis.com</code> metrics that are being ingested but realized I wanted to track the number of Pods (and Containers) deployed to a GKE cluster.</p>
+<p>With Cloud Logging, I&rsquo;ve filtered the number of logs and, of the remaining logs, am filtering the log entries (<code>fluentbit-gke</code> looking at you) that are being ingested.</p>
+<p>Because I&rsquo;m using <a href="https://cloud.google.com/endpoints">Cloud Endpoints</a> with a <a href="https://cloud.google.com/run">Cloud Run</a> proxy of the form <code>proxy-xxxxxxxxxx-yy.a.run.app</code>, each Project has a non-inferable name and accompanying log. For this reason, I&rsquo;m continuing to use Google&rsquo;s default but rather &ldquo;unconventional&rdquo; inclusion filter of the form <code>not log_id(l&lt;sub&gt;1&lt;/sub&gt;) and not log_id(l&lt;sub&gt;2&lt;/sub&gt;... and not log_id(l&lt;sub&gt;n&lt;/sub&gt;)</code>) so as to include (!?) unexpected logs such as the Cloud Endpoints proxy log.</p>
+<p>I wanted to be able to alert if:</p>
+<ol>
+<li>Google adds new logs</li>
+<li>Google adds new <code>prometheus.googleapis.com</code> metrics</li>
+<li>GKE numbers of Pods and Containers</li>
+</ol>
+<p>I am spoiled for choice.</p>
+<p>Initially, I was unable to determine the best way to monitor these metrics.</p>
+<p>For Cloud Logging logs, I&rsquo;ve updated <a href="https://github.com/DazWilkin/gcp-exporter"><code>gcp-exporter</code></a> to capture Cloud Logging. I&rsquo;ve added a rule that alerts when the number of logs for Projects associated with <a href="https://ack.al">Ackal</a> exceed the current (expected) number:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">groups</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ackal</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">alert</span>: <span style="color:#ae81ff">ackal_cloud_logging_logs</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">expr</span>: <span style="color:#ae81ff">min_over_time(gcp_cloud_logging_logs{project=~&#34;...&#34;}[15m]) &gt; 39</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">for</span>: <span style="color:#ae81ff">6h</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">severity</span>: <span style="color:#ae81ff">page</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">summary</span>: <span style="color:#e6db74">&#34;Ackal Project ({{ $labels.project}}) has {{ $value }} logs&#34;</span>
+</span></span></code></pre></div><p>I&rsquo;m unsure how to alert on changes to the number of <code>prometheus.googleapis.com</code> metrics that are being ingested. Google doesn&rsquo;t appear to support the PromQL that I&rsquo;d customarily want to use for this. Something of the form <code>count by(__name__) ({__name__=~&quot;.+&quot;})</code>.</p>
+<p>I also had quite the challenge trying to alert on the number of Pods (and Containers) deployed to the cluster.</p>
+<p>Kubernetes is renowned for its abundance of metrics. The Kubernetes documentation (now?) has a useful page that lists <a href="https://kubernetes.io/docs/reference/instrumentation/metrics/">Kubernetes Metrics Reference</a> which is useful but it doesn&rsquo;t break these down by components.</p>
+<p>After Googling (and Openai&rsquo;ing !?) around, I realized I wanted <code>kubelet_running_pods</code> and <code>kubelet_running_containers</code>. A quick check using Google&rsquo;s excellent <a href="https://console.cloud.google.com/monitoring/metrics-explorer">Metrics explorer</a> and the Google-Managed Prometheus (GMP) UI, I realized this metric was missing from my configuration.</p>
+<p>The challenge was in determining how to enable it.</p>
+<p>The challenge is compounded by the fact that GMP uses an operator and so, documentation for enabling Kubelet metrics don&rsquo;t necessarily apply e.g. <a href="https://grafana.com/blog/2023/01/25/monitoring-kubernetes-layers-key-metrics-to-know/">Monitoring Kubernetes layers: key metrics to know</a> and <a href="https://sysdig.com/blog/how-to-monitor-kubelet/">How to Monitor the Kubelet</a>.</p>
+<p>I&rsquo;ve used <a href="https://github.com/google/cadvisor">cAdvisor</a> (although I don&rsquo;t use it much these days absent its <a href="https://github.com/google/cadvisor/issues/2424">support</a> for Podman) and had an inkling that this metric may be surfaced by cAdvisor.</p>
+<p>Google has an interesting document <a href="https://cloud.google.com/stackdriver/docs/solutions/gke/installing#available-metrics">Available metrics</a> which I&rsquo;d hoped would lead me to a solution but, after trawling through each option and the metrics associated with each option, I&rsquo;d still not found <code>kubectl_running_pods</code>.</p>
+<p>Eventually, I stumbled upon <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/exporters/kubelet-cadvisor">Kubelet/cAdvisor</a> which doesn&rsquo;t list the metrics that it provides but I had a good inkling that it would include what I wanted (it does).</p>
+<p>To enable it, I need to <code>PATCH</code> GMP&rsquo;s <code>operatorconfig/config</code> which I described (with its limitations) in []/posts/230413/. This time:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">collection</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">filter</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">matchOneOf</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#e6db74">&#39;{__name__=~&#34;kubelet_.+&#34;}&#39;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">kubeletScraping</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">interval</span>: <span style="color:#ae81ff">30s</span>
+</span></span></code></pre></div><p>It&rsquo;s possible that the <code>matchOneOf</code> would be better as <code>{job=&quot;kubelete&quot;}</code> rather than including metrics prefixed <code>kubelet_</code> but, as I wrote, this is all rather poorly documented and so&hellip; who knows!</p>
+<p>After <code>PATCH</code>&lsquo;ing the <code>operatorconfig/config</code> with the change, I was able to read <code>kubelet_running_pods</code> and <code>kubelet_running_containers</code>.</p>
+<p>This may seem like a primitive metric upon which to alert but, my cluster should be relative stable and I don&rsquo;t expect there to be any (significant) changes in the number of Pods and Containers and so I&rsquo;m confident this will be a useful &ldquo;unit test&rdquo; for me to monitor changes to the cluster.</p>
+<p>I then had to choose whether to create GMP <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/rules-managed#clusterrules"><code>ClusterRules</code></a> and use GMP <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/rules-managed#managed_alertmanager">Managed alerting</a> but I decided to use Cloud Monitoring <a href="https://console.cloud.google.com/monitoring/alerting">Alerting</a> because I&rsquo;m using this elsewhere in Ackal.</p>
+<p>To corroborate my expectations, the following <code>kubectl</code> commands represent mostly (!) what I want to monitor:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Number of Pods</span>
+</span></span><span style="display:flex;"><span>kubectl get pods <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--all-namespaces <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.items|length&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Number of Containers</span>
+</span></span><span style="display:flex;"><span>kubectl get pods <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--all-namespaces <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;[.items[].spec.containers|length]|add&#39;</span>
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> The number of container is the desired (spec&rsquo;d) number of containers whereas the policy (below) filters on containers that are <code>running</code></p>
+</blockquote>
+<p>I added two Policies:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;gke-pods&#34;</span>
+</span></span><span style="display:flex;"><span>EXPECTED<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Number of Pods</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud alpha monitoring policies create <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--display-name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--documentation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Unexpected number of Pods running on GKE cluster&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--notification-channels<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>CHANNELS<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--condition-display-name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--condition-filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;resource.type=\&#34;prometheus_target\&#34; metric.type=\&#34;prometheus.googleapis.com/kubelet_running_pods/gauge\&#34;&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--duration<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0s&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--aggregation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{\&#34;alignmentPeriod\&#34;:\&#34;600s\&#34;, \&#34;crossSeriesReducer\&#34;:\&#34;REDUCE_NONE\&#34;, \&#34;perSeriesAligner\&#34;: \&#34;ALIGN_MIN\&#34;}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--if<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&gt;</span><span style="color:#e6db74">${</span>EXPECTED<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--trigger-count<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--combiner<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;OR&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--enabled <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>And:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;gke-containers&#34;</span>
+</span></span><span style="display:flex;"><span>EXPECTED<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Number of containers</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>gcloud alpha monitoring policies create <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--display-name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--documentation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Unexpected number of Containers running on GKE cluster&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--notification-channels<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>CHANNELS<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--condition-display-name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--condition-filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;resource.type=\&#34;prometheus_target\&#34; metric.type=\&#34;prometheus.googleapis.com/kubelet_running_containers/gauge\&#34; metric.labels.container_state=\&#34;running\&#34;&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--duration<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0s&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--aggregation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{\&#34;alignmentPeriod\&#34;:\&#34;600s\&#34;, \&#34;crossSeriesReducer\&#34;:\&#34;REDUCE_NONE\&#34;, \&#34;perSeriesAligner\&#34;: \&#34;ALIGN_MIN\&#34;}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--if<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&gt;</span><span style="color:#e6db74">${</span>EXPECTED<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--trigger-count<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--combiner<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;OR&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--enabled <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> I should probably revise my deployment script&rsquo;s <code>gcloud alpha monitoring policies create</code> commands to use <a href="https://cloud.google.com/sdk/gcloud/reference/alpha/monitoring/policies/create#--policy-from-file"><code>--from-file</code></a> to specify the Policy as YAML completely.</p>
+</blockquote>
+<p>So, it&rsquo;s nowhere near as straightforward as it should be to enumerate Kubernetes metrics (by component) and to include|exclude these using any Kubernetes distro, and with or without a Prometheus Operator. But, with some persistence, most things are possible.</p>
+<p>I continue to appreciate GMP. I&rsquo;m unsure whether there&rsquo;s much (any?) utility in having <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/rules-managed#managed_alertmanager">Managed alerting</a> and Cloud Monitoring Alerting(<a href="https://cloud.google.com/monitoring/alerts)">https://cloud.google.com/monitoring/alerts)</a>. Perhaps if there were different (Alertmanager) receivers or (Cloud Monitoring) notification channels available (although I think there aren&rsquo;t).</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/kubernetes/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Kubernetes</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/prometheus/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Prometheus</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/kubelet/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">kubelet</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/metrics/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">metrics</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/google-managed-prometheus/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Google Managed Prometheus</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/230413/">Filtering metrics w/ Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230310/">Kubernetes Operators</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230104/">Authenticate PromLens to Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/220520/">Prometheus Exporters for fly.io and Vultr</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210519/">Multiplexing gRPC and HTTP (Prometheus) endpoints with Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200207/">Accessing GCR repos from Kubernetes</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200107/">Google Home Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191219/">Prometheus AlertManager</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191218/">Linode Prometheus Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/190924/">Kubernetes Engine and Free Tier</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2023 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
