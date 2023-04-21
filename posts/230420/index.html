@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Prometheus Exporter for Azure (Container Apps) | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="Prometheus Exporter for Azure (Container Apps)">
+    <meta name="generator" content="Hugo 0.111.3">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.e7eb24d4e86966f8bcd5dd198bc521b41a6cbbb3bae6e7c7d36e2270a8841bd7.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+    
+    <meta property="og:title" content="Prometheus Exporter for Azure (Container Apps)" />
+<meta property="og:description" content="Prometheus Exporter for Azure (Container Apps)" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/230420/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2023-04-20T00:00:00-07:00" />
+<meta property="article:modified_time" content="2023-04-20T00:00:00-07:00" />
+<meta itemprop="name" content="Prometheus Exporter for Azure (Container Apps)">
+<meta itemprop="description" content="Prometheus Exporter for Azure (Container Apps)"><meta itemprop="datePublished" content="2023-04-20T00:00:00-07:00" />
+<meta itemprop="dateModified" content="2023-04-20T00:00:00-07:00" />
+<meta itemprop="wordCount" content="1278">
+<meta itemprop="keywords" content="Prometheus,Azure,Container Apps," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Prometheus Exporter for Azure (Container Apps)"/>
+<meta name="twitter:description" content="Prometheus Exporter for Azure (Container Apps)"/>
+
+      
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-67DZX7M0D1"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-67DZX7M0D1', { 'anonymize_ip': false });
+}
+</script>
+
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+
+
+
+
+
+
+  <div id="sharing" class="mt3 ananke-socials">
+    
+      
+      <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/230420/&amp;title=Prometheus%20Exporter%20for%20Azure%20%28Container%20Apps%29" class="ananke-social-link linkedin no-underline" aria-label="share on LinkedIn">
+        
+        <span class="icon"> <svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+        
+      </a>
+    
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Prometheus Exporter for Azure (Container Apps)</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2023-04-20T00:00:00-07:00">April 20, 2023</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 6 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 1278 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve written Prometheus Exporters for various cloud platforms. My motivation for writing these Exporters is that I want a unified mechanism to track my usage of these platform&rsquo;s services. It&rsquo;s easy to deploy a service on a platform and inadvertently leave it running (up a bill). The set of exporters is:</p>
+<ul>
+<li><a href="https://github.com/DazWilkin/azure-exporter">Prometheus Exporter for Azure</a></li>
+<li><a href="https://github.com/DazWilkin/fly-exporter">Prometheus Exporter for Fly.io</a></li>
+<li><a href="https://github.com/DazWilkin/gcp-exporter">Prometheus Exporter for GCP</a></li>
+<li><a href="https://github.com/DazWilkin/linode-exporter">Prometheus Exporter for Linode</a></li>
+<li><a href="https://github.com/DazWilkin/vultr-exporter">Prometheus Exporter for Vultr</a></li>
+</ul>
+<p>This post describes the recently-added Azure Exporter which only provides metrics for Container Apps and Resource Groups.</p>
+<blockquote>
+<p><strong>NOTE</strong> The Exporters are self-similar and for consistency (across Exporters) employ patterns that I don&rsquo;t advocate including:</p>
+<ol>
+<li><code>main.go</code> in the module root folder</li>
+<li>inconsistent metric naming</li>
+<li>The GCP Exporter uses Google&rsquo;s <a href="https://cloud.google.com/apis/docs/client-libraries-explained#google-api-client-libraries">API Client Libraries</a> exclusively</li>
+</ol>
+<p>At some point, I&rsquo;ll spend the time to update the Exporters.</p>
+</blockquote>
+<p>In the case of this Azure Exporter, my singular goal is to have an Alerting rule:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">name</span>: <span style="color:#ae81ff">azure_container_apps_running</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">expr</span>: <span style="color:#ae81ff">min_over_time(azure_container_apps_total[15m]) &gt; 0</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">for</span>: <span style="color:#ae81ff">6h</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">severity</span>: <span style="color:#ae81ff">page</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span><span style="color:#f92672">summary</span>: <span style="color:#ae81ff">Azure Container Apps ({{ $value }}) running (resource group: {{ $labels.resourcegroup }})</span>
+</span></span></code></pre></div><p>I want to know if I inadvertently leave a Container App deployed for more than 6 hours.</p>
+<p>As with the other Exporters in this series, they&rsquo;re implemented in Golang and using the <a href="https://pkg.go.dev/github.com/prometheus/client_golang">Prometheus Go client library</a> including <a href="https://pkg.go.dev/github.com/prometheus/client_golang@v1.15.0/prometheus/promhttp"><code>promhttp</code></a>.</p>
+<p><code>main.go</code> registers the 2 Azure-specific collectors and an <code>ExporterCollector</code> that provides <code>start_time</code> and <code>build_info</code> metrics for the Exporter itself. <code>main.go</code> also constructs <code>account</code>, <code>subscription</code> and <code>creds</code> (credentials) values that are used to create new instances of the Azure collectors.</p>
+<p><code>account</code> uses the Exporter&rsquo;s <code>azure</code> package. This provides resources intended to be shared across collectors. In the case of Azure, <a href="https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/manage-resource-groups-portal#what-is-a-resource-group">resource groups</a> provide a container of Azure resources (including Container Apps). To save repeatedly enumerating this list of resource groups, the <code>azure</code> package, enumerates the resource groups once, caches the results in a map and shares this map across the collectors.</p>
+<blockquote>
+<p><strong>NOTE</strong> This cacheing of resource groups means that changes to the set of resource groups aren&rsquo;t automatically found by the Exporter and it must be restarted to reflect these. This functionality could be improved by expiring the cached value.</p>
+</blockquote>
+<p><code>subscription</code> corresponds to the Azure Subscription ID which the Prometheus collectors will use to gather metrics. You can determine this using the Azure <a href="https://portal.azure.com/#view/Microsoft_Azure_Billing/SubscriptionsBlade">Portal: Subscriptions</a> or the Azure CLI: <code>az accounts list</code> perhaps even <code>az account list --output=json | jq -r .[0].id</code>.</p>
+<p>The <code>creds</code> are created using []<code>azidentity.NewDefaultAzureCredential</code>](<a href="https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity#NewDefaultAzureCredential">https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity#NewDefaultAzureCredential</a>) which is a developer-friendly mechanism. When running locally, this function grabs the <code>az</code> CLI&rsquo;s authenticated user credentials. When running in a container (as this Exporter will), it&rsquo;s possible to configure the client using environment variables (<code>AZURE_CLIENT_ID</code>, <code>AZURE_TENANT_ID</code> and <code>AZURE_CLIENT_CERTIFICATE_PATH</code>) to acquire credentials from an <a href="https://learn.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals#service-principal-object">Azure Service Principal</a> without having to change the code. I&rsquo;ll explain how this is done later.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// Environment variables
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">subscription</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">LookupEnv</span>(<span style="color:#a6e22e">envSubscription</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;Expected environment to contain `%s`&#34;</span>, <span style="color:#a6e22e">envSubscription</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Azure Identity (uses local `az` CLI credentials)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">creds</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">azidentity</span>.<span style="color:#a6e22e">NewDefaultAzureCredential</span>(<span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Object that holds Azure-specific resources (e.g. Resource Groups)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">account</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">azure</span>.<span style="color:#a6e22e">NewAccount</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">registry</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">NewRegistry</span>()
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">registry</span>.<span style="color:#a6e22e">MustRegister</span>(<span style="color:#a6e22e">collector</span>.<span style="color:#a6e22e">NewExporterCollector</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">OSVersion</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">GoVersion</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">GitCommit</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">StartTime</span>,
+</span></span><span style="display:flex;"><span>))
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">registry</span>.<span style="color:#a6e22e">MustRegister</span>(<span style="color:#a6e22e">collector</span>.<span style="color:#a6e22e">NewContainerAppsCollector</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">account</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">subscription</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">creds</span>,
+</span></span><span style="display:flex;"><span>))
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">registry</span>.<span style="color:#a6e22e">MustRegister</span>(<span style="color:#a6e22e">collector</span>.<span style="color:#a6e22e">NewResourceGroupsCollector</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">account</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">subscription</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">creds</span>,
+</span></span><span style="display:flex;"><span>))
+</span></span></code></pre></div><p>The code for the Collectors is similar and so I&rsquo;ll focus on <code>ContainerAppsCollector</code>. Each Collector exposes a single (gauge) metric:</p>
+<ul>
+<li><code>ContainerAppsCollector</code> exports <code>container_apps_total</code></li>
+<li><code>ResourceGroupsCollector</code> exports <code>resource_groups_total</code></li>
+</ul>
+<p>The <code>collector</code> package includes a struct (<code>ContainerAppsCollector</code>) for each Collector and this implements Prometheus&rsquo; <a href="https://pkg.go.dev/github.com/prometheus/client_golang@v1.15.0/prometheus#Collector"><code>prometheus.Collector</code></a> interface of two methods: <code>Collect</code> and <code>Describe</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// ContainerAppsCollector represents Azure Container Apps
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ContainerAppsCollector</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">account</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">azure</span>.<span style="color:#a6e22e">Account</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">client</span>  <span style="color:#f92672">*</span><span style="color:#a6e22e">armappcontainers</span>.<span style="color:#a6e22e">ContainerAppsClient</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Apps</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">Desc</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Each Collector includes a function to create a new Collector (e.g. <code>NewContainerAppsCollector</code>) which uses a service-specific client (e.g. <a href="https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appcontainers/armappcontainers/v2@v2.0.0-beta.2#ContainerAppsClient"><code>armappcontainers.ContainerAppsClient</code></a> created from a client factory (e.g. <a href="https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appcontainers/armappcontainers/v2@v2.0.0-beta.2#NewClientFactory"><code>armappcontainers.NewClientFactory</code></a>) using the previously described <code>subscription</code> and <code>creds</code>.</p>
+<blockquote>
+<p><strong>NOTE</strong> Being new to Azure, I was confused by the recurring use of <code>arm</code> in Azure-related content until I realized that it&rsquo;s an acronym of <a href="https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/overview">Azure Resource Manager</a>.</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">clientFactory</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">armappcontainers</span>.<span style="color:#a6e22e">NewClientFactory</span>(<span style="color:#a6e22e">subscription</span>, <span style="color:#a6e22e">creds</span>, <span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Print</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">clientFactory</span>.<span style="color:#a6e22e">NewContainerAppsClient</span>()
+</span></span></code></pre></div><p>The function completes by returning the <code>account</code>, the just-created <code>client</code> and appropriate Prometheus metric descriptors (<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus#Desc"><code>prometheus.Desc</code></a>):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">ContainerAppsCollector</span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">account</span>: <span style="color:#a6e22e">account</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">client</span>:  <span style="color:#a6e22e">client</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Apps</span>: <span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">NewDesc</span>(
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">BuildFQName</span>(<span style="color:#a6e22e">namespace</span>, <span style="color:#a6e22e">subsystem</span>, <span style="color:#e6db74">&#34;total&#34;</span>),
+</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;Number of Container Apps deployed&#34;</span>,
+</span></span><span style="display:flex;"><span>		[]<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;resourcegroup&#34;</span>,
+</span></span><span style="display:flex;"><span>		},
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">nil</span>,
+</span></span><span style="display:flex;"><span>	),
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Each Collector then needs to implement <code>Collect</code> and <code>Describe</code> methods. The latter are trivial and add the Prometheus metric descriptors to a channel. The <code>Collect</code> method must enumerate the Cloud service&rsquo;s resource (e.g. Container Apps) create and add Prometheus metrics (<a href="https://pkg.go.dev/github.com/prometheus/client_golang/prometheus#Metric"><code>prometheus.Metric</code></a>):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">wg</span> <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">WaitGroup</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">resourcegroup</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">account</span>.<span style="color:#a6e22e">ResourceGroups</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">rg</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">armresources</span>.<span style="color:#a6e22e">ResourceGroup</span>) {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Done</span>()
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">count</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">pager</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">NewListByResourceGroupPager</span>(<span style="color:#a6e22e">to</span>.<span style="color:#a6e22e">String</span>(<span style="color:#a6e22e">rg</span>.<span style="color:#a6e22e">Name</span>), <span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">pager</span>.<span style="color:#a6e22e">More</span>() {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">page</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">pager</span>.<span style="color:#a6e22e">NextPage</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Print</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>			}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">containerapps</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">page</span>.<span style="color:#a6e22e">Value</span>
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">count</span> <span style="color:#f92672">+=</span> len(<span style="color:#a6e22e">containerapps</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">ch</span> <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">MustNewConstMetric</span>(
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Apps</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">GaugeValue</span>,
+</span></span><span style="display:flex;"><span>			float64(<span style="color:#a6e22e">count</span>),
+</span></span><span style="display:flex;"><span>			[]<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">to</span>.<span style="color:#a6e22e">String</span>(<span style="color:#a6e22e">rg</span>.<span style="color:#a6e22e">Name</span>),
+</span></span><span style="display:flex;"><span>			}<span style="color:#f92672">...</span>,
+</span></span><span style="display:flex;"><span>		)
+</span></span><span style="display:flex;"><span>	}(<span style="color:#a6e22e">resourcegroup</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Wait</span>()
+</span></span></code></pre></div><p>To enumerate the Azure Subscription&rsquo;s (!) Resource Groups, the <code>Collect</code> method must iterate over the previously enumerated <code>ResourceGroups</code> (now cached in <code>azure.Account</code>). Each iteration spawns a Go routine which uses the client (<code>armappcontainers.ContainerAppsClient</code>) to page through the results tallying a <code>count</code>. This <code>count</code> value becomes the <code>Apps</code>&rsquo;s metric value that is added to the channel at the <code>Collect</code> method&rsquo;s completion.</p>
+<p>As long as you have an Azure CLI client that&rsquo;s authenticated, you can invoke the Exporter:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>SUBSCRIPTION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Azure Subscription ID</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;8080&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>go run .
+</span></span></code></pre></div><p>And, all being well, you can show the exported metrics with:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl --silent --get http://localhost:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span>/metrics
+</span></span></code></pre></div><p>Which should yield something of the form:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#75715e"># HELP azure_container_apps_total Number of Container Apps deployed</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE azure_container_apps_total gauge</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">azure_container_apps_total{resourcegroup=&#34;foo&#34;} 1</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># HELP azure_exporter_build_info A metric with a constant &#39;1&#39; value labeled by OS version, Go version, and the Git commit of the exporter</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE azure_exporter_build_info counter</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">azure_exporter_build_info{git_commit=&#34;&#34;,go_version=&#34;go1.20&#34;,os_version=&#34;&#34;} 1</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># HELP azure_exporter_start_time Exporter start time in Unix epoch seconds</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE azure_exporter_start_time gauge</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">azure_exporter_start_time 1.234567890e+09</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># HELP azure_resource_groups_total Number of Resource Groups</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE azure_resource_groups_total gauge</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">azure_resource_groups_total 1</span>
+</span></span></code></pre></div><p>And, a proposed Prometheus rule of:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>- <span style="color:#f92672">name</span>: <span style="color:#ae81ff">azure_exporter</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">alert</span>: <span style="color:#ae81ff">azure_container_apps_running</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">expr</span>: <span style="color:#ae81ff">min_over_time(azure_container_apps_total{}[15m]) &gt; 0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">for</span>: <span style="color:#ae81ff">2h</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">severity</span>: <span style="color:#ae81ff">page</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">summary</span>: <span style="color:#e6db74">&#34;Azure Container Apps ({{ $value }}) running (resource group: {{ $labels.resourcegroup }})&#34;</span>
+</span></span></code></pre></div><p>I mentioned above that, when deploying the Exporter as e.g. a container, a different auth mechanism is needed than, when running locally when you can leverage the credentials used by the Azure CLI (<code>az</code>). To address this, I used an Azure Service Principal, assigned it a <code>Reader</code> role and provided an X509 certificate:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;azure-exporter&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create self-signed cert</span>
+</span></span><span style="display:flex;"><span>openssl req <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-x509 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-newkey rsa:4096 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-keyout <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span>.key <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-out <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span>.crt <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-sha256 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-days <span style="color:#ae81ff">365</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-nodes <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-subj <span style="color:#e6db74">&#34;/CN=</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Need key+crt PEMs combined</span>
+</span></span><span style="display:flex;"><span>cat <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span>.key &gt;&gt; <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span>.key+crt
+</span></span><span style="display:flex;"><span>cat <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span>.crt &gt;&gt; <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span>.key+crt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create Service Principal</span>
+</span></span><span style="display:flex;"><span>SUBSCRIPTION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Azure Subscription ID</span>
+</span></span><span style="display:flex;"><span>GROUP<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>        <span style="color:#75715e"># Azure Resource Group ID</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>az ad sp create-for-rbac <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--name<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--role<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Reader&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--scopes<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/subscriptions/</span><span style="color:#e6db74">${</span>SUBSCRIPTION<span style="color:#e6db74">}</span><span style="color:#e6db74">/resourceGroups/</span><span style="color:#e6db74">${</span>GROUP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--cert<span style="color:#f92672">=</span>@<span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span>.crt
+</span></span></code></pre></div><p>The <code>az ad sp create-for-rbac</code> command yields JSON of the form:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;appId&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> <span style="color:#e6db74">&#34;{AZURE_CLIENT_ID}&#34;</span><span style="color:#960050;background-color:#1e0010">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;displayName&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> <span style="color:#e6db74">&#34;{NAME}&#34;</span><span style="color:#960050;background-color:#1e0010">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;password&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> <span style="color:#66d9ef">null</span><span style="color:#960050;background-color:#1e0010">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;tenant&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> <span style="color:#e6db74">&#34;{AZURE_TENANT_ID}&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">}</span>
+</span></span></code></pre></div><p>You&rsquo;ll need the value for <code>AZURE_CLIENT_ID</code> and <code>AZURE_TENANT_ID</code> for the next step.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;azure-exporter&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>SUBSCRIPTION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Azure Subscription ID</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>AZURE_CLIENT_ID<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Use values from Service Principal</span>
+</span></span><span style="display:flex;"><span>AZURE_TENANT_ID<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>AZURE_CLIENT_CERTIFICATE_PATH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">.key+crt&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;8080&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>podman run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--name<span style="color:#f92672">=</span>azure-exporter <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--env<span style="color:#f92672">=</span>SUBSCRIPTION<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>SUBSCRIPTION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--env<span style="color:#f92672">=</span>AZURE_CLIENT_ID<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>AZURE_CLIENT_ID<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--env<span style="color:#f92672">=</span>AZURE_TENANT_ID<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>AZURE_TENANT_ID<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--env<span style="color:#f92672">=</span>AZURE_CLIENT_CERTIFICATE_PATH<span style="color:#f92672">=</span>/secrets/<span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span>.key+crt <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>AZURE_CLIENT_CERTIFICATE_PATH<span style="color:#e6db74">}</span>:/secrets/<span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span>.key+crt <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span>/tcp <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>ghcr.io/dazwilkin/azure-exporter:c9e40ea08733da565c5ce2ff2ef24e740b1e3f3d <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--endpoint<span style="color:#f92672">=</span>0.0.0.0:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--path<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/metrics&#34;</span>
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong></p>
+<ol>
+<li><code>AZURE_CLIENT_CERTIFICATE_PATH</code> refers to the container&rsquo;s (!) folder (<strong>not</strong> the host&rsquo;s)</li>
+<li>The <code>--volume</code> mapping maps the host&rsquo;s <code>AZURE_CLIENT_CERTIFICATE_PATH</code> to the container&rsquo;s <code>/secrets</code> folder</li>
+<li>In the above, the same name is used for the host&rsquo;s and container&rsquo;s <code>key+crt</code> filename</li>
+<li>In the above, the same <code>HOST:CONTAINER</code> port value (<code>{PORT}</code>) is used</li>
+<li>The value of <code>--endpoint=0.0.0.0:${PORT}</code> refers to the container&rsquo;s (!) port.</li>
+</ol>
+</blockquote>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/prometheus/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Prometheus</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/azure/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Azure</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/container-apps/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Container Apps</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/230404/">Azure Container Apps</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230419/">Kubernetes metrics, metrics everywhere</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230413/">Filtering metrics w/ Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230310/">Kubernetes Operators</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230104/">Authenticate PromLens to Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200107/">Google Home Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191219/">Prometheus AlertManager</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191218/">Linode Prometheus Exporter</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2023 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
