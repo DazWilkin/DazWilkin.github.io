@@ -38,7 +38,7 @@
 <meta itemprop="name" content="Prometheus Exporter for Azure (Container Apps)">
 <meta itemprop="description" content="Prometheus Exporter for Azure (Container Apps)"><meta itemprop="datePublished" content="2023-04-20T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2023-04-20T00:00:00-07:00" />
-<meta itemprop="wordCount" content="1278">
+<meta itemprop="wordCount" content="1283">
 <meta itemprop="keywords" content="Prometheus,Azure,Container Apps," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Prometheus Exporter for Azure (Container Apps)"/>
 <meta name="twitter:description" content="Prometheus Exporter for Azure (Container Apps)"/>
@@ -193,8 +193,8 @@ if (!doNotTrack) {
 
       
       
-        <span class="f6 mv4 dib tracked"> - 6 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 1278 words </span>
+        <span class="f6 mv4 dib tracked"> - 7 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 1283 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve written Prometheus Exporters for various cloud platforms. My motivation for writing these Exporters is that I want a unified mechanism to track my usage of these platform&rsquo;s services. It&rsquo;s easy to deploy a service on a platform and inadvertently leave it running (up a bill). The set of exporters is:</p>
@@ -220,9 +220,9 @@ if (!doNotTrack) {
 </span></span><span style="display:flex;"><span><span style="color:#f92672">expr</span>: <span style="color:#ae81ff">min_over_time(azure_container_apps_total[15m]) &gt; 0</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">for</span>: <span style="color:#ae81ff">6h</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">labels</span>:
-</span></span><span style="display:flex;"><span><span style="color:#f92672">severity</span>: <span style="color:#ae81ff">page</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">severity</span>: <span style="color:#ae81ff">page</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">annotations</span>:
-</span></span><span style="display:flex;"><span><span style="color:#f92672">summary</span>: <span style="color:#ae81ff">Azure Container Apps ({{ $value }}) running (resource group: {{ $labels.resourcegroup }})</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">summary</span>: <span style="color:#ae81ff">Azure Container Apps ({{ $value }}) running (resource group: {{ $labels.resourcegroup }})</span>
 </span></span></code></pre></div><p>I want to know if I inadvertently leave a Container App deployed for more than 6 hours.</p>
 <p>As with the other Exporters in this series, they&rsquo;re implemented in Golang and using the <a href="https://pkg.go.dev/github.com/prometheus/client_golang">Prometheus Go client library</a> including <a href="https://pkg.go.dev/github.com/prometheus/client_golang@v1.15.0/prometheus/promhttp"><code>promhttp</code></a>.</p>
 <p><code>main.go</code> registers the 2 Azure-specific collectors and an <code>ExporterCollector</code> that provides <code>start_time</code> and <code>build_info</code> metrics for the Exporter itself. <code>main.go</code> also constructs <code>account</code>, <code>subscription</code> and <code>creds</code> (credentials) values that are used to create new instances of the Azure collectors.</p>
@@ -235,7 +235,9 @@ if (!doNotTrack) {
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// Environment variables
 </span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">subscription</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">LookupEnv</span>(<span style="color:#a6e22e">envSubscription</span>)
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;Expected environment to contain `%s`&#34;</span>, <span style="color:#a6e22e">envSubscription</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;Expected environment to contain `%s`&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">envSubscription</span>,
+</span></span><span style="display:flex;"><span>	)
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e">// Azure Identity (uses local `az` CLI credentials)
@@ -281,7 +283,11 @@ if (!doNotTrack) {
 <blockquote>
 <p><strong>NOTE</strong> Being new to Azure, I was confused by the recurring use of <code>arm</code> in Azure-related content until I realized that it&rsquo;s an acronym of <a href="https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/overview">Azure Resource Manager</a>.</p>
 </blockquote>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">clientFactory</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">armappcontainers</span>.<span style="color:#a6e22e">NewClientFactory</span>(<span style="color:#a6e22e">subscription</span>, <span style="color:#a6e22e">creds</span>, <span style="color:#66d9ef">nil</span>)
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">clientFactory</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">armappcontainers</span>.<span style="color:#a6e22e">NewClientFactory</span>(
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">subscription</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">creds</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">nil</span>,
+</span></span><span style="display:flex;"><span>)
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Print</span>(<span style="color:#a6e22e">err</span>)
 </span></span><span style="display:flex;"><span>}
@@ -310,7 +316,10 @@ if (!doNotTrack) {
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">rg</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">armresources</span>.<span style="color:#a6e22e">ResourceGroup</span>) {
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Done</span>()
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">count</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">pager</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">NewListByResourceGroupPager</span>(<span style="color:#a6e22e">to</span>.<span style="color:#a6e22e">String</span>(<span style="color:#a6e22e">rg</span>.<span style="color:#a6e22e">Name</span>), <span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">pager</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">NewListByResourceGroupPager</span>(
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">to</span>.<span style="color:#a6e22e">String</span>(<span style="color:#a6e22e">rg</span>.<span style="color:#a6e22e">Name</span>),
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">nil</span>,
+</span></span><span style="display:flex;"><span>		)
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">pager</span>.<span style="color:#a6e22e">More</span>() {
 </span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">page</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">pager</span>.<span style="color:#a6e22e">NextPage</span>(<span style="color:#a6e22e">ctx</span>)
 </span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
@@ -354,7 +363,7 @@ if (!doNotTrack) {
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># HELP azure_resource_groups_total Number of Resource Groups</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># TYPE azure_resource_groups_total gauge</span>
 </span></span><span style="display:flex;"><span><span style="color:#ae81ff">azure_resource_groups_total 1</span>
-</span></span></code></pre></div><p>And, a proposed Prometheus rule of:</p>
+</span></span></code></pre></div><p>And, the previously desired Prometheus rule:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>- <span style="color:#f92672">name</span>: <span style="color:#ae81ff">azure_exporter</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">rules</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">alert</span>: <span style="color:#ae81ff">azure_container_apps_running</span>
@@ -418,7 +427,7 @@ if (!doNotTrack) {
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--env<span style="color:#f92672">=</span>AZURE_CLIENT_CERTIFICATE_PATH<span style="color:#f92672">=</span>/secrets/<span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span>.key+crt <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>AZURE_CLIENT_CERTIFICATE_PATH<span style="color:#e6db74">}</span>:/secrets/<span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span>.key+crt <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span>/tcp <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>ghcr.io/dazwilkin/azure-exporter:c9e40ea08733da565c5ce2ff2ef24e740b1e3f3d <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>ghcr.io/dazwilkin/azure-exporter:v0.0.2 <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--endpoint<span style="color:#f92672">=</span>0.0.0.0:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--path<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/metrics&#34;</span>
 </span></span></code></pre></div><blockquote>
