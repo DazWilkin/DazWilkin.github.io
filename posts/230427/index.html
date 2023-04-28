@@ -38,7 +38,7 @@
 <meta itemprop="name" content="Robusta KRR w/ GMP">
 <meta itemprop="description" content="Robusta KRR with Google Managed Prometheus"><meta itemprop="datePublished" content="2023-04-27T00:00:00-07:00" />
 <meta itemprop="dateModified" content="2023-04-27T00:00:00-07:00" />
-<meta itemprop="wordCount" content="472">
+<meta itemprop="wordCount" content="481">
 <meta itemprop="keywords" content="Prometheus,Google Managed Prometheus,Kubernetes,Robusta,cloud-monitoring," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Robusta KRR w/ GMP"/>
 <meta name="twitter:description" content="Robusta KRR with Google Managed Prometheus"/>
@@ -194,7 +194,7 @@ if (!doNotTrack) {
       
       
         <span class="f6 mv4 dib tracked"> - 3 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 472 words </span>
+        <span class="f6 mv4 dib tracked"> - 481 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve been spending time recently optimizing <a href="https://ack.al">Ackal</a>&rsquo;s use of Google <a href="https://cloud.google.com/logging">Cloud Logging</a> and <a href="https://cloud.google.com/monitoring">Cloud Monitoring</a> in posts:</p>
@@ -227,11 +227,13 @@ if (!doNotTrack) {
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">interval</span>: <span style="color:#ae81ff">30s</span>
 </span></span></code></pre></div><h3 id="enable-kube-state-metricshttpscloudgooglecomstackdriverdocsmanaged-prometheusexporterskube_state_metrics">Enable <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/exporters/kube_state_metrics">kube-state-metrics</a></h3>
 <p>You will need to apply the configuration described in <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/exporters/kube_state_metrics#install-exporter">Install Kube State Metrics</a>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl --silent https://raw.githubusercontent.com/GoogleCloudPlatform/prometheus-engine/main/examples/kube-state-metrics/kube-state-metrics.yaml | kubectl apply --filename<span style="color:#f92672">=</span>-
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent https://raw.githubusercontent.com/GoogleCloudPlatform/prometheus-engine/main/examples/kube-state-metrics/kube-state-metrics.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>-
 </span></span></code></pre></div><h3 id="create-a-clusterruleshttpscloudgooglecomstackdriverdocsmanaged-prometheusrules-managedclusterrules">Create a <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/rules-managed#clusterrules"><code>ClusterRules</code></a></h3>
 <p>KRR uses 2 PromQL queries as described in the repo&rsquo;s README <a href="https://github.com/robusta-dev/krr#metrics-gathering">metrics gathering</a>. The first, corresponding to CPU is defined:</p>
 <pre tabindex="0"><code>sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=&#34;{object.namespace}&#34;, pod=&#34;{pod}&#34;, container=&#34;{object.container}&#34;})
-</code></pre><p><code>node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate</code> is a recording rule that was not present in GMP. I was able to find a reference to its implementation:</p>
+</code></pre><p><code>node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate</code> is a recording rule that was not present in GMP. It uses 2 metrics (<code>container_cpu_usage_seconds_total</code> and <code>kube_pod_info</code>) I was able to find a reference to its implementation:</p>
 <pre tabindex="0"><code>sum by (cluster, namespace, pod, container) (
     irate(container_cpu_usage_seconds_total{job=&#34;kubelet&#34;, image!=&#34;}[5m])
 ) * on (cluster, namespace, pod) group_left(node) topk by (cluster,
