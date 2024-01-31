@@ -50,7 +50,7 @@ This post shows how to generate a Rust SDK using the Generator and provides a ve
 The Generator will create a Rust library project:
 VERS=&#34;v7.2.0&#34; PACKAGE_NAME=&#34;koyeb-api-client-rs&#34; PACKAGE_VERS=&#34;1.0.0&#34; podman run \ --interactive --tty --rm \ --volume=${PWD}:/local \ docker.io/openapitools/openapi-generator-cli:${VERS} \ generate \ -g=rust \ -i=https://developer."><meta itemprop="datePublished" content="2024-01-30T00:00:00-08:00" />
 <meta itemprop="dateModified" content="2024-01-30T00:00:00-08:00" />
-<meta itemprop="wordCount" content="555">
+<meta itemprop="wordCount" content="566">
 <meta itemprop="keywords" content="koyeb,rust,openapi,swagger," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="Navigating Koyeb&#39;s API with Rust"/>
 <meta name="twitter:description" content="I wrote about Navigating Koyeb&rsquo;s Golang SDK. That client is generated using the OpenAPI Generator project using Koyeb&rsquo;s Swagger (now OpenAPI) REST API spec.
 This post shows how to generate a Rust SDK using the Generator and provides a very basic example of using the SDK.
@@ -197,7 +197,7 @@ VERS=&#34;v7.2.0&#34; PACKAGE_NAME=&#34;koyeb-api-client-rs&#34; PACKAGE_VERS=&#
       
       
         <span class="f6 mv4 dib tracked"> - 3 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 555 words </span>
+        <span class="f6 mv4 dib tracked"> - 566 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I wrote about <a href="/posts/240105/">Navigating Koyeb&rsquo;s Golang SDK</a>. That client is generated using the <a href="https://openapi-generator.tech/">OpenAPI Generator</a> project using Koyeb&rsquo;s Swagger (now OpenAPI) REST API <a href="https://developer.koyeb.com/public.swagger.json">spec</a>.</p>
@@ -228,16 +228,24 @@ VERS=&#34;v7.2.0&#34; PACKAGE_NAME=&#34;koyeb-api-client-rs&#34; PACKAGE_VERS=&#
 </span></span><span style="display:flex;"><span>cargo add reqwest
 </span></span><span style="display:flex;"><span>cargo add --features<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;full&#34;</span> tokio
 </span></span></code></pre></div><p>You&rsquo;ll need a Koyeb API access token to authenticate your code to Koyeb&rsquo;s API. Visit your <a href="https://app.koyeb.com/settings/">Organization Settings</a> and select <a href="https://app.koyeb.com/settings/api">API</a>. Provide a Name perhaps <code>koyeb-api-client-rs</code> and click &ldquo;Create API Access Token&rdquo;. Ensure you record the value and set the environment variable:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>KOYEB_API_ACCESS_TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{value}&#34;</span> <span style="color:#75715e"># Replace {value} with your access token</span>
-</span></span></code></pre></div><p>The <code>main.rs</code> need several <code>use</code> statements:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>KOYEB_API_ACCESS_TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{value}&#34;</span>
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> Replace <code>{value}</code> with your access token</p>
+</blockquote>
+<p>The <code>main.rs</code> need several <code>use</code> statements:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::env;
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> koyeb_api_client_rs::apis::{
-</span></span><span style="display:flex;"><span>    Error,
+</span></span><span style="display:flex;"><span>    apps_api::{
+</span></span><span style="display:flex;"><span>        list_apps,
+</span></span><span style="display:flex;"><span>        ListAppsError::{
+</span></span><span style="display:flex;"><span>            DefaultResponse, Status400, Status401, Status403, Status404, Status500, UnknownValue,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>    },
 </span></span><span style="display:flex;"><span>    configuration::{ApiKey, Configuration},
-</span></span><span style="display:flex;"><span>    apps_api::list_apps,
+</span></span><span style="display:flex;"><span>    deployments_api::list_deployments,
 </span></span><span style="display:flex;"><span>    services_api::list_services,
-</span></span><span style="display:flex;"><span>    deployments_api::list_deployments
+</span></span><span style="display:flex;"><span>    Error,
 </span></span><span style="display:flex;"><span>};
 </span></span></code></pre></div><p>We&rsquo;ll grab the environment variable:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">API_ACCESS_TOKEN</span>: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;KOYEB_API_ACCESS_TOKEN&#34;</span>;
