@@ -50,7 +50,7 @@ This post shows how to generate a Rust SDK using the Generator and provides a ve
 The Generator will create a Rust library project:
 VERS=&#34;v7.2.0&#34; PACKAGE_NAME=&#34;koyeb-api-client-rs&#34; PACKAGE_VERS=&#34;1.0.0&#34; podman run \ --interactive --tty --rm \ --volume=${PWD}:/local \ docker.io/openapitools/openapi-generator-cli:${VERS} \ generate \ -g=rust \ -i=https://developer."><meta itemprop="datePublished" content="2024-01-30T00:00:00-08:00" />
 <meta itemprop="dateModified" content="2024-01-30T00:00:00-08:00" />
-<meta itemprop="wordCount" content="566">
+<meta itemprop="wordCount" content="581">
 <meta itemprop="keywords" content="koyeb,rust,openapi,swagger," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="Navigating Koyeb&#39;s API with Rust"/>
 <meta name="twitter:description" content="I wrote about Navigating Koyeb&rsquo;s Golang SDK. That client is generated using the OpenAPI Generator project using Koyeb&rsquo;s Swagger (now OpenAPI) REST API spec.
 This post shows how to generate a Rust SDK using the Generator and provides a very basic example of using the SDK.
@@ -197,7 +197,7 @@ VERS=&#34;v7.2.0&#34; PACKAGE_NAME=&#34;koyeb-api-client-rs&#34; PACKAGE_VERS=&#
       
       
         <span class="f6 mv4 dib tracked"> - 3 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 566 words </span>
+        <span class="f6 mv4 dib tracked"> - 581 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I wrote about <a href="/posts/240105/">Navigating Koyeb&rsquo;s Golang SDK</a>. That client is generated using the <a href="https://openapi-generator.tech/">OpenAPI Generator</a> project using Koyeb&rsquo;s Swagger (now OpenAPI) REST API <a href="https://developer.koyeb.com/public.swagger.json">spec</a>.</p>
@@ -251,7 +251,10 @@ VERS=&#34;v7.2.0&#34; PACKAGE_NAME=&#34;koyeb-api-client-rs&#34; PACKAGE_VERS=&#
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">API_ACCESS_TOKEN</span>: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;KOYEB_API_ACCESS_TOKEN&#34;</span>;
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> api_access_token <span style="color:#f92672">=</span> env::var(<span style="color:#66d9ef">API_ACCESS_TOKEN</span>)
-</span></span><span style="display:flex;"><span>    .map_err(<span style="color:#f92672">|</span>_<span style="color:#f92672">|</span>format!(<span style="color:#e6db74">&#34;Environment variable &#39;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#39; not set&#34;</span>,<span style="color:#66d9ef">API_ACCESS_TOKEN</span>))<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    .map_err(<span style="color:#f92672">|</span>_<span style="color:#f92672">|</span>format!(
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;Environment variable &#39;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#39; not set&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">API_ACCESS_TOKEN</span>,
+</span></span><span style="display:flex;"><span>    ))<span style="color:#f92672">?</span>;
 </span></span></code></pre></div><p>And, in a different approach to the Go SDK, we&rsquo;ll include the access token in the <code>Configuration</code> struct:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">let</span> configuration <span style="color:#f92672">=</span> Configuration{
 </span></span><span style="display:flex;"><span>    api_key: Some(ApiKey {
@@ -276,9 +279,18 @@ VERS=&#34;v7.2.0&#34; PACKAGE_NAME=&#34;koyeb-api-client-rs&#34; PACKAGE_VERS=&#
 </span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">for</span> app: <span style="color:#a6e22e">AppListItem</span> <span style="color:#66d9ef">in</span> apps {
 </span></span><span style="display:flex;"><span>                println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, app);
 </span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> app_id: Option<span style="color:#f92672">&lt;&amp;</span><span style="color:#66d9ef">str</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> app.id.as_deref();
-</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> types: Option<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;&gt;</span> <span style="color:#f92672">=</span> Some(vec![<span style="color:#e6db74">&#34;WEB&#34;</span>.to_owned()]);;
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> types: Option<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;&gt;</span> <span style="color:#f92672">=</span> Some(vec![
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;WEB&#34;</span>.to_owned(),
+</span></span><span style="display:flex;"><span>                ]);;
 </span></span><span style="display:flex;"><span>    
-</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">match</span> list_services(<span style="color:#f92672">&amp;</span>configuration, app_id, <span style="color:#66d9ef">LIMIT</span>, <span style="color:#66d9ef">OFFSET</span>, <span style="color:#66d9ef">NAME</span>, types).<span style="color:#66d9ef">await</span> { <span style="color:#f92672">..</span>. }
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">match</span> list_services(
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&amp;</span>configuration,
+</span></span><span style="display:flex;"><span>                    app_id,
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">LIMIT</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">OFFSET</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">NAME</span>,
+</span></span><span style="display:flex;"><span>                    types,
+</span></span><span style="display:flex;"><span>                ).<span style="color:#66d9ef">await</span> { <span style="color:#f92672">..</span>. }
 </span></span><span style="display:flex;"><span>    Err(e: <span style="color:#a6e22e">Error</span><span style="color:#f92672">&lt;</span>ListAppsError<span style="color:#f92672">&gt;</span>) <span style="color:#f92672">=&gt;</span> {
 </span></span><span style="display:flex;"><span>        <span style="color:#f92672">..</span>.
 </span></span><span style="display:flex;"><span>    }
@@ -288,17 +300,30 @@ VERS=&#34;v7.2.0&#34; PACKAGE_NAME=&#34;koyeb-api-client-rs&#34; PACKAGE_VERS=&#
 </span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;Error: </span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, e);
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">match</span> e {
 </span></span><span style="display:flex;"><span>        Error::ResponseError(response_content) <span style="color:#f92672">=&gt;</span> {
-</span></span><span style="display:flex;"><span>            println!(<span style="color:#e6db74">&#34;Error: </span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">|</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, response_content.status,response_content.status.canonical_reason());
+</span></span><span style="display:flex;"><span>            println!(<span style="color:#e6db74">&#34;Error: </span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">|</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>,
+</span></span><span style="display:flex;"><span>                response_content.status,
+</span></span><span style="display:flex;"><span>                response_content.status.canonical_reason(),
+</span></span><span style="display:flex;"><span>            );
 </span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">match</span> response_content.entity {
 </span></span><span style="display:flex;"><span>                Some(list_apps_error) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">match</span> list_apps_error {
 </span></span><span style="display:flex;"><span>                    Status400(error_with_fields) <span style="color:#f92672">=&gt;</span> {
-</span></span><span style="display:flex;"><span>                        println!(<span style="color:#e6db74">&#34;Error with Fields: </span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, error_with_fields);
+</span></span><span style="display:flex;"><span>                        println!(
+</span></span><span style="display:flex;"><span>                            <span style="color:#e6db74">&#34;Error with Fields: </span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>,
+</span></span><span style="display:flex;"><span>                            error_with_fields,
+</span></span><span style="display:flex;"><span>                        );
 </span></span><span style="display:flex;"><span>                    },
-</span></span><span style="display:flex;"><span>                    Status401(error) <span style="color:#f92672">|</span> Status403(error) <span style="color:#f92672">|</span> Status404(error) <span style="color:#f92672">|</span> Status500(error) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                    Status401(error) <span style="color:#f92672">|</span>
+</span></span><span style="display:flex;"><span>                    Status403(error) <span style="color:#f92672">|</span>
+</span></span><span style="display:flex;"><span>                    Status404(error) <span style="color:#f92672">|</span>
+</span></span><span style="display:flex;"><span>                    Status500(error) <span style="color:#f92672">=&gt;</span> {
 </span></span><span style="display:flex;"><span>                        println!(<span style="color:#e6db74">&#34;Error: </span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, error);
 </span></span><span style="display:flex;"><span>                    },
 </span></span><span style="display:flex;"><span>                    DefaultResponse(s)<span style="color:#f92672">=&gt;</span>{
-</span></span><span style="display:flex;"><span>                        println!(<span style="color:#e6db74">&#34;Error: </span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">|</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74"> [</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">]&#34;</span>,s.code,s.message,s.details);
+</span></span><span style="display:flex;"><span>                        println!(
+</span></span><span style="display:flex;"><span>                            <span style="color:#e6db74">&#34;Error: </span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">|</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74"> [</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">]&#34;</span>,
+</span></span><span style="display:flex;"><span>                            s.code,s.message,
+</span></span><span style="display:flex;"><span>                            s.details,
+</span></span><span style="display:flex;"><span>                        );
 </span></span><span style="display:flex;"><span>                    },
 </span></span><span style="display:flex;"><span>                    UnknownValue(v)<span style="color:#f92672">=&gt;</span>{
 </span></span><span style="display:flex;"><span>                        println!(<span style="color:#e6db74">&#34;Unknown Value: </span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>,v);
