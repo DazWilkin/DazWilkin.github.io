@@ -47,7 +47,7 @@ It&rsquo;s unclear whether there&rsquo;s a difference in the primary components 
 sudo microk8s.enable prometheus Infer repository core for addon prometheus DEPRECATION WARNING: &#39;prometheus&#39; is deprecated and will soon be removed. Please use &#39;observability&#39; instead. ... The reason for the name change is unclear.
 It&rsquo;s unclear whether there&rsquo;s a difference in the primary components that are installed too (I&rsquo;d thought Grafana wasn&rsquo;t included in &lsquo;prometheus&rsquo;), (Grafana) Loki and (Grafana) Tempo definitely weren&rsquo;t included and I don&rsquo;t want them either."><meta itemprop="datePublished" content="2024-02-16T00:00:00-08:00" />
 <meta itemprop="dateModified" content="2024-02-16T00:00:00-08:00" />
-<meta itemprop="wordCount" content="393">
+<meta itemprop="wordCount" content="398">
 <meta itemprop="keywords" content="kubernetes,microk8s,kube-prometheus-stack," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="MicroK8s operability add-on"/>
 <meta name="twitter:description" content="Spent time today yak-shaving which resulted in an unplanned migration from MicroK8s &lsquo;prometheus&rsquo; add-on to the new and not fully-documented &lsquo;observability&rsquo; add-on:
 sudo microk8s.enable prometheus Infer repository core for addon prometheus DEPRECATION WARNING: &#39;prometheus&#39; is deprecated and will soon be removed. Please use &#39;observability&#39; instead. ... The reason for the name change is unclear.
@@ -193,7 +193,7 @@ It&rsquo;s unclear whether there&rsquo;s a difference in the primary components 
       
       
         <span class="f6 mv4 dib tracked"> - 2 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 393 words </span>
+        <span class="f6 mv4 dib tracked"> - 398 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>Spent time today <a href="https://en.wiktionary.org/wiki/yak_shaving">yak-shaving</a> which resulted in an unplanned migration from <a href="https://microk8s.io">MicroK8s</a> &lsquo;prometheus&rsquo; <a href="https://microk8s.io/docs/addons">add-on</a> to the new and not fully-documented &lsquo;observability&rsquo; add-on:</p>
@@ -232,7 +232,9 @@ It&rsquo;s unclear whether there&rsquo;s a difference in the primary components 
 </span></span></code></pre></div><p>The documentation for <a href="https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack#multiple-releases">Multiple releases</a> explains|confirms that it should be able to disable <code>grafana</code> by setting a property during deployment <code>--set=grafana.enabled=false</code>.</p>
 <p>But, how to intervene in this deployment when I&rsquo;m using <code>microk8s.enable observability</code>?</p>
 <p>I suspect there&rsquo;s a better way to do this but, I&rsquo;m simply re-upping the deployment (thanks to the ) <a href="https://github.com/canonical/microk8s-core-addons/blob/main/addons/observability/enable"><code>enable</code></a> script for helping determine the correct way to do this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NODE_ENDPOINTS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>VERSION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;45.5.0&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>NODE_ENDPOINTS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  kubectl get nodes <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">={</span>.items<span style="color:#f92672">[</span>*<span style="color:#f92672">]</span>.status.addresses<span style="color:#f92672">[</span>?<span style="color:#ae81ff">\(</span>@.type<span style="color:#f92672">==</span><span style="color:#ae81ff">\&#34;</span>InternalIP<span style="color:#ae81ff">\&#34;\)</span><span style="color:#f92672">]</span>.address<span style="color:#f92672">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | sed <span style="color:#e6db74">&#39;s/\s\+/,/g&#39;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>NODE_ENDPOINTS<span style="color:#e6db74">}</span>
@@ -242,7 +244,8 @@ It&rsquo;s unclear whether there&rsquo;s a difference in the primary components 
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--set<span style="color:#f92672">=</span>grafana.enabled<span style="color:#f92672">=</span>false <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--set<span style="color:#f92672">=</span>kubeControllerManager.endpoints<span style="color:#f92672">={</span><span style="color:#e6db74">${</span>NODE_ENDPOINTS<span style="color:#e6db74">}</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--set<span style="color:#f92672">=</span>kubeScheduler.endpoints<span style="color:#f92672">={</span><span style="color:#e6db74">${</span>NODE_ENDPOINTS<span style="color:#e6db74">}</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--repo<span style="color:#f92672">=</span>https://prometheus-community.github.io/helm-charts 
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--repo<span style="color:#f92672">=</span>https://prometheus-community.github.io/helm-charts <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--version<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>VERSION<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> <code>NODE_ENDPOINTS</code> is a comma-separated list of the node IPs and is enclosed within braces (<code>{...}</code>) for the <code>helm set</code> value to represent a list.</p>
 </blockquote>
@@ -254,7 +257,8 @@ It&rsquo;s unclear whether there&rsquo;s a difference in the primary components 
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--set<span style="color:#f92672">=</span>nodeExporter.enabled<span style="color:#f92672">=</span>false <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--set<span style="color:#f92672">=</span>kubeControllerManager.endpoints<span style="color:#f92672">={</span><span style="color:#e6db74">${</span>NODE_ENDPOINTS<span style="color:#e6db74">}</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--set<span style="color:#f92672">=</span>kubeScheduler.endpoints<span style="color:#f92672">={</span><span style="color:#e6db74">${</span>NODE_ENDPOINTS<span style="color:#e6db74">}</span><span style="color:#f92672">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--repo<span style="color:#f92672">=</span>https://prometheus-community.github.io/helm-charts
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--repo<span style="color:#f92672">=</span>https://prometheus-community.github.io/helm-charts <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--version<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>VERSION<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><ul class="pa0">
   
    <li class="list di">
