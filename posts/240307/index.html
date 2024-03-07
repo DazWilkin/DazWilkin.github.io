@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Prometheus Protobufs and Native Histograms | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="I responded to a question Prometheus metric protocol buffer in gRPC on Stackoverflow and it piqued my curiosity and got me yak shaving.
+Prometheus used to support two exposition formats including Protocol Buffers, then dropped Protocol Buffer and has since re-added it (see Protobuf format). The Protobuf format has returned to support the experimental Native Histograms feature.
+I&rsquo;m interested in adding Native Histogram support to Ackal so thought I&rsquo;d learn more about this metric.">
+    <meta name="generator" content="Hugo 0.124.0-DEV">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.e7eb24d4e86966f8bcd5dd198bc521b41a6cbbb3bae6e7c7d36e2270a8841bd7.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:title" content="Prometheus Protobufs and Native Histograms" />
+<meta property="og:description" content="I responded to a question Prometheus metric protocol buffer in gRPC on Stackoverflow and it piqued my curiosity and got me yak shaving.
+Prometheus used to support two exposition formats including Protocol Buffers, then dropped Protocol Buffer and has since re-added it (see Protobuf format). The Protobuf format has returned to support the experimental Native Histograms feature.
+I&rsquo;m interested in adding Native Histogram support to Ackal so thought I&rsquo;d learn more about this metric." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://pretired.dazwilkin.com/posts/240307/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2024-03-07T00:00:00-08:00" />
+<meta property="article:modified_time" content="2024-03-07T00:00:00-08:00" />
+
+<meta itemprop="name" content="Prometheus Protobufs and Native Histograms">
+<meta itemprop="description" content="I responded to a question Prometheus metric protocol buffer in gRPC on Stackoverflow and it piqued my curiosity and got me yak shaving.
+Prometheus used to support two exposition formats including Protocol Buffers, then dropped Protocol Buffer and has since re-added it (see Protobuf format). The Protobuf format has returned to support the experimental Native Histograms feature.
+I&rsquo;m interested in adding Native Histogram support to Ackal so thought I&rsquo;d learn more about this metric."><meta itemprop="datePublished" content="2024-03-07T00:00:00-08:00" />
+<meta itemprop="dateModified" content="2024-03-07T00:00:00-08:00" />
+<meta itemprop="wordCount" content="1356">
+<meta itemprop="keywords" content="Prometheus,Protobufs,gRPC,prom2json,Protobuf format," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="Prometheus Protobufs and Native Histograms"/>
+<meta name="twitter:description" content="I responded to a question Prometheus metric protocol buffer in gRPC on Stackoverflow and it piqued my curiosity and got me yak shaving.
+Prometheus used to support two exposition formats including Protocol Buffers, then dropped Protocol Buffer and has since re-added it (see Protobuf format). The Protobuf format has returned to support the experimental Native Histograms feature.
+I&rsquo;m interested in adding Native Histogram support to Ackal so thought I&rsquo;d learn more about this metric."/>
+
+      
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+
+
+
+
+
+
+  <div id="sharing" class="mt3 ananke-socials">
+    
+      
+      <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/240307/&amp;title=Prometheus%20Protobufs%20and%20Native%20Histograms" class="ananke-social-link linkedin no-underline" aria-label="share on LinkedIn">
+        
+        <span class="icon"> <svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+        
+      </a>
+    
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Prometheus Protobufs and Native Histograms</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2024-03-07T00:00:00-08:00">March 7, 2024</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 7 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 1356 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I responded to a question <a href="https://stackoverflow.com/questions/78112323/prometheus-metric-protocol-buffer-in-grpc#comment137716337_78112323">Prometheus metric protocol buffer in gRPC</a> on Stackoverflow and it piqued my curiosity and got me yak shaving.</p>
+<p>Prometheus used to support two exposition formats including Protocol Buffers, then dropped Protocol Buffer and has since re-added it (see <a href="https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md#protobuf-format">Protobuf format</a>). The Protobuf format has returned to support the experimental <a href="https://prometheus.io/docs/prometheus/latest/feature_flags/#native-histograms">Native Histograms</a> feature.</p>
+<p>I&rsquo;m interested in adding Native Histogram support to <a href="https://ack.al">Ackal</a> so thought I&rsquo;d learn more about this metric. You can learn more:</p>
+<ul>
+<li><a href="https://www.youtube.com/watch?v=NDb9yZl1u1Y">Julius Volz - Native Histograms in Prometheus</a>;</li>
+<li><a href="https://www.youtube.com/watch?v=AcmABV6NCYk">PromCon EU 2022: Native Histograms in Prometheus</a>;</li>
+<li><a href="https://www.youtube.com/watch?v=fikCqhlUOmQ">PromCon EU 2022: PromQL for Native Histograms</a></li>
+</ul>
+<p>It&rsquo;s straightforward to run a Prometheus server that will scrape targets that export Protobuf format:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>podman run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span>9090:9090/tcp <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>prom/prometheus:v2.50.1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--config.file<span style="color:#f92672">=</span>/etc/prometheus/prometheus.yml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--enable-feature<span style="color:#f92672">=</span>native-histograms <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--web.enable-lifecycle
+</span></span></code></pre></div><p>But, I think (!?) you also need to publish some metrics using them.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log/slog&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;math/rand/v2&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;net/http&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/prometheus/client_golang/prometheus&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/prometheus/client_golang/prometheus/promauto&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/prometheus/client_golang/prometheus/promhttp&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> (
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">foo</span> = <span style="color:#a6e22e">promauto</span>.<span style="color:#a6e22e">NewHistogram</span>(<span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">HistogramOpts</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Name</span>:                        <span style="color:#e6db74">&#34;foo&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Help</span>:                        <span style="color:#e6db74">&#34;The foo metric&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">NativeHistogramBucketFactor</span>: <span style="color:#ae81ff">1.1</span>,
+</span></span><span style="display:flex;"><span>	})
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>() {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">for</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">num</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">Float64</span>() <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;go&#34;</span>, <span style="color:#e6db74">&#34;num&#34;</span>, <span style="color:#a6e22e">num</span>)
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">foo</span>.<span style="color:#a6e22e">Observe</span>(<span style="color:#a6e22e">num</span>)
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Sleep</span>(<span style="color:#ae81ff">1</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">registry</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">prometheus</span>.<span style="color:#a6e22e">NewRegistry</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">registry</span>.<span style="color:#a6e22e">MustRegister</span>(<span style="color:#a6e22e">foo</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Handle</span>(<span style="color:#e6db74">&#34;/metrics&#34;</span>, <span style="color:#a6e22e">promhttp</span>.<span style="color:#a6e22e">HandlerFor</span>(<span style="color:#a6e22e">r</span>, <span style="color:#a6e22e">promhttp</span>.<span style="color:#a6e22e">HandlerOpts</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Registry</span>: <span style="color:#a6e22e">registry</span>,
+</span></span><span style="display:flex;"><span>    }))
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ListenAndServe</span>(<span style="color:#e6db74">&#34;:2112&#34;</span>, <span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Browsing the endpoint (<code>http://localhost:2112/metrics</code>):</p>
+<pre tabindex="0"><code># HELP foo The foo metric
+# TYPE foo histogram
+foo_bucket{le=&#34;+Inf&#34;} 10
+foo_sum 523.0613213986003
+foo_count 10
+# HELP promhttp_metric_handler_errors_total Total number of internal errors encountered by the promhttp metric handler.
+# TYPE promhttp_metric_handler_errors_total counter
+promhttp_metric_handler_errors_total{cause=&#34;encoding&#34;} 0
+promhttp_metric_handler_errors_total{cause=&#34;gathering&#34;} 0
+</code></pre><p>But, this is the <a href="https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md#text-based-format">Text-based</a> (not Protobuf) format.</p>
+<p>It took some hunting but I discovered this <a href="https://github.com/kubernetes/kube-state-metrics/"><code>kube-state-metrics</code></a> issue <a href="https://github.com/kubernetes/kube-state-metrics/issues/1604">Expose metrics in Protobuf format #1603</a> and:</p>
+<pre tabindex="0"><code>GET /metrics HTTP/1.1
+Host: localhost:8080
+User-Agent: Go-http-client/1.1
+Accept: application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited;q=0.7,text/plain;version=0.0.4;q=0.3
+</code></pre><p>I don&rsquo;t fully understand the <code>Accept</code> header value (<code>q=0.7</code>,<code>version=0.0.4</code>,<code>q=0.3</code>) but otherwise this suggests (!?) that the caller expects (accepts) responses with either <code>application/vnd.google.protobuf</code> (Protobuf format) or <code>text/plain</code> (Text format). And, for the Protobuf format that the proto is <code>io.prometheus.client.MetricFamily</code> which makes sense as this Message type is defined in Prometheus&rsquo; repo <a href="https://github.com/prometheus/client_model/blob/master/io/prometheus/client/metrics.proto"><code>metrics.proto</code></a></p>
+<p>Using the above Golang exporter, instead of the browser&rsquo;s <code>Accept: text/plain</code>, we can use curl and specify <code>application/vnd.google.protobuf</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--verbose <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Accept: application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>localhost:2112/metrics
+</span></span></code></pre></div><pre tabindex="0"><code>*   Trying 127.0.0.1:2112...
+* Connected to localhost (127.0.0.1) port 2112 (#0)
+&gt; GET /metrics HTTP/1.1
+&gt; Host: localhost:2112
+&gt; User-Agent: curl/7.81.0
+&gt; Accept: application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited
+&gt; 
+* Mark bundle as not supporting multiuse
+&lt; HTTP/1.1 200 OK
+&lt; Content-Type: application/vnd.google.protobuf; proto=io.prometheus.client.MetricFamily; encoding=delimited; escaping=values
+&lt; Date: Thu, 07 Mar 2024 19:58:04 GMT
+&lt; Content-Length: 416
+&lt; 
+* Failure writing output to destination
+* Closing connection 0
+</code></pre><p>This succeeds (<code>200</code>) but curl prohibits writing binary to standard out. You can <code>--output response.bin</code> or <code>&gt; response.bin</code> or just pipe the result into <code>xxd</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>... | xxd
+</span></span></code></pre></div><pre tabindex="0"><code>00000000: cc01 0a03 666f 6f12 0e54 6865 2066 6f6f  ....foo..The foo
+00000010: 206d 6574 7269 6318 0422 b201 3aaf 0108   metric..&#34;..:...
+00000020: e204 1143 331d 5b3e c1dd 4028 0631 0000  ...C3.[&gt;..@(.1..
+00000030: 0000 0000 f037 3800 6204 0819 1001 6204  .....78.b.....b.
+00000040: 080a 100f 6204 0808 102b 6802 6800 6801  ....b....+h.h.h.
+00000050: 6806 6805 6802 6800 6801 6802 6802 6803  h.h.h.h.h.h.h.h.
+00000060: 6804 6803 6802 6801 6802 6802 6801 6801  h.h.h.h.h.h.h.h.
+00000070: 6802 6802 6802 6801 6800 6806 6803 6806  h.h.h.h.h.h.h.h.
+00000080: 6807 6802 6802 6805 680c 6802 6805 6804  h.h.h.h.h.h.h.h.
+00000090: 6804 6804 6802 6800 6802 6801 6803 680a  h.h.h.h.h.h.h.h.
+000000a0: 6803 680a 6801 6806 6806 6809 6802 6810  h.h.h.h.h.h.h.h.
+000000b0: 6802 6805 681e 6808 6805 680a 6803 6839  h.h.h.h.h.h.h.h9
+000000c0: 7a0c 08e2 b4a8 af06 108e abdc a901 d201  z...............
+000000d0: 0a24 7072 6f6d 6874 7470 5f6d 6574 7269  .$promhttp_metri
+000000e0: 635f 6861 6e64 6c65 725f 6572 726f 7273  c_handler_errors
+000000f0: 5f74 6f74 616c 124b 546f 7461 6c20 6e75  _total.KTotal nu
+00000100: 6d62 6572 206f 6620 696e 7465 726e 616c  mber of internal
+00000110: 2065 7272 6f72 7320 656e 636f 756e 7465   errors encounte
+00000120: 7265 6420 6279 2074 6865 2070 726f 6d68  red by the promh
+00000130: 7474 7020 6d65 7472 6963 2068 616e 646c  ttp metric handl
+00000140: 6572 2e18 0022 2c0a 110a 0563 6175 7365  er...&#34;,....cause
+00000150: 1208 656e 636f 6469 6e67 1a17 0900 0000  ..encoding......
+00000160: 0000 0000 001a 0c08 e2b4 a8af 0610 d68d  ................
+00000170: e0a9 0122 2d0a 120a 0563 6175 7365 1209  ...&#34;-....cause..
+00000180: 6761 7468 6572 696e 671a 1709 0000 0000  gathering.......
+00000190: 0000 0000 1a0c 08e2 b4a8 af06 10ad e1df  ................
+000001a0: a901 
+</code></pre><p>At this point, I naively (as it turned out) tried to pipe the results into <code>protoc --decode</code> but it fails.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>... | protoc --decode<span style="color:#f92672">=</span>io.prometheus.client.MetricFamily metrics.proto
+</span></span></code></pre></div><p>I think (!?) this is because the response is a chunked series of protobuf-encoded <code>MetricFamily</code> messages.</p>
+<p>If this were a gRPC implementation, I suspect the response would either be a stream of <code>MetricFamily</code> or a unary repeated <code>MetricFamily</code> but, absent HTTP/2, HTTP/1.1 uses chunking <strong>and</strong> individual messages one after the other.</p>
+<p>I learned subsequently that these are varint-delimited:</p>
+<pre tabindex="0"><code>[SIZE-1][MESSAGE-1]
+[SIZE-2][MESSAGE-2]
+[SIZE-3][MESSAGE-3]
+...
+</code></pre><p>There&rsquo;s even a proposal <a href="https://github.com/golang/protobuf/issues/1382">protodelim: add delimited-message serialization support package</a> and a Golang implemnentation <a href="https://pkg.go.dev/google.golang.org/protobuf/encoding/protodelim"><code>protodelim</code></a> (see later).</p>
+<p>The issue <a href="https://github.com/kubernetes/kube-state-metrics/issues/1604">Expose metrics in Protobuf format #1603</a> references using <a href="https://github.com/prometheus/prom2json"><code>prom2json</code></a> which is another tool I was unaware of. This works:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go install github.com/prometheus/prom2json/cmd/prom2json@latest
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>prom2json http://localhost:2112/metrics | jq -r .
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>[
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;foo&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;help&#34;</span>: <span style="color:#e6db74">&#34;The foo metric&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;HISTOGRAM&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;metrics&#34;</span>: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;count&#34;</span>: <span style="color:#e6db74">&#34;10&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;sum&#34;</span>: <span style="color:#e6db74">&#34;523.0613213986003&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>]
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> I was unable to get this working by piping the <code>curl</code> output into <code>prom2json</code>. The nuance of this approach is being able to explicitly request <code>application/vnd.google.protobuf</code>.</p>
+</blockquote>
+<p>I cloned and debugged <code>prom2json</code>. It uses <a href="https://github.com/matttproud/golang_protobuf_extensions"><code>google_protobuf_extensions</code></a> (you guessed it, another tool I was unaware of!).</p>
+<p>Debugging the code helped me confirm the approach of receiving the response body, looking for a <code>varint</code>  message size, and then unmarshaling it into <code>MetricFamily</code>.</p>
+<p>However, the code is functional richer than I need in this case, so I simplified it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;flag&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;io&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log/slog&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;mime&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;net/http&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">dto</span> <span style="color:#e6db74">&#34;github.com/prometheus/client_model/go&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/protobuf/encoding/protodelim&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">protoMediaType</span> <span style="color:#66d9ef">string</span> = <span style="color:#e6db74">&#34;application/vnd.google.protobuf&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">protoPackage</span>   <span style="color:#66d9ef">string</span> = <span style="color:#e6db74">&#34;io.prometheus.client&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">protoMessage</span>   <span style="color:#66d9ef">string</span> = <span style="color:#e6db74">&#34;MetricFamily&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">encoding</span>       <span style="color:#66d9ef">string</span> = <span style="color:#e6db74">&#34;delimited&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">metricsPath</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;metrics&#34;</span>, <span style="color:#e6db74">&#34;http://localhost:2112/metrics&#34;</span>, <span style="color:#e6db74">&#34;URL of the Prometheus Exporter&#39;s metrics endpoint&#34;</span>)
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">proto</span>  <span style="color:#66d9ef">string</span> = <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%s.%s&#34;</span>, <span style="color:#a6e22e">protoPackage</span>, <span style="color:#a6e22e">protoMessage</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">accept</span> <span style="color:#66d9ef">string</span> = <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%s;proto=%s;encoding=%s&#34;</span>, <span style="color:#a6e22e">protoMediaType</span>, <span style="color:#a6e22e">proto</span>, <span style="color:#a6e22e">encoding</span>)
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Reader</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span> <span style="color:#a6e22e">io</span>.<span style="color:#a6e22e">Reader</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewReader</span>(<span style="color:#a6e22e">r</span> <span style="color:#a6e22e">io</span>.<span style="color:#a6e22e">Reader</span>) <span style="color:#a6e22e">Reader</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Reader</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">r</span>: <span style="color:#a6e22e">r</span>,
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#a6e22e">Reader</span>) <span style="color:#a6e22e">Read</span>(<span style="color:#a6e22e">b</span> []<span style="color:#66d9ef">byte</span>) (<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Read</span>(<span style="color:#a6e22e">b</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#a6e22e">Reader</span>) <span style="color:#a6e22e">ReadByte</span>() (<span style="color:#66d9ef">byte</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">buf</span> [<span style="color:#ae81ff">1</span>]<span style="color:#66d9ef">byte</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Read</span>(<span style="color:#a6e22e">buf</span>[:])
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">buf</span>[<span style="color:#ae81ff">0</span>], <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">logger</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">NewJSONHandler</span>(<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Stdout</span>, <span style="color:#66d9ef">nil</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rqst</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">NewRequest</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">MethodGet</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">metricsPath</span>, <span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#e6db74">&#34;unable to create new request&#34;</span>, <span style="color:#e6db74">&#34;err&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Exit</span>(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#e6db74">&#34;Accept&#34;</span>, <span style="color:#a6e22e">accept</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Client</span>{}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Do</span>(<span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#e6db74">&#34;unable to do request&#34;</span>, <span style="color:#e6db74">&#34;err&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Exit</span>(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">StatusCode</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusOK</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#e6db74">&#34;request failed&#34;</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Exit</span>(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">mediatype</span>, <span style="color:#a6e22e">params</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mime</span>.<span style="color:#a6e22e">ParseMediaType</span>(<span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;Content-Type&#34;</span>))
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#e6db74">&#34;unable to parse &#39;Content-Type&#39; header&#34;</span>, <span style="color:#e6db74">&#34;err&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Exit</span>(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">mediatype</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">protoMediaType</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#e6db74">&#34;unexpected &#39;Content-Type&#39; media type&#34;</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;want&#34;</span>, <span style="color:#a6e22e">protoMediaType</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;got&#34;</span>, <span style="color:#a6e22e">mediatype</span>,
+</span></span><span style="display:flex;"><span>		)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Exit</span>(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">params</span>[<span style="color:#e6db74">&#34;proto&#34;</span>] <span style="color:#f92672">!=</span> <span style="color:#a6e22e">proto</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#e6db74">&#34;unexpected &#39;Content-Type&#39; param&#34;</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;want&#34;</span>, <span style="color:#a6e22e">proto</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;got&#34;</span>, <span style="color:#a6e22e">params</span>[<span style="color:#e6db74">&#34;proto&#34;</span>],
+</span></span><span style="display:flex;"><span>		)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Exit</span>(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">params</span>[<span style="color:#e6db74">&#34;encoding&#34;</span>] <span style="color:#f92672">!=</span> <span style="color:#a6e22e">encoding</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#e6db74">&#34;unexpected &#39;Content-Type encoding&#34;</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;want&#34;</span>, <span style="color:#a6e22e">encoding</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;got&#34;</span>, <span style="color:#a6e22e">params</span>[<span style="color:#e6db74">&#34;encoding&#34;</span>],
+</span></span><span style="display:flex;"><span>		)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Exit</span>(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">m</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">dto</span>.<span style="color:#a6e22e">MetricFamily</span>{}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">r</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewReader</span>(<span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Body</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">opts</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">protodelim</span>.<span style="color:#a6e22e">UnmarshalOptions</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">MaxSize</span>: <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">opts</span>.<span style="color:#a6e22e">UnmarshalFrom</span>(<span style="color:#a6e22e">r</span>, <span style="color:#a6e22e">m</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">io</span>.<span style="color:#a6e22e">EOF</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Unable to unmarshal message&#34;</span>, <span style="color:#e6db74">&#34;err&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Message&#34;</span>, <span style="color:#e6db74">&#34;m&#34;</span>, <span style="color:#a6e22e">m</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;time&#34;</span>:<span style="color:#e6db74">&#34;2024-03-07T00:00:00.00000000-08:00&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;level&#34;</span>:<span style="color:#e6db74">&#34;INFO&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;msg&#34;</span>:<span style="color:#e6db74">&#34;Message&#34;</span>,<span style="color:#f92672">&#34;m&#34;</span>:{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;name&#34;</span>:<span style="color:#e6db74">&#34;foo&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;help&#34;</span>:<span style="color:#e6db74">&#34;The foo metric&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;type&#34;</span>:<span style="color:#ae81ff">4</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;metric&#34;</span>:[{
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;histogram&#34;</span>:{
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;sample_count&#34;</span>:<span style="color:#ae81ff">10</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;sample_sum&#34;</span>:<span style="color:#ae81ff">523.0613213986003</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;created_timestamp&#34;</span>:{
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;seconds&#34;</span>:<span style="color:#ae81ff">1709769600</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;nanos&#34;</span>:<span style="color:#ae81ff">00000000</span>
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;schema&#34;</span>:<span style="color:#ae81ff">3</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;zero_threshold&#34;</span>:<span style="color:#ae81ff">0.0</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;zero_count&#34;</span>:<span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;positive_span&#34;</span>:[{
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;offset&#34;</span>:<span style="color:#ae81ff">23</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;length&#34;</span>:<span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>                },{
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;offset&#34;</span>:<span style="color:#ae81ff">12</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;length&#34;</span>:<span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>                },{
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;offset&#34;</span>:<span style="color:#ae81ff">5</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;length&#34;</span>:<span style="color:#ae81ff">12</span>
+</span></span><span style="display:flex;"><span>                }],
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;positive_delta&#34;</span>: [<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">-1</span>,<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">-1</span>,<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">-1</span>,<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">-1</span>]
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }]
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The JSON schema represented by <code>MetricFamily</code> is not the same as that used by the Prometheus HTTP API:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--get <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--data-urlencode <span style="color:#e6db74">&#34;query=foo{}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>http://localhost:9090/api/v1/query  <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r .
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;success&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;data&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;resultType&#34;</span>: <span style="color:#e6db74">&#34;vector&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;result&#34;</span>: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;metric&#34;</span>: {
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;__name__&#34;</span>: <span style="color:#e6db74">&#34;foo&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;instance&#34;</span>: <span style="color:#e6db74">&#34;localhost:2112&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;job&#34;</span>: <span style="color:#e6db74">&#34;foo&#34;</span>
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;histogram&#34;</span>: [
+</span></span><span style="display:flex;"><span>          <span style="color:#ae81ff">1709769600.000</span>,
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;count&#34;</span>: <span style="color:#e6db74">&#34;10&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;sum&#34;</span>: <span style="color:#e6db74">&#34;523.0613213986003&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;buckets&#34;</span>: [<span style="color:#960050;background-color:#1e0010">...</span>]
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>        ]
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/prometheus/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Prometheus</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/protobufs/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Protobufs</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/grpc/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">GRPC</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/prom2json/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Prom2json</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/protobuf-format/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Protobuf Format</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/240117/">Gnarly Protocol Buffers compilation</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240104/">Capturing e.g. CronJob metrics with GMP</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/231222/">Listing Cloud Logging log-based metrics using gRPC</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230709/">Prometheus Exporter for Koyeb</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230427/">Robusta KRR w/ GMP</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230425/">Google Metric Diagnostics and Metric Data Ingested</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230420/">Prometheus Exporter for Azure (Container Apps)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230419/">Kubernetes metrics, metrics everywhere</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230413/">Filtering metrics w/ Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230404/">Azure Container Apps</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230314/">Access Google Services using gRPC</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230310/">Kubernetes Operators</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230104/">Authenticate PromLens to Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210730/">Renewing Firebase Authentication ID tokens with gRPC</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200403/">Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2024 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
