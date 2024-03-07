@@ -47,7 +47,7 @@ I&rsquo;m interested in adding Native Histogram support to Ackal so thought I&rs
 Prometheus used to support two exposition formats including Protocol Buffers, then dropped Protocol Buffer and has since re-added it (see Protobuf format). The Protobuf format has returned to support the experimental Native Histograms feature.
 I&rsquo;m interested in adding Native Histogram support to Ackal so thought I&rsquo;d learn more about this metric."><meta itemprop="datePublished" content="2024-03-07T00:00:00-08:00" />
 <meta itemprop="dateModified" content="2024-03-07T00:00:00-08:00" />
-<meta itemprop="wordCount" content="1356">
+<meta itemprop="wordCount" content="1462">
 <meta itemprop="keywords" content="Prometheus,Protobufs,gRPC,prom2json,Protobuf format," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="Prometheus Protobufs and Native Histograms"/>
 <meta name="twitter:description" content="I responded to a question Prometheus metric protocol buffer in gRPC on Stackoverflow and it piqued my curiosity and got me yak shaving.
 Prometheus used to support two exposition formats including Protocol Buffers, then dropped Protocol Buffer and has since re-added it (see Protobuf format). The Protobuf format has returned to support the experimental Native Histograms feature.
@@ -193,12 +193,13 @@ I&rsquo;m interested in adding Native Histogram support to Ackal so thought I&rs
       
       
         <span class="f6 mv4 dib tracked"> - 7 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 1356 words </span>
+        <span class="f6 mv4 dib tracked"> - 1462 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I responded to a question <a href="https://stackoverflow.com/questions/78112323/prometheus-metric-protocol-buffer-in-grpc#comment137716337_78112323">Prometheus metric protocol buffer in gRPC</a> on Stackoverflow and it piqued my curiosity and got me yak shaving.</p>
 <p>Prometheus used to support two exposition formats including Protocol Buffers, then dropped Protocol Buffer and has since re-added it (see <a href="https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md#protobuf-format">Protobuf format</a>). The Protobuf format has returned to support the experimental <a href="https://prometheus.io/docs/prometheus/latest/feature_flags/#native-histograms">Native Histograms</a> feature.</p>
-<p>I&rsquo;m interested in adding Native Histogram support to <a href="https://ack.al">Ackal</a> so thought I&rsquo;d learn more about this metric. You can learn more:</p>
+<p>I&rsquo;m interested in adding Native Histogram support to <a href="https://ack.al">Ackal</a> so thought I&rsquo;d learn more about this metric.</p>
+<p>You can learn more from these YouTube videos:</p>
 <ul>
 <li><a href="https://www.youtube.com/watch?v=NDb9yZl1u1Y">Julius Volz - Native Histograms in Prometheus</a>;</li>
 <li><a href="https://www.youtube.com/watch?v=AcmABV6NCYk">PromCon EU 2022: Native Histograms in Prometheus</a>;</li>
@@ -331,7 +332,7 @@ Accept: application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;
 [SIZE-2][MESSAGE-2]
 [SIZE-3][MESSAGE-3]
 ...
-</code></pre><p>There&rsquo;s even a proposal <a href="https://github.com/golang/protobuf/issues/1382">protodelim: add delimited-message serialization support package</a> and a Golang implemnentation <a href="https://pkg.go.dev/google.golang.org/protobuf/encoding/protodelim"><code>protodelim</code></a> (see later).</p>
+</code></pre><p>There&rsquo;s even a proposal <a href="https://github.com/golang/protobuf/issues/1382">protodelim: add delimited-message serialization support package</a> and a Golang implementation <a href="https://pkg.go.dev/google.golang.org/protobuf/encoding/protodelim"><code>protodelim</code></a> (see later).</p>
 <p>The issue <a href="https://github.com/kubernetes/kube-state-metrics/issues/1604">Expose metrics in Protobuf format #1603</a> references using <a href="https://github.com/prometheus/prom2json"><code>prom2json</code></a> which is another tool I was unaware of. This works:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go install github.com/prometheus/prom2json/cmd/prom2json@latest
 </span></span><span style="display:flex;"><span>
@@ -354,7 +355,7 @@ Accept: application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;
 </blockquote>
 <p>I cloned and debugged <code>prom2json</code>. It uses <a href="https://github.com/matttproud/golang_protobuf_extensions"><code>google_protobuf_extensions</code></a> (you guessed it, another tool I was unaware of!).</p>
 <p>Debugging the code helped me confirm the approach of receiving the response body, looking for a <code>varint</code>  message size, and then unmarshaling it into <code>MetricFamily</code>.</p>
-<p>However, the code is functional richer than I need in this case, so I simplified it:</p>
+<p>However, the code is functionally richer than I need in this case, so I simplified it:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
@@ -540,7 +541,32 @@ Accept: application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;
 </span></span><span style="display:flex;"><span>    ]
 </span></span><span style="display:flex;"><span>  }
 </span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>That&rsquo;s all!</p>
+</span></span></code></pre></div><p>If you want to scrape the Native Histogram exporter with Prometheus, you&rsquo;ll need to create a <code>prometheus.yml</code> and restart the server configured to use it:</p>
+<p><code>prometheus.yml</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">scrape_configs</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;foo&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">static_configs</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">targets</span>: [<span style="color:#e6db74">&#34;localhost:2112&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">metric_relabel_configs</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">source_labels</span>: [<span style="color:#ae81ff">__name__]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">regex</span>: <span style="color:#ae81ff">^foo</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">action</span>: <span style="color:#ae81ff">keep</span>
+</span></span></code></pre></div><p>And:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>podman run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--net<span style="color:#f92672">=</span>host <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/prometheus.yml:/etc/prometheus/prometheus.yml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>prom/prometheus:v2.50.1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--config.file<span style="color:#f92672">=</span>/etc/prometheus/prometheus.yml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--enable-feature<span style="color:#f92672">=</span>native-histograms <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--web.enable-lifecycle
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> For the containerized Prometheus to access the local Go process, it&rsquo;s easiest to bind the container to the host network (<code>--net=host</code>) voiding the need for <code>--publish=9090:9090/tcp</code>.</p>
+</blockquote>
+<p>It is easier to interact with Native Histograms from the Prometheus Web UI:</p>
+<pre tabindex="0"><code>rate(foo{}[5m])
+</code></pre><p><img src="/images/240307.prometheus.native-histogram.png" alt="Prometheus Native Histogram"></p>
+<p>That&rsquo;s all!</p>
 <ul class="pa0">
   
    <li class="list di">
