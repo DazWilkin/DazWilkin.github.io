@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Google Cloud Translation w/ gRPC 3 ways | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="General You&rsquo;ll need a Google Cloud project with Cloud Translation (translate.googleapis.com) enabled and a Service Account (and key) with suitable permissions in order to run the following.
+BILLING=&#34;...&#34; # Your Billing ID (gcloud billing accounts list) PROJECT=&#34;...&#34; # Your Project ID ACCOUNT=&#34;tester&#34; EMAIL=&#34;${ACCOUNT}@${PROJECT}.iam.gserviceaccount.com&#34; ROLES=( &#34;roles/cloudtranslate.user&#34; &#34;roles/serviceusage.serviceUsageConsumer&#34; ) # Create Project gcloud projects create ${PROJECT} # Associate Project with your Billing Account gcloud billing accounts link ${PROJECT} \ --billing-account=${BILLING} # Create Service Account gcloud iam service-accounts create ${ACCOUNT} \ --project=${PROJECT} # Create Service Account Key gcloud iam service-accounts keys create ${PWD}/${ACCOUNT}.">
+    <meta name="generator" content="Hugo 0.125.0-DEV">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.e7eb24d4e86966f8bcd5dd198bc521b41a6cbbb3bae6e7c7d36e2270a8841bd7.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:url" content="https://pretired.dazwilkin.com/posts/240409/">
+  <meta property="og:site_name" content="(p)retired">
+  <meta property="og:title" content="Google Cloud Translation w/ gRPC 3 ways">
+  <meta property="og:description" content="General You&amp;rsquo;ll need a Google Cloud project with Cloud Translation (translate.googleapis.com) enabled and a Service Account (and key) with suitable permissions in order to run the following.
+BILLING=&amp;#34;...&amp;#34; # Your Billing ID (gcloud billing accounts list) PROJECT=&amp;#34;...&amp;#34; # Your Project ID ACCOUNT=&amp;#34;tester&amp;#34; EMAIL=&amp;#34;${ACCOUNT}@${PROJECT}.iam.gserviceaccount.com&amp;#34; ROLES=( &amp;#34;roles/cloudtranslate.user&amp;#34; &amp;#34;roles/serviceusage.serviceUsageConsumer&amp;#34; ) # Create Project gcloud projects create ${PROJECT} # Associate Project with your Billing Account gcloud billing accounts link ${PROJECT} \ --billing-account=${BILLING} # Create Service Account gcloud iam service-accounts create ${ACCOUNT} \ --project=${PROJECT} # Create Service Account Key gcloud iam service-accounts keys create ${PWD}/${ACCOUNT}.">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+  <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2024-04-09T00:00:00-07:00">
+    <meta property="article:modified_time" content="2024-04-09T00:00:00-07:00">
+    <meta property="article:tag" content="Google">
+    <meta property="article:tag" content="Translation">
+    <meta property="article:tag" content="GRPC">
+    <meta property="article:tag" content="Rust">
+    <meta property="article:tag" content="Golang">
+    <meta property="article:tag" content="Dotnet">
+
+  <meta itemprop="name" content="Google Cloud Translation w/ gRPC 3 ways">
+  <meta itemprop="description" content="General You&rsquo;ll need a Google Cloud project with Cloud Translation (translate.googleapis.com) enabled and a Service Account (and key) with suitable permissions in order to run the following.
+BILLING=&#34;...&#34; # Your Billing ID (gcloud billing accounts list) PROJECT=&#34;...&#34; # Your Project ID ACCOUNT=&#34;tester&#34; EMAIL=&#34;${ACCOUNT}@${PROJECT}.iam.gserviceaccount.com&#34; ROLES=( &#34;roles/cloudtranslate.user&#34; &#34;roles/serviceusage.serviceUsageConsumer&#34; ) # Create Project gcloud projects create ${PROJECT} # Associate Project with your Billing Account gcloud billing accounts link ${PROJECT} \ --billing-account=${BILLING} # Create Service Account gcloud iam service-accounts create ${ACCOUNT} \ --project=${PROJECT} # Create Service Account Key gcloud iam service-accounts keys create ${PWD}/${ACCOUNT}.">
+  <meta itemprop="datePublished" content="2024-04-09T00:00:00-07:00">
+  <meta itemprop="dateModified" content="2024-04-09T00:00:00-07:00">
+  <meta itemprop="wordCount" content="1059">
+  <meta itemprop="keywords" content="Google,Translation,GRPC,Rust,Golang,Dotnet"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="Google Cloud Translation w/ gRPC 3 ways">
+<meta name="twitter:description" content="General You&rsquo;ll need a Google Cloud project with Cloud Translation (translate.googleapis.com) enabled and a Service Account (and key) with suitable permissions in order to run the following.
+BILLING=&#34;...&#34; # Your Billing ID (gcloud billing accounts list) PROJECT=&#34;...&#34; # Your Project ID ACCOUNT=&#34;tester&#34; EMAIL=&#34;${ACCOUNT}@${PROJECT}.iam.gserviceaccount.com&#34; ROLES=( &#34;roles/cloudtranslate.user&#34; &#34;roles/serviceusage.serviceUsageConsumer&#34; ) # Create Project gcloud projects create ${PROJECT} # Associate Project with your Billing Account gcloud billing accounts link ${PROJECT} \ --billing-account=${BILLING} # Create Service Account gcloud iam service-accounts create ${ACCOUNT} \ --project=${PROJECT} # Create Service Account Key gcloud iam service-accounts keys create ${PWD}/${ACCOUNT}.">
+
+      
+  
+
+
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+
+
+
+
+
+
+  <div id="sharing" class="mt3 ananke-socials">
+    
+      
+      <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/240409/&amp;title=Google%20Cloud%20Translation%20w/%20gRPC%203%20ways" class="ananke-social-link linkedin no-underline" aria-label="share on LinkedIn">
+        
+        <span class="icon"> <svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+        
+      </a>
+    
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Google Cloud Translation w/ gRPC 3 ways</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2024-04-09T00:00:00-07:00">April 9, 2024</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 5 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 1059 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><h2 id="general">General</h2>
+<p>You&rsquo;ll need a Google Cloud project with Cloud Translation (<code>translate.googleapis.com</code>) enabled and a Service Account (and key) with suitable permissions in order to run the following.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>BILLING<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Your Billing ID (gcloud billing accounts list)</span>
+</span></span><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Your Project ID</span>
+</span></span><span style="display:flex;"><span>ACCOUNT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;tester&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>EMAIL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span><span style="color:#e6db74">@</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">.iam.gserviceaccount.com&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ROLES<span style="color:#f92672">=(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;roles/cloudtranslate.user&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;roles/serviceusage.serviceUsageConsumer&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create Project</span>
+</span></span><span style="display:flex;"><span>gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Associate Project with your Billing Account</span>
+</span></span><span style="display:flex;"><span>gcloud billing accounts link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create Service Account</span>
+</span></span><span style="display:flex;"><span>gcloud iam service-accounts create <span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create Service Account Key</span>
+</span></span><span style="display:flex;"><span>gcloud iam service-accounts keys create <span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--iam-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Update Project IAM permissions</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> ROLE in <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ROLES[@]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  gcloud projects add-iam-policy-binding <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --member<span style="color:#f92672">=</span>serviceAccount:<span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --role<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ROLE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span></code></pre></div><p>For the code, you&rsquo;ll need to install <a href="https://github.com/protocolbuffers/protobuf"><code>protoc</code></a> and preferably have it in your path.</p>
+<p>You&rsquo;ll also need to clone Google&rsquo;s <a href="https://github.com/googleapis/googleapis"><code>googleapis</code></a> repo. The repo contains Google&rsquo;s protobuf definitions for all its services</p>
+<h2 id="grpcurlhttpsgithubcomfullstorydevgrpcurl"><a href="https://github.com/fullstorydev/grpcurl">gRPCurl</a></h2>
+<p>Let&rsquo;s test a translation using a known working client:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Your Project ID</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Retain current default auth account</span>
+</span></span><span style="display:flex;"><span>AUTH<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud config get account<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Activate the Service Account (for use with gcloud)</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Side effect is to change the current auth account</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># This account is associated with {EMAIL}</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># We will use it to create tokens to access the service</span>
+</span></span><span style="display:flex;"><span>gcloud auth activate-service-account <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--key-file<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Revert to previous default auth account</span>
+</span></span><span style="display:flex;"><span>gcloud config set account <span style="color:#e6db74">${</span>AUTH<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Get a token for the service using the Service Account</span>
+</span></span><span style="display:flex;"><span>TOKEN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud auth print-access-token <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>GOOGLEAPIS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/path/to/googleapis&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>LOCATION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;global&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Path is &#34;translate&#34; but Package is &#34;translation&#34;</span>
+</span></span><span style="display:flex;"><span>PACKAGE_PATH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;google/cloud/translate/v3&#34;</span>
+</span></span><span style="display:flex;"><span>PACKAGE_NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;google.cloud.translation.v3&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;TranslationService&#34;</span>
+</span></span><span style="display:flex;"><span>METHOD<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;TranslateText&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>DATA<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;contents\&#34;: [\&#34;The quick brown fox jumps over the lazy dog\&#34;],
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;source_language_code\&#34;: \&#34;en-US\&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;target_language_code\&#34;: \&#34;zh-CN\&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;parent\&#34;: \&#34;projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">/locations/</span><span style="color:#e6db74">${</span>LOCATION<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;translate.googleapis.com:443&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;X-Goog-User-Project: </span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--import-path <span style="color:#e6db74">${</span>GOOGLEAPIS<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proto <span style="color:#e6db74">${</span>GOOGLEAPIS<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>PACKAGE_PATH<span style="color:#e6db74">}</span>/translation_service.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>DATA<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PACKAGE_NAME<span style="color:#e6db74">}</span>.<span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.<span style="color:#e6db74">${</span>METHOD<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;translations&#34;</span>: [
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;translatedText&#34;</span>: <span style="color:#e6db74">&#34;敏捷的棕色狐狸跳过了懒狗&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="net">.NET</h2>
+<p>I prefer to use .NET through a container:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Use the Service Account key with Application Default Credentials</span>
+</span></span><span style="display:flex;"><span>export GOOGLE_APPLICATION_CREDENTIALS<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Folder on the host to contain the app</span>
+</span></span><span style="display:flex;"><span>mkdir app
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Microsoft .NET SDK</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Mount app folder</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Mount Application Default Credentials</span>
+</span></span><span style="display:flex;"><span>podman run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/app:/app <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json:/secrets/key.json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--env<span style="color:#f92672">=</span>GOOGLE_APPLICATION_CREDENTIALS<span style="color:#f92672">=</span>/secrets/key.json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/app mcr.microsoft.com/dotnet/sdk:8.0 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>bash
+</span></span></code></pre></div><p>From within the container shell:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>dotnet new console
+</span></span><span style="display:flex;"><span>dotnet add package Google.Cloud.Translate.V3 --version 3.6.0
+</span></span></code></pre></div><p>And then edit <code>Program.cs</code> to contain:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> Google.Cloud.Translate.V3;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">string</span> project = <span style="color:#e6db74">&#34;{PROJECT}&#34;</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">string</span> location = <span style="color:#e6db74">&#34;global&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> parent = String.Format(<span style="color:#e6db74">&#34;projects/{0}/locations/{1}&#34;</span>,project,location);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> client = TranslationServiceClient.Create();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>TranslateTextRequest request = <span style="color:#66d9ef">new</span>()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    Contents = {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;The quick brown fox jumps over the lazy dog&#34;</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    SourceLanguageCode = <span style="color:#e6db74">&#34;en-US&#34;</span>,
+</span></span><span style="display:flex;"><span>    TargetLanguageCode = <span style="color:#e6db74">&#34;zh-CN&#34;</span>,
+</span></span><span style="display:flex;"><span>    Parent = parent,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>TranslateTextResponse response = client.TranslateText(request);
+</span></span><span style="display:flex;"><span>Console.WriteLine(response);
+</span></span></code></pre></div><p>Then:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>dotnet run
+</span></span></code></pre></div><h2 id="rust">Rust</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Use the Service Account key with Application Default Credentials</span>
+</span></span><span style="display:flex;"><span>export GOOGLE_APPLICATION_CREDENTIALS<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>cargo new --bin rust
+</span></span></code></pre></div><p>Because rust&rsquo;s <a href="https://crates.io/crates/tonic-build"><code>tonic-build</code></a> uses <code>protoc</code>, it can be confusing if you don&rsquo;t have <code>protoc</code> in your PATH and wonder why code isn&rsquo;t being generated.</p>
+<p><code>Cargo.toml</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-TOML" data-lang="TOML"><span style="display:flex;"><span>[<span style="color:#a6e22e">package</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;rust&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;0.0.1&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">edition</span> = <span style="color:#e6db74">&#34;2021&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">dependencies</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">tokio</span> = { <span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;1.0&#34;</span>, <span style="color:#a6e22e">features</span> = [<span style="color:#e6db74">&#34;full&#34;</span>] }
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">prost</span> = <span style="color:#e6db74">&#34;0.12.4&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">prost-types</span> = <span style="color:#e6db74">&#34;0.12.4&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">tonic</span> = { <span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;0.11.0&#34;</span>, <span style="color:#a6e22e">features</span> = [<span style="color:#e6db74">&#34;tls&#34;</span>, <span style="color:#e6db74">&#34;tls-roots&#34;</span>,<span style="color:#e6db74">&#34;transport&#34;</span>] }
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">gcp_auth</span> = <span style="color:#e6db74">&#34;0.11.0&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">build-dependencies</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">prost</span> = <span style="color:#e6db74">&#34;0.12.4&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">tonic-build</span> = <span style="color:#e6db74">&#34;0.11.0&#34;</span>
+</span></span></code></pre></div><p><code>build.rs</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::{env, path::PathBuf};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">GOOGLEAPIS</span>: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;/path/to/googleapis&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() -&gt; Result<span style="color:#f92672">&lt;</span>(), Box<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">dyn</span> std::error::Error<span style="color:#f92672">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Required by prost-reflection to create descriptors.bin in correct OUT_DIR
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> out_dir <span style="color:#f92672">=</span> PathBuf::from(env::var(<span style="color:#e6db74">&#34;OUT_DIR&#34;</span>).expect(<span style="color:#e6db74">&#34;unable to determine `OUT_DIR`&#34;</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// `file_descriptor_set_path` appends `.bin` to the file that&#39;s created
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    tonic_build::configure()
+</span></span><span style="display:flex;"><span>        .build_client(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>        .build_server(<span style="color:#66d9ef">false</span>)
+</span></span><span style="display:flex;"><span>        .file_descriptor_set_path(out_dir.join(<span style="color:#e6db74">&#34;translate.bin&#34;</span>))
+</span></span><span style="display:flex;"><span>        .compile(
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&amp;</span>[format!(
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;/</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">/google/cloud/translate/v3/translation_service.proto&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">$</span>{<span style="color:#66d9ef">GOOGLEAPIS</span>},
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&amp;</span>[<span style="color:#66d9ef">GOOGLEAPIS</span>],
+</span></span><span style="display:flex;"><span>        )<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And:
+<code>client.rs</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">mod</span> google {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">mod</span> cloud {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">mod</span> translation {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">mod</span> v3 {
+</span></span><span style="display:flex;"><span>                tonic::include_proto!(<span style="color:#e6db74">&#34;google.cloud.translation.v3&#34;</span>);
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">mod</span> longrunning {
+</span></span><span style="display:flex;"><span>        tonic::include_proto!(<span style="color:#e6db74">&#34;google.longrunning&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">mod</span> rpc {
+</span></span><span style="display:flex;"><span>        tonic::include_proto!(<span style="color:#e6db74">&#34;google.rpc&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> gcp_auth::AuthenticationManager;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> google::cloud::translation::v3::{
+</span></span><span style="display:flex;"><span>    translation_service_client::TranslationServiceClient, TranslateTextRequest,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::{collections::HashMap, env};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tonic::{
+</span></span><span style="display:flex;"><span>    metadata::MetadataValue,
+</span></span><span style="display:flex;"><span>    transport::{channel::ClientTlsConfig, Channel},
+</span></span><span style="display:flex;"><span>    Request,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">URL</span>: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;https://translate.googleapis.com:443&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">CLOUD_PLATFORM</span>: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;https://www.googleapis.com/auth/cloud-platform&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[tokio::main]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() -&gt; Result<span style="color:#f92672">&lt;</span>(), Box<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">dyn</span> std::error::Error<span style="color:#f92672">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> _ <span style="color:#f92672">=</span> env::var(<span style="color:#e6db74">&#34;GOOGLE_APPLICATION_CREDENTIALS&#34;</span>)
+</span></span><span style="display:flex;"><span>        .expect(<span style="color:#e6db74">&#34;expected GOOGLE_APPLICATION_CREDENTIALS in environment&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> project <span style="color:#f92672">=</span> env::var(<span style="color:#e6db74">&#34;PROJECT&#34;</span>)
+</span></span><span style="display:flex;"><span>        .expect(<span style="color:#e6db74">&#34;expected PROJECT in environment&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> location <span style="color:#f92672">=</span> env::var(<span style="color:#e6db74">&#34;LOCATION&#34;</span>)
+</span></span><span style="display:flex;"><span>        .unwrap_or_else(<span style="color:#f92672">|</span>_<span style="color:#f92672">|</span> <span style="color:#e6db74">&#34;global&#34;</span>.to_string());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> uri: <span style="color:#a6e22e">tonic</span>::transport::Uri <span style="color:#f92672">=</span> <span style="color:#66d9ef">URL</span>
+</span></span><span style="display:flex;"><span>        .parse()
+</span></span><span style="display:flex;"><span>        .expect(<span style="color:#e6db74">&#34;valid gRPC URL&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> config <span style="color:#f92672">=</span> ClientTlsConfig::new();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> endpoint <span style="color:#f92672">=</span> Channel::builder(uri)
+</span></span><span style="display:flex;"><span>        .tls_config(config)
+</span></span><span style="display:flex;"><span>        .expect(<span style="color:#e6db74">&#34;unable to configure TLS&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> channel <span style="color:#f92672">=</span> endpoint
+</span></span><span style="display:flex;"><span>        .connect()
+</span></span><span style="display:flex;"><span>        .<span style="color:#66d9ef">await</span>
+</span></span><span style="display:flex;"><span>        .expect(<span style="color:#e6db74">&#34;Unable to connect&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> authentication_manager <span style="color:#f92672">=</span> AuthenticationManager::new().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> scopes <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>[<span style="color:#66d9ef">CLOUD_PLATFORM</span>];
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> token <span style="color:#f92672">=</span> authentication_manager.get_token(scopes).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> token: <span style="color:#a6e22e">MetadataValue</span><span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;Bearer </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, token.as_str())
+</span></span><span style="display:flex;"><span>        .parse()
+</span></span><span style="display:flex;"><span>        .expect(<span style="color:#e6db74">&#34;unable to parse token&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> client <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>        TranslationServiceClient::with_interceptor(channel, <span style="color:#66d9ef">move</span> <span style="color:#f92672">|</span><span style="color:#66d9ef">mut</span> req: <span style="color:#a6e22e">Request</span><span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;|</span> {
+</span></span><span style="display:flex;"><span>            req.metadata_mut().insert(<span style="color:#e6db74">&#34;authorization&#34;</span>, token.clone());
+</span></span><span style="display:flex;"><span>            Ok(req)
+</span></span><span style="display:flex;"><span>        });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> parent <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;projects/</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">/locations/</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, project, location);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> msg <span style="color:#f92672">=</span> TranslateTextRequest {
+</span></span><span style="display:flex;"><span>        contents: <span style="color:#a6e22e">vec</span><span style="color:#f92672">!</span>[<span style="color:#e6db74">&#34;The quick brown fox jumps over the lazy dog&#34;</span>.to_owned()],
+</span></span><span style="display:flex;"><span>        mime_type: <span style="color:#e6db74">&#34;&#34;</span>.to_owned(),
+</span></span><span style="display:flex;"><span>        source_language_code: <span style="color:#e6db74">&#34;en-US&#34;</span>.to_owned(),
+</span></span><span style="display:flex;"><span>        target_language_code: <span style="color:#e6db74">&#34;zh-CN&#34;</span>.to_owned(),
+</span></span><span style="display:flex;"><span>        parent: <span style="color:#a6e22e">parent</span>,
+</span></span><span style="display:flex;"><span>        model: <span style="color:#e6db74">&#34;&#34;</span>.to_owned(),
+</span></span><span style="display:flex;"><span>        glossary_config: None,
+</span></span><span style="display:flex;"><span>        labels: <span style="color:#a6e22e">HashMap</span>::new(),
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> request <span style="color:#f92672">=</span> tonic::Request::new(msg);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> response <span style="color:#f92672">=</span> client.translate_text(request).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> message <span style="color:#f92672">=</span> response.get_ref();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    message.translations.iter().for_each(<span style="color:#f92672">|</span>translation<span style="color:#f92672">|</span> {
+</span></span><span style="display:flex;"><span>        println!(<span style="color:#e6db74">&#34;Translated text: </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, translation.translated_text);
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="golang">Golang</h2>
+<p>For Go, we can use the Google-generated <a href="https://pkg.go.dev/cloud.google.com/go/translate">sources</a> for Cloud Translation:</p>
+<p><code>go.mod</code>:</p>
+<pre tabindex="0"><code>module golang
+
+go 1.22.0
+
+require (
+	cloud.google.com/go/translate v1.10.2
+	golang.org/x/oauth2 v0.17.0
+	google.golang.org/grpc v1.62.1
+)
+</code></pre><p>And:
+<code>main.go</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;crypto/tls&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;flag&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log/slog&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">pb</span> <span style="color:#e6db74">&#34;cloud.google.com/go/translate/apiv3/translatepb&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;golang.org/x/oauth2/google&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc/credentials&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc/credentials/oauth&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">endpoint</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;endpoint&#34;</span>, <span style="color:#e6db74">&#34;translate.googleapis.com:443&#34;</span>, <span style="color:#e6db74">&#34;Endpoint of Google Translate service&#34;</span>)
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">project</span> <span style="color:#66d9ef">string</span> = <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PROJECT&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">location</span> <span style="color:#66d9ef">string</span> = <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;LOCATION&#34;</span>)
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">parent</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;projects/%s/locations/%s&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">project</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">location</span>,
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">message</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">TranslateTextRequest</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Contents</span>: []<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;The quick brown fox jumps over the lazy dog&#34;</span>,
+</span></span><span style="display:flex;"><span>		},
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">MimeType</span>:           <span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">SourceLanguageCode</span>: <span style="color:#e6db74">&#34;en-US&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">TargetLanguageCode</span>: <span style="color:#e6db74">&#34;zh-CN&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Parent</span>:             <span style="color:#a6e22e">parent</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Model</span>:              <span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">GlossaryConfig</span>:     <span style="color:#66d9ef">nil</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Labels</span>:             <span style="color:#66d9ef">nil</span>,
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">scopes</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;https://www.googleapis.com/auth/cloud-platform&#34;</span>,
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">tokensource</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">google</span>.<span style="color:#a6e22e">DefaultTokenSource</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">scopes</span><span style="color:#f92672">...</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;unable to create DefaultTokenSource&#34;</span>, <span style="color:#e6db74">&#34;err&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Exit</span>(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">conn</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">Dial</span>(
+</span></span><span style="display:flex;"><span>		<span style="color:#f92672">*</span><span style="color:#a6e22e">endpoint</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithTransportCredentials</span>(
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">credentials</span>.<span style="color:#a6e22e">NewTLS</span>(
+</span></span><span style="display:flex;"><span>				<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Config</span>{
+</span></span><span style="display:flex;"><span>                    <span style="color:#a6e22e">InsecureSkipVerify</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>				},
+</span></span><span style="display:flex;"><span>			),
+</span></span><span style="display:flex;"><span>		),
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithPerRPCCredentials</span>(
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">oauth</span>.<span style="color:#a6e22e">TokenSource</span>{
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">TokenSource</span>: <span style="color:#a6e22e">tokensource</span>,
+</span></span><span style="display:flex;"><span>			},
+</span></span><span style="display:flex;"><span>		),
+</span></span><span style="display:flex;"><span>	)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;unable to dial&#34;</span>, <span style="color:#e6db74">&#34;err&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">conn</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">c</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">NewTranslationServiceClient</span>(<span style="color:#a6e22e">conn</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">cancel</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">WithTimeout</span>(
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(),
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>,
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">cancel</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">TranslateText</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">message</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#e6db74">&#34;failed to call TranslateText&#34;</span>, <span style="color:#e6db74">&#34;err&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">translation</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Translations</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Translation&#34;</span>, <span style="color:#e6db74">&#34;text&#34;</span>, <span style="color:#a6e22e">translation</span>.<span style="color:#a6e22e">TranslatedText</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="tidy">Tidy</h2>
+<p>You may want to revoke the Service Account&rsquo;s credentials when you&rsquo;re done:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud auth revoke <span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>And delete the Project if you&rsquo;re certain that you no longer need it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud auth delete projects <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
+</span></span></code></pre></div><ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/google/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Google</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/translation/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Translation</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/grpc/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">GRPC</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/rust/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Rust</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/golang/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Golang</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/dotnet/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Dotnet</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/200403/">Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240405/">Google Cloud Events protobufs and SDKs</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/221128/">Maintaining Container Images</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/221117/">Delegate domain-wide authority using Golang</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201113/">Akri</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200817/">WASM Transparency</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200807/">waPC and MsgPack (Rust|Golang)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200326/">Google Trillian on Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200320/">Golang gRPC Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240325/">Prost! Tonic w/ a dash of JSON</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240307/">Prometheus Protobufs and Native Histograms</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240130/">Navigating Koyeb&#39;s API with Rust</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240117/">Gnarly Protocol Buffers compilation</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/231222/">Listing Cloud Logging log-based metrics using gRPC</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2024 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
