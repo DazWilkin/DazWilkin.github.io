@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Using Rust to generate Kubernetes CRD | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="For the first time, I chose Rust to solve a problem. Until this, I&rsquo;ve been trying to use Rust to learn the language and to rewrite existing code. But, this problem led me to Rust because my other tools wouldn&rsquo;t cut it.
+The question was how to represent oneof fields in Kubernetes Custom Resource Definitions (CRDs).
+CRDs use OpenAPI schema and the YAML that results can be challenging to grok.">
+    <meta name="generator" content="Hugo 0.126.1">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.e7eb24d4e86966f8bcd5dd198bc521b41a6cbbb3bae6e7c7d36e2270a8841bd7.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:url" content="https://pretired.dazwilkin.com/posts/240529/">
+  <meta property="og:site_name" content="(p)retired">
+  <meta property="og:title" content="Using Rust to generate Kubernetes CRD">
+  <meta property="og:description" content="For the first time, I chose Rust to solve a problem. Until this, I’ve been trying to use Rust to learn the language and to rewrite existing code. But, this problem led me to Rust because my other tools wouldn’t cut it.
+The question was how to represent oneof fields in Kubernetes Custom Resource Definitions (CRDs).
+CRDs use OpenAPI schema and the YAML that results can be challenging to grok.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2024-05-29T00:00:00-07:00">
+    <meta property="article:modified_time" content="2024-05-29T00:00:00-07:00">
+    <meta property="article:tag" content="Kubernetes">
+    <meta property="article:tag" content="CRD">
+    <meta property="article:tag" content="Rust">
+
+  <meta itemprop="name" content="Using Rust to generate Kubernetes CRD">
+  <meta itemprop="description" content="For the first time, I chose Rust to solve a problem. Until this, I’ve been trying to use Rust to learn the language and to rewrite existing code. But, this problem led me to Rust because my other tools wouldn’t cut it.
+The question was how to represent oneof fields in Kubernetes Custom Resource Definitions (CRDs).
+CRDs use OpenAPI schema and the YAML that results can be challenging to grok.">
+  <meta itemprop="datePublished" content="2024-05-29T00:00:00-07:00">
+  <meta itemprop="dateModified" content="2024-05-29T00:00:00-07:00">
+  <meta itemprop="wordCount" content="1234">
+  <meta itemprop="keywords" content="Kubernetes,CRD,Rust">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Using Rust to generate Kubernetes CRD">
+  <meta name="twitter:description" content="For the first time, I chose Rust to solve a problem. Until this, I’ve been trying to use Rust to learn the language and to rewrite existing code. But, this problem led me to Rust because my other tools wouldn’t cut it.
+The question was how to represent oneof fields in Kubernetes Custom Resource Definitions (CRDs).
+CRDs use OpenAPI schema and the YAML that results can be challenging to grok.">
+
+      
+  
+
+
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked">
+          
+        POSTS
+      </aside>
+      
+
+
+
+
+
+
+
+
+
+
+  <div id="sharing" class="mt3 ananke-socials">
+    
+      
+      <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/240529/&amp;title=Using%20Rust%20to%20generate%20Kubernetes%20CRD" class="ananke-social-link linkedin no-underline" aria-label="share on LinkedIn">
+        
+        <span class="icon"> <svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+        
+      </a>
+    
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Using Rust to generate Kubernetes CRD</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2024-05-29T00:00:00-07:00">May 29, 2024</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 6 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 1234 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>For the first time, I chose Rust to solve a problem. Until this, I&rsquo;ve been trying to use Rust to learn the language and to rewrite existing code. But, this problem led me to Rust because my other tools wouldn&rsquo;t cut it.</p>
+<p>The question was how to represent oneof fields in Kubernetes <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/">Custom Resource Definitions (CRDs)</a>.</p>
+<p>CRDs use <a href="https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.0.md#schemaObject">OpenAPI</a> schema and the YAML that results can be challenging to grok.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apiextensions.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">CustomResourceDefinition</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">deploymentconfigs.example.com</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">group</span>: <span style="color:#ae81ff">example.com</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">names</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">categories</span>: []
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">DeploymentConfig</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">plural</span>: <span style="color:#ae81ff">deploymentconfigs</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">shortNames</span>: []
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">singular</span>: <span style="color:#ae81ff">deploymentconfig</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">scope</span>: <span style="color:#ae81ff">Namespaced</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">versions</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">additionalPrinterColumns</span>: []
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">v1alpha1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">schema</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">openAPIV3Schema</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">description</span>: <span style="color:#ae81ff">An example schema</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">deployment_strategy</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">oneOf</span>:
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>                  - <span style="color:#ae81ff">rolling_update</span>
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>                  - <span style="color:#ae81ff">recreate</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>                  <span style="color:#f92672">recreate</span>:
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>                      <span style="color:#f92672">something</span>:
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">format</span>: <span style="color:#ae81ff">uint16</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">minimum</span>: <span style="color:#ae81ff">0.0</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">integer</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>                    - <span style="color:#ae81ff">something</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>                  <span style="color:#f92672">rolling_update</span>:
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>                      <span style="color:#f92672">max_surge</span>:
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">format</span>: <span style="color:#ae81ff">uint16</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">minimum</span>: <span style="color:#ae81ff">0.0</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">integer</span>
+</span></span><span style="display:flex;"><span>                      <span style="color:#f92672">max_unavailable</span>:
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">format</span>: <span style="color:#ae81ff">uint16</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">minimum</span>: <span style="color:#ae81ff">0.0</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">integer</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>                    - <span style="color:#ae81ff">max_surge</span>
+</span></span><span style="display:flex;"><span>                    - <span style="color:#ae81ff">max_unavailable</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>            - <span style="color:#ae81ff">deployment_strategy</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#ae81ff">spec</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">title</span>: <span style="color:#ae81ff">DeploymentConfig</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">served</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">storage</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">subresources</span>: {}
+</span></span></code></pre></div><p>I&rsquo;ve developed several Kubernetes <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/operator/">Operators</a> using the <a href="https://sdk.operatorframework.io/">Operator SDK</a> in Go (which builds upon <a href="https://github.com/kubernetes-sigs/kubebuilder">Kubebuilder</a>).</p>
+<p>But I worried that, because Go doesn&rsquo;t (!?) directly represent union (<code>oneOf</code>) types. I have experienced this using Protobufs <code>oneOf</code> which is compiled to an interface type and uses (interface-)implementing types to represent the union&rsquo;s types. I was also unsure (see below) how to represent this using Kubebuilder.</p>
+<p>Interestingly, Gemini proposes the following which I will try:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// +kubebuilder:validation:Union
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">DeploymentStrategy</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// +unionDiscriminator
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">Type</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;type&#34;`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// +unionMember
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">RollingUpdate</span> <span style="color:#a6e22e">RollingUpdate</span> <span style="color:#e6db74">`json:&#34;rolling_update,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// +unionMember
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">Recreate</span> <span style="color:#a6e22e">Recreate</span> <span style="color:#e6db74">`json:&#34;recreate,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>We want to able to represent the following variants:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">DeploymentConfig</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">example.com/v1alpha1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">rolling-update</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">deployment_strategy</span>: <span style="color:#75715e"># &lt;--- Here&#39;s the union either rolling_update</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">rolling_update</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">max_surge</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">max_unavailable</span>: <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><p>Or:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">DeploymentConfig</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">example.com/v1alpha1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">recreate</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">deployment_strategy</span>: <span style="color:#75715e"># &lt;--- Here&#39;s the union or recreate</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">recreate</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">something</span>: <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><p>I know from my adventures with Rust, that union types are permitted and I&rsquo;ve experience using Rust with Protobuf <code>oneOf</code> types.</p>
+<p>So I started with:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> kube_derive::CustomResource;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> schemars::JsonSchema;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> serde::{Serialize, Deserialize};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[derive(CustomResource, Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[kube(group = </span><span style="color:#e6db74">&#34;example.com&#34;</span><span style="color:#75715e">, version = </span><span style="color:#e6db74">&#34;v1alpha1&#34;</span><span style="color:#75715e">, kind = </span><span style="color:#e6db74">&#34;DeploymentConfig&#34;</span><span style="color:#75715e">, namespaced)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">DeploymentConfigsSpec</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> deployment_strategy: <span style="color:#a6e22e">DeploymentStrategy</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[derive(Serialize,Deserialize,Clone,Debug,JsonSchema)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">enum</span> <span style="color:#a6e22e">DeploymentStrategy</span> {
+</span></span><span style="display:flex;"><span>    RollingUpdate{
+</span></span><span style="display:flex;"><span>        max_surge: <span style="color:#66d9ef">u16</span>,
+</span></span><span style="display:flex;"><span>        max_unavailable: <span style="color:#66d9ef">u16</span>,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    Recreate{
+</span></span><span style="display:flex;"><span>        something: <span style="color:#66d9ef">u16</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> Default <span style="color:#66d9ef">for</span> DeploymentStrategy {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">default</span>() -&gt; <span style="color:#a6e22e">Self</span> {
+</span></span><span style="display:flex;"><span>        DeploymentStrategy::Recreate{
+</span></span><span style="display:flex;"><span>            something: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>It&rsquo;s then possible to create the CRD from the <code>Spec</code> and serialize it as JSON:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> kube::core::CustomResourceExt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CRD as YAML
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> document_spec <span style="color:#f92672">=</span> DeploymentConfig::crd();
+</span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>,serde_yaml::to_string(<span style="color:#f92672">&amp;</span>document_spec).unwrap());
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apiextensions.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">CustomResourceDefinition</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">deploymentconfigs.example.com</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">group</span>: <span style="color:#ae81ff">example.com</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">names</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">categories</span>: []
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">DeploymentConfig</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">plural</span>: <span style="color:#ae81ff">deploymentconfigs</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">shortNames</span>: []
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">singular</span>: <span style="color:#ae81ff">deploymentconfig</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">scope</span>: <span style="color:#ae81ff">Namespaced</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">versions</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">additionalPrinterColumns</span>: []
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">v1alpha1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">schema</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">openAPIV3Schema</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">description</span>: <span style="color:#ae81ff">An example schema</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">deployment_strategy</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">oneOf</span>:
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>                  - <span style="color:#ae81ff">RollingUpdate</span>
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>                  - <span style="color:#ae81ff">Recreate</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>                  <span style="color:#f92672">Recreate</span>:
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>                      <span style="color:#f92672">something</span>:
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">format</span>: <span style="color:#ae81ff">uint16</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">minimum</span>: <span style="color:#ae81ff">0.0</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">integer</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>                    - <span style="color:#ae81ff">something</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>                  <span style="color:#f92672">RollingUpdate</span>:
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>                      <span style="color:#f92672">max_surge</span>:
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">format</span>: <span style="color:#ae81ff">uint16</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">minimum</span>: <span style="color:#ae81ff">0.0</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">integer</span>
+</span></span><span style="display:flex;"><span>                      <span style="color:#f92672">max_unavailable</span>:
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">format</span>: <span style="color:#ae81ff">uint16</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">minimum</span>: <span style="color:#ae81ff">0.0</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">integer</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>                    - <span style="color:#ae81ff">max_surge</span>
+</span></span><span style="display:flex;"><span>                    - <span style="color:#ae81ff">max_unavailable</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>            - <span style="color:#ae81ff">deployment_strategy</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#ae81ff">spec</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">title</span>: <span style="color:#ae81ff">DeploymentConfig</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">served</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">storage</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">subresources</span>: {}
+</span></span></code></pre></div><p>You can then apply this to a (sacrificial) cluster and try to create some Custom Resources (CRs) against it. The examples above will suffice:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--filename<span style="color:#f92672">=</span>deploymentconfig.tests.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>error: error validating &#34;/path/to/deploymentconfig.tests.yaml&#34;: error validating data: [ValidationError(DeploymentConfig.spec.deployment_strategy): unknown field &#34;rolling_update&#34; in com.example.v1alpha1.DeploymentConfig.spec.deployment_strategy, ValidationError(DeploymentConfig.spec.deployment_strategy): unknown field &#34;recreate&#34; in com.example.v1alpha1.DeploymentConfig.spec.deployment_strategy]; if you choose to ignore these errors, turn validation off with --validate=false
+</span></span></code></pre></div><p>Uh-oh! The <code>enum</code> branches <code>RollingUpdate</code> and <code>Recreate</code> aren&rsquo;t being correctly renamed when serialized to JSON.</p>
+<p>This is straightforward to fix:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">#[derive(Serialize,Deserialize,Clone,Debug,JsonSchema)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">enum</span> <span style="color:#a6e22e">DeploymentStrategy</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Add Serde rename
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">#[serde(rename=</span><span style="color:#e6db74">&#34;rolling_update&#34;</span><span style="color:#75715e">)]</span>
+</span></span><span style="display:flex;"><span>    RollingUpdate{
+</span></span><span style="display:flex;"><span>        max_surge: <span style="color:#66d9ef">u16</span>,
+</span></span><span style="display:flex;"><span>        max_unavailable: <span style="color:#66d9ef">u16</span>,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Add Serde rename
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">#[serde(rename=</span><span style="color:#e6db74">&#34;recreate&#34;</span><span style="color:#75715e">)]</span>
+</span></span><span style="display:flex;"><span>    Recreate{
+</span></span><span style="display:flex;"><span>        something: <span style="color:#66d9ef">u16</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> Default <span style="color:#66d9ef">for</span> DeploymentStrategy {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">default</span>() -&gt; <span style="color:#a6e22e">Self</span> {
+</span></span><span style="display:flex;"><span>        DeploymentStrategy::Recreate{
+</span></span><span style="display:flex;"><span>            something: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Rerun to regenerate the CRD YAML:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apiextensions.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">CustomResourceDefinition</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">deploymentconfigs.example.com</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">group</span>: <span style="color:#ae81ff">example.com</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">names</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">categories</span>: []
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">DeploymentConfig</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">plural</span>: <span style="color:#ae81ff">deploymentconfigs</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">shortNames</span>: []
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">singular</span>: <span style="color:#ae81ff">deploymentconfig</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">scope</span>: <span style="color:#ae81ff">Namespaced</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">versions</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">additionalPrinterColumns</span>: []
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">v1alpha1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">schema</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">openAPIV3Schema</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">description</span>: <span style="color:#ae81ff">An example schema</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">deployment_strategy</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">oneOf</span>:
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>                  - <span style="color:#ae81ff">rolling_update</span> <span style="color:#75715e"># Correct</span>
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>                  - <span style="color:#ae81ff">recreate      </span> <span style="color:#75715e"># Correct</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>                  <span style="color:#f92672">recreate</span>:
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>                      <span style="color:#f92672">something</span>:
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">format</span>: <span style="color:#ae81ff">uint16</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">minimum</span>: <span style="color:#ae81ff">0.0</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">integer</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>                    - <span style="color:#ae81ff">something</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>                  <span style="color:#f92672">rolling_update</span>:
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>                      <span style="color:#f92672">max_surge</span>:
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">format</span>: <span style="color:#ae81ff">uint16</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">minimum</span>: <span style="color:#ae81ff">0.0</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">integer</span>
+</span></span><span style="display:flex;"><span>                      <span style="color:#f92672">max_unavailable</span>:
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">format</span>: <span style="color:#ae81ff">uint16</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">minimum</span>: <span style="color:#ae81ff">0.0</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">integer</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>                    - <span style="color:#ae81ff">max_surge</span>
+</span></span><span style="display:flex;"><span>                    - <span style="color:#ae81ff">max_unavailable</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>            - <span style="color:#ae81ff">deployment_strategy</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">required</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#ae81ff">spec</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">title</span>: <span style="color:#ae81ff">DeploymentConfig</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">object</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">served</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">storage</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">subresources</span>: {}
+</span></span></code></pre></div><p>Reapply the CRD to the cluster and then reapply the tests:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--filename<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/deploymentconfig.tests.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>deploymentconfig.example.com/rolling-update created
+</span></span><span style="display:flex;"><span>deploymentconfig.example.com/recreate created
+</span></span><span style="display:flex;"><span>The DeploymentConfig &#34;bothof&#34; is invalid: &lt;nil&gt;: Invalid value: &#34;&#34;: &#34;spec.deployment_strategy&#34; must validate one and only one schema (oneOf). Found 2 valid alternatives
+</span></span><span style="display:flex;"><span>dazwilkin@hades-canyon:~/Projects/stackoverflow/78523396/rust (master)$ 
+</span></span></code></pre></div><p>The last test fails intentionally:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">DeploymentConfig</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">example.com/v1alpha1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">bothof</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">deployment_strategy</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">rolling_update</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">max_surge</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">max_unavailable</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">recreate</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">something</span>: <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><p>Because <code>deployment_strategy</code> is <code>oneOf</code> <code>rolling_update</code> or <code>recreate</code>, it should not contain both and so this Custom Resource&rsquo;s creation fails.</p>
+<p>So, as far as the CRD generation works, the Rust code is sufficient.</p>
+<p>But, there&rsquo;s another problem.</p>
+<p>It&rsquo;s possible to create the Custom Resources in Rust too:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CRD as YAML
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> document_spec <span style="color:#f92672">=</span> DeploymentConfig::crd();
+</span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>,serde_yaml::to_string(<span style="color:#f92672">&amp;</span>document_spec).unwrap());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CR with RollingUpdate as YAML
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> d1 <span style="color:#f92672">=</span> DeploymentConfigsSpec{
+</span></span><span style="display:flex;"><span>        deployment_strategy: <span style="color:#a6e22e">DeploymentStrategy</span>::RollingUpdate{
+</span></span><span style="display:flex;"><span>            max_surge:<span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>            max_unavailable:<span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>,serde_yaml::to_string(<span style="color:#f92672">&amp;</span>d1).unwrap());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CR with Recreate as YAML
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> d2 <span style="color:#f92672">=</span> DeploymentConfigsSpec{
+</span></span><span style="display:flex;"><span>        deployment_strategy:<span style="color:#a6e22e">DeploymentStrategy</span>::Recreate{
+</span></span><span style="display:flex;"><span>            something: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>,serde_yaml::to_string(<span style="color:#f92672">&amp;</span>d2).unwrap());
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This yields (incorrectly):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">deployment_strategy</span>: !<span style="color:#ae81ff">rolling_update</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">max_surge</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">max_unavailable</span>: <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">deployment_strategy</span>: !<span style="color:#ae81ff">recreate</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">something</span>: <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><p>The solution I found for this problem is the following. As always I&rsquo;m interested in better ways to do this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">#[derive(Deserialize,Clone,Debug,JsonSchema)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">enum</span> <span style="color:#a6e22e">DeploymentStrategy</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#[serde(rename=</span><span style="color:#e6db74">&#34;rolling_update&#34;</span><span style="color:#75715e">)]</span>
+</span></span><span style="display:flex;"><span>    RollingUpdate{
+</span></span><span style="display:flex;"><span>        max_surge: <span style="color:#66d9ef">u16</span>,
+</span></span><span style="display:flex;"><span>        max_unavailable: <span style="color:#66d9ef">u16</span>,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#[serde(rename=</span><span style="color:#e6db74">&#34;recreate&#34;</span><span style="color:#75715e">)]</span>
+</span></span><span style="display:flex;"><span>    Recreate{
+</span></span><span style="display:flex;"><span>        something: <span style="color:#66d9ef">u16</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> Default <span style="color:#66d9ef">for</span> DeploymentStrategy {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">default</span>() -&gt; <span style="color:#a6e22e">Self</span> {
+</span></span><span style="display:flex;"><span>        DeploymentStrategy::Recreate{
+</span></span><span style="display:flex;"><span>            something: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> Serialize <span style="color:#66d9ef">for</span> DeploymentStrategy {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">serialize</span><span style="color:#f92672">&lt;</span>S<span style="color:#f92672">&gt;</span>(<span style="color:#f92672">&amp;</span>self, serializer: <span style="color:#a6e22e">S</span>) -&gt; Result<span style="color:#f92672">&lt;</span>S::Ok, S::Error<span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">where</span>
+</span></span><span style="display:flex;"><span>            S: <span style="color:#a6e22e">serde</span>::Serializer {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">match</span> self {
+</span></span><span style="display:flex;"><span>            DeploymentStrategy::RollingUpdate{
+</span></span><span style="display:flex;"><span>                max_surge,
+</span></span><span style="display:flex;"><span>                max_unavailable
+</span></span><span style="display:flex;"><span>            } <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> rolling_update <span style="color:#f92672">=</span> RollingUpdate {
+</span></span><span style="display:flex;"><span>                    max_surge: <span style="color:#f92672">*</span>max_surge,
+</span></span><span style="display:flex;"><span>                    max_unavailable: <span style="color:#f92672">*</span>max_unavailable,
+</span></span><span style="display:flex;"><span>                };
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> map <span style="color:#f92672">=</span> std::collections::BTreeMap::new();
+</span></span><span style="display:flex;"><span>                map.insert(<span style="color:#e6db74">&#34;rolling_update&#34;</span>, rolling_update);
+</span></span><span style="display:flex;"><span>                map.serialize(serializer)
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            DeploymentStrategy::Recreate{ 
+</span></span><span style="display:flex;"><span>                something 
+</span></span><span style="display:flex;"><span>            } <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> recreate <span style="color:#f92672">=</span> Recreate {
+</span></span><span style="display:flex;"><span>                    something: <span style="color:#f92672">*</span>something,
+</span></span><span style="display:flex;"><span>                };
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> map <span style="color:#f92672">=</span> std::collections::BTreeMap::new();
+</span></span><span style="display:flex;"><span>                map.insert(<span style="color:#e6db74">&#34;recreate&#34;</span>, recreate);
+</span></span><span style="display:flex;"><span>                map.serialize(serializer)
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[derive(Serialize,Deserialize,Clone,Debug,JsonSchema)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">RollingUpdate</span> {
+</span></span><span style="display:flex;"><span>    max_surge: <span style="color:#66d9ef">u16</span>,
+</span></span><span style="display:flex;"><span>    max_unavailable: <span style="color:#66d9ef">u16</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[derive(Serialize,Deserialize,Clone,Debug,JsonSchema)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Recreate</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> something: <span style="color:#66d9ef">u16</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This is slightly awkward because it duplicates (which gives me pause) the type definitions of <code>RollingUpdate</code> and <code>Recreate</code>. The first time these are defined as variants of the <code>enum</code>. The second time they&rsquo;re defined explicitly as <code>struct</code> types.</p>
+<p><code>Serialize</code> is implemented explicity for the <code>enum</code> (<code>DeploymentStrategy</code>) and it matches on the variants and replaces the enum variant with the struct type and adds (!) the resulting struct to a <code>BTreeMap</code>. The map is then serialized.</p>
+<p>This code yields the same CRD but yields expected YAML for Custom Resources:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">deployment_strategy</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">rolling_update</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">max_surge</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">max_unavailable</span>: <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">deployment_strategy</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">recreate</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">something</span>: <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><p>Don&rsquo;t forget to delete the CRD, Namespace and any CRs before you finish:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NAMES<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  kubectl get deploymentconfigs <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>name<span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> NAME in <span style="color:#e6db74">${</span>NAMES<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  kubectl delete <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl delete crd/deploymentconfigs.example.com
+</span></span></code></pre></div><p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/kubernetes/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Kubernetes</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/crd/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">CRD</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/rust/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Rust</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/201113/">Akri</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240528/">Using Delve to debug Go containers on Kubernetes</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240409/">Google Cloud Translation w/ gRPC 3 ways</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240405/">Google Cloud Events protobufs and SDKs</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240325/">Prost! Tonic w/ a dash of JSON</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240216/">MicroK8s operability add-on</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240130/">Navigating Koyeb&#39;s API with Rust</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230215/">Secure (TLS) gRPC services with LKE</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/220603/">Secure (TLS) gRPC services with VKE</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/220602/">Vultr CLI and JSON output</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210305/">Prometheus VPA Recommendations</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210122/">Krustlet on DO Managed Kubernetes</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210108/">Kubernetes cert-manager</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201229/">Kubernetes Webhooks</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201217/">Kubernetes Device Plugins</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2024 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
