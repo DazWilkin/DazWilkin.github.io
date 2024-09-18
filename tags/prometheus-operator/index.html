@@ -7,7 +7,7 @@
     <title>(p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="">
-    <meta name="generator" content="Hugo 0.133.0-DEV">
+    <meta name="generator" content="Hugo 0.135.0-DEV">
     
     
     
@@ -49,9 +49,6 @@
   <meta name="twitter:title" content="Prometheus Operator">
 
       
-  
-
-
     
 	
   </head>
@@ -169,10 +166,23 @@
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      The deployment of Kube State Metrics for Google Managed Prometheus creates both a PodMonitoring and ClusterPodMonitoring.
-The PodMonitoring resource exposes metrics published on metric-self port (8081).
-The ClusterPodMonitoring exposes metrics published on metric port (8080) but this doesn&rsquo;t include cronjob-related metrics:
-kubectl get clusterpodmonitoring/kube-state-metrics \ --output=jsonpath=&#34;{.spec.endpoints[0].metricRelabeling}&#34; \ | jq -r . [ { &#34;action&#34;: &#34;keep&#34;, &#34;regex&#34;: &#34;kube_(daemonset|deployment|replicaset|pod|namespace|node|statefulset|persistentvolume|horizontalpodautoscaler|job_created)(_.+)?&#34;, &#34;sourceLabels&#34;: [ &#34;__name__&#34; ] } ] NOTE The regex does not include kube_cronjob and only includes kube_job_created patterns.
+      <p>The deployment of <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/exporters/kube_state_metrics">Kube State Metrics</a> for Google Managed Prometheus creates both a <code>PodMonitoring</code> and <code>ClusterPodMonitoring</code>.</p>
+<p>The <code>PodMonitoring</code> resource exposes metrics published on <code>metric-self</code> port (8081).</p>
+<p>The <code>ClusterPodMonitoring</code> exposes metrics published on <code>metric</code> port (8080) <strong>but</strong> this doesn&rsquo;t include <code>cronjob</code>-related metrics:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get clusterpodmonitoring/kube-state-metrics <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.endpoints[0].metricRelabeling}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r .
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>[
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;action&#34;</span>: <span style="color:#e6db74">&#34;keep&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;regex&#34;</span>: <span style="color:#e6db74">&#34;kube_(daemonset|deployment|replicaset|pod|namespace|node|statefulset|persistentvolume|horizontalpodautoscaler|job_created)(_.+)?&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;sourceLabels&#34;</span>: [
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;__name__&#34;</span>
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>]
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> The <code>regex</code> does <strong>not</strong> include <code>kube_cronjob</code> and only includes <code>kube_job_created</code> patterns.</p>
     </div>
     <a href="/posts/240104/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -190,9 +200,43 @@ kubectl get clusterpodmonitoring/kube-state-metrics \ --output=jsonpath=&#34;{.s
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      CRD linting
-Returning to yesterday&rsquo;s failing tests, it&rsquo;s unclear how to introspect the E2E tests.
-kubectl get namespaces NAME STATUS AGE ... allns-s2os2u-0-90f56669 Active 22h allns-s2qhuw-0-6b33d5eb Active 4m23s kubectl get all \ --namespace=allns-s2os2u-0-90f56669 No resources found in allns-s2os2u-0-90f56669 namespace. kubectl get all \ --namespace=allns-s2qhuw-0-6b33d5eb NAME READY STATUS RESTARTS AGE pod/prometheus-operator-6c96477b9c-q6qm2 1/1 Running 0 4m12s pod/prometheus-operator-admission-webhook-68bc9f885-nq6r8 0/1 ImagePullBackOff 0 4m7s NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE service/prometheus-operator ClusterIP 10.152.183.247 &lt;none&gt; 443/TCP 4m9s NAME READY UP-TO-DATE AVAILABLE AGE deployment.
+      <p>CRD <a href="https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/linting.md">linting</a></p>
+<p>Returning to yesterday&rsquo;s failing tests, it&rsquo;s unclear how to introspect the E2E tests.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get namespaces
+</span></span></code></pre></div><pre tabindex="0"><code>NAME                      STATUS   AGE
+...
+allns-s2os2u-0-90f56669   Active   22h
+allns-s2qhuw-0-6b33d5eb   Active   4m23s
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get all <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>allns-s2os2u-0-90f56669
+</span></span></code></pre></div><pre tabindex="0"><code>No resources found in allns-s2os2u-0-90f56669 namespace.
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get all <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>allns-s2qhuw-0-6b33d5eb
+</span></span></code></pre></div><pre tabindex="0"><code>NAME                                                        READY   STATUS             RESTARTS   AGE
+pod/prometheus-operator-6c96477b9c-q6qm2                    1/1     Running            0          4m12s
+pod/prometheus-operator-admission-webhook-68bc9f885-nq6r8   0/1     ImagePullBackOff   0          4m7s
+
+NAME                          TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+service/prometheus-operator   ClusterIP   10.152.183.247   &lt;none&gt;        443/TCP   4m9s
+
+NAME                                                    READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/prometheus-operator                     1/1     1            1           4m12s
+deployment.apps/prometheus-operator-admission-webhook   0/1     1            0           4m7s
+
+NAME                                                              DESIRED   CURRENT   READY   AGE
+replicaset.apps/prometheus-operator-6c96477b9c                    1         1         1       4m13s
+replicaset.apps/prometheus-operator-admission-webhook-68bc9f885   1         1         0       4m8s
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl logs deployment/prometheus-operator-admission-webhook <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>allns-s2qhuw-0-6b33d5eb
+</span></span></code></pre></div><pre tabindex="0"><code>Error from server (BadRequest): container &#34;prometheus-operator-admission-webhook&#34; in pod &#34;prometheus-operator-admission-webhook-68bc9f885-nq6r8&#34; is waiting to start: trying and failing to pull image
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;prometheus-operator-admission-webhook&#34;</span>
+</span></span><span style="display:flex;"><span>FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.template.spec.containers[?(@.name==\&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;)].image}&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl get deployment/prometheus-operator-admission-webhook <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>allns-s2qjz2-0-fad82c03 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span></code></pre></div><pre tabindex="0"><code>quay.io/prometheus-operator/admission-webhook:52d1e55af
+</code></pre><p>Want:</p>
     </div>
     <a href="/posts/231018/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -210,10 +254,11 @@ kubectl get namespaces NAME STATUS AGE ... allns-s2os2u-0-90f56669 Active 22h al
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      For ackalctld to be deployable to Kubernetes with Prometheus Operator, it is necessary to Enable ScrapeConfig to use (discovery|target) proxies #5966. While I&rsquo;m familiar with Kubernetes, Kubernetes operators (Ackal uses one built with the Operator SDK) and Prometheus Operator, I&rsquo;m unfamiliar with developing Prometheus Operator. This (and subsequent) posts will document some preliminary work on this.
-Cloned Prometheus Operator
-Branched scrape-config-url-proxy
-I&rsquo;m unsure how to effect these changes and unsure whether documentation exists.
+      <p>For <code>ackalctld</code> to be deployable to Kubernetes with <a href="github.com/prometheus-operator/prometheus-operator">Prometheus Operator</a>, it is necessary to <a href="https://github.com/prometheus-operator/prometheus-operator/issues/5966">Enable <code>ScrapeConfig</code> to use (discovery|target) proxies #5966</a>. While I&rsquo;m familiar with Kubernetes, Kubernetes operators (<a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a> uses one built with the <a href="">Operator SDK</a>) and <a href="https://sdk.operatorframework.io/">Prometheus Operator</a>, I&rsquo;m unfamiliar with developing Prometheus Operator. This (and subsequent) posts will document some preliminary work on this.</p>
+<p>Cloned <a href="github.com/prometheus-operator/prometheus-operator">Prometheus Operator</a></p>
+<p>Branched <code>scrape-config-url-proxy</code></p>
+<p>I&rsquo;m unsure how to effect these changes and unsure whether documentation exists.</p>
+<p>Clearly, I will need to revise the <code>ScrapeConfig</code> CRD to add the <code>proxy_url</code> fields (one <code>proxy_url</code> defines a proxy for the Service Discovery endpoint; the second defines a proxy for the targets themselves) and it would be useful for this to closely mirror the existing <a href="https://prometheus.io/docs/prometheus/latest/http_sd/">Prometheus HTTP Service Discovery</a> use, namely <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#http_sd_config"><code>,http_sd_config&gt;</code></a>:</p>
     </div>
     <a href="/posts/231017/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -231,10 +276,10 @@ I&rsquo;m unsure how to effect these changes and unsure whether documentation ex
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      TL;DR Enable ScrapeConfig to use (discovery|target) proxies
-I&rsquo;ve developed a companion, local daemon (called ackalctld) for Ackal that provides a functionally close version of the service.
-One way to deploy ackalctld is to use Kubernetes and it would be convenient if the Prometheus metrics were scrapeable by Prometheus Operator.
-In order for this to work, Prometheus Operator needs to be able to scrape Google Cloud Run targets because ackalctld creates Cloud Run services for its health check clients.
+      <p>TL;DR <a href="https://github.com/prometheus-operator/prometheus-operator/issues/5966#issuecomment-1754317247">Enable <code>ScrapeConfig</code> to use (discovery|target) proxies</a></p>
+<p>I&rsquo;ve developed a companion, local daemon (called <code>ackalctld</code>) for <a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a> that provides a functionally close version of the service.</p>
+<p>One way to deploy <code>ackalctld</code> is to use Kubernetes and it would be convenient if the Prometheus metrics were scrapeable by <a href="https://github.com/prometheus-operator/prometheus-operator">Prometheus Operator</a>.</p>
+<p>In order for this to work, Prometheus Operator needs to be able to scrape Google <a href="https://cloud.google.com/run">Cloud Run</a> targets because <code>ackalctld</code> creates Cloud Run services for its health check clients.</p>
     </div>
     <a href="/posts/231013/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>

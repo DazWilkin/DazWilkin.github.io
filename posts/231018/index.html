@@ -8,8 +8,42 @@
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="CRD linting
 Returning to yesterday&rsquo;s failing tests, it&rsquo;s unclear how to introspect the E2E tests.
-kubectl get namespaces NAME STATUS AGE ... allns-s2os2u-0-90f56669 Active 22h allns-s2qhuw-0-6b33d5eb Active 4m23s kubectl get all \ --namespace=allns-s2os2u-0-90f56669 No resources found in allns-s2os2u-0-90f56669 namespace. kubectl get all \ --namespace=allns-s2qhuw-0-6b33d5eb NAME READY STATUS RESTARTS AGE pod/prometheus-operator-6c96477b9c-q6qm2 1/1 Running 0 4m12s pod/prometheus-operator-admission-webhook-68bc9f885-nq6r8 0/1 ImagePullBackOff 0 4m7s NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE service/prometheus-operator ClusterIP 10.152.183.247 &lt;none&gt; 443/TCP 4m9s NAME READY UP-TO-DATE AVAILABLE AGE deployment.">
-    <meta name="generator" content="Hugo 0.133.0-DEV">
+kubectl get namespaces
+NAME                      STATUS   AGE
+...
+allns-s2os2u-0-90f56669   Active   22h
+allns-s2qhuw-0-6b33d5eb   Active   4m23s
+kubectl get all \
+--namespace=allns-s2os2u-0-90f56669
+No resources found in allns-s2os2u-0-90f56669 namespace.
+kubectl get all \
+--namespace=allns-s2qhuw-0-6b33d5eb
+NAME                                                        READY   STATUS             RESTARTS   AGE
+pod/prometheus-operator-6c96477b9c-q6qm2                    1/1     Running            0          4m12s
+pod/prometheus-operator-admission-webhook-68bc9f885-nq6r8   0/1     ImagePullBackOff   0          4m7s
+
+NAME                          TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+service/prometheus-operator   ClusterIP   10.152.183.247   &lt;none&gt;        443/TCP   4m9s
+
+NAME                                                    READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/prometheus-operator                     1/1     1            1           4m12s
+deployment.apps/prometheus-operator-admission-webhook   0/1     1            0           4m7s
+
+NAME                                                              DESIRED   CURRENT   READY   AGE
+replicaset.apps/prometheus-operator-6c96477b9c                    1         1         1       4m13s
+replicaset.apps/prometheus-operator-admission-webhook-68bc9f885   1         1         0       4m8s
+kubectl logs deployment/prometheus-operator-admission-webhook \
+--namespace=allns-s2qhuw-0-6b33d5eb
+Error from server (BadRequest): container &#34;prometheus-operator-admission-webhook&#34; in pod &#34;prometheus-operator-admission-webhook-68bc9f885-nq6r8&#34; is waiting to start: trying and failing to pull image
+NAME=&#34;prometheus-operator-admission-webhook&#34;
+FILTER=&#34;{.spec.template.spec.containers[?(@.name==\&#34;${NAME}\&#34;)].image}&#34;
+
+kubectl get deployment/prometheus-operator-admission-webhook \
+--namespace=allns-s2qjz2-0-fad82c03 \
+--output=jsonpath=&#34;${FILTER}&#34;
+quay.io/prometheus-operator/admission-webhook:52d1e55af
+Want:">
+    <meta name="generator" content="Hugo 0.135.0-DEV">
     
     
     
@@ -38,7 +72,7 @@ kubectl get namespaces NAME STATUS AGE ... allns-s2os2u-0-90f56669 Active 22h al
   <meta property="og:title" content="Prometheus Operator support an auth proxy for Service Discovery">
   <meta property="og:description" content="CRD linting
 Returning to yesterday’s failing tests, it’s unclear how to introspect the E2E tests.
-kubectl get namespaces NAME STATUS AGE ... allns-s2os2u-0-90f56669 Active 22h allns-s2qhuw-0-6b33d5eb Active 4m23s kubectl get all \ --namespace=allns-s2os2u-0-90f56669 No resources found in allns-s2os2u-0-90f56669 namespace. kubectl get all \ --namespace=allns-s2qhuw-0-6b33d5eb NAME READY STATUS RESTARTS AGE pod/prometheus-operator-6c96477b9c-q6qm2 1/1 Running 0 4m12s pod/prometheus-operator-admission-webhook-68bc9f885-nq6r8 0/1 ImagePullBackOff 0 4m7s NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE service/prometheus-operator ClusterIP 10.152.183.247 &lt;none&gt; 443/TCP 4m9s NAME READY UP-TO-DATE AVAILABLE AGE deployment.">
+kubectl get namespaces NAME STATUS AGE ... allns-s2os2u-0-90f56669 Active 22h allns-s2qhuw-0-6b33d5eb Active 4m23s kubectl get all \ --namespace=allns-s2os2u-0-90f56669 No resources found in allns-s2os2u-0-90f56669 namespace. kubectl get all \ --namespace=allns-s2qhuw-0-6b33d5eb NAME READY STATUS RESTARTS AGE pod/prometheus-operator-6c96477b9c-q6qm2 1/1 Running 0 4m12s pod/prometheus-operator-admission-webhook-68bc9f885-nq6r8 0/1 ImagePullBackOff 0 4m7s NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE service/prometheus-operator ClusterIP 10.152.183.247 &lt;none&gt; 443/TCP 4m9s NAME READY UP-TO-DATE AVAILABLE AGE deployment.apps/prometheus-operator 1/1 1 1 4m12s deployment.apps/prometheus-operator-admission-webhook 0/1 1 0 4m7s NAME DESIRED CURRENT READY AGE replicaset.apps/prometheus-operator-6c96477b9c 1 1 1 4m13s replicaset.apps/prometheus-operator-admission-webhook-68bc9f885 1 1 0 4m8s kubectl logs deployment/prometheus-operator-admission-webhook \ --namespace=allns-s2qhuw-0-6b33d5eb Error from server (BadRequest): container &#34;prometheus-operator-admission-webhook&#34; in pod &#34;prometheus-operator-admission-webhook-68bc9f885-nq6r8&#34; is waiting to start: trying and failing to pull image NAME=&#34;prometheus-operator-admission-webhook&#34; FILTER=&#34;{.spec.template.spec.containers[?(@.name==\&#34;${NAME}\&#34;)].image}&#34; kubectl get deployment/prometheus-operator-admission-webhook \ --namespace=allns-s2qjz2-0-fad82c03 \ --output=jsonpath=&#34;${FILTER}&#34; quay.io/prometheus-operator/admission-webhook:52d1e55af Want:">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="posts">
@@ -51,7 +85,7 @@ kubectl get namespaces NAME STATUS AGE ... allns-s2os2u-0-90f56669 Active 22h al
   <meta itemprop="name" content="Prometheus Operator support an auth proxy for Service Discovery">
   <meta itemprop="description" content="CRD linting
 Returning to yesterday’s failing tests, it’s unclear how to introspect the E2E tests.
-kubectl get namespaces NAME STATUS AGE ... allns-s2os2u-0-90f56669 Active 22h allns-s2qhuw-0-6b33d5eb Active 4m23s kubectl get all \ --namespace=allns-s2os2u-0-90f56669 No resources found in allns-s2os2u-0-90f56669 namespace. kubectl get all \ --namespace=allns-s2qhuw-0-6b33d5eb NAME READY STATUS RESTARTS AGE pod/prometheus-operator-6c96477b9c-q6qm2 1/1 Running 0 4m12s pod/prometheus-operator-admission-webhook-68bc9f885-nq6r8 0/1 ImagePullBackOff 0 4m7s NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE service/prometheus-operator ClusterIP 10.152.183.247 &lt;none&gt; 443/TCP 4m9s NAME READY UP-TO-DATE AVAILABLE AGE deployment.">
+kubectl get namespaces NAME STATUS AGE ... allns-s2os2u-0-90f56669 Active 22h allns-s2qhuw-0-6b33d5eb Active 4m23s kubectl get all \ --namespace=allns-s2os2u-0-90f56669 No resources found in allns-s2os2u-0-90f56669 namespace. kubectl get all \ --namespace=allns-s2qhuw-0-6b33d5eb NAME READY STATUS RESTARTS AGE pod/prometheus-operator-6c96477b9c-q6qm2 1/1 Running 0 4m12s pod/prometheus-operator-admission-webhook-68bc9f885-nq6r8 0/1 ImagePullBackOff 0 4m7s NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE service/prometheus-operator ClusterIP 10.152.183.247 &lt;none&gt; 443/TCP 4m9s NAME READY UP-TO-DATE AVAILABLE AGE deployment.apps/prometheus-operator 1/1 1 1 4m12s deployment.apps/prometheus-operator-admission-webhook 0/1 1 0 4m7s NAME DESIRED CURRENT READY AGE replicaset.apps/prometheus-operator-6c96477b9c 1 1 1 4m13s replicaset.apps/prometheus-operator-admission-webhook-68bc9f885 1 1 0 4m8s kubectl logs deployment/prometheus-operator-admission-webhook \ --namespace=allns-s2qhuw-0-6b33d5eb Error from server (BadRequest): container &#34;prometheus-operator-admission-webhook&#34; in pod &#34;prometheus-operator-admission-webhook-68bc9f885-nq6r8&#34; is waiting to start: trying and failing to pull image NAME=&#34;prometheus-operator-admission-webhook&#34; FILTER=&#34;{.spec.template.spec.containers[?(@.name==\&#34;${NAME}\&#34;)].image}&#34; kubectl get deployment/prometheus-operator-admission-webhook \ --namespace=allns-s2qjz2-0-fad82c03 \ --output=jsonpath=&#34;${FILTER}&#34; quay.io/prometheus-operator/admission-webhook:52d1e55af Want:">
   <meta itemprop="datePublished" content="2023-10-18T00:00:00-07:00">
   <meta itemprop="dateModified" content="2023-10-18T00:00:00-07:00">
   <meta itemprop="wordCount" content="809">
@@ -60,12 +94,9 @@ kubectl get namespaces NAME STATUS AGE ... allns-s2os2u-0-90f56669 Active 22h al
   <meta name="twitter:title" content="Prometheus Operator support an auth proxy for Service Discovery">
   <meta name="twitter:description" content="CRD linting
 Returning to yesterday’s failing tests, it’s unclear how to introspect the E2E tests.
-kubectl get namespaces NAME STATUS AGE ... allns-s2os2u-0-90f56669 Active 22h allns-s2qhuw-0-6b33d5eb Active 4m23s kubectl get all \ --namespace=allns-s2os2u-0-90f56669 No resources found in allns-s2os2u-0-90f56669 namespace. kubectl get all \ --namespace=allns-s2qhuw-0-6b33d5eb NAME READY STATUS RESTARTS AGE pod/prometheus-operator-6c96477b9c-q6qm2 1/1 Running 0 4m12s pod/prometheus-operator-admission-webhook-68bc9f885-nq6r8 0/1 ImagePullBackOff 0 4m7s NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE service/prometheus-operator ClusterIP 10.152.183.247 &lt;none&gt; 443/TCP 4m9s NAME READY UP-TO-DATE AVAILABLE AGE deployment.">
+kubectl get namespaces NAME STATUS AGE ... allns-s2os2u-0-90f56669 Active 22h allns-s2qhuw-0-6b33d5eb Active 4m23s kubectl get all \ --namespace=allns-s2os2u-0-90f56669 No resources found in allns-s2os2u-0-90f56669 namespace. kubectl get all \ --namespace=allns-s2qhuw-0-6b33d5eb NAME READY STATUS RESTARTS AGE pod/prometheus-operator-6c96477b9c-q6qm2 1/1 Running 0 4m12s pod/prometheus-operator-admission-webhook-68bc9f885-nq6r8 0/1 ImagePullBackOff 0 4m7s NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE service/prometheus-operator ClusterIP 10.152.183.247 &lt;none&gt; 443/TCP 4m9s NAME READY UP-TO-DATE AVAILABLE AGE deployment.apps/prometheus-operator 1/1 1 1 4m12s deployment.apps/prometheus-operator-admission-webhook 0/1 1 0 4m7s NAME DESIRED CURRENT READY AGE replicaset.apps/prometheus-operator-6c96477b9c 1 1 1 4m13s replicaset.apps/prometheus-operator-admission-webhook-68bc9f885 1 1 0 4m8s kubectl logs deployment/prometheus-operator-admission-webhook \ --namespace=allns-s2qhuw-0-6b33d5eb Error from server (BadRequest): container &#34;prometheus-operator-admission-webhook&#34; in pod &#34;prometheus-operator-admission-webhook-68bc9f885-nq6r8&#34; is waiting to start: trying and failing to pull image NAME=&#34;prometheus-operator-admission-webhook&#34; FILTER=&#34;{.spec.template.spec.containers[?(@.name==\&#34;${NAME}\&#34;)].image}&#34; kubectl get deployment/prometheus-operator-admission-webhook \ --namespace=allns-s2qjz2-0-fad82c03 \ --output=jsonpath=&#34;${FILTER}&#34; quay.io/prometheus-operator/admission-webhook:52d1e55af Want:">
 
       
-  
-
-
     
 	
   </head>

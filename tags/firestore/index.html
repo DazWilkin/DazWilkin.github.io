@@ -7,7 +7,7 @@
     <title>(p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="">
-    <meta name="generator" content="Hugo 0.133.0-DEV">
+    <meta name="generator" content="Hugo 0.135.0-DEV">
     
     
     
@@ -49,9 +49,6 @@
   <meta name="twitter:title" content="Firestore">
 
       
-  
-
-
     
 	
   </head>
@@ -169,9 +166,17 @@
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      I&rsquo;ve written before about Ackal&rsquo;s use of Firestore and subscribing to Firestore document CRUD events:
-Routing Firestore events to GKE with Eventarc Cloud Firestore Triggers in Golang using Firestore triggers I find Google&rsquo;s Eventarc documentation to be confusing and, in typical Google fashion, even though open-sourced, you often need to do some legwork to find relevant sources, viz:
-Google&rsquo;s Protobufs for Eventarc (using cloudevents) google-cloudevents1 Convenience (since you can generate these using protoc) language-specific types generated from the above e.
+      <p>I&rsquo;ve written before about <a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a>&rsquo;s use of <a href="https://cloud.google.com/firestore">Firestore</a> and subscribing to Firestore document CRUD events:</p>
+<ul>
+<li><a href="/posts/230530/">Routing Firestore events to GKE with Eventarc</a></li>
+<li><a href="/posts/210413/">Cloud Firestore Triggers in Golang</a> using <a href="https://cloud.google.com/functions/docs/calling/cloud-firestore">Firestore triggers</a></li>
+</ul>
+<p>I find Google&rsquo;s <a href="cloud.google.com/eventarc">Eventarc</a> documentation to be confusing and, in typical Google fashion, even though open-sourced, you often need to do some legwork to find relevant sources, viz:</p>
+<ul>
+<li>Google&rsquo;s Protobufs for Eventarc (using <a href="https://cloudevents.io/">cloudevents</a>) <a href="https://github.com/googleapis/google-cloudevents"><code>google-cloudevents</code></a><!-- raw HTML omitted -->1<!-- raw HTML omitted --></li>
+<li>Convenience (since you can generate these using <code>protoc</code>) language-specific types generated from the above e.g. <a href="https://github.com/googleapis/google-cloudevents-go"><code>google-cloudevents-go</code></a>; <a href="https://github.com/googleapis/google-cloudevents-python"><code>google-cloudevents-python</code></a> etc.</li>
+</ul>
+<p><!-- raw HTML omitted -->1<!-- raw HTML omitted --> &ndash; IIUC EventArc is the Google service. It carries Google Events that are CloudEvents. These are defined by protocol buffers schemas.</p>
     </div>
     <a href="/posts/240405/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -189,9 +194,9 @@ Google&rsquo;s Protobufs for Eventarc (using cloudevents) google-cloudevents1 Co
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      Google announced Firestore &hellip; integration with Eventarc. Ackal uses Firestore to persist Customer and Check information and it uses Google Cloud Firestore Triggers to handle events on these document types.
-Eventarc feels like the strategic future of eventing in Google Cloud and I&rsquo;ve been concerned since adopting the technology that Google would abandon Google Cloud Firestore Triggers.
-For this reason, when I saw last week&rsquo;s announcement, I thought I should evaluate the mechanism and this blog post is a summary of that work.
+      <p>Google announced <a href="https://cloud.google.com/blog/products/databases/firestore-triggers-for-cloud-run-and-google-kubernetes-engine/">Firestore &hellip; integration with Eventarc</a>. <a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a> uses <a href="https://cloud.google.com/firestore">Firestore</a> to persist Customer and Check information and it uses <a href="https://cloud.google.com/functions/docs/calling/cloud-firestore-1st-gen">Google Cloud Firestore Triggers</a> to handle events on these document types.</p>
+<p><a href="https://cloud.google.com/eventarc">Eventarc</a> feels like the strategic future of eventing in Google Cloud and I&rsquo;ve been concerned since adopting the technology that Google would abandon Google Cloud Firestore Triggers.</p>
+<p>For this reason, when I saw last week&rsquo;s announcement, I thought I should evaluate the mechanism and this blog post is a summary of that work.</p>
     </div>
     <a href="/posts/230530/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -209,8 +214,9 @@ For this reason, when I saw last week&rsquo;s announcement, I thought I should e
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      While testing Firestore export and import yesterday and checking the IAM permissions on a Cloud Storage Bucket, I noticed some Member (member) values (I think Google refers to these as Principals) were logical but unfamiliar to me:
-deleted:serviceAccount:{email}?uid={uid} I was using gsutil iam get gs://${BUCKET} because I&rsquo;d realized (and this is another useful lesson) that, as I&rsquo;ve been creating daily test projects, I&rsquo;ve been binding each project&rsquo;s Firestore Service Account (service-{project-number}@gcp-sa-firestore.
+      <p>While testing <a href="/posts/221110/">Firestore export and import</a> yesterday and checking the IAM permissions on a Cloud Storage Bucket, I noticed some Member (<code>member</code>) values (I think Google refers to these as Principals) were logical but unfamiliar to me:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>deleted:serviceAccount:{email}?uid={uid}
+</span></span></code></pre></div><p>I was using <code>gsutil iam get gs://${BUCKET}</code> because I&rsquo;d realized (and this is another useful lesson) that, as I&rsquo;ve been creating daily test projects, I&rsquo;ve been binding each project&rsquo;s Firestore Service Account (<code>service-{project-number}@gcp-sa-firestore.iam.gserviceaccount.com</code>) to a Bucket owned by another Project <strong>but</strong> I hadn&rsquo;t been deleting the binding when I deleted the Project.</p>
     </div>
     <a href="/posts/221111/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -228,9 +234,9 @@ deleted:serviceAccount:{email}?uid={uid} I was using gsutil iam get gs://${BUCKE
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      For my &ldquo;thing&rdquo;, I use Firestore to persist state. I like Firestore a lot and, having been around Google for almost (!) a decade, I much prefer it to Datastore.
-Firestore has a managed export|import service and I use this to backup Firestore collections|documents.
-I&rsquo;d been doing backups manually (using gcloud) and decided today to take the plunge and use Cloud Scheduler for the first time. I&rsquo;d been reluctant to do this until now because I&rsquo;d assumed incorrectly that I&rsquo;d need to write a wrapping service to invoke the export.
+      <p>For my &ldquo;thing&rdquo;, I use <a href="https://cloud.google.com/firestore">Firestore</a> to persist state. I like Firestore a lot and, having been around Google for almost (!) a decade, I much prefer it to Datastore.</p>
+<p>Firestore has a <a href="https://firebase.google.com/docs/firestore/manage-data/export-import">managed export|import service</a> and I use this to backup Firestore collections|documents.</p>
+<p>I&rsquo;d been doing backups manually (using <code>gcloud</code>) and decided today to take the plunge and use <a href="https://cloud.google.com/scheduler">Cloud Scheduler</a> for the first time. I&rsquo;d been reluctant to do this until now because I&rsquo;d assumed <strong>incorrectly</strong> that I&rsquo;d need to write a wrapping service to invoke the export.</p>
     </div>
     <a href="/posts/220503/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -248,8 +254,8 @@ I&rsquo;d been doing backups manually (using gcloud) and decided today to take t
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      I&rsquo;m using Google&rsquo;s Golang SDK for Firestore. The experience is excellent and I&rsquo;m quikcly becoming a fan of Firestore. However, as a Golang Firestore developer, I&rsquo;m feeling less loved and some of the concepts in the database were causing me a conundrum.
-I&rsquo;m still not entirely certain that I have Timestamps nailed but&hellip; I learned an important lesson on the auto-creation of Timestamps in documents and how to retain these values.
+      <p>I&rsquo;m using Google&rsquo;s <a href="https://pkg.go.dev/cloud.google.com/go/firestore#DocumentRef">Golang SDK for Firestore</a>. The experience is excellent and I&rsquo;m quikcly becoming a fan of Firestore. However, as a Golang Firestore developer, I&rsquo;m feeling less loved and some of the concepts in the database were causing me a conundrum.</p>
+<p>I&rsquo;m still not entirely certain that I have Timestamps nailed but&hellip; I learned an important lesson on the auto-creation of Timestamps in documents and how to retain these values.</p>
     </div>
     <a href="/posts/210506/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -267,8 +273,8 @@ I&rsquo;m still not entirely certain that I have Timestamps nailed but&hellip; I
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      I was pleased to discover that Google provides a non-Node.JS mechanism to subscribe to and act upon Firestore triggers, Google Cloud Firestore Triggers. I&rsquo;ve nothing against Node.JS but, for the project i&rsquo;m developing, everything else is written in Golang. It&rsquo;s good to keep it all in one language.
-I&rsquo;m perplexed that Cloud Functions still (!) only supports Go 1.13 (03-Sep-2019). Even Go 1.14 (25-Feb-2020) was released pre-pandemic and we&rsquo;re now running on 1.
+      <p>I was pleased to discover that Google provides a non-Node.JS mechanism to subscribe to and act upon Firestore triggers, <a href="https://cloud.google.com/functions/docs/calling/cloud-firestore">Google Cloud Firestore Triggers</a>. I&rsquo;ve nothing against Node.JS but, for the project i&rsquo;m developing, everything else is written in Golang. It&rsquo;s good to keep it all in one language.</p>
+<p>I&rsquo;m perplexed that Cloud Functions still (!) only supports Go 1.13 (03-Sep-2019). Even <a href="https://golang.org/doc/devel/release.html#go1.14">Go 1.14</a> (25-Feb-2020) was released pre-pandemic and we&rsquo;re now running on 1.16. Come on Google!</p>
     </div>
     <a href="/posts/210413/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -286,9 +292,86 @@ I&rsquo;m perplexed that Cloud Functions still (!) only supports Go 1.13 (03-Sep
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      This works great but it wasn&rsquo;t clearly documented for non-Firebase users. I assume it will work, as well, for any of the client libraries (not just Golang).
-Assuming you have some (Golang) code (in this case using the Google Cloud Client Library) that interacts with a Firestore database. Something of the form:
-package main import ( &#34;context&#34; &#34;crypto/sha256&#34; &#34;fmt&#34; &#34;log&#34; &#34;os&#34; &#34;time&#34; &#34;cloud.google.com/go/firestore&#34; ) func hash(s string) string { h := sha256.
+      <p><img src="/images/210317.firebase.firestore.docs.png" alt="Firestore"></p>
+<p>This works great but it wasn&rsquo;t clearly documented for non-Firebase users. I assume it will work, as well, for any of the client libraries (not just Golang).</p>
+<p>Assuming you have some (Golang) code (in this case using the Google Cloud Client Library) that interacts with a Firestore database. Something of the form:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;crypto/sha256&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;cloud.google.com/go/firestore&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">hash</span>(<span style="color:#a6e22e">s</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">string</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">h</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sha256</span>.<span style="color:#a6e22e">New</span>()
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Write</span>([]byte(<span style="color:#a6e22e">s</span>))
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%x&#34;</span>, <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Sum</span>(<span style="color:#66d9ef">nil</span>))
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Dog</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Name</span>    <span style="color:#66d9ef">string</span>                 <span style="color:#e6db74">`firestore:&#34;name&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Age</span>     <span style="color:#66d9ef">int</span>                    <span style="color:#e6db74">`firestore:&#34;age&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Human</span>   <span style="color:#f92672">*</span><span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">DocumentRef</span> <span style="color:#e6db74">`firestore:&#34;human&#34;`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Created</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>              <span style="color:#e6db74">`firestore:&#34;created&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewDog</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">age</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">human</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">DocumentRef</span>) <span style="color:#a6e22e">Dog</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Dog</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Name</span>:    <span style="color:#a6e22e">name</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Age</span>:     <span style="color:#a6e22e">age</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Human</span>:   <span style="color:#a6e22e">human</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Created</span>: <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>(),
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">d</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Dog</span>) <span style="color:#a6e22e">ID</span>() <span style="color:#66d9ef">string</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">hash</span>(<span style="color:#a6e22e">d</span>.<span style="color:#a6e22e">Name</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Human</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Name</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`firestore:&#34;name&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Human</span>) <span style="color:#a6e22e">ID</span>() <span style="color:#66d9ef">string</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">hash</span>(<span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Name</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">project</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PROJECT&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">client</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">firestore</span>.<span style="color:#a6e22e">NewClient</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">project</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">value</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;FIRESTORE_EMULATOR_HOST&#34;</span>); <span style="color:#a6e22e">value</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;&#34;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Using Firestore Emulator: %s&#34;</span>, <span style="color:#a6e22e">value</span>)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">me</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Human</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;me&#34;</span>,
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">meDocRef</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;humans&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#a6e22e">me</span>.<span style="color:#a6e22e">ID</span>())
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">meDocRef</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">me</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">freddie</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewDog</span>(<span style="color:#e6db74">&#34;Freddie&#34;</span>, <span style="color:#ae81ff">2</span>, <span style="color:#a6e22e">meDocRef</span>)
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">freddieDocRef</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;dogs&#34;</span>).<span style="color:#a6e22e">Doc</span>(<span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">ID</span>())
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">freddieDocRef</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">freddie</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Then you can interact instead with the Firestore Emulator.</p>
     </div>
     <a href="/posts/210317/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>

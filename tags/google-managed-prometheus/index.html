@@ -7,7 +7,7 @@
     <title>(p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="">
-    <meta name="generator" content="Hugo 0.133.0-DEV">
+    <meta name="generator" content="Hugo 0.135.0-DEV">
     
     
     
@@ -49,9 +49,6 @@
   <meta name="twitter:title" content="Google Managed Prometheus">
 
       
-  
-
-
     
 	
   </head>
@@ -169,10 +166,23 @@
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      The deployment of Kube State Metrics for Google Managed Prometheus creates both a PodMonitoring and ClusterPodMonitoring.
-The PodMonitoring resource exposes metrics published on metric-self port (8081).
-The ClusterPodMonitoring exposes metrics published on metric port (8080) but this doesn&rsquo;t include cronjob-related metrics:
-kubectl get clusterpodmonitoring/kube-state-metrics \ --output=jsonpath=&#34;{.spec.endpoints[0].metricRelabeling}&#34; \ | jq -r . [ { &#34;action&#34;: &#34;keep&#34;, &#34;regex&#34;: &#34;kube_(daemonset|deployment|replicaset|pod|namespace|node|statefulset|persistentvolume|horizontalpodautoscaler|job_created)(_.+)?&#34;, &#34;sourceLabels&#34;: [ &#34;__name__&#34; ] } ] NOTE The regex does not include kube_cronjob and only includes kube_job_created patterns.
+      <p>The deployment of <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/exporters/kube_state_metrics">Kube State Metrics</a> for Google Managed Prometheus creates both a <code>PodMonitoring</code> and <code>ClusterPodMonitoring</code>.</p>
+<p>The <code>PodMonitoring</code> resource exposes metrics published on <code>metric-self</code> port (8081).</p>
+<p>The <code>ClusterPodMonitoring</code> exposes metrics published on <code>metric</code> port (8080) <strong>but</strong> this doesn&rsquo;t include <code>cronjob</code>-related metrics:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get clusterpodmonitoring/kube-state-metrics <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{.spec.endpoints[0].metricRelabeling}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r .
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>[
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;action&#34;</span>: <span style="color:#e6db74">&#34;keep&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;regex&#34;</span>: <span style="color:#e6db74">&#34;kube_(daemonset|deployment|replicaset|pod|namespace|node|statefulset|persistentvolume|horizontalpodautoscaler|job_created)(_.+)?&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;sourceLabels&#34;</span>: [
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;__name__&#34;</span>
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>]
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> The <code>regex</code> does <strong>not</strong> include <code>kube_cronjob</code> and only includes <code>kube_job_created</code> patterns.</p>
     </div>
     <a href="/posts/240104/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -190,9 +200,14 @@ kubectl get clusterpodmonitoring/kube-state-metrics \ --output=jsonpath=&#34;{.s
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      I&rsquo;ve been spending time recently optimizing Ackal&rsquo;s use of Google Cloud Logging and Cloud Monitoring in posts:
-Filtering metrics w/ Google Managed Prometheus Kubernetes metrics, metrics everywhere Google Metric Diagnostics and Metric Data Ingested Yesterday, I read that Robusta has a new open source project Kubernetes Resource Recommendations (KRR) so I took some time to evaluate it.
-This post describes the changes I had to make to get KRR working with Google Managed Prometheus (GMP):
+      <p>I&rsquo;ve been spending time recently optimizing <a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a>&rsquo;s use of Google <a href="https://cloud.google.com/logging">Cloud Logging</a> and <a href="https://cloud.google.com/monitoring">Cloud Monitoring</a> in posts:</p>
+<ul>
+<li><a href="/posts/230413/">Filtering metrics w/ Google Managed Prometheus</a></li>
+<li><a href="/posts/230419/">Kubernetes metrics, metrics everywhere</a></li>
+<li><a href="/posts/230425/">Google Metric Diagnostics and Metric Data Ingested</a></li>
+</ul>
+<p>Yesterday, I read that <a href="https://home.robusta.dev/">Robusta</a> has a new open source project <a href="https://github.com/robusta-dev/krr">Kubernetes Resource Recommendations (KRR)</a> so I took some time to evaluate it.</p>
+<p>This post describes the changes I had to make to get KRR working with <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus">Google Managed Prometheus (GMP)</a>:</p>
     </div>
     <a href="/posts/230427/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -210,8 +225,8 @@ This post describes the changes I had to make to get KRR working with Google Man
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      I&rsquo;ve been on an efficiency drive with Cloud Logging and Cloud Monitoring.
-With regards Cloud Logging, I&rsquo;m contemplating (!) eliminating almost all log storage. As it is I&rsquo;ve buzz cut log storage with a _Default sink that has comprehensive sets of NOT LOG_ID(X) inclusion and exclusion filters. As I was doing so, I began to wonder why I need to pay for the storage of much logging. There&rsquo;s the comfort from knowing that everything you may ever need is being logged (at least for 30 days) but there&rsquo;s also the costs that that entails.
+      <p>I&rsquo;ve been on an efficiency drive with <a href="https://cloud.google.com/logging">Cloud Logging</a> and <a href="https://cloud.google.com/monitoring">Cloud Monitoring</a>.</p>
+<p>With regards Cloud Logging, I&rsquo;m contemplating (!) eliminating almost all log storage. As it is I&rsquo;ve buzz cut log storage with a <code>_Default</code> sink that has comprehensive sets of <code>NOT LOG_ID(X)</code> inclusion and exclusion filters. As I was doing so, I began to wonder why I need to pay for the storage of much logging. There&rsquo;s the comfort from knowing that everything you may ever need is being logged (at least for 30 days) but there&rsquo;s also the costs that that entails. I use logs exclusively for debugging which got me thinking, couldn&rsquo;t I just capture logs when I&rsquo;m debugging (rather thna all the time?). I&rsquo;ve not taken that leap yet but I&rsquo;m noodling on it.</p>
     </div>
     <a href="/posts/230425/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -229,8 +244,12 @@ With regards Cloud Logging, I&rsquo;m contemplating (!) eliminating almost all l
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      I&rsquo;ve been tinkering with ways to &ldquo;unit-test&rdquo; my assumptions when using cloud platforms. I recently wrote about good posts by Google describing achieving cost savings with Cloud Monitoring and Cloud Logging:
-How to identify and reduce costs of your Google Cloud observability in Cloud Monitoring Cloud Logging pricing for Cloud Admins: How to approach it &amp; save cost With Cloud Monitoring, I&rsquo;ve restricted the prometheus.googleapis.com metrics that are being ingested but realized I wanted to track the number of Pods (and Containers) deployed to a GKE cluster.
+      <p>I&rsquo;ve been tinkering with ways to &ldquo;unit-test&rdquo; my assumptions when using cloud platforms. I recently wrote about good posts by Google describing achieving cost savings with Cloud Monitoring and Cloud Logging:</p>
+<ul>
+<li><a href="https://cloud.google.com/blog/products/management-tools/learn-to-understand-and-reduce-cloud-monitoring-costs/">How to identify and reduce costs of your Google Cloud observability in Cloud Monitoring</a></li>
+<li><a href="https://cloud.google.com/blog/topics/cost-management/how-to-approach-cloud-logging-pricing-for-cloud-admins">Cloud Logging pricing for Cloud Admins: How to approach it &amp; save cost</a></li>
+</ul>
+<p>With Cloud Monitoring, I&rsquo;ve restricted the <code>prometheus.googleapis.com</code> metrics that are being ingested but realized I wanted to track the number of Pods (and Containers) deployed to a GKE cluster.</p>
     </div>
     <a href="/posts/230419/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -248,9 +267,13 @@ How to identify and reduce costs of your Google Cloud observability in Cloud Mon
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      Google has published two, very good blog posts on cost management:
-How to identify and reduce costs of your Google Cloud observability in Cloud Monitoring Cloud Logging pricing for Cloud Admins: How to approach it &amp; save cost This post is about my application cost reductions for Cloud Monitoring for Ackal.
-I&rsquo;m pleased with Google Cloud Managed Service for Prometheus (hereinafter GMP). I&rsquo;ve a strong preference for letting service providers run components of Ackal that I consider important but non-differentiating.
+      <p>Google has published two, very good blog posts on cost management:</p>
+<ul>
+<li><a href="https://cloud.google.com/blog/products/management-tools/learn-to-understand-and-reduce-cloud-monitoring-costs/">How to identify and reduce costs of your Google Cloud observability in Cloud Monitoring</a></li>
+<li><a href="https://cloud.google.com/blog/topics/cost-management/how-to-approach-cloud-logging-pricing-for-cloud-admins">Cloud Logging pricing for Cloud Admins: How to approach it &amp; save cost</a></li>
+</ul>
+<p>This post is about my application cost reductions for Cloud Monitoring for <a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a>.</p>
+<p>I&rsquo;m pleased with <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus">Google Cloud Managed Service for Prometheus</a> (hereinafter GMP). I&rsquo;ve a strong preference for letting service providers run components of <a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a> that I consider important but non-differentiating.</p>
     </div>
     <a href="/posts/230413/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -268,9 +291,9 @@ I&rsquo;m pleased with Google Cloud Managed Service for Prometheus (hereinafter 
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      I&rsquo;m using Google Managed Service for Prometheus (GMP) and liking it.
-Sometime ago, I tried using PromLens with GMP but GMP&rsquo;s Prometheus HTTP API endpoint requires auth and I&rsquo;ve battled Prometheus&rsquo; somewhat limited auth mechanism before (Scraping metrics exposed by Google Cloud Run services that require authentication).
-Listening to PromCon EU 2022 videos, I learned that PromLens has been open sourced and contributed to the Prometheus project. Eventually, the functionality of PromLens should be combined into the Prometheus UI.
+      <p>I&rsquo;m using <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus">Google Managed Service for Prometheus (GMP)</a> and liking it.</p>
+<p>Sometime ago, I tried using <a href="https://promlens.com/">PromLens</a> with GMP but GMP&rsquo;s Prometheus HTTP API endpoint requires auth and I&rsquo;ve battled Prometheus&rsquo; somewhat limited auth mechanism before (<a href="/posts/211005/">Scraping metrics exposed by Google Cloud Run services that require authentication</a>).</p>
+<p>Listening to <a href="https://promcon.io/2022-munich/schedule/">PromCon EU 2022</a> videos, I learned that PromLens has been <a href="https://promlabs.com/blog/2022/10/25/promlabs-and-chronosphere-open-source-the-promlens-query-builder">open sourced</a> and contributed to the Prometheus project. Eventually, the functionality of PromLens should be combined into the Prometheus UI.</p>
     </div>
     <a href="/posts/230104/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>

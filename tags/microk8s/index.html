@@ -7,7 +7,7 @@
     <title>(p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="">
-    <meta name="generator" content="Hugo 0.133.0-DEV">
+    <meta name="generator" content="Hugo 0.135.0-DEV">
     
     
     
@@ -49,9 +49,6 @@
   <meta name="twitter:title" content="MicroK8s">
 
       
-  
-
-
     
 	
   </head>
@@ -169,10 +166,40 @@
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      An interesting question on Stack overflow prompted me to understand how to use Visual Studio Code and Delve to remotely debug a Golang app running on Kubernetes (MicroK8s).
-The OP is using Gin which was also new to me so the question gave me an opportunity to try out several things.
-Sources A simple healthz handler:
-package main import ( &#34;flag&#34; &#34;log/slog&#34; &#34;net/http&#34; &#34;github.com/gin-gonic/gin&#34; ) var ( addr = flag.String(&#34;addr&#34;, &#34;0.
+      <p>An interesting <a href="https://stackoverflow.com/questions/78537605">question</a> on Stack overflow prompted me to understand how to use Visual Studio Code and <a href="https://github.com/go-delve/delve">Delve</a> to remotely debug a Golang app running on Kubernetes (MicroK8s).</p>
+<p>The OP is using <a href="https://github.com/gin-gonic/gin">Gin</a> which was also new to me so the question gave me an opportunity to try out several things.</p>
+<h2 id="sources">Sources</h2>
+<p>A simple <code>healthz</code> handler:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;flag&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log/slog&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;net/http&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/gin-gonic/gin&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">addr</span> = <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;addr&#34;</span>, <span style="color:#e6db74">&#34;0.0.0.0:8080&#34;</span>, <span style="color:#e6db74">&#34;HTTP server endpoint&#34;</span>)
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">healthz</span>(<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">gin</span>.<span style="color:#a6e22e">Context</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">String</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusOK</span>, <span style="color:#e6db74">&#34;ok&#34;</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">router</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">gin</span>.<span style="color:#a6e22e">Default</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">router</span>.<span style="color:#a6e22e">GET</span>(<span style="color:#e6db74">&#34;/fib&#34;</span>, <span style="color:#a6e22e">handler</span>())
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">router</span>.<span style="color:#a6e22e">GET</span>(<span style="color:#e6db74">&#34;healthz&#34;</span>, <span style="color:#a6e22e">healthz</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Server starting&#34;</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Server error&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;err&#34;</span>, <span style="color:#a6e22e">router</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">addr</span>),
+</span></span><span style="display:flex;"><span>	)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><code>Containerfile</code>:</p>
     </div>
     <a href="/posts/240528/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -190,9 +217,13 @@ package main import ( &#34;flag&#34; &#34;log/slog&#34; &#34;net/http&#34; &#34;
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      Spent time today yak-shaving which resulted in an unplanned migration from MicroK8s &lsquo;prometheus&rsquo; add-on to the new and not fully-documented &lsquo;observability&rsquo; add-on:
-sudo microk8s.enable prometheus Infer repository core for addon prometheus DEPRECATION WARNING: &#39;prometheus&#39; is deprecated and will soon be removed. Please use &#39;observability&#39; instead. ... The reason for the name change is unclear.
-It&rsquo;s unclear whether there&rsquo;s a difference in the primary components that are installed too (I&rsquo;d thought Grafana wasn&rsquo;t included in &lsquo;prometheus&rsquo;), (Grafana) Loki and (Grafana) Tempo definitely weren&rsquo;t included and I don&rsquo;t want them either.
+      <p>Spent time today <a href="https://en.wiktionary.org/wiki/yak_shaving">yak-shaving</a> which resulted in an unplanned migration from <a href="https://microk8s.io">MicroK8s</a> &lsquo;prometheus&rsquo; <a href="https://microk8s.io/docs/addons">add-on</a> to the new and not fully-documented &lsquo;observability&rsquo; add-on:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo microk8s.enable prometheus
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>Infer repository core for addon prometheus
+</span></span><span style="display:flex;"><span>DEPRECATION WARNING: &#39;prometheus&#39; is deprecated and will soon be removed. Please use &#39;observability&#39; instead.
+</span></span><span style="display:flex;"><span>...
+</span></span></code></pre></div><p>The reason for the name change is unclear.</p>
+<p>It&rsquo;s unclear whether there&rsquo;s a difference in the primary components that are installed too (I&rsquo;d thought Grafana wasn&rsquo;t included in &lsquo;prometheus&rsquo;), <a href="https://grafana.com/oss/loki">(Grafana) Loki</a> and <a href="https://grafana.com/oss/tempo/">(Grafana) Tempo</a> definitely weren&rsquo;t included and I don&rsquo;t want them either.</p>
     </div>
     <a href="/posts/240216/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -210,12 +241,26 @@ It&rsquo;s unclear whether there&rsquo;s a difference in the primary components 
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      Phew!
-For Want of a Nail
-I was interested in learning how to Manage Resources for Containers. On the way, I learned and discovered:
-kubectl top Vertical Pod Autoscaler A (valuable) digression through PodMonitor kube-state-metrics `kubectl-patch Created a Graph References Kubernetes Resources Visual Studio Code has begun to bug me (reasonably) to add resources to Kubernetes manifests.
-E.g.:
-resources: limits: cpu: &#34;1&#34; memory: &#34;512Mi&#34; I&rsquo;ve been spending time with Deislab&rsquo;s Akri and decided to determine whether Akri&rsquo;s primary resources (Agent, Controller) and some of my creations HTTP Device and Discovery, were being suitably constrained.
+      <p>Phew!</p>
+<p><a href="https://en.wikipedia.org/wiki/For_Want_of_a_Nail">For Want of a Nail</a></p>
+<p>I was interested in learning how to <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">Manage Resources for Containers</a>. On the way, I learned and discovered:</p>
+<ul>
+<li><a href="#kubectl-top"><code>kubectl top</code></a></li>
+<li><a href="#vertical-pod-autoscaler-vpa">Vertical Pod Autoscaler</a></li>
+<li>A (valuable) digression through <a href="#digression-podmonitor">PodMonitor</a></li>
+<li><a href="#kube-state-metrics"><code>kube-state-metrics</code></a></li>
+<li><a href="#kubectl-patch">`kubectl-patch</a></li>
+<li>Created a <a href="#graph">Graph</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+<h2 id="kubernetes-resources">Kubernetes Resources</h2>
+<p>Visual Studio Code has begun to bug me (reasonably) to add <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/"><code>resources</code></a> to Kubernetes manifests.</p>
+<p>E.g.:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">limits</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;1&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;512Mi&#34;</span>
+</span></span></code></pre></div><p>I&rsquo;ve been spending time with Deislab&rsquo;s <a href="https://github.com/deislabs/akri">Akri</a> and decided to determine whether Akri&rsquo;s primary resources (Agent, Controller) and some of my creations HTTP Device and Discovery, were being suitably constrained.</p>
     </div>
     <a href="/posts/210305/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -233,8 +278,8 @@ resources: limits: cpu: &#34;1&#34; memory: &#34;512Mi&#34; I&rsquo;ve been spen
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      It&rsquo;s a good name, I read it as &ldquo;dapper&rdquo; but I frequently type &ldquo;darp&rdquo; :-(
-Was interested to read that Dapr is now v1.0 and decided to check it out. I was initially confused between Dapr and service mesh functionality. But, having used Dapr, it appears to be more focused in aiding the development of (cloud-native) (distributed) apps by providing developers with abstractions for e.g. service discovery, eventing, observability whereas service meshes feel (!
+      <p>It&rsquo;s a good name, I read it as &ldquo;dapper&rdquo; but I frequently type &ldquo;darp&rdquo; :-(</p>
+<p>Was interested to <a href="https://blog.dapr.io/posts/2021/02/17/announcing-dapr-v1.0/">read</a> that <a href="https://dapr.io/">Dapr</a> is now v1.0 and decided to check it out. I was initially confused between Dapr and service mesh functionality. But, having used Dapr, it appears to be more focused in aiding the development of (cloud-native) (distributed) apps by providing developers with abstractions for e.g. service discovery, eventing, observability whereas service meshes feel (!) more oriented towards simplifying the deployment of existing apps. Both use the concept of proxies, deployed alongside app components (as sidecars on Kubernetes) to provide their functionality to apps.</p>
     </div>
     <a href="/posts/210222/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -252,9 +297,9 @@ Was interested to read that Dapr is now v1.0 and decided to check it out. I was 
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      I&rsquo;m debugging an issue with Akri Zeroconf protocol in which Instance environment variables are no longer (!) being surfaced within the Broker pods. In my adventures, it seemed useful to better understand how Akri works and specifically, how Akri uses Kubernetes Device Plugins.
-IIUC plugins register with the Kubelet (!) via a gRPC service (Registration) that the Kubelet exposes on a UNIX socket at /var/lib/kubelet/device-plugins/kubelet.sock
-Then (!) if successful, devices should be reported by the Node&rsquo;s metadata (spec) and available to be bound to Pods.
+      <p>I&rsquo;m debugging an <a href="https://github.com/deislabs/akri/issues/177">issue</a> with Akri <code>Zeroconf</code> <a href="https://github.com/DazWilkin/akri/tree/protocol-zeroconf">protocol</a> in which Instance environment variables are no longer (!) being surfaced within the Broker pods. In my adventures, it seemed useful to better understand how Akri works and specifically, how Akri uses Kubernetes <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/">Device Plugins</a>.</p>
+<p>IIUC plugins register with the Kubelet (!) via a gRPC service (<code>Registration</code>) that the Kubelet exposes on a UNIX socket at <code>/var/lib/kubelet/device-plugins/kubelet.sock</code></p>
+<p>Then (!) if successful, devices should be reported by the Node&rsquo;s metadata (spec) and available to be bound to Pods.</p>
     </div>
     <a href="/posts/201217/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -272,8 +317,9 @@ Then (!) if successful, devices should be reported by the Node&rsquo;s metadata 
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      For the past couple of weeks, I&rsquo;ve been playing around with Akri, a Microsoft (DeisLabs) project for building a connected edge with Kubernetes. Kubernetes, IoT, Rust (and Golang) make this all compelling to me.
-Initially, I deployed an Akri End-to-End to MicroK8s on Google Compute Engine (link) and Digital Ocean (link). But I was interested to create me own example and so have proposed a very (!) simple HTTP-based protocol.
+      <p>For the past couple of weeks, I&rsquo;ve been playing around with <a href="http://github.com/deislabs/akri">Akri</a>, a Microsoft (DeisLabs) project for <a href="https://cloudblogs.microsoft.com/opensource/2020/10/20/announcing-akri-open-source-project-building-connected-edge-kubernetes/">building a connected edge with Kubernetes</a>. Kubernetes, IoT, Rust (and Golang) make this all compelling to me.</p>
+<p>Initially, I deployed an Akri <a href="https://github.com/deislabs/akri/blob/main/docs/end-to-end-demo.md">End-to-End</a> to <a href="https://microk8s.io/">MicroK8s</a> on Google Compute Engine (<a href="https://github.com/deislabs/akri/blob/main/docs/end-to-end-demo-gce.md">link</a>) and Digital Ocean (<a href="https://github.com/deislabs/akri/blob/main/docs/end-to-end-demo-do.md">link</a>). But I was interested to create me own example and so have proposed a very (!) simple <a href="https://github.com/DazWilkin/akri/blob/protocol-http/docs/extensibility-http.md">HTTP-based protocol</a>.</p>
+<p>This blog summarizes my thoughts about Akri and an explanation of the HTTP protocol implementation in the hope that this helps others.</p>
     </div>
     <a href="/posts/201113/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -291,7 +337,7 @@ Initially, I deployed an Akri End-to-End to MicroK8s on Google Compute Engine (l
       </a>
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
-      I was very interested to read about Microsoft&rsquo;s DeisLab&rsquo;s latest (rust-based) Kubernetes project: akri. If I understand it correctly, it provides a mechanism to make any (IoT) device accessible to containers running within a cluster. I need to spend more time playing around with it so that I can fully understand it. I had some problems getting the End-to-End demo running on Google Compute Engine (and then I tried DigitalOcean droplet) instances.
+      <p>I was very interested to read about Microsoft&rsquo;s DeisLab&rsquo;s latest (rust-based) Kubernetes project: <a href="https://cloudblogs.microsoft.com/opensource/2020/10/20/announcing-akri-open-source-project-building-connected-edge-kubernetes/">akri</a>. If I understand it correctly, it provides a mechanism to make any (IoT) device accessible to containers running within a cluster. I need to spend more time playing around with it so that I can fully understand it. I had some problems getting the <a href="https://github.com/deislabs/akri/blob/main/docs/end-to-end-demo.md">End-to-End</a> demo running on Google Compute Engine (and then I tried DigitalOcean droplet) instances. So, here&rsquo;s a two-ways solution to get you going.</p>
     </div>
     <a href="/posts/201022/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>

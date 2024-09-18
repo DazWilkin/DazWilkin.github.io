@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Trivy vulnerability scanning | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="I build (and therefore) manage many container images. It&rsquo;s easy (common?) to overlook that these images contain vulnerabilities, hopefully vulns that are fixed and that the images must be rebuilt to accommodate these changes.
+I have used Google&rsquo;s very expensive container vulnerability scanning tool but wanted something cheaper. I found this list of open source solutions on Reddit and decided to look into Trivy.
+It&rsquo;s possible to install Trivy via a package manager, a binary or to build the Go binary locally but I prefer to use containers whenever possible:">
+    <meta name="generator" content="Hugo 0.135.0-DEV">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.6034ebad1bcaca305e5bfb3c7e4e0693f922718ecee81314bab17d117b4bab5b.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:url" content="https://pretired.dazwilkin.com/posts/240918/">
+  <meta property="og:site_name" content="(p)retired">
+  <meta property="og:title" content="Trivy vulnerability scanning">
+  <meta property="og:description" content="I build (and therefore) manage many container images. It’s easy (common?) to overlook that these images contain vulnerabilities, hopefully vulns that are fixed and that the images must be rebuilt to accommodate these changes.
+I have used Google’s very expensive container vulnerability scanning tool but wanted something cheaper. I found this list of open source solutions on Reddit and decided to look into Trivy.
+It’s possible to install Trivy via a package manager, a binary or to build the Go binary locally but I prefer to use containers whenever possible:">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2024-09-18T00:00:00-07:00">
+    <meta property="article:modified_time" content="2024-09-18T00:00:00-07:00">
+    <meta property="article:tag" content="Trivy">
+    <meta property="article:tag" content="Vulnerability Scanning">
+
+  <meta itemprop="name" content="Trivy vulnerability scanning">
+  <meta itemprop="description" content="I build (and therefore) manage many container images. It’s easy (common?) to overlook that these images contain vulnerabilities, hopefully vulns that are fixed and that the images must be rebuilt to accommodate these changes.
+I have used Google’s very expensive container vulnerability scanning tool but wanted something cheaper. I found this list of open source solutions on Reddit and decided to look into Trivy.
+It’s possible to install Trivy via a package manager, a binary or to build the Go binary locally but I prefer to use containers whenever possible:">
+  <meta itemprop="datePublished" content="2024-09-18T00:00:00-07:00">
+  <meta itemprop="dateModified" content="2024-09-18T00:00:00-07:00">
+  <meta itemprop="wordCount" content="2185">
+  <meta itemprop="keywords" content="Trivy,Vulnerability Scanning">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Trivy vulnerability scanning">
+  <meta name="twitter:description" content="I build (and therefore) manage many container images. It’s easy (common?) to overlook that these images contain vulnerabilities, hopefully vulns that are fixed and that the images must be rebuilt to accommodate these changes.
+I have used Google’s very expensive container vulnerability scanning tool but wanted something cheaper. I found this list of open source solutions on Reddit and decided to look into Trivy.
+It’s possible to install Trivy via a package manager, a binary or to build the Go binary locally but I prefer to use containers whenever possible:">
+
+      
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked ttu">
+          
+        Posts
+      </aside>
+      
+
+
+
+
+
+
+
+
+
+
+  <div id="sharing" class="mt3 ananke-socials">
+    
+      
+      <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https://pretired.dazwilkin.com/posts/240918/&amp;title=Trivy%20vulnerability%20scanning" class="ananke-social-link linkedin no-underline" aria-label="share on LinkedIn">
+        
+        <span class="icon"> <svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+        
+      </a>
+    
+  </div>
+
+
+      <h1 class="f1 athelas mt3 mb1">Trivy vulnerability scanning</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2024-09-18T00:00:00-07:00">September 18, 2024</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 11 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 2185 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I build (and therefore) manage many container images. It&rsquo;s easy (common?) to overlook that these images contain vulnerabilities, hopefully vulns that are fixed and that the images must be rebuilt to accommodate these changes.</p>
+<p>I have used Google&rsquo;s <strong>very</strong> expensive container vulnerability scanning tool but wanted something cheaper. I found this <a href="https://www.reddit.com/r/selfhosted/comments/12mvpq2/comment/jgdjoqr/">list of open source solutions</a> on Reddit and decided to look into <a href="https://github.com/aquasecurity/trivy">Trivy</a>.</p>
+<p>It&rsquo;s possible to <a href="https://aquasecurity.github.io/trivy/v0.55/getting-started/installation/">install</a> Trivy via a package manager, a binary or to build the Go binary locally but I prefer to use containers whenever possible:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PODMAN_SOCKET<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/run/user/1000/podman/podman.sock&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>podman run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span>/trivy/cache/:/root/.cache/ <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PODMAN_SOCKET<span style="color:#e6db74">}</span>:/podman.sock <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>aquasec/trivy:latest <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --image-src<span style="color:#f92672">=</span>podman <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --podman-host<span style="color:#f92672">=</span>/podman.sock <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  image <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --format<span style="color:#f92672">=</span>table <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --scanners<span style="color:#f92672">=</span>vuln <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --ignore-unfixed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    <span style="color:#e6db74">${</span>IMAGE<span style="color:#e6db74">}</span>:<span style="color:#e6db74">${</span>TAG<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>Or:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">function</span> trivy <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  local PODMAN_SOCKET<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/run/user/1000/podman/podman.sock&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  podman run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span>/trivy/cache/:/root/.cache/ <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PODMAN_SOCKET<span style="color:#e6db74">}</span>:/podman.sock <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  aquasec/trivy:latest <span style="color:#e6db74">&#34;</span>$@<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>As you can see, I&rsquo;m using (prefer) <a href="">Podman</a> and needed a socket (<code>/var/run/user/1000/podman/podman.sock</code>) for Trivy:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>systemctl --user enable --now podman.socket
+</span></span></code></pre></div><p>And a 5-year old <a href="https://hub.docker.com/layers/library/python/3.4-alpine/images/sha256-c06adcf62f6ef21ae5c586552532b04b693f9ab6df377d7ea066fd682c470864?context=explore">python:3.4-alpine</a> image:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>podman pull docker.io/library/python:3.4-alpine
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>trivy <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--image-src<span style="color:#f92672">=</span>podman <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--podman-host<span style="color:#f92672">=</span>/podman.sock <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>image <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span>table <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --scanners<span style="color:#f92672">=</span>vuln <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --ignore-unfixed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  docker.io/library/python:3.4-alpine
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>2024-09-18T17:42:36Z	INFO	[vuln] Vulnerability scanning is enabled
+</span></span><span style="display:flex;"><span>2024-09-18T17:42:36Z	INFO	Detected OS	family=&#34;alpine&#34; version=&#34;3.9.2&#34;
+</span></span><span style="display:flex;"><span>2024-09-18T17:42:36Z	INFO	[alpine] Detecting vulnerabilities...	os_version=&#34;3.9&#34; repository=&#34;3.9&#34; pkg_num=28
+</span></span><span style="display:flex;"><span>2024-09-18T17:42:36Z	INFO	Number of language-specific files	num=1
+</span></span><span style="display:flex;"><span>2024-09-18T17:42:36Z	INFO	[python-pkg] Detecting vulnerabilities...
+</span></span><span style="display:flex;"><span>2024-09-18T17:42:36Z	WARN	This OS version is no longer supported by the distribution	family=&#34;alpine&#34; version=&#34;3.9.2&#34;
+</span></span><span style="display:flex;"><span>2024-09-18T17:42:36Z	WARN	The vulnerability detection may be insufficient because security updates are not provided
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>docker.io/library/python:3.4-alpine (alpine 3.9.2)
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>Total: 37 (UNKNOWN: 0, LOW: 4, MEDIUM: 16, HIGH: 13, CRITICAL: 4)
+</span></span></code></pre></div><pre tabindex="0"><code>┌──────────────┬────────────────┬──────────┬────────┬───────────────────┬───────────────┬──────────────────────────────────────────────────────────────┐
+│   Library    │ Vulnerability  │ Severity │ Status │ Installed Version │ Fixed Version │                            Title                             │
+├──────────────┼────────────────┼──────────┼────────┼───────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ expat        │ CVE-2018-20843 │ HIGH     │ fixed  │ 2.2.6-r0          │ 2.2.7-r0      │ expat: large number of colons in input makes parser consume  │
+│              │                │          │        │                   │               │ high amount...                                               │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2018-20843                   │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2019-15903 │          │        │                   │ 2.2.7-r1      │ expat: heap-based buffer over-read via crafted XML input     │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-15903                   │
+├──────────────┼────────────────┼──────────┤        ├───────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ libbz2       │ CVE-2019-12900 │ CRITICAL │        │ 1.0.6-r6          │ 1.0.6-r7      │ bzip2: out-of-bounds write in function BZ2_decompress        │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-12900                   │
+├──────────────┼────────────────┼──────────┤        ├───────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ libcrypto1.1 │ CVE-2019-1543  │ HIGH     │        │ 1.1.1a-r1         │ 1.1.1b-r1     │ openssl: ChaCha20-Poly1305 with long nonces                  │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1543                    │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2020-1967  │          │        │                   │ 1.1.1g-r0     │ openssl: Segmentation fault in SSL_check_chain causes denial │
+│              │                │          │        │                   │               │ of service                                                   │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2020-1967                    │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2021-23840 │          │        │                   │ 1.1.1j-r0     │ openssl: integer overflow in CipherUpdate                    │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2021-23840                   │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2021-3450  │          │        │                   │ 1.1.1k-r0     │ openssl: CA certificate check bypass with                    │
+│              │                │          │        │                   │               │ X509_V_FLAG_X509_STRICT                                      │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2021-3450                    │
+│              ├────────────────┼──────────┤        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2019-1547  │ MEDIUM   │        │                   │ 1.1.1d-r0     │ openssl: side-channel weak encryption vulnerability          │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1547                    │
+│              ├────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│              │ CVE-2019-1549  │          │        │                   │               │ openssl: information disclosure in fork()                    │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1549                    │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2019-1551  │          │        │                   │ 1.1.1d-r2     │ openssl: Integer overflow in RSAZ modular exponentiation on  │
+│              │                │          │        │                   │               │ x86_64                                                       │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1551                    │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2020-1971  │          │        │                   │ 1.1.1i-r0     │ openssl: EDIPARTYNAME NULL pointer de-reference              │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2020-1971                    │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2021-23841 │          │        │                   │ 1.1.1j-r0     │ openssl: NULL pointer dereference in                         │
+│              │                │          │        │                   │               │ X509_issuer_and_serial_hash()                                │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2021-23841                   │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2021-3449  │          │        │                   │ 1.1.1k-r0     │ openssl: NULL pointer dereference in signature_algorithms    │
+│              │                │          │        │                   │               │ processing                                                   │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2021-3449                    │
+│              ├────────────────┼──────────┤        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2019-1563  │ LOW      │        │                   │ 1.1.1d-r0     │ openssl: information disclosure in PKCS7_dataDecode and      │
+│              │                │          │        │                   │               │ CMS_decrypt_set1_pkey                                        │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1563                    │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2021-23839 │          │        │                   │ 1.1.1j-r0     │ openssl: incorrect SSLv2 rollback protection                 │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2021-23839                   │
+├──────────────┼────────────────┼──────────┤        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│ libssl1.1    │ CVE-2019-1543  │ HIGH     │        │                   │ 1.1.1b-r1     │ openssl: ChaCha20-Poly1305 with long nonces                  │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1543                    │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2020-1967  │          │        │                   │ 1.1.1g-r0     │ openssl: Segmentation fault in SSL_check_chain causes denial │
+│              │                │          │        │                   │               │ of service                                                   │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2020-1967                    │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2021-23840 │          │        │                   │ 1.1.1j-r0     │ openssl: integer overflow in CipherUpdate                    │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2021-23840                   │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2021-3450  │          │        │                   │ 1.1.1k-r0     │ openssl: CA certificate check bypass with                    │
+│              │                │          │        │                   │               │ X509_V_FLAG_X509_STRICT                                      │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2021-3450                    │
+│              ├────────────────┼──────────┤        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2019-1547  │ MEDIUM   │        │                   │ 1.1.1d-r0     │ openssl: side-channel weak encryption vulnerability          │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1547                    │
+│              ├────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│              │ CVE-2019-1549  │          │        │                   │               │ openssl: information disclosure in fork()                    │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1549                    │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2019-1551  │          │        │                   │ 1.1.1d-r2     │ openssl: Integer overflow in RSAZ modular exponentiation on  │
+│              │                │          │        │                   │               │ x86_64                                                       │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1551                    │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2020-1971  │          │        │                   │ 1.1.1i-r0     │ openssl: EDIPARTYNAME NULL pointer de-reference              │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2020-1971                    │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2021-23841 │          │        │                   │ 1.1.1j-r0     │ openssl: NULL pointer dereference in                         │
+│              │                │          │        │                   │               │ X509_issuer_and_serial_hash()                                │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2021-23841                   │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2021-3449  │          │        │                   │ 1.1.1k-r0     │ openssl: NULL pointer dereference in signature_algorithms    │
+│              │                │          │        │                   │               │ processing                                                   │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2021-3449                    │
+│              ├────────────────┼──────────┤        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2019-1563  │ LOW      │        │                   │ 1.1.1d-r0     │ openssl: information disclosure in PKCS7_dataDecode and      │
+│              │                │          │        │                   │               │ CMS_decrypt_set1_pkey                                        │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-1563                    │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2021-23839 │          │        │                   │ 1.1.1j-r0     │ openssl: incorrect SSLv2 rollback protection                 │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2021-23839                   │
+├──────────────┼────────────────┼──────────┤        ├───────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ musl         │ CVE-2019-14697 │ CRITICAL │        │ 1.1.20-r4         │ 1.1.20-r5     │ musl libc through 1.1.23 has an x87 floating-point stack     │
+│              │                │          │        │                   │               │ adjustment im ......                                         │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-14697                   │
+│              ├────────────────┼──────────┤        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2020-28928 │ MEDIUM   │        │                   │ 1.1.20-r6     │ In musl libc through 1.2.1, wcsnrtombs mishandles particular │
+│              │                │          │        │                   │               │ combinati ...                                                │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2020-28928                   │
+├──────────────┼────────────────┼──────────┤        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│ musl-utils   │ CVE-2019-14697 │ CRITICAL │        │                   │ 1.1.20-r5     │ musl libc through 1.1.23 has an x87 floating-point stack     │
+│              │                │          │        │                   │               │ adjustment im ......                                         │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-14697                   │
+│              ├────────────────┼──────────┤        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2020-28928 │ MEDIUM   │        │                   │ 1.1.20-r6     │ In musl libc through 1.2.1, wcsnrtombs mishandles particular │
+│              │                │          │        │                   │               │ combinati ...                                                │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2020-28928                   │
+├──────────────┼────────────────┼──────────┤        ├───────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ sqlite-libs  │ CVE-2019-8457  │ CRITICAL │        │ 3.26.0-r3         │ 3.28.0-r0     │ sqlite: heap out-of-bound read in function rtreenode()       │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-8457                    │
+│              ├────────────────┼──────────┤        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2019-19244 │ HIGH     │        │                   │ 3.28.0-r2     │ sqlite: allows a crash if a sub-select uses both DISTINCT    │
+│              │                │          │        │                   │               │ and window...                                                │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-19244                   │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2019-5018  │          │        │                   │ 3.28.0-r0     │ sqlite: Use-after-free in window function leading to remote  │
+│              │                │          │        │                   │               │ code execution                                               │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-5018                    │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2020-11655 │          │        │                   │ 3.28.0-r3     │ sqlite: malformed window-function query leads to DoS         │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2020-11655                   │
+│              ├────────────────┼──────────┤        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2019-16168 │ MEDIUM   │        │                   │ 3.28.0-r1     │ sqlite: Division by zero in whereLoopAddBtreeIndex in        │
+│              │                │          │        │                   │               │ sqlite3.c                                                    │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-16168                   │
+│              ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│              │ CVE-2019-19242 │          │        │                   │ 3.28.0-r2     │ sqlite: SQL injection in sqlite3ExprCodeTarget in expr.c     │
+│              │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-19242                   │
+└──────────────┴────────────────┴──────────┴────────┴───────────────────┴───────────────┴──────────────────────────────────────────────────────────────┘
+</code></pre><pre tabindex="0"><code>2024-09-18T17:42:36Z	INFO	Table result includes only package filenames. Use &#39;--format json&#39; option to get the full path to the package file.
+
+Python (python-pkg)
+
+Total: 6 (UNKNOWN: 0, LOW: 0, MEDIUM: 2, HIGH: 4, CRITICAL: 0)
+</code></pre><pre tabindex="0"><code>┌───────────────────────┬────────────────┬──────────┬────────┬───────────────────┬───────────────┬─────────────────────────────────────────────────────────────┐
+│        Library        │ Vulnerability  │ Severity │ Status │ Installed Version │ Fixed Version │                            Title                            │
+├───────────────────────┼────────────────┼──────────┼────────┼───────────────────┼───────────────┼─────────────────────────────────────────────────────────────┤
+│ pip (METADATA)        │ CVE-2019-20916 │ HIGH     │ fixed  │ 19.0.3            │ 19.2          │ python-pip: directory traversal in _download_http_url()     │
+│                       │                │          │        │                   │               │ function in src/pip/_internal/download.py                   │
+│                       │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2019-20916                  │
+│                       ├────────────────┼──────────┤        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│                       │ CVE-2021-3572  │ MEDIUM   │        │                   │ 21.1          │ python-pip: Incorrect handling of unicode separators in git │
+│                       │                │          │        │                   │               │ references                                                  │
+│                       │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2021-3572                   │
+│                       ├────────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│                       │ CVE-2023-5752  │          │        │                   │ 23.3          │ pip: Mercurial configuration injectable in repo revision    │
+│                       │                │          │        │                   │               │ when installing via pip                                     │
+│                       │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-5752                   │
+├───────────────────────┼────────────────┼──────────┤        ├───────────────────┼───────────────┼─────────────────────────────────────────────────────────────┤
+│ setuptools (METADATA) │ CVE-2022-40897 │ HIGH     │        │ 40.8.0            │ 65.5.1        │ pypa-setuptools: Regular Expression Denial of Service       │
+│                       │                │          │        │                   │               │ (ReDoS) in package_index.py                                 │
+│                       │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2022-40897                  │
+│                       ├────────────────┤          │        │                   ├───────────────┼─────────────────────────────────────────────────────────────┤
+│                       │ CVE-2024-6345  │          │        │                   │ 70.0.0        │ pypa/setuptools: Remote code execution via download         │
+│                       │                │          │        │                   │               │ functions in the package_index module in...                 │
+│                       │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2024-6345                   │
+├───────────────────────┼────────────────┤          │        ├───────────────────┼───────────────┼─────────────────────────────────────────────────────────────┤
+│ wheel (METADATA)      │ CVE-2022-40898 │          │        │ 0.33.1            │ 0.38.1        │ python-wheel: remote attackers can cause denial of service  │
+│                       │                │          │        │                   │               │ via attacker controlled input...                            │
+│                       │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2022-40898                  │
+└───────────────────────┴────────────────┴──────────┴────────┴───────────────────┴───────────────┴─────────────────────────────────────────────────────────────┘
+</code></pre><p>Versus:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker.io/library/python:3.9.20-alpine
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>2024-09-18T18:18:43Z	INFO	[vuln] Vulnerability scanning is enabled
+</span></span><span style="display:flex;"><span>2024-09-18T18:18:44Z	INFO	[python] License acquired from METADATA classifiers may be subject to additional terms	name=&#34;pip&#34; version=&#34;23.0.1&#34;
+</span></span><span style="display:flex;"><span>2024-09-18T18:18:44Z	INFO	[python] License acquired from METADATA classifiers may be subject to additional terms	name=&#34;setuptools&#34; version=&#34;58.1.0&#34;
+</span></span><span style="display:flex;"><span>2024-09-18T18:18:45Z	INFO	Detected OS	family=&#34;alpine&#34; version=&#34;3.20.3&#34;
+</span></span><span style="display:flex;"><span>2024-09-18T18:18:45Z	INFO	[alpine] Detecting vulnerabilities...	os_version=&#34;3.20&#34; repository=&#34;3.20&#34; pkg_num=37
+</span></span><span style="display:flex;"><span>2024-09-18T18:18:45Z	INFO	Number of language-specific files	num=1
+</span></span><span style="display:flex;"><span>2024-09-18T18:18:45Z	INFO	[python-pkg] Detecting vulnerabilities...
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>docker.io/library/python:3.9.20-alpine (alpine 3.20.3)
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>Total: 0 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0)
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>2024-09-18T18:18:45Z	INFO	Table result includes only package filenames. Use &#39;--format json&#39; option to get the full path to the package file.
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>Python (python-pkg)
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>Total: 3 (UNKNOWN: 0, LOW: 0, MEDIUM: 1, HIGH: 2, CRITICAL: 0)
+</span></span></code></pre></div><pre tabindex="0"><code>┌───────────────────────┬────────────────┬──────────┬────────┬───────────────────┬───────────────┬──────────────────────────────────────────────────────────┐
+│        Library        │ Vulnerability  │ Severity │ Status │ Installed Version │ Fixed Version │                          Title                           │
+├───────────────────────┼────────────────┼──────────┼────────┼───────────────────┼───────────────┼──────────────────────────────────────────────────────────┤
+│ pip (METADATA)        │ CVE-2023-5752  │ MEDIUM   │ fixed  │ 23.0.1            │ 23.3          │ pip: Mercurial configuration injectable in repo revision │
+│                       │                │          │        │                   │               │ when installing via pip                                  │
+│                       │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2023-5752                │
+├───────────────────────┼────────────────┼──────────┤        ├───────────────────┼───────────────┼──────────────────────────────────────────────────────────┤
+│ setuptools (METADATA) │ CVE-2022-40897 │ HIGH     │        │ 58.1.0            │ 65.5.1        │ pypa-setuptools: Regular Expression Denial of Service    │
+│                       │                │          │        │                   │               │ (ReDoS) in package_index.py                              │
+│                       │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2022-40897               │
+│                       ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────┤
+│                       │ CVE-2024-6345  │          │        │                   │ 70.0.0        │ pypa/setuptools: Remote code execution via download      │
+│                       │                │          │        │                   │               │ functions in the package_index module in...              │
+│                       │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2024-6345                │
+└───────────────────────┴────────────────┴──────────┴────────┴───────────────────┴───────────────┴──────────────────────────────────────────────────────────┘
+</code></pre><p>There&rsquo;s also a GitHub Actions <a href="https://github.com/aquasecurity/trivy-action"><code>trivy-action</code></a> that I&rsquo;m now incorporating into my container builds.</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/trivy/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Trivy</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/vulnerability-scanning/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Vulnerability Scanning</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2024 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
