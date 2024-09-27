@@ -7,7 +7,7 @@
     <title>(p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="">
-    <meta name="generator" content="Hugo 0.135.0-DEV">
+    <meta name="generator" content="Hugo 0.136.0-DEV">
     
     
     
@@ -43,8 +43,8 @@
   <meta property="og:type" content="website">
 
   <meta itemprop="name" content="Tags">
-  <meta itemprop="datePublished" content="2024-09-18T00:00:00-07:00">
-  <meta itemprop="dateModified" content="2024-09-18T00:00:00-07:00">
+  <meta itemprop="datePublished" content="2024-09-27T00:00:00-07:00">
+  <meta itemprop="dateModified" content="2024-09-27T00:00:00-07:00">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Tags">
 
@@ -156,6 +156,1234 @@
   </article>
   <div class="mw8 center">
     <section class="ph4">
+      
+        <h2 class="f1">
+          <a href="/tags/cloud-run/" class="link blue hover-black">
+            Tag: Cloud-Run
+          </a>
+        </h2>
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/240927/" class="link black dim">
+        Cloud Run with a gRPC probe
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Cloud Run supports <a href="https://cloud.google.com/run/docs/configuring/healthchecks">gRPC startup|liveness probes</a> which I&rsquo;d not used before.</p>
+<p>I&rsquo;m using <a href="https://cloud.google.com/run/docs/reference/rest">Cloud Run</a> v2 and specifically <a href="https://cloud.google.com/run/docs/reference/rest/v2/projects.locations.services/create"><code>projects.locations.services.create</code></a> and <a href="https://cloud.google.com/run/docs/reference/rest/v2/projects.locations.services#Service"><code>Service</code></a></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>REGION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>REPO<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;..&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Must be in an Artifact Registry repo</span>
+</span></span><span style="display:flex;"><span>IMAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span><span style="color:#e6db74">-docker.pkg.dev/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>REPO<span style="color:#e6db74">}</span><span style="color:#e6db74">/...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Run v2</span>
+</span></span><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://run.googleapis.com/v2&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PARENT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">/locations/</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span></code></pre></div><p>I like to use <a href="https://jsonnet.org/">Jsonnet</a> (specifically <a href="https://github.com/google/go-jsonnet"><code>go-jsonnet</code></a>) to help templating Kubernetes(-like) deployments.</p>
+<p><code>cloudrun.jsonnet</code>:</p>
+<pre tabindex="0"><code class="language-jsonnet" data-lang="jsonnet">local project = std.extVar(&#34;project&#34;);
+local region = std.extVar(&#34;region&#34;);
+local service = std.extVar(&#34;service&#34;);
+local image = std.extVar(&#34;image&#34;);
+
+local port = 8080;
+local health_checking_service = &#34;foo&#34;;
+
+{
+    &#34;labels&#34;:{
+        &#34;type&#34;: &#34;test&#34;
+    },
+    &#34;annotations&#34;: {
+        &#34;type&#34;: &#34;test&#34;
+    },
+    &#34;template&#34;:{
+        &#34;containers&#34;: {
+            &#34;name&#34;: service,
+            &#34;image&#34;: image,
+            &#34;args&#34;: [],
+            &#34;resources&#34;: {
+                &#34;limits&#34;: {
+                    &#34;cpu&#34;: &#34;1000m&#34;,
+                    &#34;memory&#34;: &#34;512Mi&#34;
+                }
+            },
+            &#34;ports&#34;: [
+                {
+                    &#34;name&#34;: &#34;http1&#34;,
+                    &#34;containerPort&#34;: port
+                }
+            ],
+            &#34;startupProbe&#34;: {
+                &#34;grpc&#34;: {
+                    &#34;port&#34;: port,
+                    &#34;service&#34;: health_checking_service
+                }
+            }
+        },
+        &#34;scaling&#34;: {
+            &#34;maxInstanceCount&#34;: 1
+        }
+    }
+}
+</code></pre><p>And deploy it using:</p>
+    </div>
+    <a href="/posts/240927/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/220506/" class="link black dim">
+        Cloud Run custom domain mappings
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I have several Cloud Run services that I want to map to a domain.</p>
+<p>During development, I create a Google Cloud Platform (GCP) project each day into which everything is deployed. This means that, every day, the Cloud Run services have newly non-inferable (to me) URLs. I thought this would be tedious to manage because:</p>
+<ol>
+<li>My DNS service isn&rsquo;t programmable (I know!)</li>
+<li>Cloud Run services have non-inferable (by me) URLs</li>
+</ol>
+<p>i.e. I thought I&rsquo;d have to manually update the DNS entries each day.</p>
+    </div>
+    <a href="/posts/220506/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/220225/" class="link black dim">
+        Prometheus HTTP Service Discovery of Cloud Run services
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Some time ago, I wrote about using <a href="https://pretired.dazwilkin.com/posts/210419/">Prometheus Service Discovery w/ Consul for Cloud Run</a> and also <a href="https://pretired.dazwilkin.com/posts/211005/">Scraping metrics exposed by Google Cloud Run services that require authentication</a>. Both solutions remain viable but they didn&rsquo;t address another use case for Prometheus and Cloud Run services that I have with a &ldquo;thing&rdquo; that I&rsquo;ve been building.</p>
+<p>In this scenario, I want to:</p>
+<ol>
+<li>Configure Prometheus to scrape Cloud Run service metrics</li>
+<li>Discover Cloud Run services dynamically</li>
+<li>Authenticate to Cloud Run using Firebase Auth ID tokens</li>
+</ol>
+<p>These requirements and &ndash; one other &ndash; present several challenges:</p>
+    </div>
+    <a href="/posts/220225/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/211026/" class="link black dim">
+        Firebase Auth authorized domains
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I&rsquo;m using Firebase Authentication in a project to authenticate users of various OAuth2 identity systems. Firebase Authentication requires a set of Authorized Domains.</p>
+<p>The (web) app that interacts with Firebase Authentication is deployed to Cloud Run.  The Authorized Domains list must include the app&rsquo;s Cloud Run service URL.</p>
+<p>Cloud Run service URLs vary by Project (ID). They are a combination of the service name, a hash (?) of the Project (ID) and <code>.a.run.app</code>.</p>
+    </div>
+    <a href="/posts/211026/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/211005/" class="link black dim">
+        Scraping metrics exposed by Google Cloud Run services that require authentication
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I&rsquo;ve written a solution (<a href="https://github.com/DazWilkin/gcp-oidc-token-proxy"><code>gcp-oidc-token-proxy</code></a>) that can be used in conjunction with Prometheus <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#oauth2">OAuth2</a> to authenticate requests so that Prometheus can scrape metrics exposed by e.g. Cloud Run services that require authentication. The solution resulted from my <a href="https://stackoverflow.com/questions/69411584/is-there-a-way-to-configure-prometheus-to-use-a-google-service-account-to-auth">question</a> on Stack overflow.</p>
+<p>Problem #1: Endpoint requires authentication</p>
+<p>Given a Cloud Run service URL for which:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;my-server-blahblah-wl.a.run.app&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Returns 200 when authentication w/ an ID token</span>
+</span></span><span style="display:flex;"><span>TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>gcloud auth print-identity-token<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--write-out <span style="color:#e6db74">&#34;%{response_code}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output /dev/null <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/metrics
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Returns 403 otherwise</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--write-out <span style="color:#e6db74">&#34;%{response_code}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output /dev/null <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/metrics
+</span></span></code></pre></div><p>Problem #2: Prometheus <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#oauth2">OAuth2</a> configuration is constrained</p>
+    </div>
+    <a href="/posts/211005/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210907/" class="link black dim">
+        `gcloud beta run services replace`
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <blockquote>
+<p><strong>TL;DR</strong> I&rsquo;m working on a project that includes multiple Cloud Run services. I&rsquo;ve been putting my <code>gcloud</code> head on to deploy these services thinking that it&rsquo;s curious there&rsquo;s no way to write the specs as YAML configs. Today, I learned that there is: <a href="https://cloud.google.com/sdk/gcloud/reference/beta/run/services/replace"><code>gcloud beta run services replace</code></a>.</p>
+</blockquote>
+<p>What prompted the discovery was some frustration trying to deploy a JSON-valued environment variable to Cloud Run:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>  local FIREBASE_CONFIG<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    apiKey: </span><span style="color:#e6db74">${</span>FIREBASE_API_KEY<span style="color:#e6db74">}</span><span style="color:#e6db74">,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    authDomain: </span><span style="color:#e6db74">${</span>FIREBASE_AUTH_DOMAIN<span style="color:#e6db74">}</span><span style="color:#e6db74">,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    projectId: </span><span style="color:#e6db74">${</span>FIREBASE_PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    storageBucket: </span><span style="color:#e6db74">${</span>FIREBASE_STORAGE_BUCKET<span style="color:#e6db74">}</span><span style="color:#e6db74">,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    messagingSenderId: </span><span style="color:#e6db74">${</span>FIREBASE_MESSAGING_SENDER<span style="color:#e6db74">}</span><span style="color:#e6db74">,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    appId: </span><span style="color:#e6db74">${</span>FIREBASE_APP<span style="color:#e6db74">}</span><span style="color:#e6db74">}&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  gcloud run deploy <span style="color:#e6db74">${</span>SRV_NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --image<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>IMAGE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --command<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/server&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --args<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;--endpoint=:</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --set-env-vars<span style="color:#f92672">=</span>FIREBASE_CONFIG<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FIREBASE_CONFIG<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --max-instances<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --memory<span style="color:#f92672">=</span>256Mi <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --ingress<span style="color:#f92672">=</span>all <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --port<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --allow-unauthenticated <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p><code>gcloud</code> balks at this.</p>
+    </div>
+    <a href="/posts/210907/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210608/" class="link black dim">
+        Cloud Endpoints combine OpenAPI and gRPC... or not!
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>See:</p>
+<ul>
+<li><a href="/posts/210519/">Multiplexing gRPC and HTTP endpoints with Cloud Run</a></li>
+<li><a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a></li>
+<li><a href="https://github.com/GoogleCloudPlatform/esp-v2/issues/523">ESPv2: Configure Cloud Endpoints to proxy traffic to a Cloud Run multiplexed (gRPC|HTTP) service</a></li>
+</ul>
+<p>Challenges:</p>
+<ul>
+<li>Cloud Run permits single port</li>
+<li>Cloud Run services publishing e.g. gRPC and Prometheus, must multiplex transports</li>
+<li>Cloud Run services publishing multiplexed transports are <em>challenging</em> to expose using Cloud Endpoints</li>
+</ul>
+<h2 id="hypothesis-1-multiplexed-transports-work-with-cloud-run">Hypothesis #1: Multiplexed transports work with Cloud Run</h2>
+<p>See: <a href="/posts/210519/">Multiplexing gRPC and HTTP endpoints with Cloud Run</a></p>
+    </div>
+    <a href="/posts/210608/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210520/" class="link black dim">
+        Consul discovers Google Cloud Run
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I&rsquo;ve written a basic <code>discoverer</code> of Google <a href="https://cloud.google.com/run">Cloud Run</a> services. This is for a project and it extends work done in some previous posts to <a href="/posts/210519/">Multiplex gRPC and Prometheus with Cloud Run</a> and to use <a href="/posts/210419/">Consul for Prometheus service discovery</a>.</p>
+<p>This solution:</p>
+<ul>
+<li>Accepts a set of Google Cloud Platform (GCP) projects</li>
+<li>Trawls them for Cloud Run services</li>
+<li>Assumes that the services expose Prometheus metrics on <code>:443/metrics</code></li>
+<li>Relabels the services</li>
+<li>Surfaces any discovered Cloud Run services&rsquo; metrics in Prometheus</li>
+</ul>
+<p>You&rsquo;ll need Docker and Docker Compose.</p>
+    </div>
+    <a href="/posts/210520/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210519/" class="link black dim">
+        Multiplexing gRPC and HTTP (Prometheus) endpoints with Cloud Run
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Google <a href="https://cloud.google.com/run">Cloud Run</a> is useful but, each service is limited to exposing a single port. This caused me problems with a gRPC service that serves (non-gRPC) Prometheus metrics because customarily, you would serve gRPC on one port and the Prometheus metrics on another.</p>
+<p>Fortunately, <a href="https://github.com/soheilhy/cmux">cmux</a> provides a solution by providing a mechanism that multiplexes both services (gRPC and HTTP) on a single port!</p>
+<blockquote>
+<p><strong>TL;DR</strong> See the cmux <a href="https://github.com/soheilhy/cmux#limitations">Limitations</a> and use:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">grpcl</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">MatchWithWriters</span>(
+</span></span><span style="display:flex;"><span>   <span style="color:#a6e22e">cmux</span>.<span style="color:#a6e22e">HTTP2MatchHeaderFieldSendSettings</span>(<span style="color:#e6db74">&#34;content-type&#34;</span>, <span style="color:#e6db74">&#34;application/grpc&#34;</span>))
+</span></span></code></pre></div></blockquote>
+<p>Extending the <a href="https://github.com/soheilhy/cmux#how-to">example</a> from the cmux repo:</p>
+    </div>
+    <a href="/posts/210519/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210419/" class="link black dim">
+        Prometheus Service Discovery w/ Consul for Cloud Run
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I&rsquo;m working on a project that will programmatically create Google <a href="https://cloud.google.com/run">Cloud Run</a> services and I want to be able to dynamically discover these services using Prometheus.</p>
+<p>This is one solution.</p>
+<blockquote>
+<p><strong>NOTE</strong> Google Cloud Run is the service I&rsquo;m using, but the principle described herein applies to any runtime service that you&rsquo;d wish to use.</p>
+</blockquote>
+<p>Why is this challenging? IIUC, it&rsquo;s primarily because Prometheus has a limited set of plugins for service discovery, see the sections that include <code>_sd_</code> in Prometheus <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/">Configuration</a> documentation. Unfortunately, Cloud Run is not explicitly supported. The alternative appears to be to use file-based discovery but this seems &lsquo;challenging&rsquo;; it requires, for example, reloading Prometheus on file changes.</p>
+    </div>
+    <a href="/posts/210419/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210316/" class="link black dim">
+        Programmatically deploying Cloud Run services (Golang|Python)
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Phew! Programmitcally deploying Cloud Run services should be easy but it didn&rsquo;t find it so.</p>
+<p>My issues were that the Cloud Run Admin (!) API is poorly documented and it uses non-standard endpoints (thanks Sal!). Here, for others who may struggle with this, is how I got this to work.</p>
+<h2 id="goal">Goal</h2>
+<p>Programmatically (have Golang, Python, want Rust) deploy services to Cloud Run.</p>
+<p>i.e. achieve this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud run deploy <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--image<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>IMAGE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--no-allow-unauthenticated <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><blockquote>
+<p><strong>TRICK</strong> <a href="https://cloud.google.com/sdk/gcloud/reference#--log-http"><code>--log-http</code></a> is your friend</p>
+    </div>
+    <a href="/posts/210316/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/200326/" class="link black dim">
+        Google Trillian on Cloud Run
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I&rsquo;ve written previously (<a href="https://medium.com/google-cloud/google-trillian-for-noobs-1a-c87a78e5e585">Google Trillian for Noobs</a>) about Google&rsquo;s interesting project <a href="https://github.com/google/trillian">Trillian</a> and about some of the &ldquo;personalities&rdquo; (e.g. <a href="/posts/190907/">PyPi Transparency</a>) that I&rsquo;ve build using it.</p>
+<p>Having gone slight cra-cra on <a href="https://cloud.google.com/run">Cloud Run</a> and <a href="https://grpc.io">gRPC</a> this week with <a href="/posts/200320/">Golang gRPC Cloud Run</a> and <a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a>, I thought it&rsquo;d be fun to deploy Trillian and a personality to Cloud Run.</p>
+<p>It mostly (!) works :-)</p>
+<p>At the end of the post, I&rsquo;ve summarized creating a Cloud SQL instance to host the Trillian data(base).</p>
+    </div>
+    <a href="/posts/200326/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/200325/" class="link black dim">
+        gRPC, Cloud Run &amp; Endpoints
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>&lt;3 Google but there&rsquo;s quite often an assumption that we&rsquo;re all sitting around the engineering table and, of course, we&rsquo;re not.</p>
+<p><a href="https://cloud.google.com/endpoints">Cloud Endpoints</a> is a powerful offering but &ndash; IMO &ndash; it&rsquo;s <strong>super</strong> confusing to understand and complex to deploy.</p>
+<p>If you&rsquo;re familiar with the motivations behind service meshes (e.g. <a href="https://istio.io">Istio</a>), Cloud Endpoints fits in a similar niche (&ldquo;neesh&rdquo; or &ldquo;nitch&rdquo;?). The underlying ambition is that, developers can take <strong>existing</strong> code and by adding a proxy (or sidecar), general-purpose abstractions, security, logging etc. may be added.</p>
+    </div>
+    <a href="/posts/200325/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/200320/" class="link black dim">
+        Golang gRPC Cloud Run
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <blockquote>
+<p><strong>Update: 2020-03-24</strong>: Since writing this post, I&rsquo;ve contributed <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/pull/12">Golang</a> and <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/pull/15">Rust</a> samples to Google&rsquo;s project. I recommend you start there.</p>
+</blockquote>
+<p>Google explained how to run gRPC servers with Cloud Run. The examples are good but only Python and Node.JS:</p>
+<ul>
+<li><a href="https://cloud.google.com/blog/products/compute/serve-cloud-run-requests-with-grpc-not-just-http">gRPC comes to Cloud Run</a></li>
+<li><a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example">gRPC in Google Cloud Run</a></li>
+</ul>
+<p>Missing Golang&hellip;. until now ;-)</p>
+<p>I had problems with 1.14 and so I&rsquo;m using 1.13.</p>
+<h2 id="project-structure">Project structure</h2>
+<p>I&rsquo;ll tidy up my repo but the code may be found:</p>
+    </div>
+    <a href="/posts/200320/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+      
+        <h2 class="f1">
+          <a href="/tags/grpc/" class="link blue hover-black">
+            Tag: GRPC
+          </a>
+        </h2>
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/240927/" class="link black dim">
+        Cloud Run with a gRPC probe
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Cloud Run supports <a href="https://cloud.google.com/run/docs/configuring/healthchecks">gRPC startup|liveness probes</a> which I&rsquo;d not used before.</p>
+<p>I&rsquo;m using <a href="https://cloud.google.com/run/docs/reference/rest">Cloud Run</a> v2 and specifically <a href="https://cloud.google.com/run/docs/reference/rest/v2/projects.locations.services/create"><code>projects.locations.services.create</code></a> and <a href="https://cloud.google.com/run/docs/reference/rest/v2/projects.locations.services#Service"><code>Service</code></a></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>REGION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>REPO<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;..&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Must be in an Artifact Registry repo</span>
+</span></span><span style="display:flex;"><span>IMAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span><span style="color:#e6db74">-docker.pkg.dev/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>REPO<span style="color:#e6db74">}</span><span style="color:#e6db74">/...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Run v2</span>
+</span></span><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://run.googleapis.com/v2&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PARENT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">/locations/</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span></code></pre></div><p>I like to use <a href="https://jsonnet.org/">Jsonnet</a> (specifically <a href="https://github.com/google/go-jsonnet"><code>go-jsonnet</code></a>) to help templating Kubernetes(-like) deployments.</p>
+<p><code>cloudrun.jsonnet</code>:</p>
+<pre tabindex="0"><code class="language-jsonnet" data-lang="jsonnet">local project = std.extVar(&#34;project&#34;);
+local region = std.extVar(&#34;region&#34;);
+local service = std.extVar(&#34;service&#34;);
+local image = std.extVar(&#34;image&#34;);
+
+local port = 8080;
+local health_checking_service = &#34;foo&#34;;
+
+{
+    &#34;labels&#34;:{
+        &#34;type&#34;: &#34;test&#34;
+    },
+    &#34;annotations&#34;: {
+        &#34;type&#34;: &#34;test&#34;
+    },
+    &#34;template&#34;:{
+        &#34;containers&#34;: {
+            &#34;name&#34;: service,
+            &#34;image&#34;: image,
+            &#34;args&#34;: [],
+            &#34;resources&#34;: {
+                &#34;limits&#34;: {
+                    &#34;cpu&#34;: &#34;1000m&#34;,
+                    &#34;memory&#34;: &#34;512Mi&#34;
+                }
+            },
+            &#34;ports&#34;: [
+                {
+                    &#34;name&#34;: &#34;http1&#34;,
+                    &#34;containerPort&#34;: port
+                }
+            ],
+            &#34;startupProbe&#34;: {
+                &#34;grpc&#34;: {
+                    &#34;port&#34;: port,
+                    &#34;service&#34;: health_checking_service
+                }
+            }
+        },
+        &#34;scaling&#34;: {
+            &#34;maxInstanceCount&#34;: 1
+        }
+    }
+}
+</code></pre><p>And deploy it using:</p>
+    </div>
+    <a href="/posts/240927/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/240430/" class="link black dim">
+        Securing gRPC services using Tailscale
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>This is <strong>so</strong> useful that it&rsquo;s worth its own post.</p>
+<p>I write many gRPC services. As these generally run securely, it&rsquo;s best to test them that way too but, even with e.g. <a href="https://letsencrypt.org/">Let&rsquo;s Encrypt</a>, it can be challenging to generate appropriate TLS certs.</p>
+<p><a href="https://tailscale.com">Tailscale</a> makes this trivial.</p>
+<p>Assuming there&rsquo;s a gRPC service running on <code>localhost:50051</code>, we want to avoid <code>-plaintext</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;50051&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-plaintext 0.0.0.0:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>list
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> I&rsquo;m using <code>list</code> and assuming your service has reflection enabled but you can, of course, use relevant methods.</p>
+    </div>
+    <a href="/posts/240430/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/240409/" class="link black dim">
+        Google Cloud Translation w/ gRPC 3 ways
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <h2 id="general">General</h2>
+<p>You&rsquo;ll need a Google Cloud project with Cloud Translation (<code>translate.googleapis.com</code>) enabled and a Service Account (and key) with suitable permissions in order to run the following.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>BILLING<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Your Billing ID (gcloud billing accounts list)</span>
+</span></span><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Your Project ID</span>
+</span></span><span style="display:flex;"><span>ACCOUNT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;tester&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>EMAIL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span><span style="color:#e6db74">@</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">.iam.gserviceaccount.com&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ROLES<span style="color:#f92672">=(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;roles/cloudtranslate.user&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;roles/serviceusage.serviceUsageConsumer&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create Project</span>
+</span></span><span style="display:flex;"><span>gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Associate Project with your Billing Account</span>
+</span></span><span style="display:flex;"><span>gcloud billing accounts link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Enable Cloud Translation</span>
+</span></span><span style="display:flex;"><span>gcloud services enable translate.googleapis.com <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create Service Account</span>
+</span></span><span style="display:flex;"><span>gcloud iam service-accounts create <span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create Service Account Key</span>
+</span></span><span style="display:flex;"><span>gcloud iam service-accounts keys create <span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--iam-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Update Project IAM permissions</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> ROLE in <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ROLES[@]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  gcloud projects add-iam-policy-binding <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --member<span style="color:#f92672">=</span>serviceAccount:<span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --role<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ROLE<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span></code></pre></div><p>For the code, you&rsquo;ll need to install <a href="https://github.com/protocolbuffers/protobuf"><code>protoc</code></a> and preferably have it in your path.</p>
+    </div>
+    <a href="/posts/240409/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/240307/" class="link black dim">
+        Prometheus Protobufs and Native Histograms
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I responded to a question <a href="https://stackoverflow.com/questions/78112323/prometheus-metric-protocol-buffer-in-grpc#comment137716337_78112323">Prometheus metric protocol buffer in gRPC</a> on Stackoverflow and it piqued my curiosity and got me yak shaving.</p>
+<p>Prometheus used to support two exposition formats including Protocol Buffers, then dropped Protocol Buffer and has since re-added it (see <a href="https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md#protobuf-format">Protobuf format</a>). The Protobuf format has returned to support the experimental <a href="https://prometheus.io/docs/prometheus/latest/feature_flags/#native-histograms">Native Histograms</a> feature.</p>
+<p>I&rsquo;m interested in adding Native Histogram support to <a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a> so thought I&rsquo;d learn more about this metric.</p>
+    </div>
+    <a href="/posts/240307/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/240117/" class="link black dim">
+        Gnarly Protocol Buffers compilation
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>This Stackoverflow question piqued my interest:</p>
+<p><a href="https://stackoverflow.com/questions/77829333/retry-policy-configuration-for-grpc-not-working">retry policy configuration for grpc not working</a></p>
+<p><a href="https://github.com/grpc/grpc/blob/master/doc/service_config.md">Service Config in gRPC</a> is new to me but, my initial suspicion (albeit incorrect) was that the JSON types were incorrect.</p>
+<p>I decided to try using the Protocol Buffer source <a href="https://github.com/grpc/grpc-proto/blob/master/grpc/service_config/service_config.proto"><code>service_config.proto</code></a> to verify the JSON.</p>
+<p>To do so I needed to compile the source&hellip;. it was gnarly.</p>
+<p>There are 2 repos used:</p>
+<ul>
+<li><a href="https://github.com/googleapis/googleapis"><code>googleapis</code></a></li>
+<li><a href="https://github.com/grpc/grpc-proto"><code>grpc-proto</code></a></li>
+</ul>
+<p>The <code>service_config.proto</code> includes <code>options</code> for <code>java_package</code> but no <code>go_package</code>.</p>
+    </div>
+    <a href="/posts/240117/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/231222/" class="link black dim">
+        Listing Cloud Logging log-based metrics using gRPC
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Referring to <a href="/posts/230314/">Accessing Google Services using gRPC</a>, I wanted to query a project&rsquo;s <a href="https://cloud.google.com/logging">Cloud Logging</a> for <a href="https://cloud.google.com/logging/docs/logs-based-metrics">log-based metrics</a> using gRPC.</p>
+<p>In summary:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;logging.googleapis.com:443&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ROOT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/path/to/googleapis&#34;</span> <span style="color:#75715e"># https://github.com/googleapis/googleapis</span>
+</span></span><span style="display:flex;"><span>PACKAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;google/logging/v2&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># NB Not logging.proto</span>
+</span></span><span style="display:flex;"><span>PROTO<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ROOT<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>PACKAGE<span style="color:#e6db74">}</span><span style="color:#e6db74">/logging_metrics.proto&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>TOKEN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud auth print-access-token<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PACKAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;google.logging.v2&#34;</span>
+</span></span><span style="display:flex;"><span>SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;MetricsServiceV2&#34;</span>
+</span></span><span style="display:flex;"><span>METHOD<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>PACKAGE<span style="color:#e6db74">}</span><span style="color:#e6db74">.</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">/ListLogMetrics&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># ListLogMetricsRequest fields</span>
+</span></span><span style="display:flex;"><span>PARENT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--import-path<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ROOT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proto<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROTO<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{\&#34;parent\&#34;: \&#34;</span><span style="color:#e6db74">${</span>PARENT<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span> <span style="color:#e6db74">${</span>METHOD<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>From <a href="https://developers.google.com/apis-explorer">APIs Explorer</a>, <a href="https://cloud.google.com/logging/docs/reference/api-overview">Cloud Logging API v2</a>, instead of the <a href="https://cloud.google.com/logging/docs/reference/v2/rest">REST reference</a>, browse the <a href="https://cloud.google.com/logging/docs/reference/v2/rpc">gRPC reference</a> specifically the package <a href="https://cloud.google.com/logging/docs/reference/v2/rpc/google.logging.v2"><code>google.logging.v2</code></a> which includes <a href="https://cloud.google.com/logging/docs/reference/v2/rpc/google.logging.v2#google.logging.v2.MetricsServiceV2"><code>MetricsServiceV2</code></a>. We&rsquo;re interested in the <code>ListLogMetrics</code> method (which unfortunately isn&rsquo;t directly hyperlinkable) but is defined to be:</p>
+    </div>
+    <a href="/posts/231222/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/230404/" class="link black dim">
+        Azure Container Apps
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>The majority of <a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a>&rsquo;s components are deployed to <a href="https://cloud.google.com">Google Cloud</a>. However, by its nature, Ackal benefits from deployments that span cloud platforms. I&rsquo;ve deployed Ackal&rsquo;s <a href="https://grpc.io">gRPC</a> <a href="https://github.com/grpc/grpc/blob/master/doc/health-checking.md">health checks</a> to <a href="https://fly.io">Fly</a>, and managed Kubernetes services on <a href="https://linode.com">Linode</a> and <a href="https://vultr.com">Vultr</a>.</p>
+<p>Today, I decided to revisit<a href="#microsoft">¹</a> <a href="https://azure.microsoft.com">Azure</a>. Ackal uses Azure (Active Directory) for one of its OAuth providers. This time, I wanted to deploy a containerized gRPC service. Azure provides <a href="https://azure.microsoft.com/en-us/products/category/containers/">several</a> container-oriented services. I decided to use <a href="https://azure.microsoft.com/en-us/products/container-apps/">Azure Container Apps</a> and, in hindsight, find it analogous to Google <a href="https://cloud.google.com/run">Cloud Run</a>.</p>
+    </div>
+    <a href="/posts/230404/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/230314/" class="link black dim">
+        Access Google Services using gRPC
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Google publishes interface definitions of Google APIs (services) that support REST and gRPC in a repo called <a href="https://github.com/googleapis/googleapis">Google APIs</a>. Google&rsquo;s SDKs uses gRPC to access these services but, how to do this using e.g. <a href="https://github.com/fullstorydev/grpcurl">gRPCurl</a>?</p>
+<p>I wanted to debug <a href="https://cloud.google.com/profiler/docs">Cloud Profiler</a> and its agent makes <a href="https://github.com/googleapis/googleapis/blob/42ba7e6302f5e0f10ac2b9b17f5b6d568ecae02d/google/devtools/cloudprofiler/v2/profiler.proto#L83"><code>UpdateProfile</code></a> RPCs to <a href="https://github.com/googleapis/googleapis/blob/42ba7e6302f5e0f10ac2b9b17f5b6d568ecae02d/google/devtools/cloudprofiler/v2/profiler.proto#L41"><code>cloudprofiler.googleapis.com</code></a>. Cloud Profiler is more challenging service to debug because (a) it&rsquo;s publicly &ldquo;write-only&rdquo;; and (b) it has complex messages. <code>UpdateProfile</code> sends <a href="https://github.com/googleapis/googleapis/blob/42ba7e6302f5e0f10ac2b9b17f5b6d568ecae02d/google/devtools/cloudprofiler/v2/profiler.proto#L123"><code>UpdateProfileRequest</code></a> messages that include <a href="https://github.com/googleapis/googleapis/blob/42ba7e6302f5e0f10ac2b9b17f5b6d568ecae02d/google/devtools/cloudprofiler/v2/profiler.proto#L123"><code>Profile</code></a> messages that include <code>profile_bytes</code> which are gzip compressed serialized protos of <a href="https://github.com/google/pprof">pprof</a>&rsquo;s <a href="https://github.com/google/pprof/blob/d61513b1440d93d62aad023cc60d7a33f3917b70/proto/profile.proto#L46"><code>Profile</code></a>.</p>
+    </div>
+    <a href="/posts/230314/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/230215/" class="link black dim">
+        Secure (TLS) gRPC services with LKE
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <blockquote>
+<p><strong>NOTE</strong> <a href="https://cert-manager.io"><code>cert-manager</code></a> is a better solution to what follows.</p>
+</blockquote>
+<p>I wrote about deploying <a href="/posts/220603/">Secure (TLS) gRPC services with Vultr Kubernetes Engine (VKE)</a>. This week, I&rsquo;ve reproduced this deployment using Linode Kubernetes Engine (LKE).</p>
+<p>Thanks to the consistency provided by Kubernetes, the Kubernetes programming is almost identical. The main differences are between the CLI&rsquo;s provided by these platforms. Both are good. They&rsquo;re just different.</p>
+<p>I&rsquo;m going to include the <code>linode-cli</code> commands I&rsquo;m using in this post as I found it slightly more quirky.</p>
+    </div>
+    <a href="/posts/230215/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/220603/" class="link black dim">
+        Secure (TLS) gRPC services with VKE
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <blockquote>
+<p><strong>NOTE</strong> <a href="https://cert-manager.io"><code>cert-manager</code></a> is a better solution to what follows.</p>
+</blockquote>
+<p>I&rsquo;ve a need to deploy a Vultr Kubernetes Engine (VKE) cluster on a daily basis (create and delete within a few hours) and expose (securely|TLS) a gRPC service.</p>
+<p>I have an existing solution <a href="/posts/211130/">Automatic Certs w/ Golang gRPC service on Compute Engine</a> that combines a gRPC Healthchecking and an ACME service and decided to reuse this.</p>
+<p>In order for it work, we need:</p>
+    </div>
+    <a href="/posts/220603/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/220421/" class="link black dim">
+        Using Google&#39;s Public Certificate Authority with Golang autocert
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Last year, I wrote about using <a href="/posts/211130/">Automatic Certs w/ Golang gRPC service on Compute Engine</a>. That solution uses <a href="https://en.wikipedia.org/wiki/Automatic_Certificate_Management_Environment">ACME</a> with (the wonderful) <a href="https://letsencrypt.org">Let&rsquo;s Encrypt</a>. Google is offering a private preview of <a href="https://cloud.google.com/blog/products/identity-security/automate-public-certificate-lifecycle-management-via--acme-client-api">Automate Public Certificates Lifecycle Management via RFC 8555 (ACME)</a> and, because I&rsquo;m using Google Cloud Platform extensively to build a &ldquo;thing&rdquo; and I think it would be useful to have a backup to Let&rsquo;s Encrypt, I thought I&rsquo;d give the solution a try. You&rsquo;ll need to sign-up for the private preview, for what follows to work.</p>
+    </div>
+    <a href="/posts/220421/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/211130/" class="link black dim">
+        Automatic Certs w/ Golang gRPC service on Compute Engine
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I needed to deploy a <a href="https://github.com/grpc/grpc/blob/master/src/proto/grpc/health/v1/health.proto">healthcheck</a>-enabled gRPC TLS-enabled service. Fortunately, most (all?) of the SDKs include an implementation, e.g. Golang has <a href="https://github.com/grpc/grpc-go/tree/master/health"><code>grpc-go/health</code></a>.</p>
+<p>I learned in my travels that:</p>
+<ul>
+<li>DigitalOcean [App] platform does not (<a href="https://www.digitalocean.com/community/questions/app-platform-http-2-support">link</a>) work with TLS-based gRPC apps.</li>
+<li><a href="https://fly.io">Fly</a> has a regression (<a href="https://community.fly.io/t/urgent-grpc-server-unreachable-via-grpcurl/2694/5">link</a>) that breaks gRPC</li>
+</ul>
+<p>So, I resorted to Google Cloud Platform (GCP). Although Cloud Run would be well-suited to running the gRPC app, it uses a proxy|sidecar to provision a cert for the app and I wanted to be able to (easily use a custom domain) and give myself a somewhat general-purpose solution.</p>
+    </div>
+    <a href="/posts/211130/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210730/" class="link black dim">
+        Renewing Firebase Authentication ID tokens with gRPC
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I&rsquo;ve written before about a project in which I&rsquo;m using Firebase Authentication in combination with Google Cloud Endpoints and a gRPC service running on Cloud Run:</p>
+<ul>
+<li><a href="/posts/210614/">Firebase Authentication, Cloud Endpoints and gRPC (1of2)</a></li>
+<li><a href="/posts/210618/">Firebase Authentication, Cloud Endpoints and gRPC (2of2)</a></li>
+</ul>
+<p>This works well with one caveat, the ID tokens (JWTs) minted by Firebase Authentication have a 3600 second (one hour) lifetime.</p>
+<p>The user flow in my app is that whenever the user invokes the app&rsquo;s CLI:</p>
+    </div>
+    <a href="/posts/210730/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210724/" class="link black dim">
+        gRPC Interceptors and in-memory gRPC connections
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>For&hellip; reasons, I wanted to pre-filter gRPC requests to check for authorization. Authorization is implemented as a &lsquo;micro-service&rsquo; and I wanted the authorization server to run in the same process as the gRPC client.</p>
+<p>TL;DR:</p>
+<ul>
+<li>Shiju&rsquo;s <a href="https://shijuvar.medium.com/writing-grpc-interceptors-in-go-bf3e7671fe48">&ldquo;Writing gRPC Interceptors in Go&rdquo;</a> is great</li>
+<li>This Stack overflow <a href="https://stackoverflow.com/a/52080545/609290">answer</a> ostensibly for writing unit tests for gRPC got me an in-process server</li>
+</ul>
+<p>What follows stands on these folks&rsquo; shoulders&hellip;</p>
+<p>A key motivator for me to write blog posts is that helps me ensure that I understand things. Writing this post, I realized I&rsquo;d not researched gRPC Interceptors and, as luck would have it, I found some interesting content, not on <a href="https://grpc.io"><code>grpc.io</code></a> but on the <a href="https://github.com/grpc-ecosystem"><code>grpc-ecosystem</code></a> repo, specifically <a href="https://github.com/grpc-ecosystem/go-grpc-middleware">Go gRPC middleware</a>. But, I refer again to Shiju&rsquo;s clear and helpful <a href="https://shijuvar.medium.com/writing-grpc-interceptors-in-go-bf3e7671fe48">&ldquo;Writing gRPC Interceptors in Go&rdquo;</a></p>
+    </div>
+    <a href="/posts/210724/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210618/" class="link black dim">
+        Firebase Authentication, Cloud Endpoints and gRPC (2of2)
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Earlier this week, I wrote about using <a href="/posts/210614/">Firebase Authentcation, Cloud Endpoints and gRPC (1of2)</a>. Since then, I <a href="https://github.com/GoogleCloudPlatform/esp-v2/issues/542">learned some more</a> and added a gRPC interceptor to implement basic authorization for the service.</p>
+<h2 id="espv2---allow-unauthenticated">ESPv2 <code>--allow-unauthenticated</code></h2>
+<p>The Cloud Enpoints (ESPv2) proxy must be run as <code>--allow-unauthenticated</code> on Cloud Run to ensure that requests make it to the proxy where the request is authenticated and only authenticated requests make it on to the backend service. Thanks Google&rsquo;s <a href="https://github.com/nareddyt">Teju Nareddy</a>!</p>
+    </div>
+    <a href="/posts/210618/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210614/" class="link black dim">
+        Firebase Authentication, Cloud Endpoints and gRPC (1of2)
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I&rsquo;m building a service that requires user authentication. The primary endpoint is a gRPC-based service. I would like to consider using certificate-based auth but this feels&hellip; challenging. Instead, I have been aware of, but never used, <a href="https://firebase.google.com/products/auth">Firebase Authentication</a> and was interested to see that <a href="https://cloud.google.com/endpoints">Cloud Endpoints</a> includes Firebase Authentication as one of its supported auth mechanisms. Curiosity piqued, I confirmed that gRPC supports <a href="https://grpc.io/docs/guides/auth/#using-google-token-based-authentication">Google token-based authentication</a>.</p>
+<p>The following is a summary of what I did but I&rsquo;ll leave the extensive documentation to Google, (Google&rsquo;s) Firebase and gRPC, all of which, in this case, provide really good explanations.</p>
+    </div>
+    <a href="/posts/210614/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210608/" class="link black dim">
+        Cloud Endpoints combine OpenAPI and gRPC... or not!
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>See:</p>
+<ul>
+<li><a href="/posts/210519/">Multiplexing gRPC and HTTP endpoints with Cloud Run</a></li>
+<li><a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a></li>
+<li><a href="https://github.com/GoogleCloudPlatform/esp-v2/issues/523">ESPv2: Configure Cloud Endpoints to proxy traffic to a Cloud Run multiplexed (gRPC|HTTP) service</a></li>
+</ul>
+<p>Challenges:</p>
+<ul>
+<li>Cloud Run permits single port</li>
+<li>Cloud Run services publishing e.g. gRPC and Prometheus, must multiplex transports</li>
+<li>Cloud Run services publishing multiplexed transports are <em>challenging</em> to expose using Cloud Endpoints</li>
+</ul>
+<h2 id="hypothesis-1-multiplexed-transports-work-with-cloud-run">Hypothesis #1: Multiplexed transports work with Cloud Run</h2>
+<p>See: <a href="/posts/210519/">Multiplexing gRPC and HTTP endpoints with Cloud Run</a></p>
+    </div>
+    <a href="/posts/210608/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210519/" class="link black dim">
+        Multiplexing gRPC and HTTP (Prometheus) endpoints with Cloud Run
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Google <a href="https://cloud.google.com/run">Cloud Run</a> is useful but, each service is limited to exposing a single port. This caused me problems with a gRPC service that serves (non-gRPC) Prometheus metrics because customarily, you would serve gRPC on one port and the Prometheus metrics on another.</p>
+<p>Fortunately, <a href="https://github.com/soheilhy/cmux">cmux</a> provides a solution by providing a mechanism that multiplexes both services (gRPC and HTTP) on a single port!</p>
+<blockquote>
+<p><strong>TL;DR</strong> See the cmux <a href="https://github.com/soheilhy/cmux#limitations">Limitations</a> and use:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">grpcl</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">MatchWithWriters</span>(
+</span></span><span style="display:flex;"><span>   <span style="color:#a6e22e">cmux</span>.<span style="color:#a6e22e">HTTP2MatchHeaderFieldSendSettings</span>(<span style="color:#e6db74">&#34;content-type&#34;</span>, <span style="color:#e6db74">&#34;application/grpc&#34;</span>))
+</span></span></code></pre></div></blockquote>
+<p>Extending the <a href="https://github.com/soheilhy/cmux#how-to">example</a> from the cmux repo:</p>
+    </div>
+    <a href="/posts/210519/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210412/" class="link black dim">
+        Fly.io
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I spent some time over the weekend understanding <a href="https://fly.io">Fly.io</a>. It&rsquo;s always fascinating to me how many smart people are building really neat solutions. Fly.io is subtly different to other platforms that I use (Kubernetes, GCP, DO, Linode) and I&rsquo;ve found the Fly.io team to be highly responsive and helpful to my noob questions.</p>
+<p>One of the team&rsquo;s posts, <a href="https://fly.io/blog/docker-without-docker/">Docker without Docker</a> surfaced in my Feedly feed (<a href="https://news.ycombinator.com/item?id=26746280">hackernews</a>) and it piqued my interest.</p>
+    </div>
+    <a href="/posts/210412/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/210222/" class="link black dim">
+        Dapr
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>It&rsquo;s a good name, I read it as &ldquo;dapper&rdquo; but I frequently type &ldquo;darp&rdquo; :-(</p>
+<p>Was interested to <a href="https://blog.dapr.io/posts/2021/02/17/announcing-dapr-v1.0/">read</a> that <a href="https://dapr.io/">Dapr</a> is now v1.0 and decided to check it out. I was initially confused between Dapr and service mesh functionality. But, having used Dapr, it appears to be more focused in aiding the development of (cloud-native) (distributed) apps by providing developers with abstractions for e.g. service discovery, eventing, observability whereas service meshes feel (!) more oriented towards simplifying the deployment of existing apps. Both use the concept of proxies, deployed alongside app components (as sidecars on Kubernetes) to provide their functionality to apps.</p>
+    </div>
+    <a href="/posts/210222/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/200717/" class="link black dim">
+        Remotely invoking WASM functions using gRPC and waPC
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Following on from <a href="/posts/200612/">waPC &amp; Protobufs</a>, I can now remotely invoke (arbitrary) WASM functions:</p>
+<p>Client:</p>
+<p>The logging isn&rsquo;t perfectly clear but, the client gets (a previously added) WASM binary from the server (using the SHA-256 of the WASM binary as a unique identifier). The result includes metadata that includes a protobuf descriptor of the WASM binary&rsquo;s functions. The descriptor defines gRPC services (that represent the WASM functions) with input (parameters) and output (results) messages.</p>
+    </div>
+    <a href="/posts/200717/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/200429/" class="link black dim">
+        Rust implementation of Crate Transparency using Google Trillian
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I&rsquo;ve been hacking on a Rust-based transparent application for Google Trillian. As appears to be my fixation, this personality is for another package manager. This time, Rust&rsquo;s <a href="https://doc.rust-lang.org/1.0.0/book/crates-and-modules.html">Crates</a> often found in <a href="https://crates.io"><code>crates.io</code></a> which is Rust&rsquo;s Package Registry. I discussed this project earlier this month <a href="/posts/200403/">Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian</a> and and earlier approach for Python&rsquo;s packages with <a href="/posts/190907/">pypi-transparency</a>.</p>
+<p>This time, of course, I&rsquo;m using Rust. And, by way of a first for me, for the gRPC server implementation (aka &ldquo;personality&rdquo;). I&rsquo;ve been lazy thanks to the excellent <a href="https://github.com/fullstorydev/grpcurl">gRPCurl</a> and have been using it way of a client. Because I&rsquo;m more familiar with Golang and because I&rsquo;ve written (most) other Trillian personalities in Golang, I resorted to quickly implementing Crate Transparency in Golang too in order to uncover bugs with the Rust implementation. I&rsquo;ll write a follow-up post on the complexity I seem to struggle with when using protobufs and gRPC [in Golang].</p>
+    </div>
+    <a href="/posts/200429/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/200403/" class="link black dim">
+        Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I&rsquo;m noodling the utility of a Transparency solution for Rust Crates. When developers push crates to Cargo, a bunch of metadata is associated with the crate. E.g. <a href="https://crates.io/crates/protobuf"><code>protobuf</code></a>. As with Golang Modules, Python packages on PyPi etc., there appears to be utility in making tamperproof recordings of these publications. Then, other developers may confirm that a crate pulled from cates.io is highly unlikely to have been changed.</p>
+<p>On Linux, Cargo stores downloaded crates under <code>${HOME}/.crates/registry</code>. In the case of the latest version (<code>2.12.0</code>) of <code>protobuf</code>, on my machine, I have:</p>
+    </div>
+    <a href="/posts/200403/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/200326/" class="link black dim">
+        Google Trillian on Cloud Run
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I&rsquo;ve written previously (<a href="https://medium.com/google-cloud/google-trillian-for-noobs-1a-c87a78e5e585">Google Trillian for Noobs</a>) about Google&rsquo;s interesting project <a href="https://github.com/google/trillian">Trillian</a> and about some of the &ldquo;personalities&rdquo; (e.g. <a href="/posts/190907/">PyPi Transparency</a>) that I&rsquo;ve build using it.</p>
+<p>Having gone slight cra-cra on <a href="https://cloud.google.com/run">Cloud Run</a> and <a href="https://grpc.io">gRPC</a> this week with <a href="/posts/200320/">Golang gRPC Cloud Run</a> and <a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a>, I thought it&rsquo;d be fun to deploy Trillian and a personality to Cloud Run.</p>
+<p>It mostly (!) works :-)</p>
+<p>At the end of the post, I&rsquo;ve summarized creating a Cloud SQL instance to host the Trillian data(base).</p>
+    </div>
+    <a href="/posts/200326/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/200325/" class="link black dim">
+        gRPC, Cloud Run &amp; Endpoints
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>&lt;3 Google but there&rsquo;s quite often an assumption that we&rsquo;re all sitting around the engineering table and, of course, we&rsquo;re not.</p>
+<p><a href="https://cloud.google.com/endpoints">Cloud Endpoints</a> is a powerful offering but &ndash; IMO &ndash; it&rsquo;s <strong>super</strong> confusing to understand and complex to deploy.</p>
+<p>If you&rsquo;re familiar with the motivations behind service meshes (e.g. <a href="https://istio.io">Istio</a>), Cloud Endpoints fits in a similar niche (&ldquo;neesh&rdquo; or &ldquo;nitch&rdquo;?). The underlying ambition is that, developers can take <strong>existing</strong> code and by adding a proxy (or sidecar), general-purpose abstractions, security, logging etc. may be added.</p>
+    </div>
+    <a href="/posts/200325/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/200320/" class="link black dim">
+        Golang gRPC Cloud Run
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <blockquote>
+<p><strong>Update: 2020-03-24</strong>: Since writing this post, I&rsquo;ve contributed <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/pull/12">Golang</a> and <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/pull/15">Rust</a> samples to Google&rsquo;s project. I recommend you start there.</p>
+</blockquote>
+<p>Google explained how to run gRPC servers with Cloud Run. The examples are good but only Python and Node.JS:</p>
+<ul>
+<li><a href="https://cloud.google.com/blog/products/compute/serve-cloud-run-requests-with-grpc-not-just-http">gRPC comes to Cloud Run</a></li>
+<li><a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example">gRPC in Google Cloud Run</a></li>
+</ul>
+<p>Missing Golang&hellip;. until now ;-)</p>
+<p>I had problems with 1.14 and so I&rsquo;m using 1.13.</p>
+<h2 id="project-structure">Project structure</h2>
+<p>I&rsquo;ll tidy up my repo but the code may be found:</p>
+    </div>
+    <a href="/posts/200320/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/190918/" class="link black dim">
+        Cloud Functions Simple(st) HTTP Multi-host Proxy
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Tweaked yesterday&rsquo;s solution so that it will randomly select one from several hosts with which it&rsquo;s configured.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">proxy</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;math/rand&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;net/http&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;net/url&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;strings&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">robin</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">hostsList</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PROXY_HOST&#34;</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">hostsList</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;&#34;</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#e6db74">&#34;&#39;PROXY_HOST&#39; environment variable should contain comma-separated list of hosts&#34;</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Comma-separated lists of hosts
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">hosts</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Split</span>(<span style="color:#a6e22e">hostsList</span>, <span style="color:#e6db74">&#34;,&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">urls</span> <span style="color:#f92672">:=</span> make([]<span style="color:#f92672">*</span><span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">URL</span>, len(<span style="color:#a6e22e">hosts</span>))
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">host</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">hosts</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">origin</span> = <span style="color:#a6e22e">Endpoint</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Host</span>: <span style="color:#a6e22e">host</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Port</span>: <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PROXY_PORT&#34;</span>),
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">url</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">origin</span>.<span style="color:#a6e22e">URL</span>()
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">urls</span>[<span style="color:#a6e22e">i</span>] = <span style="color:#a6e22e">url</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">s</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">NewSource</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">UnixNano</span>())
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">q</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">s</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Handler</span> = <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Pick one of the URLs at random
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">url</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">urls</span>[<span style="color:#a6e22e">q</span>.<span style="color:#a6e22e">Int31n</span>(int32(len(<span style="color:#a6e22e">urls</span>)))]
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[Handler] Forwarding: %s&#34;</span>, <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">String</span>())
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Forward to it
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">reverseproxy</span>(<span style="color:#a6e22e">url</span>, <span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">r</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This requires a minor tweak to the deployment to escape the commas within the <code>PROXY_HOST</code> string to disambiguate these for <code>gcloud</code>:</p>
+    </div>
+    <a href="/posts/190918/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/190917/" class="link black dim">
+        Cloud Functions Simple(st) HTTP Proxy
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I&rsquo;m investigating the use of <a href="https://letsencrypt.org/">LetsEncrypt</a> for gRPC services. I found this straightforward <a href="https://www.d3void.net/post/acme/">post</a> by Scott Devoid and am going to try this approach.</p>
+<p>Before I can do that, I need to be able to publish services (make them Internet-accessible) and would like to try to continue to use GCP for <a href="https://cloud.google.com/free/">free</a>.</p>
+<p>Some time ago, I <a href="https://medium.com/google-cloud/microk8s-on-google-cloud-platform-d8b7a71a3ef">wrote</a> about using the excellent <a href="https://microk8s.io/">Microk8s</a> on GCP. Using an <code>f1-micro</code>, I&rsquo;m hoping (!) to stay within the Compute Engine free tier. I&rsquo;ll also try to be diligent and delete the instance when it&rsquo;s not needed. This gives me a runtime platform and I can expose services to the Instance&rsquo;s (Node)Ports but, I&rsquo;d prefer to not be billed for a simple proxy.</p>
+    </div>
+    <a href="/posts/190917/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+      
+        <h2 class="f1">
+          <a href="/tags/probe/" class="link blue hover-black">
+            Tag: Probe
+          </a>
+        </h2>
+        
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/240927/" class="link black dim">
+        Cloud Run with a gRPC probe
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Cloud Run supports <a href="https://cloud.google.com/run/docs/configuring/healthchecks">gRPC startup|liveness probes</a> which I&rsquo;d not used before.</p>
+<p>I&rsquo;m using <a href="https://cloud.google.com/run/docs/reference/rest">Cloud Run</a> v2 and specifically <a href="https://cloud.google.com/run/docs/reference/rest/v2/projects.locations.services/create"><code>projects.locations.services.create</code></a> and <a href="https://cloud.google.com/run/docs/reference/rest/v2/projects.locations.services#Service"><code>Service</code></a></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>REGION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>REPO<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;..&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Must be in an Artifact Registry repo</span>
+</span></span><span style="display:flex;"><span>IMAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span><span style="color:#e6db74">-docker.pkg.dev/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>REPO<span style="color:#e6db74">}</span><span style="color:#e6db74">/...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Run v2</span>
+</span></span><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://run.googleapis.com/v2&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PARENT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">/locations/</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span></code></pre></div><p>I like to use <a href="https://jsonnet.org/">Jsonnet</a> (specifically <a href="https://github.com/google/go-jsonnet"><code>go-jsonnet</code></a>) to help templating Kubernetes(-like) deployments.</p>
+<p><code>cloudrun.jsonnet</code>:</p>
+<pre tabindex="0"><code class="language-jsonnet" data-lang="jsonnet">local project = std.extVar(&#34;project&#34;);
+local region = std.extVar(&#34;region&#34;);
+local service = std.extVar(&#34;service&#34;);
+local image = std.extVar(&#34;image&#34;);
+
+local port = 8080;
+local health_checking_service = &#34;foo&#34;;
+
+{
+    &#34;labels&#34;:{
+        &#34;type&#34;: &#34;test&#34;
+    },
+    &#34;annotations&#34;: {
+        &#34;type&#34;: &#34;test&#34;
+    },
+    &#34;template&#34;:{
+        &#34;containers&#34;: {
+            &#34;name&#34;: service,
+            &#34;image&#34;: image,
+            &#34;args&#34;: [],
+            &#34;resources&#34;: {
+                &#34;limits&#34;: {
+                    &#34;cpu&#34;: &#34;1000m&#34;,
+                    &#34;memory&#34;: &#34;512Mi&#34;
+                }
+            },
+            &#34;ports&#34;: [
+                {
+                    &#34;name&#34;: &#34;http1&#34;,
+                    &#34;containerPort&#34;: port
+                }
+            ],
+            &#34;startupProbe&#34;: {
+                &#34;grpc&#34;: {
+                    &#34;port&#34;: port,
+                    &#34;service&#34;: health_checking_service
+                }
+            }
+        },
+        &#34;scaling&#34;: {
+            &#34;maxInstanceCount&#34;: 1
+        }
+    }
+}
+</code></pre><p>And deploy it using:</p>
+    </div>
+    <a href="/posts/240927/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
       
         <h2 class="f1">
           <a href="/tags/trivy/" class="link blue hover-black">
@@ -3453,657 +4681,6 @@ ID                                      DATE CREATED                    LABEL   
       <p>I was very interested to read about Microsoft&rsquo;s DeisLab&rsquo;s latest (rust-based) Kubernetes project: <a href="https://cloudblogs.microsoft.com/opensource/2020/10/20/announcing-akri-open-source-project-building-connected-edge-kubernetes/">akri</a>. If I understand it correctly, it provides a mechanism to make any (IoT) device accessible to containers running within a cluster. I need to spend more time playing around with it so that I can fully understand it. I had some problems getting the <a href="https://github.com/deislabs/akri/blob/main/docs/end-to-end-demo.md">End-to-End</a> demo running on Google Compute Engine (and then I tried DigitalOcean droplet) instances. So, here&rsquo;s a two-ways solution to get you going.</p>
     </div>
     <a href="/posts/201022/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-      
-        <h2 class="f1">
-          <a href="/tags/grpc/" class="link blue hover-black">
-            Tag: GRPC
-          </a>
-        </h2>
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/240430/" class="link black dim">
-        Securing gRPC services using Tailscale
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>This is <strong>so</strong> useful that it&rsquo;s worth its own post.</p>
-<p>I write many gRPC services. As these generally run securely, it&rsquo;s best to test them that way too but, even with e.g. <a href="https://letsencrypt.org/">Let&rsquo;s Encrypt</a>, it can be challenging to generate appropriate TLS certs.</p>
-<p><a href="https://tailscale.com">Tailscale</a> makes this trivial.</p>
-<p>Assuming there&rsquo;s a gRPC service running on <code>localhost:50051</code>, we want to avoid <code>-plaintext</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;50051&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-plaintext 0.0.0.0:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>list
-</span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> I&rsquo;m using <code>list</code> and assuming your service has reflection enabled but you can, of course, use relevant methods.</p>
-    </div>
-    <a href="/posts/240430/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/240409/" class="link black dim">
-        Google Cloud Translation w/ gRPC 3 ways
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <h2 id="general">General</h2>
-<p>You&rsquo;ll need a Google Cloud project with Cloud Translation (<code>translate.googleapis.com</code>) enabled and a Service Account (and key) with suitable permissions in order to run the following.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>BILLING<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Your Billing ID (gcloud billing accounts list)</span>
-</span></span><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Your Project ID</span>
-</span></span><span style="display:flex;"><span>ACCOUNT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;tester&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>EMAIL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span><span style="color:#e6db74">@</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">.iam.gserviceaccount.com&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>ROLES<span style="color:#f92672">=(</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;roles/cloudtranslate.user&#34;</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;roles/serviceusage.serviceUsageConsumer&#34;</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create Project</span>
-</span></span><span style="display:flex;"><span>gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Associate Project with your Billing Account</span>
-</span></span><span style="display:flex;"><span>gcloud billing accounts link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Enable Cloud Translation</span>
-</span></span><span style="display:flex;"><span>gcloud services enable translate.googleapis.com <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create Service Account</span>
-</span></span><span style="display:flex;"><span>gcloud iam service-accounts create <span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create Service Account Key</span>
-</span></span><span style="display:flex;"><span>gcloud iam service-accounts keys create <span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>ACCOUNT<span style="color:#e6db74">}</span>.json <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--iam-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Update Project IAM permissions</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> ROLE in <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ROLES[@]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
-</span></span><span style="display:flex;"><span>  gcloud projects add-iam-policy-binding <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --member<span style="color:#f92672">=</span>serviceAccount:<span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --role<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ROLE<span style="color:#e6db74">}</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
-</span></span></code></pre></div><p>For the code, you&rsquo;ll need to install <a href="https://github.com/protocolbuffers/protobuf"><code>protoc</code></a> and preferably have it in your path.</p>
-    </div>
-    <a href="/posts/240409/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/240307/" class="link black dim">
-        Prometheus Protobufs and Native Histograms
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I responded to a question <a href="https://stackoverflow.com/questions/78112323/prometheus-metric-protocol-buffer-in-grpc#comment137716337_78112323">Prometheus metric protocol buffer in gRPC</a> on Stackoverflow and it piqued my curiosity and got me yak shaving.</p>
-<p>Prometheus used to support two exposition formats including Protocol Buffers, then dropped Protocol Buffer and has since re-added it (see <a href="https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md#protobuf-format">Protobuf format</a>). The Protobuf format has returned to support the experimental <a href="https://prometheus.io/docs/prometheus/latest/feature_flags/#native-histograms">Native Histograms</a> feature.</p>
-<p>I&rsquo;m interested in adding Native Histogram support to <a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a> so thought I&rsquo;d learn more about this metric.</p>
-    </div>
-    <a href="/posts/240307/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/240117/" class="link black dim">
-        Gnarly Protocol Buffers compilation
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>This Stackoverflow question piqued my interest:</p>
-<p><a href="https://stackoverflow.com/questions/77829333/retry-policy-configuration-for-grpc-not-working">retry policy configuration for grpc not working</a></p>
-<p><a href="https://github.com/grpc/grpc/blob/master/doc/service_config.md">Service Config in gRPC</a> is new to me but, my initial suspicion (albeit incorrect) was that the JSON types were incorrect.</p>
-<p>I decided to try using the Protocol Buffer source <a href="https://github.com/grpc/grpc-proto/blob/master/grpc/service_config/service_config.proto"><code>service_config.proto</code></a> to verify the JSON.</p>
-<p>To do so I needed to compile the source&hellip;. it was gnarly.</p>
-<p>There are 2 repos used:</p>
-<ul>
-<li><a href="https://github.com/googleapis/googleapis"><code>googleapis</code></a></li>
-<li><a href="https://github.com/grpc/grpc-proto"><code>grpc-proto</code></a></li>
-</ul>
-<p>The <code>service_config.proto</code> includes <code>options</code> for <code>java_package</code> but no <code>go_package</code>.</p>
-    </div>
-    <a href="/posts/240117/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/231222/" class="link black dim">
-        Listing Cloud Logging log-based metrics using gRPC
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>Referring to <a href="/posts/230314/">Accessing Google Services using gRPC</a>, I wanted to query a project&rsquo;s <a href="https://cloud.google.com/logging">Cloud Logging</a> for <a href="https://cloud.google.com/logging/docs/logs-based-metrics">log-based metrics</a> using gRPC.</p>
-<p>In summary:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;logging.googleapis.com:443&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>ROOT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/path/to/googleapis&#34;</span> <span style="color:#75715e"># https://github.com/googleapis/googleapis</span>
-</span></span><span style="display:flex;"><span>PACKAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;google/logging/v2&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># NB Not logging.proto</span>
-</span></span><span style="display:flex;"><span>PROTO<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ROOT<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>PACKAGE<span style="color:#e6db74">}</span><span style="color:#e6db74">/logging_metrics.proto&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>TOKEN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud auth print-access-token<span style="color:#66d9ef">)</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>PACKAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;google.logging.v2&#34;</span>
-</span></span><span style="display:flex;"><span>SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;MetricsServiceV2&#34;</span>
-</span></span><span style="display:flex;"><span>METHOD<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>PACKAGE<span style="color:#e6db74">}</span><span style="color:#e6db74">.</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">/ListLogMetrics&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># ListLogMetricsRequest fields</span>
-</span></span><span style="display:flex;"><span>PARENT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--import-path<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ROOT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proto<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROTO<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{\&#34;parent\&#34;: \&#34;</span><span style="color:#e6db74">${</span>PARENT<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;}&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span> <span style="color:#e6db74">${</span>METHOD<span style="color:#e6db74">}</span>
-</span></span></code></pre></div><p>From <a href="https://developers.google.com/apis-explorer">APIs Explorer</a>, <a href="https://cloud.google.com/logging/docs/reference/api-overview">Cloud Logging API v2</a>, instead of the <a href="https://cloud.google.com/logging/docs/reference/v2/rest">REST reference</a>, browse the <a href="https://cloud.google.com/logging/docs/reference/v2/rpc">gRPC reference</a> specifically the package <a href="https://cloud.google.com/logging/docs/reference/v2/rpc/google.logging.v2"><code>google.logging.v2</code></a> which includes <a href="https://cloud.google.com/logging/docs/reference/v2/rpc/google.logging.v2#google.logging.v2.MetricsServiceV2"><code>MetricsServiceV2</code></a>. We&rsquo;re interested in the <code>ListLogMetrics</code> method (which unfortunately isn&rsquo;t directly hyperlinkable) but is defined to be:</p>
-    </div>
-    <a href="/posts/231222/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/230404/" class="link black dim">
-        Azure Container Apps
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>The majority of <a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a>&rsquo;s components are deployed to <a href="https://cloud.google.com">Google Cloud</a>. However, by its nature, Ackal benefits from deployments that span cloud platforms. I&rsquo;ve deployed Ackal&rsquo;s <a href="https://grpc.io">gRPC</a> <a href="https://github.com/grpc/grpc/blob/master/doc/health-checking.md">health checks</a> to <a href="https://fly.io">Fly</a>, and managed Kubernetes services on <a href="https://linode.com">Linode</a> and <a href="https://vultr.com">Vultr</a>.</p>
-<p>Today, I decided to revisit<a href="#microsoft">¹</a> <a href="https://azure.microsoft.com">Azure</a>. Ackal uses Azure (Active Directory) for one of its OAuth providers. This time, I wanted to deploy a containerized gRPC service. Azure provides <a href="https://azure.microsoft.com/en-us/products/category/containers/">several</a> container-oriented services. I decided to use <a href="https://azure.microsoft.com/en-us/products/container-apps/">Azure Container Apps</a> and, in hindsight, find it analogous to Google <a href="https://cloud.google.com/run">Cloud Run</a>.</p>
-    </div>
-    <a href="/posts/230404/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/230314/" class="link black dim">
-        Access Google Services using gRPC
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>Google publishes interface definitions of Google APIs (services) that support REST and gRPC in a repo called <a href="https://github.com/googleapis/googleapis">Google APIs</a>. Google&rsquo;s SDKs uses gRPC to access these services but, how to do this using e.g. <a href="https://github.com/fullstorydev/grpcurl">gRPCurl</a>?</p>
-<p>I wanted to debug <a href="https://cloud.google.com/profiler/docs">Cloud Profiler</a> and its agent makes <a href="https://github.com/googleapis/googleapis/blob/42ba7e6302f5e0f10ac2b9b17f5b6d568ecae02d/google/devtools/cloudprofiler/v2/profiler.proto#L83"><code>UpdateProfile</code></a> RPCs to <a href="https://github.com/googleapis/googleapis/blob/42ba7e6302f5e0f10ac2b9b17f5b6d568ecae02d/google/devtools/cloudprofiler/v2/profiler.proto#L41"><code>cloudprofiler.googleapis.com</code></a>. Cloud Profiler is more challenging service to debug because (a) it&rsquo;s publicly &ldquo;write-only&rdquo;; and (b) it has complex messages. <code>UpdateProfile</code> sends <a href="https://github.com/googleapis/googleapis/blob/42ba7e6302f5e0f10ac2b9b17f5b6d568ecae02d/google/devtools/cloudprofiler/v2/profiler.proto#L123"><code>UpdateProfileRequest</code></a> messages that include <a href="https://github.com/googleapis/googleapis/blob/42ba7e6302f5e0f10ac2b9b17f5b6d568ecae02d/google/devtools/cloudprofiler/v2/profiler.proto#L123"><code>Profile</code></a> messages that include <code>profile_bytes</code> which are gzip compressed serialized protos of <a href="https://github.com/google/pprof">pprof</a>&rsquo;s <a href="https://github.com/google/pprof/blob/d61513b1440d93d62aad023cc60d7a33f3917b70/proto/profile.proto#L46"><code>Profile</code></a>.</p>
-    </div>
-    <a href="/posts/230314/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/230215/" class="link black dim">
-        Secure (TLS) gRPC services with LKE
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <blockquote>
-<p><strong>NOTE</strong> <a href="https://cert-manager.io"><code>cert-manager</code></a> is a better solution to what follows.</p>
-</blockquote>
-<p>I wrote about deploying <a href="/posts/220603/">Secure (TLS) gRPC services with Vultr Kubernetes Engine (VKE)</a>. This week, I&rsquo;ve reproduced this deployment using Linode Kubernetes Engine (LKE).</p>
-<p>Thanks to the consistency provided by Kubernetes, the Kubernetes programming is almost identical. The main differences are between the CLI&rsquo;s provided by these platforms. Both are good. They&rsquo;re just different.</p>
-<p>I&rsquo;m going to include the <code>linode-cli</code> commands I&rsquo;m using in this post as I found it slightly more quirky.</p>
-    </div>
-    <a href="/posts/230215/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/220603/" class="link black dim">
-        Secure (TLS) gRPC services with VKE
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <blockquote>
-<p><strong>NOTE</strong> <a href="https://cert-manager.io"><code>cert-manager</code></a> is a better solution to what follows.</p>
-</blockquote>
-<p>I&rsquo;ve a need to deploy a Vultr Kubernetes Engine (VKE) cluster on a daily basis (create and delete within a few hours) and expose (securely|TLS) a gRPC service.</p>
-<p>I have an existing solution <a href="/posts/211130/">Automatic Certs w/ Golang gRPC service on Compute Engine</a> that combines a gRPC Healthchecking and an ACME service and decided to reuse this.</p>
-<p>In order for it work, we need:</p>
-    </div>
-    <a href="/posts/220603/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/220421/" class="link black dim">
-        Using Google&#39;s Public Certificate Authority with Golang autocert
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>Last year, I wrote about using <a href="/posts/211130/">Automatic Certs w/ Golang gRPC service on Compute Engine</a>. That solution uses <a href="https://en.wikipedia.org/wiki/Automatic_Certificate_Management_Environment">ACME</a> with (the wonderful) <a href="https://letsencrypt.org">Let&rsquo;s Encrypt</a>. Google is offering a private preview of <a href="https://cloud.google.com/blog/products/identity-security/automate-public-certificate-lifecycle-management-via--acme-client-api">Automate Public Certificates Lifecycle Management via RFC 8555 (ACME)</a> and, because I&rsquo;m using Google Cloud Platform extensively to build a &ldquo;thing&rdquo; and I think it would be useful to have a backup to Let&rsquo;s Encrypt, I thought I&rsquo;d give the solution a try. You&rsquo;ll need to sign-up for the private preview, for what follows to work.</p>
-    </div>
-    <a href="/posts/220421/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/211130/" class="link black dim">
-        Automatic Certs w/ Golang gRPC service on Compute Engine
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I needed to deploy a <a href="https://github.com/grpc/grpc/blob/master/src/proto/grpc/health/v1/health.proto">healthcheck</a>-enabled gRPC TLS-enabled service. Fortunately, most (all?) of the SDKs include an implementation, e.g. Golang has <a href="https://github.com/grpc/grpc-go/tree/master/health"><code>grpc-go/health</code></a>.</p>
-<p>I learned in my travels that:</p>
-<ul>
-<li>DigitalOcean [App] platform does not (<a href="https://www.digitalocean.com/community/questions/app-platform-http-2-support">link</a>) work with TLS-based gRPC apps.</li>
-<li><a href="https://fly.io">Fly</a> has a regression (<a href="https://community.fly.io/t/urgent-grpc-server-unreachable-via-grpcurl/2694/5">link</a>) that breaks gRPC</li>
-</ul>
-<p>So, I resorted to Google Cloud Platform (GCP). Although Cloud Run would be well-suited to running the gRPC app, it uses a proxy|sidecar to provision a cert for the app and I wanted to be able to (easily use a custom domain) and give myself a somewhat general-purpose solution.</p>
-    </div>
-    <a href="/posts/211130/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210730/" class="link black dim">
-        Renewing Firebase Authentication ID tokens with gRPC
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;ve written before about a project in which I&rsquo;m using Firebase Authentication in combination with Google Cloud Endpoints and a gRPC service running on Cloud Run:</p>
-<ul>
-<li><a href="/posts/210614/">Firebase Authentication, Cloud Endpoints and gRPC (1of2)</a></li>
-<li><a href="/posts/210618/">Firebase Authentication, Cloud Endpoints and gRPC (2of2)</a></li>
-</ul>
-<p>This works well with one caveat, the ID tokens (JWTs) minted by Firebase Authentication have a 3600 second (one hour) lifetime.</p>
-<p>The user flow in my app is that whenever the user invokes the app&rsquo;s CLI:</p>
-    </div>
-    <a href="/posts/210730/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210724/" class="link black dim">
-        gRPC Interceptors and in-memory gRPC connections
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>For&hellip; reasons, I wanted to pre-filter gRPC requests to check for authorization. Authorization is implemented as a &lsquo;micro-service&rsquo; and I wanted the authorization server to run in the same process as the gRPC client.</p>
-<p>TL;DR:</p>
-<ul>
-<li>Shiju&rsquo;s <a href="https://shijuvar.medium.com/writing-grpc-interceptors-in-go-bf3e7671fe48">&ldquo;Writing gRPC Interceptors in Go&rdquo;</a> is great</li>
-<li>This Stack overflow <a href="https://stackoverflow.com/a/52080545/609290">answer</a> ostensibly for writing unit tests for gRPC got me an in-process server</li>
-</ul>
-<p>What follows stands on these folks&rsquo; shoulders&hellip;</p>
-<p>A key motivator for me to write blog posts is that helps me ensure that I understand things. Writing this post, I realized I&rsquo;d not researched gRPC Interceptors and, as luck would have it, I found some interesting content, not on <a href="https://grpc.io"><code>grpc.io</code></a> but on the <a href="https://github.com/grpc-ecosystem"><code>grpc-ecosystem</code></a> repo, specifically <a href="https://github.com/grpc-ecosystem/go-grpc-middleware">Go gRPC middleware</a>. But, I refer again to Shiju&rsquo;s clear and helpful <a href="https://shijuvar.medium.com/writing-grpc-interceptors-in-go-bf3e7671fe48">&ldquo;Writing gRPC Interceptors in Go&rdquo;</a></p>
-    </div>
-    <a href="/posts/210724/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210618/" class="link black dim">
-        Firebase Authentication, Cloud Endpoints and gRPC (2of2)
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>Earlier this week, I wrote about using <a href="/posts/210614/">Firebase Authentcation, Cloud Endpoints and gRPC (1of2)</a>. Since then, I <a href="https://github.com/GoogleCloudPlatform/esp-v2/issues/542">learned some more</a> and added a gRPC interceptor to implement basic authorization for the service.</p>
-<h2 id="espv2---allow-unauthenticated">ESPv2 <code>--allow-unauthenticated</code></h2>
-<p>The Cloud Enpoints (ESPv2) proxy must be run as <code>--allow-unauthenticated</code> on Cloud Run to ensure that requests make it to the proxy where the request is authenticated and only authenticated requests make it on to the backend service. Thanks Google&rsquo;s <a href="https://github.com/nareddyt">Teju Nareddy</a>!</p>
-    </div>
-    <a href="/posts/210618/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210614/" class="link black dim">
-        Firebase Authentication, Cloud Endpoints and gRPC (1of2)
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;m building a service that requires user authentication. The primary endpoint is a gRPC-based service. I would like to consider using certificate-based auth but this feels&hellip; challenging. Instead, I have been aware of, but never used, <a href="https://firebase.google.com/products/auth">Firebase Authentication</a> and was interested to see that <a href="https://cloud.google.com/endpoints">Cloud Endpoints</a> includes Firebase Authentication as one of its supported auth mechanisms. Curiosity piqued, I confirmed that gRPC supports <a href="https://grpc.io/docs/guides/auth/#using-google-token-based-authentication">Google token-based authentication</a>.</p>
-<p>The following is a summary of what I did but I&rsquo;ll leave the extensive documentation to Google, (Google&rsquo;s) Firebase and gRPC, all of which, in this case, provide really good explanations.</p>
-    </div>
-    <a href="/posts/210614/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210608/" class="link black dim">
-        Cloud Endpoints combine OpenAPI and gRPC... or not!
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>See:</p>
-<ul>
-<li><a href="/posts/210519/">Multiplexing gRPC and HTTP endpoints with Cloud Run</a></li>
-<li><a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a></li>
-<li><a href="https://github.com/GoogleCloudPlatform/esp-v2/issues/523">ESPv2: Configure Cloud Endpoints to proxy traffic to a Cloud Run multiplexed (gRPC|HTTP) service</a></li>
-</ul>
-<p>Challenges:</p>
-<ul>
-<li>Cloud Run permits single port</li>
-<li>Cloud Run services publishing e.g. gRPC and Prometheus, must multiplex transports</li>
-<li>Cloud Run services publishing multiplexed transports are <em>challenging</em> to expose using Cloud Endpoints</li>
-</ul>
-<h2 id="hypothesis-1-multiplexed-transports-work-with-cloud-run">Hypothesis #1: Multiplexed transports work with Cloud Run</h2>
-<p>See: <a href="/posts/210519/">Multiplexing gRPC and HTTP endpoints with Cloud Run</a></p>
-    </div>
-    <a href="/posts/210608/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210519/" class="link black dim">
-        Multiplexing gRPC and HTTP (Prometheus) endpoints with Cloud Run
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>Google <a href="https://cloud.google.com/run">Cloud Run</a> is useful but, each service is limited to exposing a single port. This caused me problems with a gRPC service that serves (non-gRPC) Prometheus metrics because customarily, you would serve gRPC on one port and the Prometheus metrics on another.</p>
-<p>Fortunately, <a href="https://github.com/soheilhy/cmux">cmux</a> provides a solution by providing a mechanism that multiplexes both services (gRPC and HTTP) on a single port!</p>
-<blockquote>
-<p><strong>TL;DR</strong> See the cmux <a href="https://github.com/soheilhy/cmux#limitations">Limitations</a> and use:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">grpcl</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">MatchWithWriters</span>(
-</span></span><span style="display:flex;"><span>   <span style="color:#a6e22e">cmux</span>.<span style="color:#a6e22e">HTTP2MatchHeaderFieldSendSettings</span>(<span style="color:#e6db74">&#34;content-type&#34;</span>, <span style="color:#e6db74">&#34;application/grpc&#34;</span>))
-</span></span></code></pre></div></blockquote>
-<p>Extending the <a href="https://github.com/soheilhy/cmux#how-to">example</a> from the cmux repo:</p>
-    </div>
-    <a href="/posts/210519/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210412/" class="link black dim">
-        Fly.io
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I spent some time over the weekend understanding <a href="https://fly.io">Fly.io</a>. It&rsquo;s always fascinating to me how many smart people are building really neat solutions. Fly.io is subtly different to other platforms that I use (Kubernetes, GCP, DO, Linode) and I&rsquo;ve found the Fly.io team to be highly responsive and helpful to my noob questions.</p>
-<p>One of the team&rsquo;s posts, <a href="https://fly.io/blog/docker-without-docker/">Docker without Docker</a> surfaced in my Feedly feed (<a href="https://news.ycombinator.com/item?id=26746280">hackernews</a>) and it piqued my interest.</p>
-    </div>
-    <a href="/posts/210412/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210222/" class="link black dim">
-        Dapr
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>It&rsquo;s a good name, I read it as &ldquo;dapper&rdquo; but I frequently type &ldquo;darp&rdquo; :-(</p>
-<p>Was interested to <a href="https://blog.dapr.io/posts/2021/02/17/announcing-dapr-v1.0/">read</a> that <a href="https://dapr.io/">Dapr</a> is now v1.0 and decided to check it out. I was initially confused between Dapr and service mesh functionality. But, having used Dapr, it appears to be more focused in aiding the development of (cloud-native) (distributed) apps by providing developers with abstractions for e.g. service discovery, eventing, observability whereas service meshes feel (!) more oriented towards simplifying the deployment of existing apps. Both use the concept of proxies, deployed alongside app components (as sidecars on Kubernetes) to provide their functionality to apps.</p>
-    </div>
-    <a href="/posts/210222/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/200717/" class="link black dim">
-        Remotely invoking WASM functions using gRPC and waPC
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>Following on from <a href="/posts/200612/">waPC &amp; Protobufs</a>, I can now remotely invoke (arbitrary) WASM functions:</p>
-<p>Client:</p>
-<p>The logging isn&rsquo;t perfectly clear but, the client gets (a previously added) WASM binary from the server (using the SHA-256 of the WASM binary as a unique identifier). The result includes metadata that includes a protobuf descriptor of the WASM binary&rsquo;s functions. The descriptor defines gRPC services (that represent the WASM functions) with input (parameters) and output (results) messages.</p>
-    </div>
-    <a href="/posts/200717/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/200429/" class="link black dim">
-        Rust implementation of Crate Transparency using Google Trillian
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;ve been hacking on a Rust-based transparent application for Google Trillian. As appears to be my fixation, this personality is for another package manager. This time, Rust&rsquo;s <a href="https://doc.rust-lang.org/1.0.0/book/crates-and-modules.html">Crates</a> often found in <a href="https://crates.io"><code>crates.io</code></a> which is Rust&rsquo;s Package Registry. I discussed this project earlier this month <a href="/posts/200403/">Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian</a> and and earlier approach for Python&rsquo;s packages with <a href="/posts/190907/">pypi-transparency</a>.</p>
-<p>This time, of course, I&rsquo;m using Rust. And, by way of a first for me, for the gRPC server implementation (aka &ldquo;personality&rdquo;). I&rsquo;ve been lazy thanks to the excellent <a href="https://github.com/fullstorydev/grpcurl">gRPCurl</a> and have been using it way of a client. Because I&rsquo;m more familiar with Golang and because I&rsquo;ve written (most) other Trillian personalities in Golang, I resorted to quickly implementing Crate Transparency in Golang too in order to uncover bugs with the Rust implementation. I&rsquo;ll write a follow-up post on the complexity I seem to struggle with when using protobufs and gRPC [in Golang].</p>
-    </div>
-    <a href="/posts/200429/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/200403/" class="link black dim">
-        Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;m noodling the utility of a Transparency solution for Rust Crates. When developers push crates to Cargo, a bunch of metadata is associated with the crate. E.g. <a href="https://crates.io/crates/protobuf"><code>protobuf</code></a>. As with Golang Modules, Python packages on PyPi etc., there appears to be utility in making tamperproof recordings of these publications. Then, other developers may confirm that a crate pulled from cates.io is highly unlikely to have been changed.</p>
-<p>On Linux, Cargo stores downloaded crates under <code>${HOME}/.crates/registry</code>. In the case of the latest version (<code>2.12.0</code>) of <code>protobuf</code>, on my machine, I have:</p>
-    </div>
-    <a href="/posts/200403/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/200326/" class="link black dim">
-        Google Trillian on Cloud Run
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;ve written previously (<a href="https://medium.com/google-cloud/google-trillian-for-noobs-1a-c87a78e5e585">Google Trillian for Noobs</a>) about Google&rsquo;s interesting project <a href="https://github.com/google/trillian">Trillian</a> and about some of the &ldquo;personalities&rdquo; (e.g. <a href="/posts/190907/">PyPi Transparency</a>) that I&rsquo;ve build using it.</p>
-<p>Having gone slight cra-cra on <a href="https://cloud.google.com/run">Cloud Run</a> and <a href="https://grpc.io">gRPC</a> this week with <a href="/posts/200320/">Golang gRPC Cloud Run</a> and <a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a>, I thought it&rsquo;d be fun to deploy Trillian and a personality to Cloud Run.</p>
-<p>It mostly (!) works :-)</p>
-<p>At the end of the post, I&rsquo;ve summarized creating a Cloud SQL instance to host the Trillian data(base).</p>
-    </div>
-    <a href="/posts/200326/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/200325/" class="link black dim">
-        gRPC, Cloud Run &amp; Endpoints
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>&lt;3 Google but there&rsquo;s quite often an assumption that we&rsquo;re all sitting around the engineering table and, of course, we&rsquo;re not.</p>
-<p><a href="https://cloud.google.com/endpoints">Cloud Endpoints</a> is a powerful offering but &ndash; IMO &ndash; it&rsquo;s <strong>super</strong> confusing to understand and complex to deploy.</p>
-<p>If you&rsquo;re familiar with the motivations behind service meshes (e.g. <a href="https://istio.io">Istio</a>), Cloud Endpoints fits in a similar niche (&ldquo;neesh&rdquo; or &ldquo;nitch&rdquo;?). The underlying ambition is that, developers can take <strong>existing</strong> code and by adding a proxy (or sidecar), general-purpose abstractions, security, logging etc. may be added.</p>
-    </div>
-    <a href="/posts/200325/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/200320/" class="link black dim">
-        Golang gRPC Cloud Run
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <blockquote>
-<p><strong>Update: 2020-03-24</strong>: Since writing this post, I&rsquo;ve contributed <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/pull/12">Golang</a> and <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/pull/15">Rust</a> samples to Google&rsquo;s project. I recommend you start there.</p>
-</blockquote>
-<p>Google explained how to run gRPC servers with Cloud Run. The examples are good but only Python and Node.JS:</p>
-<ul>
-<li><a href="https://cloud.google.com/blog/products/compute/serve-cloud-run-requests-with-grpc-not-just-http">gRPC comes to Cloud Run</a></li>
-<li><a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example">gRPC in Google Cloud Run</a></li>
-</ul>
-<p>Missing Golang&hellip;. until now ;-)</p>
-<p>I had problems with 1.14 and so I&rsquo;m using 1.13.</p>
-<h2 id="project-structure">Project structure</h2>
-<p>I&rsquo;ll tidy up my repo but the code may be found:</p>
-    </div>
-    <a href="/posts/200320/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/190918/" class="link black dim">
-        Cloud Functions Simple(st) HTTP Multi-host Proxy
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>Tweaked yesterday&rsquo;s solution so that it will randomly select one from several hosts with which it&rsquo;s configured.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">proxy</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log&#34;</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;math/rand&#34;</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;net/http&#34;</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;net/url&#34;</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;os&#34;</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;strings&#34;</span>
-</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;time&#34;</span>
-</span></span><span style="display:flex;"><span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">robin</span>() {
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">hostsList</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PROXY_HOST&#34;</span>)
-</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">hostsList</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;&#34;</span> {
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#e6db74">&#34;&#39;PROXY_HOST&#39; environment variable should contain comma-separated list of hosts&#34;</span>)
-</span></span><span style="display:flex;"><span>	}
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Comma-separated lists of hosts
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">hosts</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Split</span>(<span style="color:#a6e22e">hostsList</span>, <span style="color:#e6db74">&#34;,&#34;</span>)
-</span></span><span style="display:flex;"><span>    
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">urls</span> <span style="color:#f92672">:=</span> make([]<span style="color:#f92672">*</span><span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">URL</span>, len(<span style="color:#a6e22e">hosts</span>))
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">host</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">hosts</span> {
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">origin</span> = <span style="color:#a6e22e">Endpoint</span>{
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Host</span>: <span style="color:#a6e22e">host</span>,
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Port</span>: <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;PROXY_PORT&#34;</span>),
-</span></span><span style="display:flex;"><span>		}
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">url</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">origin</span>.<span style="color:#a6e22e">URL</span>()
-</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
-</span></span><span style="display:flex;"><span>		}
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">urls</span>[<span style="color:#a6e22e">i</span>] = <span style="color:#a6e22e">url</span>
-</span></span><span style="display:flex;"><span>	}
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">s</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">NewSource</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">UnixNano</span>())
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">q</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">s</span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Handler</span> = <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
-</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Pick one of the URLs at random
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">url</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">urls</span>[<span style="color:#a6e22e">q</span>.<span style="color:#a6e22e">Int31n</span>(int32(len(<span style="color:#a6e22e">urls</span>)))]
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[Handler] Forwarding: %s&#34;</span>, <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">String</span>())
-</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Forward to it
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">reverseproxy</span>(<span style="color:#a6e22e">url</span>, <span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">r</span>)
-</span></span><span style="display:flex;"><span>	}
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>This requires a minor tweak to the deployment to escape the commas within the <code>PROXY_HOST</code> string to disambiguate these for <code>gcloud</code>:</p>
-    </div>
-    <a href="/posts/190918/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/190917/" class="link black dim">
-        Cloud Functions Simple(st) HTTP Proxy
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;m investigating the use of <a href="https://letsencrypt.org/">LetsEncrypt</a> for gRPC services. I found this straightforward <a href="https://www.d3void.net/post/acme/">post</a> by Scott Devoid and am going to try this approach.</p>
-<p>Before I can do that, I need to be able to publish services (make them Internet-accessible) and would like to try to continue to use GCP for <a href="https://cloud.google.com/free/">free</a>.</p>
-<p>Some time ago, I <a href="https://medium.com/google-cloud/microk8s-on-google-cloud-platform-d8b7a71a3ef">wrote</a> about using the excellent <a href="https://microk8s.io/">Microk8s</a> on GCP. Using an <code>f1-micro</code>, I&rsquo;m hoping (!) to stay within the Compute Engine free tier. I&rsquo;ll also try to be diligent and delete the instance when it&rsquo;s not needed. This gives me a runtime platform and I can expose services to the Instance&rsquo;s (Node)Ports but, I&rsquo;d prefer to not be billed for a simple proxy.</p>
-    </div>
-    <a href="/posts/190917/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
 </div>
 
@@ -10171,345 +10748,6 @@ ID                                      DATE CREATED                    LABEL   
 <p>Pushover <a href="https://pushover.net/api">API</a> has a <a href="https://pushover.net/api#messages">Pushing Messages</a> method. The documentation describes the format of the HTTP Request. It must be a <code>POST</code> using TLS (<code>https://</code>) to <code>https://api.pushover.net/1/messages.json</code>. The <code>content-type</code> should be <code>application/json</code>. In the JSON body of the message, we must include <code>token</code> (<code>PUSHOVER_TOKEN</code>), <code>user</code> (<code>PUSHOVER_USER_KEY</code>), <code>device</code> (we&rsquo;ll use <code>cloud-monitoring</code>) and a <code>title</code> and a <code>message</code></p>
     </div>
     <a href="/posts/220514/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-      
-        <h2 class="f1">
-          <a href="/tags/cloud-run/" class="link blue hover-black">
-            Tag: Cloud-Run
-          </a>
-        </h2>
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/220506/" class="link black dim">
-        Cloud Run custom domain mappings
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I have several Cloud Run services that I want to map to a domain.</p>
-<p>During development, I create a Google Cloud Platform (GCP) project each day into which everything is deployed. This means that, every day, the Cloud Run services have newly non-inferable (to me) URLs. I thought this would be tedious to manage because:</p>
-<ol>
-<li>My DNS service isn&rsquo;t programmable (I know!)</li>
-<li>Cloud Run services have non-inferable (by me) URLs</li>
-</ol>
-<p>i.e. I thought I&rsquo;d have to manually update the DNS entries each day.</p>
-    </div>
-    <a href="/posts/220506/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/220225/" class="link black dim">
-        Prometheus HTTP Service Discovery of Cloud Run services
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>Some time ago, I wrote about using <a href="https://pretired.dazwilkin.com/posts/210419/">Prometheus Service Discovery w/ Consul for Cloud Run</a> and also <a href="https://pretired.dazwilkin.com/posts/211005/">Scraping metrics exposed by Google Cloud Run services that require authentication</a>. Both solutions remain viable but they didn&rsquo;t address another use case for Prometheus and Cloud Run services that I have with a &ldquo;thing&rdquo; that I&rsquo;ve been building.</p>
-<p>In this scenario, I want to:</p>
-<ol>
-<li>Configure Prometheus to scrape Cloud Run service metrics</li>
-<li>Discover Cloud Run services dynamically</li>
-<li>Authenticate to Cloud Run using Firebase Auth ID tokens</li>
-</ol>
-<p>These requirements and &ndash; one other &ndash; present several challenges:</p>
-    </div>
-    <a href="/posts/220225/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/211026/" class="link black dim">
-        Firebase Auth authorized domains
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;m using Firebase Authentication in a project to authenticate users of various OAuth2 identity systems. Firebase Authentication requires a set of Authorized Domains.</p>
-<p>The (web) app that interacts with Firebase Authentication is deployed to Cloud Run.  The Authorized Domains list must include the app&rsquo;s Cloud Run service URL.</p>
-<p>Cloud Run service URLs vary by Project (ID). They are a combination of the service name, a hash (?) of the Project (ID) and <code>.a.run.app</code>.</p>
-    </div>
-    <a href="/posts/211026/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/211005/" class="link black dim">
-        Scraping metrics exposed by Google Cloud Run services that require authentication
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;ve written a solution (<a href="https://github.com/DazWilkin/gcp-oidc-token-proxy"><code>gcp-oidc-token-proxy</code></a>) that can be used in conjunction with Prometheus <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#oauth2">OAuth2</a> to authenticate requests so that Prometheus can scrape metrics exposed by e.g. Cloud Run services that require authentication. The solution resulted from my <a href="https://stackoverflow.com/questions/69411584/is-there-a-way-to-configure-prometheus-to-use-a-google-service-account-to-auth">question</a> on Stack overflow.</p>
-<p>Problem #1: Endpoint requires authentication</p>
-<p>Given a Cloud Run service URL for which:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;my-server-blahblah-wl.a.run.app&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Returns 200 when authentication w/ an ID token</span>
-</span></span><span style="display:flex;"><span>TOKEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>gcloud auth print-identity-token<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
-</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--write-out <span style="color:#e6db74">&#34;%{response_code}&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output /dev/null <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/metrics
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Returns 403 otherwise</span>
-</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--write-out <span style="color:#e6db74">&#34;%{response_code}&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output /dev/null <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/metrics
-</span></span></code></pre></div><p>Problem #2: Prometheus <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#oauth2">OAuth2</a> configuration is constrained</p>
-    </div>
-    <a href="/posts/211005/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210907/" class="link black dim">
-        `gcloud beta run services replace`
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <blockquote>
-<p><strong>TL;DR</strong> I&rsquo;m working on a project that includes multiple Cloud Run services. I&rsquo;ve been putting my <code>gcloud</code> head on to deploy these services thinking that it&rsquo;s curious there&rsquo;s no way to write the specs as YAML configs. Today, I learned that there is: <a href="https://cloud.google.com/sdk/gcloud/reference/beta/run/services/replace"><code>gcloud beta run services replace</code></a>.</p>
-</blockquote>
-<p>What prompted the discovery was some frustration trying to deploy a JSON-valued environment variable to Cloud Run:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>  local FIREBASE_CONFIG<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    apiKey: </span><span style="color:#e6db74">${</span>FIREBASE_API_KEY<span style="color:#e6db74">}</span><span style="color:#e6db74">,
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    authDomain: </span><span style="color:#e6db74">${</span>FIREBASE_AUTH_DOMAIN<span style="color:#e6db74">}</span><span style="color:#e6db74">,
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    projectId: </span><span style="color:#e6db74">${</span>FIREBASE_PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">,
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    storageBucket: </span><span style="color:#e6db74">${</span>FIREBASE_STORAGE_BUCKET<span style="color:#e6db74">}</span><span style="color:#e6db74">,
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    messagingSenderId: </span><span style="color:#e6db74">${</span>FIREBASE_MESSAGING_SENDER<span style="color:#e6db74">}</span><span style="color:#e6db74">,
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    appId: </span><span style="color:#e6db74">${</span>FIREBASE_APP<span style="color:#e6db74">}</span><span style="color:#e6db74">}&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>  gcloud run deploy <span style="color:#e6db74">${</span>SRV_NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --image<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>IMAGE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --command<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/server&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --args<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;--endpoint=:</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --set-env-vars<span style="color:#f92672">=</span>FIREBASE_CONFIG<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FIREBASE_CONFIG<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --max-instances<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --memory<span style="color:#f92672">=</span>256Mi <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --ingress<span style="color:#f92672">=</span>all <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --port<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --allow-unauthenticated <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-</span></span></code></pre></div><p><code>gcloud</code> balks at this.</p>
-    </div>
-    <a href="/posts/210907/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210608/" class="link black dim">
-        Cloud Endpoints combine OpenAPI and gRPC... or not!
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>See:</p>
-<ul>
-<li><a href="/posts/210519/">Multiplexing gRPC and HTTP endpoints with Cloud Run</a></li>
-<li><a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a></li>
-<li><a href="https://github.com/GoogleCloudPlatform/esp-v2/issues/523">ESPv2: Configure Cloud Endpoints to proxy traffic to a Cloud Run multiplexed (gRPC|HTTP) service</a></li>
-</ul>
-<p>Challenges:</p>
-<ul>
-<li>Cloud Run permits single port</li>
-<li>Cloud Run services publishing e.g. gRPC and Prometheus, must multiplex transports</li>
-<li>Cloud Run services publishing multiplexed transports are <em>challenging</em> to expose using Cloud Endpoints</li>
-</ul>
-<h2 id="hypothesis-1-multiplexed-transports-work-with-cloud-run">Hypothesis #1: Multiplexed transports work with Cloud Run</h2>
-<p>See: <a href="/posts/210519/">Multiplexing gRPC and HTTP endpoints with Cloud Run</a></p>
-    </div>
-    <a href="/posts/210608/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210520/" class="link black dim">
-        Consul discovers Google Cloud Run
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;ve written a basic <code>discoverer</code> of Google <a href="https://cloud.google.com/run">Cloud Run</a> services. This is for a project and it extends work done in some previous posts to <a href="/posts/210519/">Multiplex gRPC and Prometheus with Cloud Run</a> and to use <a href="/posts/210419/">Consul for Prometheus service discovery</a>.</p>
-<p>This solution:</p>
-<ul>
-<li>Accepts a set of Google Cloud Platform (GCP) projects</li>
-<li>Trawls them for Cloud Run services</li>
-<li>Assumes that the services expose Prometheus metrics on <code>:443/metrics</code></li>
-<li>Relabels the services</li>
-<li>Surfaces any discovered Cloud Run services&rsquo; metrics in Prometheus</li>
-</ul>
-<p>You&rsquo;ll need Docker and Docker Compose.</p>
-    </div>
-    <a href="/posts/210520/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210519/" class="link black dim">
-        Multiplexing gRPC and HTTP (Prometheus) endpoints with Cloud Run
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>Google <a href="https://cloud.google.com/run">Cloud Run</a> is useful but, each service is limited to exposing a single port. This caused me problems with a gRPC service that serves (non-gRPC) Prometheus metrics because customarily, you would serve gRPC on one port and the Prometheus metrics on another.</p>
-<p>Fortunately, <a href="https://github.com/soheilhy/cmux">cmux</a> provides a solution by providing a mechanism that multiplexes both services (gRPC and HTTP) on a single port!</p>
-<blockquote>
-<p><strong>TL;DR</strong> See the cmux <a href="https://github.com/soheilhy/cmux#limitations">Limitations</a> and use:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">grpcl</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">MatchWithWriters</span>(
-</span></span><span style="display:flex;"><span>   <span style="color:#a6e22e">cmux</span>.<span style="color:#a6e22e">HTTP2MatchHeaderFieldSendSettings</span>(<span style="color:#e6db74">&#34;content-type&#34;</span>, <span style="color:#e6db74">&#34;application/grpc&#34;</span>))
-</span></span></code></pre></div></blockquote>
-<p>Extending the <a href="https://github.com/soheilhy/cmux#how-to">example</a> from the cmux repo:</p>
-    </div>
-    <a href="/posts/210519/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210419/" class="link black dim">
-        Prometheus Service Discovery w/ Consul for Cloud Run
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;m working on a project that will programmatically create Google <a href="https://cloud.google.com/run">Cloud Run</a> services and I want to be able to dynamically discover these services using Prometheus.</p>
-<p>This is one solution.</p>
-<blockquote>
-<p><strong>NOTE</strong> Google Cloud Run is the service I&rsquo;m using, but the principle described herein applies to any runtime service that you&rsquo;d wish to use.</p>
-</blockquote>
-<p>Why is this challenging? IIUC, it&rsquo;s primarily because Prometheus has a limited set of plugins for service discovery, see the sections that include <code>_sd_</code> in Prometheus <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/">Configuration</a> documentation. Unfortunately, Cloud Run is not explicitly supported. The alternative appears to be to use file-based discovery but this seems &lsquo;challenging&rsquo;; it requires, for example, reloading Prometheus on file changes.</p>
-    </div>
-    <a href="/posts/210419/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/210316/" class="link black dim">
-        Programmatically deploying Cloud Run services (Golang|Python)
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>Phew! Programmitcally deploying Cloud Run services should be easy but it didn&rsquo;t find it so.</p>
-<p>My issues were that the Cloud Run Admin (!) API is poorly documented and it uses non-standard endpoints (thanks Sal!). Here, for others who may struggle with this, is how I got this to work.</p>
-<h2 id="goal">Goal</h2>
-<p>Programmatically (have Golang, Python, want Rust) deploy services to Cloud Run.</p>
-<p>i.e. achieve this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud run deploy <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--image<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>IMAGE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--no-allow-unauthenticated <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
-</span></span></code></pre></div><blockquote>
-<p><strong>TRICK</strong> <a href="https://cloud.google.com/sdk/gcloud/reference#--log-http"><code>--log-http</code></a> is your friend</p>
-    </div>
-    <a href="/posts/210316/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/200326/" class="link black dim">
-        Google Trillian on Cloud Run
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;ve written previously (<a href="https://medium.com/google-cloud/google-trillian-for-noobs-1a-c87a78e5e585">Google Trillian for Noobs</a>) about Google&rsquo;s interesting project <a href="https://github.com/google/trillian">Trillian</a> and about some of the &ldquo;personalities&rdquo; (e.g. <a href="/posts/190907/">PyPi Transparency</a>) that I&rsquo;ve build using it.</p>
-<p>Having gone slight cra-cra on <a href="https://cloud.google.com/run">Cloud Run</a> and <a href="https://grpc.io">gRPC</a> this week with <a href="/posts/200320/">Golang gRPC Cloud Run</a> and <a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a>, I thought it&rsquo;d be fun to deploy Trillian and a personality to Cloud Run.</p>
-<p>It mostly (!) works :-)</p>
-<p>At the end of the post, I&rsquo;ve summarized creating a Cloud SQL instance to host the Trillian data(base).</p>
-    </div>
-    <a href="/posts/200326/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/200325/" class="link black dim">
-        gRPC, Cloud Run &amp; Endpoints
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>&lt;3 Google but there&rsquo;s quite often an assumption that we&rsquo;re all sitting around the engineering table and, of course, we&rsquo;re not.</p>
-<p><a href="https://cloud.google.com/endpoints">Cloud Endpoints</a> is a powerful offering but &ndash; IMO &ndash; it&rsquo;s <strong>super</strong> confusing to understand and complex to deploy.</p>
-<p>If you&rsquo;re familiar with the motivations behind service meshes (e.g. <a href="https://istio.io">Istio</a>), Cloud Endpoints fits in a similar niche (&ldquo;neesh&rdquo; or &ldquo;nitch&rdquo;?). The underlying ambition is that, developers can take <strong>existing</strong> code and by adding a proxy (or sidecar), general-purpose abstractions, security, logging etc. may be added.</p>
-    </div>
-    <a href="/posts/200325/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/200320/" class="link black dim">
-        Golang gRPC Cloud Run
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <blockquote>
-<p><strong>Update: 2020-03-24</strong>: Since writing this post, I&rsquo;ve contributed <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/pull/12">Golang</a> and <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/pull/15">Rust</a> samples to Google&rsquo;s project. I recommend you start there.</p>
-</blockquote>
-<p>Google explained how to run gRPC servers with Cloud Run. The examples are good but only Python and Node.JS:</p>
-<ul>
-<li><a href="https://cloud.google.com/blog/products/compute/serve-cloud-run-requests-with-grpc-not-just-http">gRPC comes to Cloud Run</a></li>
-<li><a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example">gRPC in Google Cloud Run</a></li>
-</ul>
-<p>Missing Golang&hellip;. until now ;-)</p>
-<p>I had problems with 1.14 and so I&rsquo;m using 1.13.</p>
-<h2 id="project-structure">Project structure</h2>
-<p>I&rsquo;ll tidy up my repo but the code may be found:</p>
-    </div>
-    <a href="/posts/200320/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
 </div>
 
