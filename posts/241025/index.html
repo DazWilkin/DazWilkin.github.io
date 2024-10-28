@@ -84,7 +84,7 @@ For my future self:
 What What? FauxRPC A general-purpose tool (built using Buf’s Connect) that includes registry and stub (gRPC) services that can be (programmatically) configured (using a Protobuf descriptor) and stubs (example method responses) to help test gRPC implementations. Testcontainers Write code (e.g. rust) to create and interact (test)services (running in [Docker] containers). Connect (More than a) gRPC implementation used by FauxRPC gRPCurl A command-line gRPC tool. I started following along with FauxRPC’s Testcontainers example but, being unfamiliar with Connect, I wasn’t familiar with its Eliza service. The service is available on demo.connectrpc.com:443 and is described using eliza.proto as part of examples-go. Had I realized this sooner, I would have used this example rather than the Health Checking protocol.">
   <meta itemprop="datePublished" content="2024-10-25T00:00:00-07:00">
   <meta itemprop="dateModified" content="2024-10-25T00:00:00-07:00">
-  <meta itemprop="wordCount" content="2386">
+  <meta itemprop="wordCount" content="2402">
   <meta itemprop="keywords" content="FauxRPC,Golang,GRPCurl,Rust">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="FauxRPC using gRPCurl, Golang and rust">
@@ -212,7 +212,7 @@ What What? FauxRPC A general-purpose tool (built using Buf’s Connect) that inc
       
       
         <span class="f6 mv4 dib tracked"> - 12 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 2386 words </span>
+        <span class="f6 mv4 dib tracked"> - 2402 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>Read <a href="https://kmcd.dev/posts/fauxrpc-testcontainers/">FauxRPC + Testcontainers</a> on Hacker News and was intrigued. I spent a little more time &ldquo;evaluating&rdquo; this than I&rsquo;d planned because I&rsquo;m forcing myself to use rust as much as possible and my ignorance (see below) caused me some challenges.</p>
@@ -764,14 +764,21 @@ What What? FauxRPC A general-purpose tool (built using Buf’s Connect) that inc
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> url <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;http://</span><span style="color:#e6db74">{host}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">{port}</span><span style="color:#e6db74">&#34;</span>);
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> uri: <span style="color:#a6e22e">tonic</span>::transport::Uri <span style="color:#f92672">=</span> url.parse().expect(<span style="color:#e6db74">&#34;invalid gRPC endpoint&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> uri: <span style="color:#a6e22e">tonic</span>::transport::Uri <span style="color:#f92672">=</span> url
+</span></span><span style="display:flex;"><span>      .parse()
+</span></span><span style="display:flex;"><span>      .expect(<span style="color:#e6db74">&#34;invalid gRPC endpoint&#34;</span>);
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> endpoint <span style="color:#f92672">=</span> Channel::builder(uri);
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> channel <span style="color:#f92672">=</span> endpoint.connect().<span style="color:#66d9ef">await</span>.expect(<span style="color:#e6db74">&#34;unable to connect&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> channel <span style="color:#f92672">=</span> endpoint.connect()
+</span></span><span style="display:flex;"><span>      .<span style="color:#66d9ef">await</span>
+</span></span><span style="display:flex;"><span>      .expect(<span style="color:#e6db74">&#34;unable to connect&#34;</span>);
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> file_descriptor_set <span style="color:#f92672">=</span>
-</span></span><span style="display:flex;"><span>        FileDescriptorSet::decode(<span style="color:#66d9ef">FILE_DESCRIPTOR_SET</span>).expect(<span style="color:#e6db74">&#34;invalid file descriptor set&#34;</span>);
+</span></span><span style="display:flex;"><span>        FileDescriptorSet::decode(<span style="color:#66d9ef">FILE_DESCRIPTOR_SET</span>)
+</span></span><span style="display:flex;"><span>          .expect(<span style="color:#e6db74">&#34;invalid file descriptor set&#34;</span>);
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> registry_service_client <span style="color:#f92672">=</span> RegistryServiceClient::new(channel.clone());
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> registry_service_client <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>      RegistryServiceClient::new(channel.clone());
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> rqst <span style="color:#f92672">=</span> tonic::Request::new(AddDescriptorsRequest {
 </span></span><span style="display:flex;"><span>        descriptors: Some(file_descriptor_set),
@@ -782,7 +789,8 @@ What What? FauxRPC A general-purpose tool (built using Buf’s Connect) that inc
 </span></span><span style="display:flex;"><span>        .expect(<span style="color:#e6db74">&#34;invalid response&#34;</span>);
 </span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, resp);
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> stubs_service_client <span style="color:#f92672">=</span> StubsServiceClient::new(channel.clone());
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> stubs_service_client <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>      StubsServiceClient::new(channel.clone());
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> id <span style="color:#f92672">=</span> Uuid::new_v4().as_hyphenated().to_string();
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> method <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;grpc.health.v1.Health/Check&#34;</span>.to_string();
@@ -877,7 +885,8 @@ What What? FauxRPC A general-purpose tool (built using Buf’s Connect) that inc
 </span></span><span style="display:flex;"><span>        channel: <span style="color:#a6e22e">Channel</span>,
 </span></span><span style="display:flex;"><span>        file_descriptor_set: <span style="color:#a6e22e">prost_types</span>::FileDescriptorSet,
 </span></span><span style="display:flex;"><span>    ) -&gt; Result<span style="color:#f92672">&lt;</span>AddDescriptorsResponse, Status<span style="color:#f92672">&gt;</span> {
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> client: <span style="color:#a6e22e">RegistryServiceClient</span><span style="color:#f92672">&lt;</span>Channel<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> RegistryServiceClient::new(channel);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> client: <span style="color:#a6e22e">RegistryServiceClient</span><span style="color:#f92672">&lt;</span>Channel<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>          RegistryServiceClient::new(channel);
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> rqst <span style="color:#f92672">=</span> tonic::Request::new(AddDescriptorsRequest {
 </span></span><span style="display:flex;"><span>            descriptors: Some(file_descriptor_set),
@@ -895,7 +904,8 @@ What What? FauxRPC A general-purpose tool (built using Buf’s Connect) that inc
 </span></span><span style="display:flex;"><span>        channel: <span style="color:#a6e22e">Channel</span>,
 </span></span><span style="display:flex;"><span>        bytes: Vec<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">u8</span><span style="color:#f92672">&gt;</span>,
 </span></span><span style="display:flex;"><span>    ) -&gt; Result<span style="color:#f92672">&lt;</span>AddStubsResponse, Status<span style="color:#f92672">&gt;</span> {
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> client: <span style="color:#a6e22e">StubsServiceClient</span><span style="color:#f92672">&lt;</span>Channel<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> StubsServiceClient::new(channel);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> client: <span style="color:#a6e22e">StubsServiceClient</span><span style="color:#f92672">&lt;</span>Channel<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>          StubsServiceClient::new(channel);
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> id <span style="color:#f92672">=</span> Uuid::new_v4().as_hyphenated().to_string();
 </span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> method <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;grpc.health.v1.Health/Check&#34;</span>.to_string();
@@ -937,14 +947,21 @@ What What? FauxRPC A general-purpose tool (built using Buf’s Connect) that inc
 </span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e">#[cfg(test)]</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">mod</span> tests {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> <span style="color:#66d9ef">crate</span>::{fauxrpctestcontainers::FauxRPC, testcontainers::runners::AsyncRunner, ImageExt};
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> <span style="color:#66d9ef">crate</span>::{
+</span></span><span style="display:flex;"><span>      fauxrpctestcontainers::FauxRPC,
+</span></span><span style="display:flex;"><span>      testcontainers::runners::AsyncRunner, ImageExt,
+</span></span><span style="display:flex;"><span>    };
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e">#[tokio::test]</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">test_fauxrpc</span>() -&gt; Result<span style="color:#f92672">&lt;</span>(), Box<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">dyn</span> std::error::Error <span style="color:#f92672">+</span> &#39;static<span style="color:#f92672">&gt;&gt;</span> {
 </span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> container <span style="color:#f92672">=</span> FauxRPC::default()
 </span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Would be good for this to be the default
 </span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#75715e">// But it requires impl ImageExt which has a bunch of functions to be implemented
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            .with_cmd(vec![<span style="color:#e6db74">&#34;run&#34;</span>, <span style="color:#e6db74">&#34;--empty&#34;</span>, <span style="color:#e6db74">&#34;--addr=:6660&#34;</span>])
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            .with_cmd(vec![
+</span></span><span style="display:flex;"><span>              <span style="color:#e6db74">&#34;run&#34;</span>,
+</span></span><span style="display:flex;"><span>              <span style="color:#e6db74">&#34;--empty&#34;</span>,
+</span></span><span style="display:flex;"><span>              <span style="color:#e6db74">&#34;--addr=:6660&#34;</span>,
+</span></span><span style="display:flex;"><span>            ])
 </span></span><span style="display:flex;"><span>            .start()
 </span></span><span style="display:flex;"><span>            .<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
 </span></span><span style="display:flex;"><span>
@@ -962,7 +979,11 @@ What What? FauxRPC A general-purpose tool (built using Buf’s Connect) that inc
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">test_fauxrpc</span>() -&gt; Result<span style="color:#f92672">&lt;</span>(), Box<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">dyn</span> std::error::Error <span style="color:#f92672">+</span> &#39;static<span style="color:#f92672">&gt;&gt;</span> {
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> port: <span style="color:#66d9ef">u16</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">6660</span>;
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> container <span style="color:#f92672">=</span> FauxRPC::default()
-</span></span><span style="display:flex;"><span>        .with_cmd(vec![<span style="color:#e6db74">&#34;run&#34;</span>, <span style="color:#e6db74">&#34;--empty&#34;</span>, format!(<span style="color:#e6db74">&#34;--addr=:</span><span style="color:#e6db74">{port}</span><span style="color:#e6db74">&#34;</span>).as_str()])
+</span></span><span style="display:flex;"><span>        .with_cmd(vec![
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;run&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;--empty&#34;</span>,
+</span></span><span style="display:flex;"><span>          format!(<span style="color:#e6db74">&#34;--addr=:</span><span style="color:#e6db74">{port}</span><span style="color:#e6db74">&#34;</span>).as_str(),
+</span></span><span style="display:flex;"><span>        ])
 </span></span><span style="display:flex;"><span>        .start()
 </span></span><span style="display:flex;"><span>        .<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
 </span></span><span style="display:flex;"><span>
@@ -971,12 +992,18 @@ What What? FauxRPC A general-purpose tool (built using Buf’s Connect) that inc
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> url <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;http://</span><span style="color:#e6db74">{host}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">{port}</span><span style="color:#e6db74">&#34;</span>);
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> uri: <span style="color:#a6e22e">tonic</span>::transport::Uri <span style="color:#f92672">=</span> url.parse().expect(<span style="color:#e6db74">&#34;invalid gRPC endpoint&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> uri: <span style="color:#a6e22e">tonic</span>::transport::Uri <span style="color:#f92672">=</span> url
+</span></span><span style="display:flex;"><span>      .parse()
+</span></span><span style="display:flex;"><span>      .expect(<span style="color:#e6db74">&#34;invalid gRPC endpoint&#34;</span>);
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> endpoint <span style="color:#f92672">=</span> Channel::builder(uri);
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> channel <span style="color:#f92672">=</span> endpoint.connect().<span style="color:#66d9ef">await</span>.expect(<span style="color:#e6db74">&#34;unable to connect&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> channel <span style="color:#f92672">=</span> endpoint.connect()
+</span></span><span style="display:flex;"><span>      .<span style="color:#66d9ef">await</span>
+</span></span><span style="display:flex;"><span>      .expect(<span style="color:#e6db74">&#34;unable to connect&#34;</span>);
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> file_descriptor_set <span style="color:#f92672">=</span>
-</span></span><span style="display:flex;"><span>        FileDescriptorSet::decode(<span style="color:#66d9ef">FILE_DESCRIPTOR_SET</span>).expect(<span style="color:#e6db74">&#34;invalid file descriptor set&#34;</span>);
+</span></span><span style="display:flex;"><span>        FileDescriptorSet::decode(<span style="color:#66d9ef">FILE_DESCRIPTOR_SET</span>)
+</span></span><span style="display:flex;"><span>          .expect(<span style="color:#e6db74">&#34;invalid file descriptor set&#34;</span>);
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> _r <span style="color:#f92672">=</span> container
 </span></span><span style="display:flex;"><span>        .image()
