@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>FauxRPC using gRPCurl, Golang and rust | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="Read FauxRPC &#43; Testcontainers on Hacker News and was intrigued. I spent a little more time &ldquo;evaluating&rdquo; this than I&rsquo;d planned because I&rsquo;m forcing myself to use rust as much as possible and my ignorance (see below) caused me some challenges.
+The technology is interesting and works well. The experience helped me explore Testcontainers too which I&rsquo;d heard about but not explored until this week.
+For my future self:
+
+  
+      
+          What
+          What?
+      
+  
+  
+      
+          FauxRPC
+          A general-purpose tool (built using Buf&rsquo;s Connect) that includes registry and stub (gRPC) services that can be (programmatically) configured (using a Protobuf descriptor) and stubs (example method responses) to help test gRPC implementations.
+      
+      
+          Testcontainers
+          Write code (e.g. rust) to create and interact (test)services (running in [Docker] containers).
+      
+      
+          Connect
+          (More than a) gRPC implementation used by FauxRPC
+      
+      
+          gRPCurl
+          A command-line gRPC tool.
+      
+  
+
+I started following along with FauxRPC&rsquo;s Testcontainers example but, being unfamiliar with Connect, I wasn&rsquo;t familiar with its Eliza service. The service is available on demo.connectrpc.com:443 and is described using eliza.proto as part of examples-go. Had I realized this sooner, I would have used this example rather than the Health Checking protocol.">
+    <meta name="generator" content="Hugo 0.137.0-DEV">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.6034ebad1bcaca305e5bfb3c7e4e0693f922718ecee81314bab17d117b4bab5b.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:url" content="https://pretired.dazwilkin.com/posts/241025/">
+  <meta property="og:site_name" content="(p)retired">
+  <meta property="og:title" content="FauxRPC using gRPCurl, Golang and rust">
+  <meta property="og:description" content="Read FauxRPC &#43; Testcontainers on Hacker News and was intrigued. I spent a little more time “evaluating” this than I’d planned because I’m forcing myself to use rust as much as possible and my ignorance (see below) caused me some challenges.
+The technology is interesting and works well. The experience helped me explore Testcontainers too which I’d heard about but not explored until this week.
+For my future self:
+What What? FauxRPC A general-purpose tool (built using Buf’s Connect) that includes registry and stub (gRPC) services that can be (programmatically) configured (using a Protobuf descriptor) and stubs (example method responses) to help test gRPC implementations. Testcontainers Write code (e.g. rust) to create and interact (test)services (running in [Docker] containers). Connect (More than a) gRPC implementation used by FauxRPC gRPCurl A command-line gRPC tool. I started following along with FauxRPC’s Testcontainers example but, being unfamiliar with Connect, I wasn’t familiar with its Eliza service. The service is available on demo.connectrpc.com:443 and is described using eliza.proto as part of examples-go. Had I realized this sooner, I would have used this example rather than the Health Checking protocol.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2024-10-25T00:00:00-07:00">
+    <meta property="article:modified_time" content="2024-10-25T00:00:00-07:00">
+    <meta property="article:tag" content="FauxRPC">
+    <meta property="article:tag" content="Golang">
+    <meta property="article:tag" content="GRPCurl">
+    <meta property="article:tag" content="Rust">
+
+  <meta itemprop="name" content="FauxRPC using gRPCurl, Golang and rust">
+  <meta itemprop="description" content="Read FauxRPC &#43; Testcontainers on Hacker News and was intrigued. I spent a little more time “evaluating” this than I’d planned because I’m forcing myself to use rust as much as possible and my ignorance (see below) caused me some challenges.
+The technology is interesting and works well. The experience helped me explore Testcontainers too which I’d heard about but not explored until this week.
+For my future self:
+What What? FauxRPC A general-purpose tool (built using Buf’s Connect) that includes registry and stub (gRPC) services that can be (programmatically) configured (using a Protobuf descriptor) and stubs (example method responses) to help test gRPC implementations. Testcontainers Write code (e.g. rust) to create and interact (test)services (running in [Docker] containers). Connect (More than a) gRPC implementation used by FauxRPC gRPCurl A command-line gRPC tool. I started following along with FauxRPC’s Testcontainers example but, being unfamiliar with Connect, I wasn’t familiar with its Eliza service. The service is available on demo.connectrpc.com:443 and is described using eliza.proto as part of examples-go. Had I realized this sooner, I would have used this example rather than the Health Checking protocol.">
+  <meta itemprop="datePublished" content="2024-10-25T00:00:00-07:00">
+  <meta itemprop="dateModified" content="2024-10-25T00:00:00-07:00">
+  <meta itemprop="wordCount" content="2386">
+  <meta itemprop="keywords" content="FauxRPC,Golang,GRPCurl,Rust">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="FauxRPC using gRPCurl, Golang and rust">
+  <meta name="twitter:description" content="Read FauxRPC &#43; Testcontainers on Hacker News and was intrigued. I spent a little more time “evaluating” this than I’d planned because I’m forcing myself to use rust as much as possible and my ignorance (see below) caused me some challenges.
+The technology is interesting and works well. The experience helped me explore Testcontainers too which I’d heard about but not explored until this week.
+For my future self:
+What What? FauxRPC A general-purpose tool (built using Buf’s Connect) that includes registry and stub (gRPC) services that can be (programmatically) configured (using a Protobuf descriptor) and stubs (example method responses) to help test gRPC implementations. Testcontainers Write code (e.g. rust) to create and interact (test)services (running in [Docker] containers). Connect (More than a) gRPC implementation used by FauxRPC gRPCurl A command-line gRPC tool. I started following along with FauxRPC’s Testcontainers example but, being unfamiliar with Connect, I wasn’t familiar with its Eliza service. The service is available on demo.connectrpc.com:443 and is described using eliza.proto as part of examples-go. Had I realized this sooner, I would have used this example rather than the Health Checking protocol.">
+
+      
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked ttu">
+          
+        Posts
+      </aside>
+      
+
+
+
+
+      <h1 class="f1 athelas mt3 mb1">FauxRPC using gRPCurl, Golang and rust</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2024-10-25T00:00:00-07:00">October 25, 2024</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 12 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 2386 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>Read <a href="https://kmcd.dev/posts/fauxrpc-testcontainers/">FauxRPC + Testcontainers</a> on Hacker News and was intrigued. I spent a little more time &ldquo;evaluating&rdquo; this than I&rsquo;d planned because I&rsquo;m forcing myself to use rust as much as possible and my ignorance (see below) caused me some challenges.</p>
+<p>The technology is interesting and works well. The experience helped me explore <a href="https://testcontainers.com/">Testcontainers</a> too which I&rsquo;d heard about but not explored until this week.</p>
+<p>For my future self:</p>
+<table>
+  <thead>
+      <tr>
+          <th>What</th>
+          <th>What?</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><a href="https://fauxrpc.com/">FauxRPC</a></td>
+          <td>A general-purpose tool (built using <a href="https://buf.build/">Buf</a>&rsquo;s <a href="https://connectrpc.com/">Connect</a>) that includes registry and stub (gRPC) services that can be (programmatically) configured (using a Protobuf descriptor) and stubs (example method responses) to help test gRPC implementations.</td>
+      </tr>
+      <tr>
+          <td><a href="https://testcontainers.com/">Testcontainers</a></td>
+          <td>Write code (e.g. rust) to create and interact (test)services (running in [Docker] containers).</td>
+      </tr>
+      <tr>
+          <td><a href="https://connectrpc.com/">Connect</a></td>
+          <td>(More than a) gRPC implementation used by FauxRPC</td>
+      </tr>
+      <tr>
+          <td><a href="https://github.com/fullstorydev/grpcurl">gRPCurl</a></td>
+          <td>A command-line gRPC tool.</td>
+      </tr>
+  </tbody>
+</table>
+<p>I started following along with FauxRPC&rsquo;s <a href="https://fauxrpc.com/docs/testcontainers/">Testcontainers</a> example but, being unfamiliar with Connect, I wasn&rsquo;t familiar with its Eliza service. The service is available on <code>demo.connectrpc.com:443</code> and is described using <a href="https://github.com/connectrpc/examples-go/blob/main/proto/connectrpc/eliza/v1/eliza.proto"><code>eliza.proto</code></a> as part of <a href="https://github.com/connectrpc/examples-go"><code>examples-go</code></a>. Had I realized this sooner, I would have used this example rather than the Health Checking protocol.</p>
+<h2 id="filedescriptorset"><code>FileDescriptorSet</code></h2>
+<p>The <a href="https://github.com/grpc/grpc/blob/master/doc/health-checking.md">gRPC Health Checking Protocol</a> is my go-to service and the one I used instead.</p>
+<p>We&rsquo;re going to need a Protobuf Descriptor for the Health Checking protocol:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>protoc <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--descriptor_set_out<span style="color:#f92672">=</span>health.bin <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>health.proto
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> The Descriptor generated by default by <code>protoc</code> differs from the one generated by rust tonic. The latter includes <code>SourceCodeInfo</code> by default. The difference is not material to what follows.</p>
+</blockquote>
+<p>To use gRPCurl with FauxRPC registry service, we&rsquo;re going to need to create an <a href=""><code>AddDescriptorRequest</code></a> and to format the message as JSON. It&rsquo;s straightforward to do this using any of the Protocol Buffer languages.</p>
+<p>We need to use <code>protoc</code> to compile the <code>registry_service.proto</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROTOS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/path/to/protos&#34;</span> <span style="color:#75715e"># Including registry/v1/registry_service.proto</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>protoc <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proto-path<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROTOS<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--python_out<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--pyi_out<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PROTOS<span style="color:#e6db74">}</span>/registry/v1/registry_server.proto
+</span></span></code></pre></div><p>This will generate <code>registry/v1/registry_service_pb2.py</code> which includes <code>AddDescriptorsRequest</code>.</p>
+<p>Here&rsquo;s the Python code using <a href="https://pypi.org/project/protobuf/"><code>protobuf</code></a>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python3" data-lang="python3"><span style="display:flex;"><span><span style="color:#f92672">from</span> google.protobuf <span style="color:#f92672">import</span> json_format
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> google.protobuf <span style="color:#f92672">import</span> descriptor_pb2
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> registry.v1 <span style="color:#f92672">import</span> registry_service_pb2
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;health.bin&#34;</span>, <span style="color:#e6db74">&#34;rb&#34;</span>) <span style="color:#66d9ef">as</span> f:
+</span></span><span style="display:flex;"><span>    d <span style="color:#f92672">=</span> descriptor_pb2<span style="color:#f92672">.</span>FileDescriptorSet()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;descriptor.json&#34;</span>, <span style="color:#e6db74">&#34;w&#34;</span>) <span style="color:#66d9ef">as</span> f:
+</span></span><span style="display:flex;"><span>    r <span style="color:#f92672">=</span> registry_service_pb2<span style="color:#f92672">.</span>AddDescriptorsRequest(
+</span></span><span style="display:flex;"><span>        descriptors<span style="color:#f92672">=</span>fds
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    j <span style="color:#f92672">=</span> json_format<span style="color:#f92672">.</span>MessageToJson(r)
+</span></span><span style="display:flex;"><span>    f<span style="color:#f92672">.</span>write(j)
+</span></span></code></pre></div><p>The result is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;descriptors&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;file&#34;</span>: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;health.proto&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;package&#34;</span>: <span style="color:#e6db74">&#34;grpc.health.v1&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;messageType&#34;</span>: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;HealthCheckRequest&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;field&#34;</span>: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;service&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;number&#34;</span>: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;label&#34;</span>: <span style="color:#e6db74">&#34;LABEL_OPTIONAL&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;TYPE_STRING&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;jsonName&#34;</span>: <span style="color:#e6db74">&#34;service&#34;</span>
+</span></span><span style="display:flex;"><span>              }
+</span></span><span style="display:flex;"><span>            ]
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;HealthCheckResponse&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;field&#34;</span>: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;status&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;number&#34;</span>: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;label&#34;</span>: <span style="color:#e6db74">&#34;LABEL_OPTIONAL&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;TYPE_ENUM&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;typeName&#34;</span>: <span style="color:#e6db74">&#34;.grpc.health.v1.HealthCheckResponse.ServingStatus&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;jsonName&#34;</span>: <span style="color:#e6db74">&#34;status&#34;</span>
+</span></span><span style="display:flex;"><span>              }
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;enumType&#34;</span>: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;ServingStatus&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;value&#34;</span>: [
+</span></span><span style="display:flex;"><span>                  {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;UNKNOWN&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;number&#34;</span>: <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>                  },
+</span></span><span style="display:flex;"><span>                  {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;SERVING&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;number&#34;</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>                  },
+</span></span><span style="display:flex;"><span>                  {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;NOT_SERVING&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;number&#34;</span>: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>                  },
+</span></span><span style="display:flex;"><span>                  {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;SERVICE_UNKNOWN&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;number&#34;</span>: <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>                  }
+</span></span><span style="display:flex;"><span>                ]
+</span></span><span style="display:flex;"><span>              }
+</span></span><span style="display:flex;"><span>            ]
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;service&#34;</span>: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Health&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;method&#34;</span>: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Check&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;inputType&#34;</span>: <span style="color:#e6db74">&#34;.grpc.health.v1.HealthCheckRequest&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;outputType&#34;</span>: <span style="color:#e6db74">&#34;.grpc.health.v1.HealthCheckResponse&#34;</span>
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Watch&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;inputType&#34;</span>: <span style="color:#e6db74">&#34;.grpc.health.v1.HealthCheckRequest&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;outputType&#34;</span>: <span style="color:#e6db74">&#34;.grpc.health.v1.HealthCheckResponse&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;serverStreaming&#34;</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>              }
+</span></span><span style="display:flex;"><span>            ]
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;options&#34;</span>: {
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;javaPackage&#34;</span>: <span style="color:#e6db74">&#34;io.grpc.health.v1&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;javaOuterClassname&#34;</span>: <span style="color:#e6db74">&#34;HealthProto&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;javaMultipleFiles&#34;</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;goPackage&#34;</span>: <span style="color:#e6db74">&#34;google.golang.org/grpc/health/grpc_health_v1&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;csharpNamespace&#34;</span>: <span style="color:#e6db74">&#34;Grpc.Health.V1&#34;</span>
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;syntax&#34;</span>: <span style="color:#e6db74">&#34;proto3&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="grpcurl-and-buf-curl"><code>gRPCurl</code> and <code>buf curl</code></h2>
+<p>Even though I began by writing a Golang test for the Health Checking service under FauxRPC running in a Testcontainers (container!?), I&rsquo;m going to reorder the work to show a more logical evolution. So, let&rsquo;s start by installing the FauxRPC (Golang) binary and the Buf CLI:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go install github.com/sudorandom/fauxrpc/cmd/fauxrpc@latest
+</span></span><span style="display:flex;"><span>go install github.com/bufbuild/buf/cmd/buf@latest
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> You can <code>fauxrpc run --schema=health.proto</code> to register the Health Checking Protocol directly:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>fauxrpc run --schema<span style="color:#f92672">=</span>health.proto
+</span></span></code></pre></div><p>And then interact with the service:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-proto health.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>localhost:6660 grpc.health.v1.Health/Check
+</span></span></code></pre></div><p>Returning:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;NOT_SERVING&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div></blockquote>
+<p>For consistency with what follows, we&rsquo;ll:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;6660&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fauxrpc run --empty --addr<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;:</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> If you&rsquo;d prefer you can run the FauxRPC container (<code>docker.io/sudorandom/fauxrpc</code>)</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>FauxRPC (dev (none) @ unknown; go1.23.2) - 0 services loaded
+</span></span><span style="display:flex;"><span>Listening on http://:6660
+</span></span><span style="display:flex;"><span>OpenAPI documentation: http://:6660/fauxrpc/openapi.html
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>Example Commands:
+</span></span><span style="display:flex;"><span>$ buf curl --http2-prior-knowledge http://:6660 --list-methods
+</span></span><span style="display:flex;"><span>$ buf curl --http2-prior-knowledge http://:6660/<span style="color:#f92672">[</span>METHOD_NAME<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>Server started.
+</span></span></code></pre></div><p>And, per the instruction, you can:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>buf curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--http2-prior-knowledge <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>http://:6660 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --list-methods
+</span></span></code></pre></div><p>Which should be empty (per the <code>--empty</code> flag).</p>
+<p>FauxRPC includes a <a href="https://fauxrpc.com/docs/server/fauxrpc-registry/">registry</a> service (<a href="https://github.com/sudorandom/fauxrpc/blob/main/proto/registry/v1/registry_service.proto"><code>registry_service.proto</code></a>) and a <a href="https://fauxrpc.com/docs/server/fauxrpc-stub/">stubs</a> service (<a href="https://github.com/sudorandom/fauxrpc/blob/main/proto/stubs/v1/stubs_service.proto"><code>stubs_service.proto</code></a>).</p>
+<p>I&rsquo;m going to use <a href="https://github.com/fullstorydev/grpcurl">gRPCurl</a> to interact with FauxRPC(&rsquo;s gRPC services).</p>
+<p>We will use the registry service to register the Health Checking Protocol using its descriptor (<code>health.bin</code>):</p>
+<blockquote>
+<p><strong>NOTE</strong> We saw this implicitly with the Python code but <code>registry_service.proto</code> imports Google&rsquo;s <a href="https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/descriptor.proto"><code>descriptor.proto</code></a>. The easiest way to avoid recursive dependencies is to clone Google&rsquo;s <a href=""><code>googleapis</code></a></p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat descriptor.json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -plaintext <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --import-path<span style="color:#f92672">=</span>protos <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --proto<span style="color:#f92672">=</span>protos/registry/v1/registry_service.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -d @ <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  localhost:6660 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  registry.v1.RegistryService.AddDescriptors
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{}
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> <code>AddDescriptors</code> returns <code>AddDescriptorsResponse</code> which is <code>{}</code>.</p>
+</blockquote>
+<p>But, we can rerun the <code>buf curl</code> command to see that we know have the Health Checking Protocol&rsquo;s <code>Check</code> and <code>Watch</code> methods in the registry:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>buf curl --http2-prior-knowledge http://:6660 --list-methods
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>grpc.health.v1.Health/Check
+</span></span><span style="display:flex;"><span>grpc.health.v1.Health/Watch
+</span></span></code></pre></div><p>Equivalently, we can use gRPCurl:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>grpcurl -plaintext localhost:6660 describe grpc.health.v1.Health
+</span></span><span style="display:flex;"><span>grpc.health.v1.Health is a service:
+</span></span><span style="display:flex;"><span>service Health <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  rpc Check <span style="color:#f92672">(</span> .grpc.health.v1.HealthCheckRequest <span style="color:#f92672">)</span> returns <span style="color:#f92672">(</span> .grpc.health.v1.HealthCheckResponse <span style="color:#f92672">)</span>;
+</span></span><span style="display:flex;"><span>  rpc Watch <span style="color:#f92672">(</span> .grpc.health.v1.HealthCheckRequest <span style="color:#f92672">)</span> returns <span style="color:#f92672">(</span> stream .grpc.health.v1.HealthCheckResponse <span style="color:#f92672">)</span>;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>And, these can be invoked:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>grpcurl -plaintext localhost:6660 grpc.health.v1.Health/Check
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;NOT_SERVING&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Hang on, why are we getting <code>NOT_SERVING</code> from a service that is only a mock without any implementation? The reason is that FauxRPC is generating random values for the value of the enum used to represent <code>status</code>. If we repeat the command, we should get random results.</p>
+<p>Using FauxRPC&rsquo;s Stubs service, we can define a specific result: 2 corresponds to <code>NOT_SERVING</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>D<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  &#34;stubs&#34;:[
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      &#34;ref&#34;:{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;id&#34;:&#34;11&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        &#34;target&#34;:&#34;grpc.health.v1.Health/Check&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      },
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      &#34;json&#34;:&#34;{\&#34;status\&#34;:2}&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  ]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--import-path<span style="color:#f92672">=</span>protos <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-proto<span style="color:#f92672">=</span>protos/stubs/v1/stubs_service.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>D<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>localhost:6660 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>stubs.v1.StubsService/AddStubs
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;stubs&#34;</span>: [
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;ref&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;11&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;target&#34;</span>: <span style="color:#e6db74">&#34;grpc.health.v1.HealthCheckResponse&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;json&#34;</span>: <span style="color:#e6db74">&#34;{\&#34;status\&#34;:2}&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Now, when we invoke the <code>Check</code> method, we&rsquo;ll get <code>NOT_SERVING</code> as the result.</p>
+<h2 id="golang">Golang</h2>
+<p>I wrote several Golang tests and implementations in order to help me build the rust clients.</p>
+<p>The first was the result of following the FauxRPC <a href="https://kmcd.dev/posts/fauxrpc-testcontainers/">tutorial</a> to test running <code>fauxrpctestcontainers</code>. So, although it&rsquo;s duplicative, it uses the Health Checking protocol instead of Eliza and includes some of the (possibly obvious steps) omitted from the tutorial.</p>
+<p>But first, an explanation. <code>testcontainers</code> provides an interface for running arbitrary containers (often servers|services) to facilitate testing. Developers can also provide implementations that wrap some of this functionality to provide a more streamlined solution (see <a href="https://testcontainers.com/modules/">Modules</a>). There is a <a href="https://pkg.go.dev/github.com/sudorandom/fauxrpc/testcontainers"><code>fauxrpctestcontainers</code></a> Golang package that provides an implementation for FauxRPC and makes it easier to use.</p>
+<p>So here are two solutions in Golang. The first using the FauxRPC binary (e.g. <code>fauxrpc run --empty --addr=&quot;:${PORT}&quot;</code> or using the container image) which makes the gRPC calls <code>AddDescriptors</code> and <code>AddStubs</code> explained previously:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log/slog&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;testing&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">healthpb</span> <span style="color:#e6db74">&#34;{MODULE}/protos/grpc/health/v1&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">registrypb</span> <span style="color:#e6db74">&#34;{MODULE}/protos/registry/v1&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">stubspb</span> <span style="color:#e6db74">&#34;{MODULE}/protos/stubs/v1&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/google/uuid&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc/credentials/insecure&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/protobuf/proto&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/protobuf/types/descriptorpb&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">health</span> <span style="color:#66d9ef">string</span> = <span style="color:#e6db74">&#34;/path/to/health.bin&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">endpoint</span> <span style="color:#66d9ef">string</span> = <span style="color:#e6db74">&#34;:6660&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestMain</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">opts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">DialOption</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithTransportCredentials</span>(<span style="color:#a6e22e">insecure</span>.<span style="color:#a6e22e">NewCredentials</span>()),
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">conn</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">NewClient</span>(<span style="color:#a6e22e">endpoint</span>, <span style="color:#a6e22e">opts</span><span style="color:#f92672">...</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">conn</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">clientRegistryService</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">registrypb</span>.<span style="color:#a6e22e">NewRegistryServiceClient</span>(<span style="color:#a6e22e">conn</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">ReadFile</span>(<span style="color:#a6e22e">health</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">fds</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">descriptorpb</span>.<span style="color:#a6e22e">FileDescriptorSet</span>{}
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">fds</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">registrypb</span>.<span style="color:#a6e22e">AddDescriptorsRequest</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Descriptors</span>: <span style="color:#a6e22e">fds</span>,
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">clientRegistryService</span>.<span style="color:#a6e22e">AddDescriptors</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Response&#34;</span>, <span style="color:#e6db74">&#34;resp&#34;</span>, <span style="color:#a6e22e">resp</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">clientStubsService</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">stubspb</span>.<span style="color:#a6e22e">NewStubsServiceClient</span>(<span style="color:#a6e22e">conn</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">id</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">uuid</span>.<span style="color:#a6e22e">New</span>().<span style="color:#a6e22e">String</span>()
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">method</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;grpc.health.v1.Health/Check&#34;</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">ref</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">stubspb</span>.<span style="color:#a6e22e">StubRef</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Id</span>:     <span style="color:#a6e22e">id</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Target</span>: <span style="color:#a6e22e">method</span>,
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">healthpb</span>.<span style="color:#a6e22e">HealthCheckResponse</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Status</span>: <span style="color:#a6e22e">healthpb</span>.<span style="color:#a6e22e">HealthCheckResponse_SERVING</span>,
+</span></span><span style="display:flex;"><span>		})
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">content</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">stubspb</span>.<span style="color:#a6e22e">Stub_Proto</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Proto</span>: <span style="color:#a6e22e">b</span>,
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">stubspb</span>.<span style="color:#a6e22e">AddStubsRequest</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Stubs</span>: []<span style="color:#f92672">*</span><span style="color:#a6e22e">stubspb</span>.<span style="color:#a6e22e">Stub</span>{
+</span></span><span style="display:flex;"><span>				{
+</span></span><span style="display:flex;"><span>					<span style="color:#a6e22e">Ref</span>:     <span style="color:#a6e22e">ref</span>,
+</span></span><span style="display:flex;"><span>					<span style="color:#a6e22e">Content</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">content</span>,
+</span></span><span style="display:flex;"><span>				},
+</span></span><span style="display:flex;"><span>			},
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">x</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Request&#34;</span>, <span style="color:#e6db74">&#34;x&#34;</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%x&#34;</span>, <span style="color:#a6e22e">x</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">clientStubsService</span>.<span style="color:#a6e22e">AddStubs</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Response&#34;</span>, <span style="color:#e6db74">&#34;resp&#34;</span>, <span style="color:#a6e22e">resp</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">clientHealthService</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">healthpb</span>.<span style="color:#a6e22e">NewHealthClient</span>(<span style="color:#a6e22e">conn</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">healthpb</span>.<span style="color:#a6e22e">HealthCheckRequest</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Service</span>: <span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">clientHealthService</span>.<span style="color:#a6e22e">Check</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Response&#34;</span>, <span style="color:#e6db74">&#34;resp&#34;</span>, <span style="color:#a6e22e">resp</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>You&rsquo;ll need to replace <code>{MODULE}</code> with your <code>go mod init ${MODULE}</code> value and, you&rsquo;ll want to compile the protocol buffers sources that you can find in the FauxRPC repo <a href="https://github.com/sudorandom/fauxrpc/tree/main/proto"><code>proto</code></a> folder:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROTOS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/path/to/protos&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>protoc <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proto_path<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROTOS<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--go_out<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--go_opt<span style="color:#f92672">=</span>Mregistry/v1/registry_service.proto<span style="color:#f92672">=</span>protos/registry/v1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--go_opt<span style="color:#f92672">=</span>Mstubs/v1/stubs_service.proto<span style="color:#f92672">=</span>protos/stubs/v1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--go_opt<span style="color:#f92672">=</span>Mstubs/v1/stubs.proto<span style="color:#f92672">=</span>protos/stubs/v1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--go-grpc_out<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--go-grpc_opt<span style="color:#f92672">=</span>Mregistry/v1/registry_service.proto<span style="color:#f92672">=</span>protos/registry/v1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--go-grpc_opt<span style="color:#f92672">=</span>Mstubs/v1/stubs_service.proto<span style="color:#f92672">=</span>protos/stubs/v1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--go-grpc_opt<span style="color:#f92672">=</span>Mstubs/v1/stubs.proto<span style="color:#f92672">=</span>protos/stubs/v1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PROTOS<span style="color:#e6db74">}</span>/registry/v1/registry_service.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PROTOS<span style="color:#e6db74">}</span>/stubs/v1/stubs_service.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PROTOS<span style="color:#e6db74">}</span>/stubs/v1/stubs.proto
+</span></span></code></pre></div><p>The second approach uses <code>fauxrpctestcontainers</code> and is more straightforward. It will run (and terminate on success) a <code>docker.io/sudorandom/fauxrpc</code> container for you so you don&rsquo;t need to run <code>fauxrpc</code> manually:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;strings&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;testing&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">fauxrpctestcontainers</span> <span style="color:#e6db74">&#34;github.com/sudorandom/fauxrpc/testcontainers&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc/credentials/insecure&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc/health/grpc_health_v1&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/protobuf/proto&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/protobuf/reflect/protodesc&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/protobuf/reflect/protoreflect&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/protobuf/types/descriptorpb&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">health</span> <span style="color:#66d9ef">string</span> = <span style="color:#e6db74">&#34;/path/to/health.bin&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">img</span> <span style="color:#66d9ef">string</span>    = <span style="color:#e6db74">&#34;docker.io/sudorandom/fauxrpc:v0.0.23&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">method</span> <span style="color:#66d9ef">string</span> = <span style="color:#e6db74">&#34;grpc.health.v1.Health/Check&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">status</span>        = <span style="color:#a6e22e">grpc_health_v1</span>.<span style="color:#a6e22e">HealthCheckResponse_SERVING</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">getHealthFileDescriptor</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">protoreflect</span>.<span style="color:#a6e22e">FileDescriptor</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">ReadFile</span>(<span style="color:#a6e22e">name</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">fds</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">descriptorpb</span>.<span style="color:#a6e22e">FileDescriptorSet</span>{}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">fds</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">fd</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">protodesc</span>.<span style="color:#a6e22e">NewFile</span>(<span style="color:#a6e22e">fds</span>.<span style="color:#a6e22e">File</span>[<span style="color:#ae81ff">0</span>], <span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fd</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestMain</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">container</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fauxrpctestcontainers</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">img</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Cleanup</span>(<span style="color:#66d9ef">func</span>() {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">container</span>.<span style="color:#a6e22e">Terminate</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span>	})
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">fd</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">getHealthFileDescriptor</span>(<span style="color:#a6e22e">health</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">container</span>.<span style="color:#a6e22e">MustAddFileDescriptor</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">fd</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Define method&#39;s response
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">want</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">status</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">container</span>.<span style="color:#a6e22e">MustAddStub</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">method</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">grpc_health_v1</span>.<span style="color:#a6e22e">HealthCheckResponse</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Status</span>: <span style="color:#a6e22e">want</span>,
+</span></span><span style="display:flex;"><span>	})
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// BaseURL includes &#34;http://&#34; which is incompatible with grpc.NewClient
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">baseURL</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">container</span>.<span style="color:#a6e22e">MustBaseURL</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">baseURL</span> = <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">TrimPrefix</span>(<span style="color:#a6e22e">baseURL</span>, <span style="color:#e6db74">&#34;http://&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">conn</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">NewClient</span>(
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">baseURL</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithTransportCredentials</span>(<span style="color:#a6e22e">insecure</span>.<span style="color:#a6e22e">NewCredentials</span>()),
+</span></span><span style="display:flex;"><span>	)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">conn</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">healthClient</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc_health_v1</span>.<span style="color:#a6e22e">NewHealthClient</span>(<span style="color:#a6e22e">conn</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">grpc_health_v1</span>.<span style="color:#a6e22e">HealthCheckRequest</span>{}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">healthClient</span>.<span style="color:#a6e22e">Check</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">got</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Status</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">got</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">want</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;got: %s, want: %s&#34;</span>, <span style="color:#a6e22e">got</span>, <span style="color:#a6e22e">want</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="rust">rust</h2>
+<p>These <code>dependencies</code> and <code>build-dependencies</code> are required by the code that follows:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-TOML" data-lang="TOML"><span style="display:flex;"><span>[<span style="color:#a6e22e">dependencies</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">prost</span> = <span style="color:#e6db74">&#34;0.13.3&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">prost-types</span> = <span style="color:#e6db74">&#34;0.13.3&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">redis</span> = <span style="color:#e6db74">&#34;0.27.4&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">testcontainers</span> = <span style="color:#e6db74">&#34;0.23.1&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">tokio</span> = <span style="color:#e6db74">&#34;1.40.0&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">tonic</span> = { <span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;0.12.3&#34;</span>, <span style="color:#a6e22e">features</span>=[<span style="color:#e6db74">&#34;tls&#34;</span>,<span style="color:#e6db74">&#34;tls-roots&#34;</span>] }
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">uuid</span> = { <span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;1.11.0&#34;</span>, <span style="color:#a6e22e">features</span>=[<span style="color:#e6db74">&#34;v4&#34;</span>] }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">build-dependencies</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">tonic-build</span> = <span style="color:#e6db74">&#34;0.12.3&#34;</span>
+</span></span></code></pre></div><p>Rust&rsquo;s <a href="https://crates.io/crates/tonic"><code>tonic</code></a> comes with a companion <a href="https://crates.io/crates/tonic-build"><code>tonic-build</code></a> that enables us to write a <code>build.rs</code> to compile protobufs:</p>
+<p><code>build.rs</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::{env, path::PathBuf};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() -&gt; Result<span style="color:#f92672">&lt;</span>(), Box<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">dyn</span> std::error::Error<span style="color:#f92672">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Required by prost-reflection to create descriptors.bin in correct OUT_DIR
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> out_dir <span style="color:#f92672">=</span> PathBuf::from(env::var(<span style="color:#e6db74">&#34;OUT_DIR&#34;</span>).expect(<span style="color:#e6db74">&#34;unable to determine `OUT_DIR`&#34;</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// `file_descriptor_set_path` appends `.bin` to the file that&#39;s created
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    tonic_build::configure()
+</span></span><span style="display:flex;"><span>        .build_client(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>        .build_server(<span style="color:#66d9ef">false</span>)
+</span></span><span style="display:flex;"><span>        .file_descriptor_set_path(out_dir.join(<span style="color:#e6db74">&#34;health.bin&#34;</span>))
+</span></span><span style="display:flex;"><span>        .compile_protos(<span style="color:#f92672">&amp;</span>[<span style="color:#e6db74">&#34;/path/to/protos/grpc/health/v1/health.proto&#34;</span>], <span style="color:#f92672">&amp;</span>[<span style="color:#e6db74">&#34;/path/to/protos&#34;</span>])<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    tonic_build::configure()
+</span></span><span style="display:flex;"><span>        .build_client(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>        .build_server(<span style="color:#66d9ef">false</span>)
+</span></span><span style="display:flex;"><span>        .file_descriptor_set_path(out_dir.join(<span style="color:#e6db74">&#34;registry_service.bin&#34;</span>))
+</span></span><span style="display:flex;"><span>        .compile_protos(
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&amp;</span>[<span style="color:#e6db74">&#34;/path/to/protos/registry/v1/registry_service.proto&#34;</span>],
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&amp;</span>[<span style="color:#e6db74">&#34;/path/to/protos&#34;</span>],
+</span></span><span style="display:flex;"><span>        )<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> googleapis <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;/path/to/googleapis&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    tonic_build::configure()
+</span></span><span style="display:flex;"><span>        .build_client(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>        .build_server(<span style="color:#66d9ef">false</span>)
+</span></span><span style="display:flex;"><span>        .file_descriptor_set_path(out_dir.join(<span style="color:#e6db74">&#34;stubs_service.bin&#34;</span>))
+</span></span><span style="display:flex;"><span>        .compile_protos(
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&amp;</span>[<span style="color:#e6db74">&#34;/path/to/protos/stubs/v1/stubs_service.proto&#34;</span>],
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&amp;</span>[<span style="color:#e6db74">&#34;/path/to/protos&#34;</span>, googleapis],
+</span></span><span style="display:flex;"><span>        )<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>There are 3 variants of the rust implementation. The first also assumes <code>fauxrpc --empty --addr=&quot;:${PORT}</code> or that you&rsquo;re running the FauxRPC container:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">FILE_DESCRIPTOR_SET</span>: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>] <span style="color:#f92672">=</span> include_file_descriptor_set!(<span style="color:#e6db74">&#34;health&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[tokio::test]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">test_grpc</span>() -&gt; Result<span style="color:#f92672">&lt;</span>(), Box<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">dyn</span> std::error::Error <span style="color:#f92672">+</span> &#39;static<span style="color:#f92672">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> host <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;localhost&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> port <span style="color:#f92672">=</span> <span style="color:#ae81ff">6660</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> url <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;http://</span><span style="color:#e6db74">{host}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">{port}</span><span style="color:#e6db74">&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> uri: <span style="color:#a6e22e">tonic</span>::transport::Uri <span style="color:#f92672">=</span> url.parse().expect(<span style="color:#e6db74">&#34;invalid gRPC endpoint&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> endpoint <span style="color:#f92672">=</span> Channel::builder(uri);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> channel <span style="color:#f92672">=</span> endpoint.connect().<span style="color:#66d9ef">await</span>.expect(<span style="color:#e6db74">&#34;unable to connect&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> file_descriptor_set <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>        FileDescriptorSet::decode(<span style="color:#66d9ef">FILE_DESCRIPTOR_SET</span>).expect(<span style="color:#e6db74">&#34;invalid file descriptor set&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> registry_service_client <span style="color:#f92672">=</span> RegistryServiceClient::new(channel.clone());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> rqst <span style="color:#f92672">=</span> tonic::Request::new(AddDescriptorsRequest {
+</span></span><span style="display:flex;"><span>        descriptors: Some(file_descriptor_set),
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> resp <span style="color:#f92672">=</span> registry_service_client
+</span></span><span style="display:flex;"><span>        .add_descriptors(rqst)
+</span></span><span style="display:flex;"><span>        .<span style="color:#66d9ef">await</span>
+</span></span><span style="display:flex;"><span>        .expect(<span style="color:#e6db74">&#34;invalid response&#34;</span>);
+</span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, resp);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> stubs_service_client <span style="color:#f92672">=</span> StubsServiceClient::new(channel.clone());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> id <span style="color:#f92672">=</span> Uuid::new_v4().as_hyphenated().to_string();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> method <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;grpc.health.v1.Health/Check&#34;</span>.to_string();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> r#ref <span style="color:#f92672">=</span> Some(stubs::v1::StubRef {
+</span></span><span style="display:flex;"><span>        id: <span style="color:#a6e22e">id</span>,
+</span></span><span style="display:flex;"><span>        target: <span style="color:#a6e22e">method</span>,
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> b <span style="color:#f92672">=</span> HealthCheckResponse { status: <span style="color:#ae81ff">1</span> }.encode_to_vec();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> content <span style="color:#f92672">=</span> Some(stubs::v1::stub::Content::Proto(b));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> rqst <span style="color:#f92672">=</span> tonic::Request::new(AddStubsRequest {
+</span></span><span style="display:flex;"><span>        stubs: <span style="color:#a6e22e">vec</span><span style="color:#f92672">!</span>[stubs::v1::Stub {
+</span></span><span style="display:flex;"><span>            r#ref: <span style="color:#a6e22e">r</span>#<span style="color:#66d9ef">ref</span>,
+</span></span><span style="display:flex;"><span>            content: <span style="color:#a6e22e">content</span>,
+</span></span><span style="display:flex;"><span>        }],
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> resp <span style="color:#f92672">=</span> stubs_service_client
+</span></span><span style="display:flex;"><span>        .add_stubs(rqst)
+</span></span><span style="display:flex;"><span>        .<span style="color:#66d9ef">await</span>
+</span></span><span style="display:flex;"><span>        .expect(<span style="color:#e6db74">&#34;invalid response&#34;</span>);
+</span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, resp);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> health_client <span style="color:#f92672">=</span> HealthClient::new(channel.clone());
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> rqst <span style="color:#f92672">=</span> tonic::Request::new(HealthCheckRequest {
+</span></span><span style="display:flex;"><span>        service: <span style="color:#e6db74">&#34;&#34;</span>.to_owned(),
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> resp <span style="color:#f92672">=</span> health_client.check(rqst).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> msg <span style="color:#f92672">=</span> resp.into_inner();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    assert_eq!(msg.status, <span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Replacing the static references to a local <code>fauxrpc --empty --addr=&quot;:${PORT}</code> (or container):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> host <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;localhost&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> port <span style="color:#f92672">=</span> <span style="color:#ae81ff">6660</span>;
+</span></span></code></pre></div><p>We can create a <code>testcontainer</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> image <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;docker.io/sudorandom/fauxrpc&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> tag <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;v0.0.23&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> port: <span style="color:#66d9ef">u16</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">6660</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> container <span style="color:#f92672">=</span> GenericImage::new(image, tag)
+</span></span><span style="display:flex;"><span>        .with_exposed_port(port.tcp())
+</span></span><span style="display:flex;"><span>        .with_wait_for(WaitFor::message_on_stdout(<span style="color:#e6db74">&#34;Server started.&#34;</span>))
+</span></span><span style="display:flex;"><span>        .with_cmd(vec![
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;run&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;--log-level=debug&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;--empty&#34;</span>,
+</span></span><span style="display:flex;"><span>            format!(<span style="color:#e6db74">&#34;--addr=:</span><span style="color:#e6db74">{port}</span><span style="color:#e6db74">&#34;</span>).as_str(),
+</span></span><span style="display:flex;"><span>        ])
+</span></span><span style="display:flex;"><span>        .start()
+</span></span><span style="display:flex;"><span>        .<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> host <span style="color:#f92672">=</span> container.get_host().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> port <span style="color:#f92672">=</span> container.get_host_port_ipv4(port).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span></code></pre></div><p>I&rsquo;m a rust noob but I&rsquo;ve <strong>begun</strong> to implement something similar to <code>fauxrpctestcontainers</code> in rust and using <a href="https://crates.io/crates/testcontainers-modules"><code>testcontainers-modules</code></a> as a guide.</p>
+<p>It is very much a work-in-progress:</p>
+<p><code>mod.rs</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> testcontainers::{
+</span></span><span style="display:flex;"><span>    core::{ContainerPort, WaitFor},
+</span></span><span style="display:flex;"><span>    Image, ImageExt,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> <span style="color:#66d9ef">crate</span>::{
+</span></span><span style="display:flex;"><span>    registry::v1::{
+</span></span><span style="display:flex;"><span>        registry_service_client::RegistryServiceClient, AddDescriptorsRequest,
+</span></span><span style="display:flex;"><span>        AddDescriptorsResponse,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    stubs::v1::{
+</span></span><span style="display:flex;"><span>        stub::Content, stubs_service_client::StubsServiceClient, AddStubsRequest, AddStubsResponse,
+</span></span><span style="display:flex;"><span>        Stub, StubRef,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tonic::{transport::Channel, Status};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> uuid::Uuid;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">DEFAULT_IMAGE_NAME</span>: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;docker.io/sudorandom/fauxrpc&#34;</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">DEFAULT_IMAGE_TAG</span>: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;v0.0.23&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">FAUXRPC_PORT</span>: <span style="color:#a6e22e">ContainerPort</span> <span style="color:#f92672">=</span> ContainerPort::Tcp(<span style="color:#ae81ff">6660</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[derive(Debug, Default, Clone)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">FauxRPC</span> {}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> FauxRPC {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">add_file_descriptor</span>(
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&amp;</span>self,
+</span></span><span style="display:flex;"><span>        channel: <span style="color:#a6e22e">Channel</span>,
+</span></span><span style="display:flex;"><span>        file_descriptor_set: <span style="color:#a6e22e">prost_types</span>::FileDescriptorSet,
+</span></span><span style="display:flex;"><span>    ) -&gt; Result<span style="color:#f92672">&lt;</span>AddDescriptorsResponse, Status<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> client: <span style="color:#a6e22e">RegistryServiceClient</span><span style="color:#f92672">&lt;</span>Channel<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> RegistryServiceClient::new(channel);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> rqst <span style="color:#f92672">=</span> tonic::Request::new(AddDescriptorsRequest {
+</span></span><span style="display:flex;"><span>            descriptors: Some(file_descriptor_set),
+</span></span><span style="display:flex;"><span>        });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> resp <span style="color:#f92672">=</span> client.add_descriptors(rqst).<span style="color:#66d9ef">await</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">match</span> resp {
+</span></span><span style="display:flex;"><span>            Ok(r) <span style="color:#f92672">=&gt;</span> Ok(r.into_inner()),
+</span></span><span style="display:flex;"><span>            Err(e) <span style="color:#f92672">=&gt;</span> Err(e),
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">add_stub</span>(
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&amp;</span>self,
+</span></span><span style="display:flex;"><span>        channel: <span style="color:#a6e22e">Channel</span>,
+</span></span><span style="display:flex;"><span>        bytes: Vec<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">u8</span><span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>    ) -&gt; Result<span style="color:#f92672">&lt;</span>AddStubsResponse, Status<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> client: <span style="color:#a6e22e">StubsServiceClient</span><span style="color:#f92672">&lt;</span>Channel<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> StubsServiceClient::new(channel);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> id <span style="color:#f92672">=</span> Uuid::new_v4().as_hyphenated().to_string();
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> method <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;grpc.health.v1.Health/Check&#34;</span>.to_string();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> rqst <span style="color:#f92672">=</span> tonic::Request::new(AddStubsRequest {
+</span></span><span style="display:flex;"><span>            stubs: <span style="color:#a6e22e">vec</span><span style="color:#f92672">!</span>[Stub {
+</span></span><span style="display:flex;"><span>                r#ref: Some(StubRef {
+</span></span><span style="display:flex;"><span>                    id: <span style="color:#a6e22e">id</span>,
+</span></span><span style="display:flex;"><span>                    target: <span style="color:#a6e22e">method</span>,
+</span></span><span style="display:flex;"><span>                }),
+</span></span><span style="display:flex;"><span>                content: Some(Content::Proto(bytes)),
+</span></span><span style="display:flex;"><span>            }],
+</span></span><span style="display:flex;"><span>        });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> resp <span style="color:#f92672">=</span> client.add_stubs(rqst).<span style="color:#66d9ef">await</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">match</span> resp {
+</span></span><span style="display:flex;"><span>            Ok(r) <span style="color:#f92672">=&gt;</span> Ok(r.into_inner()),
+</span></span><span style="display:flex;"><span>            Err(e) <span style="color:#f92672">=&gt;</span> Err(e),
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> Image <span style="color:#66d9ef">for</span> FauxRPC {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">name</span>(<span style="color:#f92672">&amp;</span>self) -&gt; <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">DEFAULT_IMAGE_NAME</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">tag</span>(<span style="color:#f92672">&amp;</span>self) -&gt; <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">DEFAULT_IMAGE_TAG</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">ready_conditions</span>(<span style="color:#f92672">&amp;</span>self) -&gt; Vec<span style="color:#f92672">&lt;</span>WaitFor<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>        vec![WaitFor::message_on_stdout(<span style="color:#e6db74">&#34;Server started&#34;</span>)]
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">expose_ports</span>(<span style="color:#f92672">&amp;</span>self) -&gt; <span style="color:#66d9ef">&amp;</span>[ContainerPort] {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&amp;</span>[<span style="color:#66d9ef">FAUXRPC_PORT</span>]
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// impl ImageExt&lt;I&gt; for FauxRPC {}
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[cfg(test)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">mod</span> tests {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">use</span> <span style="color:#66d9ef">crate</span>::{fauxrpctestcontainers::FauxRPC, testcontainers::runners::AsyncRunner, ImageExt};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">#[tokio::test]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">test_fauxrpc</span>() -&gt; Result<span style="color:#f92672">&lt;</span>(), Box<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">dyn</span> std::error::Error <span style="color:#f92672">+</span> &#39;static<span style="color:#f92672">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> container <span style="color:#f92672">=</span> FauxRPC::default()
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Would be good for this to be the default
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#75715e">// But it requires impl ImageExt which has a bunch of functions to be implemented
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            .with_cmd(vec![<span style="color:#e6db74">&#34;run&#34;</span>, <span style="color:#e6db74">&#34;--empty&#34;</span>, <span style="color:#e6db74">&#34;--addr=:6660&#34;</span>])
+</span></span><span style="display:flex;"><span>            .start()
+</span></span><span style="display:flex;"><span>            .<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> host <span style="color:#f92672">=</span> container.get_host().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> port <span style="color:#f92672">=</span> container.get_host_port_ipv4(<span style="color:#ae81ff">6660</span>).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> url <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{host}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">{port}</span><span style="color:#e6db74">&#34;</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// assert_eq!(url, &#34;127.0.0.1:6660&#34;);
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        Ok(())
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And:
+<code>main.rs</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">#[tokio::test]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">test_fauxrpc</span>() -&gt; Result<span style="color:#f92672">&lt;</span>(), Box<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">dyn</span> std::error::Error <span style="color:#f92672">+</span> &#39;static<span style="color:#f92672">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> port: <span style="color:#66d9ef">u16</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">6660</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> container <span style="color:#f92672">=</span> FauxRPC::default()
+</span></span><span style="display:flex;"><span>        .with_cmd(vec![<span style="color:#e6db74">&#34;run&#34;</span>, <span style="color:#e6db74">&#34;--empty&#34;</span>, format!(<span style="color:#e6db74">&#34;--addr=:</span><span style="color:#e6db74">{port}</span><span style="color:#e6db74">&#34;</span>).as_str()])
+</span></span><span style="display:flex;"><span>        .start()
+</span></span><span style="display:flex;"><span>        .<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> host <span style="color:#f92672">=</span> container.get_host().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> port <span style="color:#f92672">=</span> container.get_host_port_ipv4(port).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> url <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;http://</span><span style="color:#e6db74">{host}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">{port}</span><span style="color:#e6db74">&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> uri: <span style="color:#a6e22e">tonic</span>::transport::Uri <span style="color:#f92672">=</span> url.parse().expect(<span style="color:#e6db74">&#34;invalid gRPC endpoint&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> endpoint <span style="color:#f92672">=</span> Channel::builder(uri);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> channel <span style="color:#f92672">=</span> endpoint.connect().<span style="color:#66d9ef">await</span>.expect(<span style="color:#e6db74">&#34;unable to connect&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> file_descriptor_set <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>        FileDescriptorSet::decode(<span style="color:#66d9ef">FILE_DESCRIPTOR_SET</span>).expect(<span style="color:#e6db74">&#34;invalid file descriptor set&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> _r <span style="color:#f92672">=</span> container
+</span></span><span style="display:flex;"><span>        .image()
+</span></span><span style="display:flex;"><span>        .add_file_descriptor(channel.clone(), file_descriptor_set)
+</span></span><span style="display:flex;"><span>        .<span style="color:#66d9ef">await</span>;
+</span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, _r);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> b <span style="color:#f92672">=</span> HealthCheckResponse {
+</span></span><span style="display:flex;"><span>        status: <span style="color:#a6e22e">health_check_response</span>::ServingStatus::Serving <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">i32</span>,
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    .encode_to_vec();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> _r <span style="color:#f92672">=</span> container.image().add_stub(channel.clone(), b).<span style="color:#66d9ef">await</span>;
+</span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, _r);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> health_client <span style="color:#f92672">=</span> HealthClient::new(channel.clone());
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> rqst <span style="color:#f92672">=</span> tonic::Request::new(HealthCheckRequest {
+</span></span><span style="display:flex;"><span>        service: <span style="color:#e6db74">&#34;&#34;</span>.to_owned(),
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> resp <span style="color:#f92672">=</span> health_client.check(rqst).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> msg <span style="color:#f92672">=</span> resp.into_inner();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    assert_eq!(
+</span></span><span style="display:flex;"><span>        msg.status,
+</span></span><span style="display:flex;"><span>        health_check_response::ServingStatus::Serving <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">i32</span>
+</span></span><span style="display:flex;"><span>    );
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/fauxrpc/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">FauxRPC</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/golang/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Golang</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/grpcurl/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">GRPCurl</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/rust/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Rust</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240409/">Google Cloud Translation w/ gRPC 3 ways</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240325/">Prost! Tonic w/ a dash of JSON</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230314/">Access Google Services using gRPC</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200320/">Golang gRPC Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240529/">Using Rust to generate Kubernetes CRD</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240405/">Google Cloud Events protobufs and SDKs</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240130/">Navigating Koyeb&#39;s API with Rust</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240105/">Navigating Koyeb&#39;s Golang SDK</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/231222/">Listing Cloud Logging log-based metrics using gRPC</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201202/">pest: parsing in Rust</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201113/">Akri</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201008/">Deploying a Rust HTTP server to DigitalOcean App Platform</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200819/">Minimizing WASM binaries</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200817/">WASM Transparency</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2024 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
