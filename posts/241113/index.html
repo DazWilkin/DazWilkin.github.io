@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>gRPC-Web w/ FauxRPC and Rust | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="After recently discovering FauxRPC, I was sufficiently impressed that I decided to use it to test Ackal&rsquo;s gRPC services using rust.
+FauxRPC provides multi-protocol support and so, after successfully implementing the faux gRPC client tests, I was compelled to try gRPC-Web too. For no immediate benefit other than, it&rsquo;s there, it&rsquo;s free and it&rsquo;s interesting. As an aside, the faux REST client tests worked without issue using Reqwest.
+Unfortunately, my optimism hit a wall with gRPC-Web and what follows is a summary of my unresolved issue.">
+    <meta name="generator" content="Hugo 0.139.0-DEV">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.6034ebad1bcaca305e5bfb3c7e4e0693f922718ecee81314bab17d117b4bab5b.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:url" content="https://pretired.dazwilkin.com/posts/241113/">
+  <meta property="og:site_name" content="(p)retired">
+  <meta property="og:title" content="gRPC-Web w/ FauxRPC and Rust">
+  <meta property="og:description" content="After recently discovering FauxRPC, I was sufficiently impressed that I decided to use it to test Ackal’s gRPC services using rust.
+FauxRPC provides multi-protocol support and so, after successfully implementing the faux gRPC client tests, I was compelled to try gRPC-Web too. For no immediate benefit other than, it’s there, it’s free and it’s interesting. As an aside, the faux REST client tests worked without issue using Reqwest.
+Unfortunately, my optimism hit a wall with gRPC-Web and what follows is a summary of my unresolved issue.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2024-11-13T00:00:00-08:00">
+    <meta property="article:modified_time" content="2024-11-13T00:00:00-08:00">
+    <meta property="article:tag" content="FauxRPC">
+    <meta property="article:tag" content="Buf">
+    <meta property="article:tag" content="Rust">
+    <meta property="article:tag" content="Tonic-Web">
+
+  <meta itemprop="name" content="gRPC-Web w/ FauxRPC and Rust">
+  <meta itemprop="description" content="After recently discovering FauxRPC, I was sufficiently impressed that I decided to use it to test Ackal’s gRPC services using rust.
+FauxRPC provides multi-protocol support and so, after successfully implementing the faux gRPC client tests, I was compelled to try gRPC-Web too. For no immediate benefit other than, it’s there, it’s free and it’s interesting. As an aside, the faux REST client tests worked without issue using Reqwest.
+Unfortunately, my optimism hit a wall with gRPC-Web and what follows is a summary of my unresolved issue.">
+  <meta itemprop="datePublished" content="2024-11-13T00:00:00-08:00">
+  <meta itemprop="dateModified" content="2024-11-13T00:00:00-08:00">
+  <meta itemprop="wordCount" content="719">
+  <meta itemprop="keywords" content="FauxRPC,Buf,Rust,Tonic-Web">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="gRPC-Web w/ FauxRPC and Rust">
+  <meta name="twitter:description" content="After recently discovering FauxRPC, I was sufficiently impressed that I decided to use it to test Ackal’s gRPC services using rust.
+FauxRPC provides multi-protocol support and so, after successfully implementing the faux gRPC client tests, I was compelled to try gRPC-Web too. For no immediate benefit other than, it’s there, it’s free and it’s interesting. As an aside, the faux REST client tests worked without issue using Reqwest.
+Unfortunately, my optimism hit a wall with gRPC-Web and what follows is a summary of my unresolved issue.">
+
+      
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked ttu">
+          
+        Posts
+      </aside>
+      
+
+
+
+
+      <h1 class="f1 athelas mt3 mb1">gRPC-Web w/ FauxRPC and Rust</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2024-11-13T00:00:00-08:00">November 13, 2024</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 4 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 719 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>After <a href="/posts/241025/">recently</a> discovering <a href="https://github.com/sudorandom/fauxrpc">FauxRPC</a>, I was sufficiently impressed that I decided to use it to test <a href="https://www.ack.al">Ackal</a>&rsquo;s gRPC services using rust.</p>
+<p>FauxRPC provides <a href="https://fauxrpc.com/docs/server/multi-protocol-support/">multi-protocol support</a> and so, after successfully implementing the <em>faux</em> gRPC client tests, I was compelled to try gRPC-Web too. For no immediate benefit other than, it&rsquo;s there, it&rsquo;s free and it&rsquo;s interesting. As an aside, the <em>faux</em> REST client tests worked without issue using <a href="https://crates.io/crates/reqwest">Reqwest</a>.</p>
+<p>Unfortunately, my optimism hit a wall with gRPC-Web and what follows is a summary of my unresolved issue.</p>
+<p>After banging my head against the wall with the <em>faux</em> Ackal gRPC-Web client, I realized that <a href="https://crates.io/crates/tonic-web"><code>tonic-web</code></a> includes a &ldquo;definitive&rdquo; <a href="https://github.com/hyperium/tonic/tree/master/examples/src/grpc-web">client and server implementation</a> of gRPC-Web that works for me.</p>
+<p><code>server</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cargo run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--package<span style="color:#f92672">=</span>examples <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--bin<span style="color:#f92672">=</span>grpc-web-server <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--features<span style="color:#f92672">=</span>grpc-web
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>GreeterServer listening on 127.0.0.1:3000
+</span></span></code></pre></div><p>And:
+<code>client</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cargo run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--package<span style="color:#f92672">=</span>examples <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--bin<span style="color:#f92672">=</span>grpc-web-client <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--features<span style="color:#f92672">=</span>grpc-web
+</span></span></code></pre></div><pre tabindex="0"><code>RESPONSE=Response {
+    metadata: MetadataMap {
+        headers: {
+            &#34;content-type&#34;: &#34;application/grpc-web+proto&#34;,
+            &#34;vary&#34;: &#34;origin,access-control-request-method, access-control-request-headers&#34;,
+            &#34;transfer-encoding&#34;: &#34;chunked&#34;,
+            &#34;date&#34;: &#34;Wed, 13 Nov 2024 19:48:16 GMT&#34;,
+            &#34;grpc-status&#34;: &#34;0&#34;
+        }
+    },
+    message: HelloReply {
+        message: &#34;Hello Freddie!&#34;
+    },
+    extensions: Extensions
+}
+</code></pre><p>Great!</p>
+<p>But, if I switch to FauxRPC, I&rsquo;m able to reproduce the error I saw from the Ackal gRPC-Web client:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;6660&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fauxrpc run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--addr<span style="color:#f92672">=</span>localhost:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--schema<span style="color:#f92672">=</span>helloworld.binpb
+</span></span></code></pre></div><pre tabindex="0"><code>Error: Status { code: Unknown, message: &#34; &#34;, source: None }
+</code></pre><p>The <code>helloworld.binpb</code> schema for FauxRPC was generated with:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Path to tonic repo&#39;s examples folder</span>
+</span></span><span style="display:flex;"><span>PROTOS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span><span style="color:#e6db74">/protos&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>protoc <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proto_path<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROTOS<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--descriptor_set_out<span style="color:#f92672">=</span>helloworld.binpb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--include_imports <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PROTOS<span style="color:#e6db74">}</span>/helloworld/helloworld.proto
+</span></span></code></pre></div><p>What&rsquo;s frustrating is that both <code>buf curl</code> and <a href="https://kreya.app/">Kreya</a> (used because it supports gRPC and gRPC-Web unlike my preferred <a href="https://github.com/fullstorydev/grpcurl">gRPCurl</a>).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;6660&#34;</span> <span style="color:#75715e"># FauxRPC</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>buf curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--verbose <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--protocol<span style="color:#f92672">=</span>grpcweb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--http2-prior-knowledge <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--schema<span style="color:#f92672">=</span>helloworld.binpb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>http://localhost:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span>/helloworld.Greeter/SayHello
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>buf: * Invoking RPC helloworld.Greeter.SayHello
+</span></span><span style="display:flex;"><span>buf: * Dialing (tcp) localhost:12345...
+</span></span><span style="display:flex;"><span>buf: * Connected to 127.0.0.1:12345
+</span></span><span style="display:flex;"><span>buf: &gt; (#1) POST /helloworld.Greeter/SayHello
+</span></span><span style="display:flex;"><span>buf: &gt; (#1) Accept-Encoding: identity
+</span></span><span style="display:flex;"><span>buf: &gt; (#1) Content-Type: application/grpc-web+proto
+</span></span><span style="display:flex;"><span>buf: &gt; (#1) Grpc-Accept-Encoding: gzip
+</span></span><span style="display:flex;"><span>buf: &gt; (#1) Grpc-Timeout: 119963m
+</span></span><span style="display:flex;"><span>buf: &gt; (#1) User-Agent: grpc-go-connect/1.17.0 (go1.23.1) buf/1.45.0
+</span></span><span style="display:flex;"><span>buf: &gt; (#1) X-User-Agent: grpc-go-connect/1.17.0 (go1.23.1)
+</span></span><span style="display:flex;"><span>buf: &gt; (#1)
+</span></span><span style="display:flex;"><span>buf: } (#1) [5 bytes data]
+</span></span><span style="display:flex;"><span>buf: * (#1) Finished upload
+</span></span><span style="display:flex;"><span>buf: &lt; (#1) HTTP/2.0 200 OK
+</span></span><span style="display:flex;"><span>buf: &lt; (#1) Content-Type: application/grpc-web+proto
+</span></span><span style="display:flex;"><span>buf: &lt; (#1) Date: Wed, 13 Nov 2024 19:54:32 GMT
+</span></span><span style="display:flex;"><span>buf: &lt; (#1)
+</span></span><span style="display:flex;"><span>buf: { (#1) [5 bytes data]
+</span></span><span style="display:flex;"><span>buf: { (#1) [9 bytes data]
+</span></span><span style="display:flex;"><span>buf: { (#1) [5 bytes data]
+</span></span><span style="display:flex;"><span>buf: { (#1) [32 bytes data]
+</span></span><span style="display:flex;"><span>buf: * (#1) Call complete
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;message&#34;</span>: <span style="color:#e6db74">&#34;Freddie&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><img src="/images/241113.kreya.png" alt="Kreya: helloworld.Greeter/SayHello"></p>
+<p>In summary, I&rsquo;ve a single (reproducible) permutation in which I don&rsquo;t appear (!?) to be receiving a correct gRPC-Web response:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Client</th>
+          <th>Server</th>
+          <th></th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>client.rs</code></td>
+          <td>FauxRPC</td>
+          <td>❎</td>
+      </tr>
+      <tr>
+          <td><code>client.rs</code></td>
+          <td><code>server.rs</code></td>
+          <td>✅</td>
+      </tr>
+      <tr>
+          <td><code>buf curl</code></td>
+          <td><code>server.rs</code></td>
+          <td>✅</td>
+      </tr>
+      <tr>
+          <td><code>buf curl</code></td>
+          <td>FauxRPC</td>
+          <td>✅</td>
+      </tr>
+      <tr>
+          <td>Kreya</td>
+          <td><code>server.rs</code></td>
+          <td>✅</td>
+      </tr>
+      <tr>
+          <td>Kreya</td>
+          <td>FauxRPC</td>
+          <td>✅</td>
+      </tr>
+  </tbody>
+</table>
+<p>I monitored the requests being sent to FauxRPC by each of the clients and, while there are minor (header) differences and a use of chunking sometimes (relevant?), there was nothing obvious that corresponded to the <code>client.rs</code> issue.</p>
+<p>What I really want to do is debug <code>client.rs</code> to determine what response it&rsquo;s receiving and how this flows through the code. This was challenging and I&rsquo;ve not pursued it.</p>
+<p>Instead I decided to use <code>socat</code> to proxy/log traffic:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#ae81ff">6660</span> <span style="color:#75715e"># FauxRPC</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>socat -v TCP-LISTEN:12345,fork,reuseaddr TCP:localhost:<span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>For the <code>tonic-web</code> failing <code>client.rs</code> request:</p>
+<pre tabindex="0"><code>&gt; 2024/11/13 12:12:49.000320511  length=171 from=0 to=170
+POST /helloworld.Greeter/SayHello HTTP/1.1\r
+te: trailers\r
+content-type: application/grpc-web\r
+host: localhost:12345\r
+transfer-encoding: chunked\r
+\r
+E\r
+....	
+\aFreddie\r
+0\r
+\r
+&lt; 2024/11/13 12:12:51.000759623  length=145 from=0 to=144
+HTTP/1.1 200 OK\r
+Content-Type: application/grpc-web+proto\r
+Date: Wed, 13 Nov 2024 20:12:51 GMT\r
+Transfer-Encoding: chunked\r
+\r
+e\r
+....	
+\aFreddie\r
+&lt; 2024/11/13 12:12:51.000760926  length=48 from=145 to=192
+25\r
+.... Grpc-Message: \r
+Grpc-Status: 0\r
+\r
+0\r
+\r
+</code></pre><p>For the Kreya succeeding request:</p>
+<pre tabindex="0"><code>&gt; 2024/11/13 12:14:40.000795916  length=216 from=0 to=215
+POST /helloworld.Greeter/SayHello HTTP/1.1\r
+Host: localhost:12345\r
+TE: trailers\r
+grpc-accept-encoding: identity,gzip,deflate\r
+Transfer-Encoding: chunked\r
+Content-Type: application/grpc-web\r
+\r
+E\r
+....	
+\aFreddie\r
+0\r
+\r
+&lt; 2024/11/13 12:14:42.000968834  length=145 from=0 to=144
+HTTP/1.1 200 OK\r
+Content-Type: application/grpc-web+proto\r
+Date: Wed, 13 Nov 2024 20:14:42 GMT\r
+Transfer-Encoding: chunked\r
+\r
+e\r
+....	
+\aFreddie\r
+&lt; 2024/11/13 12:14:42.000970169  length=48 from=145 to=192
+25\r
+.... Grpc-Message: \r
+Grpc-Status: 0\r
+\r
+0\r
+\r
+</code></pre><p>Can you see the difference? No, me either :-(</p>
+<p>Well, there are differences</p>
+<table>
+  <thead>
+      <tr>
+          <th>Property</th>
+          <th><code>client.rs</code></th>
+          <th>Freya</th>
+          <th>Explanation</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Request length</td>
+          <td>171</td>
+          <td>145</td>
+          <td>Explained by the 45 character <code>grpc-accept-encoding</code> header</td>
+      </tr>
+      <tr>
+          <td>Headers</td>
+          <td>lowercase</td>
+          <td>uppercase</td>
+          <td>Should be inconsequential</td>
+      </tr>
+      <tr>
+          <td><code>grpc-accept-encoding</code></td>
+          <td>omitted</td>
+          <td>present</td>
+          <td>It&rsquo;s possible to replicate by revising <code>client.rs</code> but makes no difference</td>
+      </tr>
+  </tbody>
+</table>
+<p>Both responses include <code>Freddie</code> and gRPC <a href="https://grpc.io/docs/guides/status-codes/">status code</a> of <code>0</code> (OK)</p>
+<p>Stumped :-(</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/fauxrpc/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">FauxRPC</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/buf/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Buf</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/rust/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Rust</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/tonic-web/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Tonic-Web</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/241025/">FauxRPC using gRPCurl, Golang and rust</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240529/">Using Rust to generate Kubernetes CRD</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240409/">Google Cloud Translation w/ gRPC 3 ways</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240405/">Google Cloud Events protobufs and SDKs</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240325/">Prost! Tonic w/ a dash of JSON</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240130/">Navigating Koyeb&#39;s API with Rust</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201202/">pest: parsing in Rust</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201113/">Akri</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/201008/">Deploying a Rust HTTP server to DigitalOcean App Platform</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200819/">Minimizing WASM binaries</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200817/">WASM Transparency</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200807/">waPC and MsgPack (Rust|Golang)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200723/">Envoy WASM filters in Rust</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200429/">Rust implementation of Crate Transparency using Google Trillian</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200403/">Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2024 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
