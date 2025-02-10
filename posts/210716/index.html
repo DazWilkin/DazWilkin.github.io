@@ -7,7 +7,7 @@
     <title>Stripe | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="An extended tour through Stripe world">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -183,8 +183,7 @@
 <h2 id="guide">Guide</h2>
 <p>Reviewing the link to the guide <a href="https://stripe.com/docs/billing/subscriptions/checkout">Subscriptions with Checkout and the customer portal</a>, this solution appeared to perfectly match my needs and so I plowed on.</p>
 <blockquote>
-<p><strong>NOTE</strong> Since I began with the guide, they&rsquo;ve simplified the solution (for the better) and updated the Go module references. The guide that I encountered used a JavaScript client to programmatically call the backend (Golang) handlers. This has now been simplified to use e.g. <code>FORM</code> <code>POST</code>ing which makes the guide more comprehensible. However, I think the programmatic approach is more realistic in practice. In my case, I need to make other service calls to get the e.g. user email address from the authentication service and, while these values could be <code>hidden</code> in <code>FORM</code>&rsquo;s, I think it&rsquo;s probably cleaner (albeit more complex) to consider the client entirely in JavaScript. Now that the documentation has been updated (see <strong>NOTE</strong> above), I won&rsquo;t labor the fact that, when I reviewed the guide, it contained minor errors and the Golang server code referenced an outdated module.</p>
-</blockquote>
+<p><strong>NOTE</strong> Since I began with the guide, they&rsquo;ve simplified the solution (for the better) and updated the Go module references. The guide that I encountered used a JavaScript client to programmatically call the backend (Golang) handlers. This has now been simplified to use e.g. <code>FORM</code> <code>POST</code>ing which makes the guide more comprehensible. However, I think the programmatic approach is more realistic in practice. In my case, I need to make other service calls to get the e.g. user email address from the authentication service and, while these values could be <code>hidden</code> in <code>FORM</code>&rsquo;s, I think it&rsquo;s probably cleaner (albeit more complex) to consider the client entirely in JavaScript. Now that the documentation has been updated (see <strong>NOTE</strong> above), I won&rsquo;t labor the fact that, when I reviewed the guide, it contained minor errors and the Golang server code referenced an outdated module.</p></blockquote>
 <p>Given the above, I was slightly confused by the guide&rsquo;s use of JavaScript and e.g. Golang (one of the language options and my preference). Now that this has been simplified through the use of <code>FORM</code> <code>POST</code>ing, this is much less confusing but, back then, the example would include, e.g.:&quot;</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JavaScript" data-lang="JavaScript"><span style="display:flex;"><span><span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fetch</span>(<span style="color:#e6db74">&#34;/create-checkout-session&#34;</span>, {
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">method</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;POST&#34;</span>,
@@ -196,8 +195,7 @@
 </span></span><span style="display:flex;"><span>}).<span style="color:#66d9ef">catch</span>((<span style="color:#a6e22e">error</span>) =&gt; {
 </span></span><span style="display:flex;"><span>});
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> This is now replaced with a simple <code>FORM</code> <code>POST</code> to <code>/create-checkout-session</code></p>
-</blockquote>
+<p><strong>NOTE</strong> This is now replaced with a simple <code>FORM</code> <code>POST</code> to <code>/create-checkout-session</code></p></blockquote>
 <p>And there&rsquo;d be a corresponding backend handler:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CreateCheckoutSession</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Method</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;POST&#34;</span> {
@@ -229,9 +227,9 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>This combined, with the unstructured types in the JavaScript client made initial debugging very challenging. I suspect the Golang code may be a consequence of lack of familiarity with Golang (although <code>writeJSON</code> takes an <code>interface{}</code> and so the intent is to genericise the code and overcome a challenge in Golang).</p>
 <p>In my Golang code, I refactored structs out to be package-scoped and added field descriptions:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#75715e">// CreateCheckoutSessionRequest is the request type of the CreateCheckoutSession handler
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Correponds to `CreateCheckSessionRequest` class in script.js
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CreateCheckoutSessionRequest</span> <span style="color:#66d9ef">struct</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#75715e">// CreateCheckoutSessionRequest is the request type of the CreateCheckoutSession handler</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Correponds to `CreateCheckSessionRequest` class in script.js</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CreateCheckoutSessionRequest</span> <span style="color:#66d9ef">struct</span> {
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">CustomerID</span>    <span style="color:#e6db74">`json:&#34;customerId,omitempty&#34; description:&#34;Stripe Customer identifier&#34;`</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">CustomerEmail</span> <span style="color:#e6db74">`json:&#34;customerEmail,omitempty&#34; description:&#34;Email address of Customer&#34;`</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">PriceID</span>       <span style="color:#e6db74">`json:&#34;priceId&#34; description:&#34;Stripe Price identifier`</span>
@@ -265,64 +263,64 @@
 </span></span></code></pre></div><h2 id="golang-testing">Golang testing</h2>
 <p>I&rsquo;m more familiar with Golang than JavaScript and found it easier to write unit tests for the majority of the Golang code. I initially struggled wondering how to test the Golang HTTP handlers and then I discovered the Golang standard library&rsquo;s <a href="https://pkg.go.dev/net/http/httptest"><code>httptest</code></a>&hellip; It&rsquo;s excellent, e.g.:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestCheckoutSession</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Used to thread the tests together
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">sessionID</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Used to thread the tests together</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">sessionID</span> <span style="color:#66d9ef">string</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// CreateCheckoutSession
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	{
-</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Create body with valid customerId and priceId
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">body</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">NewReader</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#a6e22e">formatCreateCheckoutSessionRequest</span>, <span style="color:#a6e22e">customerID</span>, <span style="color:#a6e22e">priceID</span>))
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// CreateCheckoutSession</span>
+</span></span><span style="display:flex;"><span>	{
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Create body with valid customerId and priceId</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">body</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">NewReader</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#a6e22e">formatCreateCheckoutSessionRequest</span>, <span style="color:#a6e22e">customerID</span>, <span style="color:#a6e22e">priceID</span>))
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">NewRequest</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">MethodPost</span>, <span style="color:#e6db74">&#34;/create-checkout-session&#34;</span>, <span style="color:#a6e22e">body</span>)
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 </span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
 </span></span><span style="display:flex;"><span>		}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// ResponseRecorder
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">rr</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">httptest</span>.<span style="color:#a6e22e">NewRecorder</span>()
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// ResponseRecorder</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">rr</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">httptest</span>.<span style="color:#a6e22e">NewRecorder</span>()
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Specify the handler
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">handler</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">HandlerFunc</span>(<span style="color:#a6e22e">CreateCheckoutSession</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Specify the handler</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">handler</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">HandlerFunc</span>(<span style="color:#a6e22e">CreateCheckoutSession</span>)
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">handler</span>.<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">rr</span>, <span style="color:#a6e22e">req</span>)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">status</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rr</span>.<span style="color:#a6e22e">Code</span>; <span style="color:#a6e22e">status</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusOK</span> {
 </span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;got: %v; want: %v&#34;</span>, <span style="color:#a6e22e">status</span>, <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusOK</span>)
 </span></span><span style="display:flex;"><span>		}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Check the response body
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#75715e">// Unable to determine a priori what the `sessionId` value will be
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#75715e">// But we know what it should look like
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">got</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rr</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Bytes</span>()
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Check the response body</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Unable to determine a priori what the `sessionId` value will be</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// But we know what it should look like</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">got</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rr</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Bytes</span>()
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// The structure of the JSON returned by CreateCheckoutSession
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#75715e">// Pattern includes a submatch `(...)` for the sessionId value
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">pattern</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;{\&#34;sessionId\&#34;:\&#34;(cs_test_[a-zA-Z0-9]{58})\&#34;}\n&#34;</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// The structure of the JSON returned by CreateCheckoutSession</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Pattern includes a submatch `(...)` for the sessionId value</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">pattern</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;{\&#34;sessionId\&#34;:\&#34;(cs_test_[a-zA-Z0-9]{58})\&#34;}\n&#34;</span>
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">re</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">regexp</span>.<span style="color:#a6e22e">MustCompile</span>(<span style="color:#a6e22e">pattern</span>)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">result</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">re</span>.<span style="color:#a6e22e">FindSubmatch</span>(<span style="color:#a6e22e">got</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Unable to find the submatch pattern in the response body
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">result</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Unable to find the submatch pattern in the response body</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">result</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
 </span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;got:\n%v\nwant:\n%v&#34;</span>, <span style="color:#a6e22e">got</span>, <span style="color:#a6e22e">pattern</span>)
 </span></span><span style="display:flex;"><span>		}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Returns the entire string (0) and the submatch (1)
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#75715e">// Want only the submatch == sessionId
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">result</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">2</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Returns the entire string (0) and the submatch (1)</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Want only the submatch == sessionId</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">result</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">2</span> {
 </span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;Expected a submatch containing `sessionId`&#34;</span>)
 </span></span><span style="display:flex;"><span>		}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Otherwise, result contains the sessionId
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">sessionID</span> = string(<span style="color:#a6e22e">result</span>[<span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Otherwise, result contains the sessionId</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">sessionID</span> = string(<span style="color:#a6e22e">result</span>[<span style="color:#ae81ff">1</span>])
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Retrieved Session ID&#34;</span>,
 </span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;sessionId&#34;</span>, <span style="color:#a6e22e">sessionID</span>,
 </span></span><span style="display:flex;"><span>		)
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CheckoutSession
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CheckoutSession</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">...</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CustomerPortal
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#f92672">...</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CustomerPortal</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">...</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><h2 id="golang-depsdevhttpsdepsdev">Golang <a href="https://deps.dev"><code>deps.dev</code></a></h2>
 <p>A new and very useful Google tool that helps developers understand module dependencies and vulns. For example, here&rsquo;s the output for Stripe&rsquo;s Golang library:</p>
@@ -332,39 +330,39 @@
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Use gorilla/mux for better sub-path handling (see scripts)
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">NewRouter</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Use gorilla/mux for better sub-path handling (see scripts)</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">NewRouter</span>()
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Host</span>(<span style="color:#a6e22e">domain</span>)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">Root</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// `/success` and `/canceled` are referenced by server.go#CreateCheckoutSession
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/success&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">Success</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// `/success` and `/canceled` are referenced by server.go#CreateCheckoutSession</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/success&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">Success</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/canceled&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">Canceled</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// `/tos` and `/privacy` are required by Stripe customer portal
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/tos&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">TermsOfService</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// `/tos` and `/privacy` are required by Stripe customer portal</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/tos&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">TermsOfService</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/privacy&#34;</span>, <span style="color:#a6e22e">www</span>.<span style="color:#a6e22e">Privacy</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Stripe server-side (Golang) handlers
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/create-checkout-session&#34;</span>, <span style="color:#a6e22e">CreateCheckoutSession</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Stripe server-side (Golang) handlers</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/create-checkout-session&#34;</span>, <span style="color:#a6e22e">CreateCheckoutSession</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/checkout-session&#34;</span>, <span style="color:#a6e22e">CheckoutSession</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/customer-portal&#34;</span>, <span style="color:#a6e22e">CustomerPortal</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/retrieve-subscription&#34;</span>, <span style="color:#a6e22e">RetrieveSubscription</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Stripe Webhook handler
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/webhook&#34;</span>, <span style="color:#a6e22e">Webhook</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Stripe Webhook handler</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#e6db74">&#34;/webhook&#34;</span>, <span style="color:#a6e22e">Webhook</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Serve scripts
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">Scripts</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">FileServer</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Dir</span>(<span style="color:#a6e22e">dirScripts</span>))
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// See Gorilla [Static Files](https://github.com/gorilla/mux#static-files)
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">PathPrefix</span>(<span style="color:#e6db74">&#34;/scripts/&#34;</span>).<span style="color:#a6e22e">Handler</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StripPrefix</span>(<span style="color:#e6db74">&#34;/scripts/&#34;</span>, <span style="color:#a6e22e">Scripts</span>))
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Serve scripts</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Scripts</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">FileServer</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Dir</span>(<span style="color:#a6e22e">dirScripts</span>))
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// See Gorilla [Static Files](https://github.com/gorilla/mux#static-files)</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">PathPrefix</span>(<span style="color:#e6db74">&#34;/scripts/&#34;</span>).<span style="color:#a6e22e">Handler</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StripPrefix</span>(<span style="color:#e6db74">&#34;/scripts/&#34;</span>, <span style="color:#a6e22e">Scripts</span>))
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Prometheus
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Handle</span>(<span style="color:#e6db74">&#34;/metrics&#34;</span>, <span style="color:#a6e22e">promhttp</span>.<span style="color:#a6e22e">Handler</span>())
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Prometheus</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Handle</span>(<span style="color:#e6db74">&#34;/metrics&#34;</span>, <span style="color:#a6e22e">promhttp</span>.<span style="color:#a6e22e">Handler</span>())
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Attach router to http
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Handle</span>(<span style="color:#e6db74">&#34;/&#34;</span>, <span style="color:#a6e22e">r</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Attach router to http</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Handle</span>(<span style="color:#e6db74">&#34;/&#34;</span>, <span style="color:#a6e22e">r</span>)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ListenAndServe</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">endpoint</span>, <span style="color:#66d9ef">nil</span>), <span style="color:#e6db74">&#34;unable to serve&#34;</span>)
 </span></span><span style="display:flex;"><span>}
@@ -558,7 +556,7 @@
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">

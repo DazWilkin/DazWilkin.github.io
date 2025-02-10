@@ -7,7 +7,7 @@
     <title>WASM Transparency | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="A Google Trillian solution that enables WASM binaries to be shipped to and run from a remote gRPC server">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -212,8 +212,7 @@
 </span></span><span style="display:flex;"><span>2020/08/14 18:42:28 [main:loop:dynamic-invoke] Success: car:{manufacturer:&#34;X&#34;  model:&#34;X&#34;  color:&#34;X&#34;  owner:&#34;X&#34;}
 </span></span><span style="display:flex;"><span>2020/08/14 18:42:28 [main:loop:dynamic-invoke] Complete
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> I need to improve the randon message generator for strings so that the value is not always <code>X</code>; <code>change_owner</code> does work (<a href="https://github.com/DazWilkin/go-protobuf-extras/issues/1">issue</a>)</p>
-</blockquote>
+<p><strong>NOTE</strong> I need to improve the randon message generator for strings so that the value is not always <code>X</code>; <code>change_owner</code> does work (<a href="https://github.com/DazWilkin/go-protobuf-extras/issues/1">issue</a>)</p></blockquote>
 <p>Way back when I first began exploring blockchain technologies, I played around with Hyperledger. It has a prototypical example called <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/write_first_app.html">fabcar</a> and the above shows a WASM Transparency version of this app. After the <code>fabcarx.wasm</code> binary is shipped to the WAM Transparency server, the client invokes <code>create</code>, <code>query</code> and then <code>change_owner</code> methods exposed by it.</p>
 <p>So, why is any of this complexity of any value?</p>
 <p>The WASM binaries use <a href="https://github.com/wapc">waPC</a> to transfer arbitrary data between the Transparency server&rsquo;s Golang WASM host and the Rust WASM guests. In order to provide structure to this data, the solution uses <a href="https://developers.google.com/protocol-buffers">protocol buffers</a>. Specifically, starting with a protobuf definition that includes one of more <code>service</code> definitions, the Rust-based WASM code implements the protobuf services. A protobuf Descriptor file is generated from the protobuf sources too. The Descriptor (as metadata) is associated with the WASM binary. Descriptors are machine-readable variants of protobuf files and permit the Golang host to dynamically create clients.</p>
@@ -277,8 +276,7 @@
   </tbody>
 </table>
 <blockquote>
-<p><strong>NOTE</strong> in this prototype, the input message is randomly-generated</p>
-</blockquote>
+<p><strong>NOTE</strong> in this prototype, the input message is randomly-generated</p></blockquote>
 <p>There are 2 levels of Protobuf serivces|messages here. The primary level is the WASM Transparency Service&rsquo;s protobufs, e.g.:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-protobuf" data-lang="protobuf"><span style="display:flex;"><span><span style="color:#f92672">package</span> wasm_transparency<span style="color:#f92672">.</span>v1;<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
@@ -297,8 +295,7 @@
 </span></span></span></code></pre></div><p>This level defines the messages used by the client to invoke methods on the server.</p>
 <p>However, because the server must be capable of invoking <em>arbitrary</em> WASM functions and because these WASM functions are defined by protobufs and because protobufs does not support generic message types, the solution envelopes this second level of protobufs using <code>Any</code> as described by the previous reference.</p>
 <blockquote>
-<p><strong>NOTE</strong> Protobuf <code>Any</code> combine a type and a value (<code>[]byte</code>) and conveniently waPC uses <code>[]byte</code> as the data type between hosts and guests.</p>
-</blockquote>
+<p><strong>NOTE</strong> Protobuf <code>Any</code> combine a type and a value (<code>[]byte</code>) and conveniently waPC uses <code>[]byte</code> as the data type between hosts and guests.</p></blockquote>
 <p>So, for example <code>complex.proto</code> defines the 4 functions exported by <code>complex.wasm</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-protobuf" data-lang="protobuf"><span style="display:flex;"><span><span style="color:#f92672">package</span> examples;<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
@@ -330,8 +327,8 @@
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Message</span>(<span style="color:#a6e22e">md</span> <span style="color:#a6e22e">protoreflect</span>.<span style="color:#a6e22e">MessageDescriptor</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">dynamicpb</span>.<span style="color:#a6e22e">Message</span> {
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">m</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">dynamicpb</span>.<span style="color:#a6e22e">NewMessage</span>(<span style="color:#a6e22e">md</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">fds</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Fields</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Iterate over *all* fields
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">k</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">k</span> &lt; <span style="color:#a6e22e">fds</span>.<span style="color:#a6e22e">Len</span>(); <span style="color:#a6e22e">k</span><span style="color:#f92672">++</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Iterate over *all* fields</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">k</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">k</span> &lt; <span style="color:#a6e22e">fds</span>.<span style="color:#a6e22e">Len</span>(); <span style="color:#a6e22e">k</span><span style="color:#f92672">++</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">fd</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fds</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">k</span>)
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">v</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">func</span>() <span style="color:#a6e22e">protoreflect</span>.<span style="color:#a6e22e">Value</span> {
 </span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">result</span> <span style="color:#a6e22e">protoreflect</span>.<span style="color:#a6e22e">Value</span>
@@ -359,43 +356,42 @@
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">m</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> this function is incomplete and does not (yet) cover all possible <code>kinds</code>.</p>
-</blockquote>
+<p><strong>NOTE</strong> this function is incomplete and does not (yet) cover all possible <code>kinds</code>.</p></blockquote>
 <h2 id="client">Client</h2>
 <p>The function uses the Golang APIv2 <code>dynamicpb</code> package to create an empty protobuf message of the desired type (<code>protoreflect.MessageDescriptor</code>). For each of the <code>Fields</code> in the <code>MessageDescriptor</code> the function simply determines the type and creates a random value of that type. As you&rsquo;ll see, <code>MessageDescriptor</code> is determined by parsing the protobuf Descriptor file.</p>
 <p>The client creates a <code>FileDescriptorSet</code> and unmarshals the Descriptor Set file&rsquo;s contents into it. It then creates a <code>protodesc</code> files registry that enables <code>FindDescriptorByName</code>. In this case, it uses a specific service descriptor i.e. <code>examples.ComplexServer</code> (the full name is scoped by the package name). It then iterates over all the methods (<code>add</code>, <code>sub</code>, <code>mul</code> and <code>div</code>) that are defined within the service. For a specific method e.g. <code>mul</code> defined to be <code>rpc mul(ComplexRequest) returns (ComplexResponse)</code>, it grabs the input (<code>ComplexRequest</code>) message descriptor and creates a new dynamic, random message using it.</p>
 <p>In order to invoke the WASM function on the server, the e.g. <code>ComplexRequest</code> is marshaled into an <code>Any</code> and this is used as the <code>Parameters</code> value in the <code>InvokeRequest</code>. Not shown here is the reverse process given the <code>InvokeResponse</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// Load and parse the descriptor file
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">egDescriptorSet</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">descriptorpb</span>.<span style="color:#a6e22e">FileDescriptorSet</span>{}
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// Load and parse the descriptor file</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">egDescriptorSet</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">descriptorpb</span>.<span style="color:#a6e22e">FileDescriptorSet</span>{}
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">Metadata</span>().<span style="color:#a6e22e">DescriptorFile</span>.<span style="color:#a6e22e">Content</span>, <span style="color:#a6e22e">egDescriptorSet</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Create a files registry
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">files</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">protodesc</span>.<span style="color:#a6e22e">NewFiles</span>(<span style="color:#a6e22e">egDescriptorSet</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Create a files registry</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">files</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">protodesc</span>.<span style="color:#a6e22e">NewFiles</span>(<span style="color:#a6e22e">egDescriptorSet</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Lookup the service
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">fullname</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">DescriptorFile</span>.<span style="color:#a6e22e">FullServiceName</span>()
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Lookup the service</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fullname</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">DescriptorFile</span>.<span style="color:#a6e22e">FullServiceName</span>()
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">d</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">files</span>.<span style="color:#a6e22e">FindDescriptorByName</span>(<span style="color:#a6e22e">protoreflect</span>.<span style="color:#a6e22e">FullName</span>(<span style="color:#a6e22e">fullname</span>))
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Assert it into a ServiceDescriptor
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">s</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">d</span>.(<span style="color:#a6e22e">protoreflect</span>.<span style="color:#a6e22e">ServiceDescriptor</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Assert it into a ServiceDescriptor</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">s</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">d</span>.(<span style="color:#a6e22e">protoreflect</span>.<span style="color:#a6e22e">ServiceDescriptor</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Use the ServiceDescriptor to lookup the methods
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">mds</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Methods</span>()
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Use the ServiceDescriptor to lookup the methods</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mds</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Methods</span>()
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">j</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">j</span> &lt; <span style="color:#a6e22e">mds</span>.<span style="color:#a6e22e">Len</span>(); <span style="color:#a6e22e">j</span><span style="color:#f92672">++</span> {
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Get this MethodDescriptor
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">md</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mds</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">j</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Get this MethodDescriptor</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">md</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mds</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">j</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Get the MessageDescriptor for the service&#39;s method&#39;s input
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Input</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Get the MessageDescriptor for the service&#39;s method&#39;s input</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Input</span>()
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// New-up an random params message
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">params</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">random</span>.<span style="color:#a6e22e">Message</span>(<span style="color:#a6e22e">i</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// New-up an random params message</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">params</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">random</span>.<span style="color:#a6e22e">Message</span>(<span style="color:#a6e22e">i</span>)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">params</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
-</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">any</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">any</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>{
 </span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">TypeUrl</span>: <span style="color:#e6db74">&#34;&#34;</span>,
 </span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Value</span>:   <span style="color:#a6e22e">b</span>,
 </span></span><span style="display:flex;"><span>		}
@@ -403,7 +399,7 @@
 </span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Metadata</span>: <span style="color:#a6e22e">wasm</span>.<span style="color:#a6e22e">FromMetadata</span>(<span style="color:#a6e22e">m</span>),
 </span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">Request</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">FunctionRequest</span>{
 </span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Name</span>:       string(<span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Name</span>()),
-</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Parameters</span>: <span style="color:#a6e22e">any</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Parameters</span>: <span style="color:#66d9ef">any</span>,
 </span></span><span style="display:flex;"><span>			},
 </span></span><span style="display:flex;"><span>		}
 </span></span><span style="display:flex;"><span>	}
@@ -433,10 +429,10 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">string</span> error <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
 </span></span></span></code></pre></div><p>And so the actual <code>Invoke</code> function is straightforward, given the <code>Any</code> parameters, invoke the specific operation (e.g. <code>mul</code>) exported by the WASM function and return the result to the client:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#a6e22e">Function</span>) <span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">any</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>, <span style="color:#66d9ef">error</span>) {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#a6e22e">Function</span>) <span style="color:#a6e22e">Invoke</span>(<span style="color:#66d9ef">any</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>, <span style="color:#66d9ef">error</span>) {
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[wapc:Function:Invoke] Entered&#34;</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
-</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">i</span>.<span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">op</span>, <span style="color:#a6e22e">any</span>.<span style="color:#a6e22e">GetValue</span>())
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">i</span>.<span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">op</span>, <span style="color:#66d9ef">any</span>.<span style="color:#a6e22e">GetValue</span>())
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">anypb</span>.<span style="color:#a6e22e">Any</span>{}, <span style="color:#a6e22e">err</span>
 </span></span><span style="display:flex;"><span>	}
@@ -446,8 +442,7 @@
 </span></span><span style="display:flex;"><span>	}, <span style="color:#66d9ef">nil</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> even though <code>Any</code> requires <code>TypeURL</code> to uniquely identify these, they&rsquo;re unused in this solution because the Client has the protobuf Descriptor and knows what to expect.</p>
-</blockquote>
+<p><strong>NOTE</strong> even though <code>Any</code> requires <code>TypeURL</code> to uniquely identify these, they&rsquo;re unused in this solution because the Client has the protobuf Descriptor and knows what to expect.</p></blockquote>
 <p>waPC uses a string to identify functions exported by a WASM binary. The convention in this solution is that the protobuf method name (e.g. <code>mul</code>) matches the waPC operation name that corresponds to the exported function. Here&rsquo;s where this matching of <code>mul</code> to an actual (Rust) function is defined in the source of the WASM binary:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">handle_wapc</span>(operation: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">match</span> operation {
@@ -610,7 +605,7 @@
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">

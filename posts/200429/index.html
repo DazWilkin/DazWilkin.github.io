@@ -7,7 +7,7 @@
     <title>Rust implementation of Crate Transparency using Google Trillian | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Rust implementation of Crate Transparency using Google Trillian">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -332,11 +332,9 @@ Ok((Metadata { entries: [MetadataEntry { key: MetadataKey { name: &#34;content-t
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>DIGEST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>cat <span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span>/.cargo/registry/cache/github.com-1ecc6299db9ec823/protobuf-2.12.0.crate | sha256sum | head --bytes<span style="color:#f92672">=</span>64<span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>DIGEST<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>71964f34fd51cf04882d7ae3325fa0794d4cad66a03d0003f38d8ae4f63ba126
 </span></span></code></pre></div><blockquote>
-<p><strong>NB</strong> if you eyeball the Trillian <code>SequencedLeafData</code> table above, you should be able to find <code>LeafIdentityHash</code> value matching the above</p>
-</blockquote>
+<p><strong>NB</strong> if you eyeball the Trillian <code>SequencedLeafData</code> table above, you should be able to find <code>LeafIdentityHash</code> value matching the above</p></blockquote>
 <blockquote>
-<p><strong>NB</strong> I&rsquo;m explicitly setting the <code>LeafIdentityHash</code> to be the Crate&rsquo;s SHA-256 hash as this value represents a unique identifier of the Crate.</p>
-</blockquote>
+<p><strong>NB</strong> I&rsquo;m explicitly setting the <code>LeafIdentityHash</code> to be the Crate&rsquo;s SHA-256 hash as this value represents a unique identifier of the Crate.</p></blockquote>
 <p>The definition for <code>package.proto</code> is:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-protobuf" data-lang="protobuf"><span style="display:flex;"><span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">Package</span> {<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">string</span> name <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
@@ -346,8 +344,7 @@ Ok((Metadata { entries: [MetadataEntry { key: MetadataKey { name: &#34;content-t
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">bytes</span> sha256 <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
 </span></span></span></code></pre></div><blockquote>
-<p><strong>NB</strong> <code>sha256</code> is bytes (not string)</p>
-</blockquote>
+<p><strong>NB</strong> <code>sha256</code> is bytes (not string)</p></blockquote>
 <p>We can convert the SHA256 digest into bytes and then base-64 encode it:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>BASE64<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>printf <span style="color:#e6db74">${</span>DIGEST<span style="color:#e6db74">}</span> | xxd -r -p | base64 --wrap<span style="color:#f92672">=</span>0<span style="color:#66d9ef">)</span><span style="color:#f92672">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>BASE64<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>cZZPNP1RzwSILXrjMl+geU1MrWagPQAD842K5PY7oSY<span style="color:#f92672">=</span>
@@ -370,8 +367,7 @@ Ok((Metadata { entries: [MetadataEntry { key: MetadataKey { name: &#34;content-t
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#39;@&#39;</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>localhost:50051 crate_transparency.v1.CrateTransparency.AddPackage
 </span></span></code></pre></div><blockquote>
-<p><strong>NB</strong> Apologies for the ugly escaping, this is to permit the <code>${BASE64}</code> substitution</p>
-</blockquote>
+<p><strong>NB</strong> Apologies for the ugly escaping, this is to permit the <code>${BASE64}</code> substitution</p></blockquote>
 <h2 id="protobufs">Protobufs</h2>
 <p>This is a work in progress but, my first take is 3 methods <code>AddPackage</code>, <code>GetPackage</code> and <code>GetInclusionProof</code>. The latter (the most complex) is not yet implemented by the Rust server.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-protobuf" data-lang="protobuf"><span style="display:flex;"><span>syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
@@ -410,13 +406,11 @@ Ok((Metadata { entries: [MetadataEntry { key: MetadataKey { name: &#34;content-t
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">bytes</span> sha256 <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>;<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
 </span></span></span></code></pre></div><blockquote>
-<p><strong>NB</strong> For Golang, the <code>option</code> is becoming mandatory and I learned that it&rsquo;s best to use it particularly if you&rsquo;re using modules to manage the output location of the compiler: <code>option go_package = &quot;github.com/DazWilkin/crate-transparency/protos&quot;;</code></p>
-</blockquote>
+<p><strong>NB</strong> For Golang, the <code>option</code> is becoming mandatory and I learned that it&rsquo;s best to use it particularly if you&rsquo;re using modules to manage the output location of the compiler: <code>option go_package = &quot;github.com/DazWilkin/crate-transparency/protos&quot;;</code></p></blockquote>
 <h2 id="server">Server</h2>
 <p>I can&rsquo;t tell you that code flew from my mind into Visual Studio Code but, having used <a href="https://github.com/stepancheg">Stepan Koltsov</a>&rsquo;s excellent <a href="https://github.com/stepancheg/rust-protobuf"><code>rust-protobuf</code></a> and <a href="https://github.com/stepancheg/grpc-rust"><code>grpc-rust</code></a> crates previously, the process was not as complicated as I&rsquo;d anticipated.</p>
 <blockquote>
-<p><strong>NB</strong> One thing that Golang does better than Rust is that Golang modules are uniquely identified by repo, so e.g. <code>github.com/google/trillian</code>. The above <a href="https://github.com/stepancheg/rust-protobuf"><code>rust-protobuf</code></a> repo becomes a Crate called <a href="https://crate.io/crates/protobuf"><code>protobuf</code></a>. It&rsquo;s only by checking the &lsquo;Repository&rsquo; link on the crate.io page that this mapping is evident. It&rsquo;s not just Rust, Python has the same issue with PyPi. It&rsquo;s the little things!</p>
-</blockquote>
+<p><strong>NB</strong> One thing that Golang does better than Rust is that Golang modules are uniquely identified by repo, so e.g. <code>github.com/google/trillian</code>. The above <a href="https://github.com/stepancheg/rust-protobuf"><code>rust-protobuf</code></a> repo becomes a Crate called <a href="https://crate.io/crates/protobuf"><code>protobuf</code></a>. It&rsquo;s only by checking the &lsquo;Repository&rsquo; link on the crate.io page that this mapping is evident. It&rsquo;s not just Rust, Python has the same issue with PyPi. It&rsquo;s the little things!</p></blockquote>
 <p>In further disclosure, I&rsquo;m a Rust noob and working my way through two Rust programming books so, I&rsquo;d appreciate coding feedback and apologize if I mangling the language.</p>
 <p>One thing I really like with <code>rust-protobuf</code> is that it&rsquo;s straightforward and convenient to use it to compile Rust sources from protos:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
@@ -433,11 +427,9 @@ Ok((Metadata { entries: [MetadataEntry { key: MetadataKey { name: &#34;content-t
 </span></span><span style="display:flex;"><span>    .expect(<span style="color:#e6db74">&#34;protoc-rust-grpc&#34;</span>);
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NB</strong> One thing I often forget, is that this is, of course, dependent on <code>protoc</code> and the compiler must be in the path before this will work.</p>
-</blockquote>
+<p><strong>NB</strong> One thing I often forget, is that this is, of course, dependent on <code>protoc</code> and the compiler must be in the path before this will work.</p></blockquote>
 <blockquote>
-<p><strong>NB</strong> I remain unclear on the best practice for locating protoc compiled sources but I&rsquo;ve been using <code>./protos</code> in both Golang and Rust (mostly) without issue.</p>
-</blockquote>
+<p><strong>NB</strong> I remain unclear on the best practice for locating protoc compiled sources but I&rsquo;ve been using <code>./protos</code> in both Golang and Rust (mostly) without issue.</p></blockquote>
 <p>As we expect, we must implement the methods defined by the proto.</p>
 <p>The only nuance here is that the struct (<code>CrateTransparencyImpl</code>) that implements <code>CrateTransparency</code></p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> ::protos::{
@@ -523,8 +515,7 @@ Ok((Metadata { entries: [MetadataEntry { key: MetadataKey { name: &#34;content-t
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> vv <span style="color:#f92672">=</span> vec![v];
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> leaf_hash <span style="color:#f92672">=</span> protobuf::RepeatedField::from_vec(vv);
 </span></span></code></pre></div><blockquote>
-<p><strong>NB</strong> As with the Golang (SDK), this method should be refactored into something permitting: <code>hasher = RFC6962::new()</code>.</p>
-</blockquote>
+<p><strong>NB</strong> As with the Golang (SDK), this method should be refactored into something permitting: <code>hasher = RFC6962::new()</code>.</p></blockquote>
 <p>Then we&rsquo;re ready to create the <code>GetLeavesByHashRequest</code>, make the request (<code>get_leaves_by_hash</code>) to Trillian and deal with the results.</p>
 <p>In this case, we expect zero (not found) or one (found) leaves to be returned.</p>
 <p>Now that we can <code>AddPackage</code> and <code>GetPackage</code>, the basic functionality is available and the overview tests, shown at the top of this post, may be run.</p>
@@ -597,7 +588,7 @@ Ok((Metadata { entries: [MetadataEntry { key: MetadataKey { name: &#34;content-t
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">

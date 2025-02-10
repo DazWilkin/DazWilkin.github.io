@@ -7,7 +7,7 @@
     <title>Golang Protobuf APIv2 | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Google&#39;s new Golang Protobuf APIv2">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -177,8 +177,7 @@
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>Google has a new Golang Protobuf API, APIv2 (<a href="https://pkg.go.dev/google.golang.org/protobuf?tab=overview">google.golang.org/protobuf</a>) superseding APIv1 (<a href="https://pkg.go.dev/github.com/golang/protobuf?tab=overview">github.com/golang/protobuf</a>). If your code is importing <code>github.com/golang/protobuf</code>, you&rsquo;re using APIv2. Otherwise, you should consult with the docs because Google reimplemented APIv1 atop APIv2. One challenge this caused me, as someone who does not use protobufs and gRPC on a daily basis, is that <a href="https://pkg.go.dev/github.com/golang/protobuf/protoc-gen-go/grpc?tab=doc">gRPC</a> (code-generation) is being removed from the (Golang) <code>protoc-gen-go</code>, the Golang plugin that generates gRPC service bindings.</p>
 <blockquote>
-<p><strong>NOTE</strong> If your protoc-generated Golang sources include methods implementing the interface <code>protoreflect.ProtoMessage</code>, you&rsquo;re using APIv2</p>
-</blockquote>
+<p><strong>NOTE</strong> If your protoc-generated Golang sources include methods implementing the interface <code>protoreflect.ProtoMessage</code>, you&rsquo;re using APIv2</p></blockquote>
 <p>I&rsquo;ve been playing around with the new API.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-protobuf" data-lang="protobuf"><span style="display:flex;"><span>syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
@@ -208,8 +207,7 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">float</span> imag <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>;<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
 </span></span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> Replace <code>[[PROJECT]]</code> with your preferred module name. You should replace <code>go mod init [[PROJECT]]</code> with this module name too.</p>
-</blockquote>
+<p><strong>NOTE</strong> Replace <code>[[PROJECT]]</code> with your preferred module name. You should replace <code>go mod init [[PROJECT]]</code> with this module name too.</p></blockquote>
 <p>I&rsquo;m using Protocol Buffers v3.12.3 and:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>protoc --version
 </span></span><span style="display:flex;"><span>libprotoc 3.12.3
@@ -220,17 +218,14 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--go_out<span style="color:#f92672">=</span>plugins<span style="color:#f92672">=</span>grpc,module<span style="color:#f92672">=[[</span>PROJECT<span style="color:#f92672">]]</span>:. <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>protos/complex.proto
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> Replace <code>[[PROJECT]]</code> with your module name.</p>
-</blockquote>
+<p><strong>NOTE</strong> Replace <code>[[PROJECT]]</code> with your module name.</p></blockquote>
 <p>The command generates (a) Golang bindings for <code>complex.proto</code>; and (b) a descriptor file.</p>
 <p>Because we defined <code>go_package</code> in the protobuf source, this overrides the <code>package</code> name and, in conjunction wit the <code>module=[[PROJECT]]</code> command, ensures that the Golang sources are placed in <code>[[PROJECT]]/protos</code>. The <code>go_package</code> path must match the <code>go.mod</code> module name and it must contain (in this case) a <code>proto</code> directory.</p>
 <blockquote>
-<p><strong>NOTE</strong> For the purposes of what follows, we could omit the <code>--go_out=....</code> flag entirely</p>
-</blockquote>
+<p><strong>NOTE</strong> For the purposes of what follows, we could omit the <code>--go_out=....</code> flag entirely</p></blockquote>
 <p>We&rsquo;re going to explore dynamically constructing protobuf messages using <code>dynamicpb</code> and the descriptor generated by protoc. First, let&rsquo;s open the descriptor file&hellip;</p>
 <blockquote>
-<p><strong>NOTE</strong> Apologies if the following slab of code offends your sensibilities, it was easier to present this as a single function</p>
-</blockquote>
+<p><strong>NOTE</strong> Apologies if the following slab of code offends your sensibilities, it was easier to present this as a single function</p></blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
@@ -248,30 +243,29 @@
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Parse the flags
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Parse the flags</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create a(n empty) FileDescriptorSet
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">fds</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">descriptorpb</span>.<span style="color:#a6e22e">FileDescriptorSet</span>{}
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create a(n empty) FileDescriptorSet</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fds</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">descriptorpb</span>.<span style="color:#a6e22e">FileDescriptorSet</span>{}
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    {
-</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Open the descriptor
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadFile</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">descriptorFile</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Open the descriptor</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadFile</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">descriptorFile</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Unmarshal descriptor file into the FileDescriptorSet
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">fds</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Unmarshal descriptor file into the FileDescriptorSet</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">fds</span>)
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create a Files registry
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">files</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">protodesc</span>.<span style="color:#a6e22e">NewFiles</span>(<span style="color:#a6e22e">fds</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create a Files registry</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">files</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">protodesc</span>.<span style="color:#a6e22e">NewFiles</span>(<span style="color:#a6e22e">fds</span>)
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">...</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> I&rsquo;m omitting error-handling for brevity|clarity</p>
-</blockquote>
+<p><strong>NOTE</strong> I&rsquo;m omitting error-handling for brevity|clarity</p></blockquote>
 <p>We can then either enumerate the registry&rsquo;s members or, since we know what we&rsquo;re looking for, we can query descriptors by name:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// Query (Descriptors) by name
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">d</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">files</span>.<span style="color:#a6e22e">FindDescriptorByName</span>(<span style="color:#a6e22e">protoreflect</span>.<span style="color:#a6e22e">FullName</span>(<span style="color:#e6db74">&#34;examples.ComplexService&#34;</span>))
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// Query (Descriptors) by name</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">d</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">files</span>.<span style="color:#a6e22e">FindDescriptorByName</span>(<span style="color:#a6e22e">protoreflect</span>.<span style="color:#a6e22e">FullName</span>(<span style="color:#e6db74">&#34;examples.ComplexService&#34;</span>))
 </span></span></code></pre></div><p>Protobufs contain various types. In this example, we have service, methods and messages.</p>
 <p>Let&rsquo;s assert the <code>Descriptor</code> returned by the above into a <code>ServiceDescriptor</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">s</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">d</span>.(<span style="color:#a6e22e">protoreflect</span>.<span style="color:#a6e22e">ServiceDescriptor</span>)
@@ -283,8 +277,7 @@
 </span></span></code></pre></div><p>The <code>MethodDescriptor</code> that&rsquo;s returned, primarily reflects the binding of a method name (<code>add</code>) with a request (or input) message (<code>ComplexRequest</code>) and a response (or output) message (<code>ComplexResponse</code>).</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">Input</span>()
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> We&rsquo;re moving from <code>MethodDescriptor</code> to <code>MessageDescriptor</code></p>
-</blockquote>
+<p><strong>NOTE</strong> We&rsquo;re moving from <code>MethodDescriptor</code> to <code>MessageDescriptor</code></p></blockquote>
 <p>Using <code>dynamicpb</code>, we can now manifest this <code>MessageDescriptor</code> (<code>i</code>) into a <code>dyanmicpb.Message</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">dynamicpb</span>.<span style="color:#a6e22e">NewMessage</span>(<span style="color:#a6e22e">i</span>)
 </span></span></code></pre></div><p>Now, we can construct a ComplexRequest, the easy way:</p>
@@ -320,20 +313,17 @@
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">fd</span>, <span style="color:#a6e22e">v</span>)
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> I&rsquo;ll leave the reader to implement the construction of the  second complex number in the request, <code>b</code> (<code>&amp;pb.Complex{}</code>)</p>
-</blockquote>
+<p><strong>NOTE</strong> I&rsquo;ll leave the reader to implement the construction of the  second complex number in the request, <code>b</code> (<code>&amp;pb.Complex{}</code>)</p></blockquote>
 <p>In the dynamic case, we&rsquo;ve created a <code>dynamicpb.Message</code> which implements ProtoMessage but we&rsquo;d prefer to have a <code>pb.ComplexRequest</code> in order to call an implementation of the service.</p>
 <p>Assuming:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">r</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">ComplexRequest</span>{}
 </span></span></code></pre></div><p>There should be 2 (equivalent) ways to do this:</p>
 <blockquote>
-<p><strong>NOTE</strong> This approach does not work; <code>Merge</code> panics (see: <a href="https://github.com/golang/protobuf/issues/1163">https://github.com/golang/protobuf/issues/1163</a>)</p>
-</blockquote>
+<p><strong>NOTE</strong> This approach does not work; <code>Merge</code> panics (see: <a href="https://github.com/golang/protobuf/issues/1163">https://github.com/golang/protobuf/issues/1163</a>)</p></blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Merge</span>(<span style="color:#a6e22e">r</span>, <span style="color:#a6e22e">rqst</span>)
 </span></span></code></pre></div><p>Or:</p>
 <blockquote>
-<p><strong>NOTE</strong> This approach works</p>
-</blockquote>
+<p><strong>NOTE</strong> This approach works</p></blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">rqst</span>)
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">r</span>)
@@ -424,7 +414,7 @@
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">

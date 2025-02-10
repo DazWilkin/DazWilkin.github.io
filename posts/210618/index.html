@@ -7,7 +7,7 @@
     <title>Firebase Authentication, Cloud Endpoints and gRPC (2of2) | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Using Firebase Auth to authorize users of a gRPC service behind Cloud Endpoints">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -280,11 +280,9 @@
   </tbody>
 </table>
 <blockquote>
-<p><strong>NOTE</strong> gRPC metadata returns slices of strings. I&rsquo;ve removed the <code>[&quot;...&quot;]</code> from the above to aid clarity.</p>
-</blockquote>
+<p><strong>NOTE</strong> gRPC metadata returns slices of strings. I&rsquo;ve removed the <code>[&quot;...&quot;]</code> from the above to aid clarity.</p></blockquote>
 <blockquote>
-<p><strong>NOTE</strong> An important item of metadata is <code>X-Endpoint-API-UserInfo</code> which we&rsquo;ll use in the following code.</p>
-</blockquote>
+<p><strong>NOTE</strong> An important item of metadata is <code>X-Endpoint-API-UserInfo</code> which we&rsquo;ll use in the following code.</p></blockquote>
 <p>It&rsquo;s straightforward to interact with the metadata:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">import</span> (
 </span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;context&#34;</span>
@@ -301,8 +299,8 @@
 </span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#e6db74">&#34;unable to retrieve gRPC metadata&#34;</span>)
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get returns []string
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">value</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">SomeKey</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get returns []string</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">value</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">SomeKey</span>)
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">...</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>But, in this case, we want to apply authorization (not authentication, that&rsquo;s already done) to users of our service.</p>
@@ -310,14 +308,13 @@
 <p>Sometimes, for convenience and to highlight the different authentication is referred to as AuthN and authorization is referred to as AuthZ. Firebase Authentication (AuthN) has enabled us to outsource all the messiness of authentication for users of myriad OAuth providers to Google Firebase which is great.</p>
 <p>But, Firebase does <strong>not</strong> include an authorization (AuthZ) service.</p>
 <blockquote>
-<p><strong>NOTE</strong> Cloud Endpoints also supports <a href="https://cloud.google.com/endpoints/docs/openapi/authenticating-users-auth0">Auth0</a>. Auth0 provides <a href="https://auth0.com/docs/authentication">authentication</a> and <a href="https://auth0.com/docs/authorization">authorization</a> services. It&rsquo;s possible, as my service grows that I&rsquo;ll consider swapping both AuthN and AuthZ to Auth0.</p>
-</blockquote>
+<p><strong>NOTE</strong> Cloud Endpoints also supports <a href="https://cloud.google.com/endpoints/docs/openapi/authenticating-users-auth0">Auth0</a>. Auth0 provides <a href="https://auth0.com/docs/authentication">authentication</a> and <a href="https://auth0.com/docs/authorization">authorization</a> services. It&rsquo;s possible, as my service grows that I&rsquo;ll consider swapping both AuthN and AuthZ to Auth0.</p></blockquote>
 <p>I&rsquo;m considering using Firestore as the backend for authorization but have not yet implemented this. Meantime, I wanted to write a very simple &ndash; the simplest possible? &ndash; authorization service:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// Users is a type that represents the system&#39;s list of users
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Users</span> []<span style="color:#a6e22e">User</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// Users is a type that represents the system&#39;s list of users</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Users</span> []<span style="color:#a6e22e">User</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// User is a type that represents one of the system&#39;s users
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">User</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// User is a type that represents one of the system&#39;s users</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">User</span> <span style="color:#66d9ef">struct</span> {
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Email</span> <span style="color:#66d9ef">string</span>
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
@@ -329,8 +326,8 @@
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Contains is a method that determines whether a User is in Users
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">uu</span> <span style="color:#a6e22e">Users</span>) <span style="color:#a6e22e">Contains</span>(<span style="color:#a6e22e">u</span> <span style="color:#a6e22e">User</span>) <span style="color:#66d9ef">bool</span> {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Contains is a method that determines whether a User is in Users</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">uu</span> <span style="color:#a6e22e">Users</span>) <span style="color:#a6e22e">Contains</span>(<span style="color:#a6e22e">u</span> <span style="color:#a6e22e">User</span>) <span style="color:#66d9ef">bool</span> {
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">x</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">uu</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">x</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">u</span> {
 </span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>
@@ -349,36 +346,36 @@
 </span></span><span style="display:flex;"><span>) (<span style="color:#66d9ef">interface</span>{}, <span style="color:#66d9ef">error</span>) {
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">...</span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Get metadata
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">md</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">FromIncomingContext</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Get metadata</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">md</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">FromIncomingContext</span>(<span style="color:#a6e22e">ctx</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;...&#34;</span>)
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Metadata keys are lowercase
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// Avoid md.Get()&#39;s use of strings.ToLower(), use lowercase
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">encUserInfos</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;x-endpoint-api-userinfo&#34;</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Metadata keys are lowercase</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Avoid md.Get()&#39;s use of strings.ToLower(), use lowercase</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">encUserInfos</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">md</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;x-endpoint-api-userinfo&#34;</span>);
 </span></span><span style="display:flex;"><span>    len(<span style="color:#a6e22e">encUserInfos</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> {
-</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Should be none or one
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">encUserInfos</span>) &gt; <span style="color:#ae81ff">1</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Should be none or one</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">encUserInfos</span>) &gt; <span style="color:#ae81ff">1</span> {
 </span></span><span style="display:flex;"><span>			<span style="color:#f92672">...</span>
 </span></span><span style="display:flex;"><span>		}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Decode the header
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">userinfo</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewUserInfo</span>(<span style="color:#a6e22e">encUserInfos</span>[<span style="color:#ae81ff">0</span>])
-</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Create a User
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">user</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewUser</span>(<span style="color:#a6e22e">userinfo</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Decode the header</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">userinfo</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewUserInfo</span>(<span style="color:#a6e22e">encUserInfos</span>[<span style="color:#ae81ff">0</span>])
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Create a User</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">user</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewUser</span>(<span style="color:#a6e22e">userinfo</span>)
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">user</span>.<span style="color:#a6e22e">Valid</span>() {
-</span></span><span style="display:flex;"><span>			<span style="color:#75715e">// Authorize the User
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">SystemUsers</span>.<span style="color:#a6e22e">Authorized</span>(<span style="color:#a6e22e">user</span>) {
-</span></span><span style="display:flex;"><span>				<span style="color:#75715e">// Call the intercepted handler
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                <span style="color:#75715e">// Returning its results
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>				<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">handler</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>			<span style="color:#75715e">// Authorize the User</span>
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">SystemUsers</span>.<span style="color:#a6e22e">Authorized</span>(<span style="color:#a6e22e">user</span>) {
+</span></span><span style="display:flex;"><span>				<span style="color:#75715e">// Call the intercepted handler</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// Returning its results</span>
+</span></span><span style="display:flex;"><span>				<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">handler</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
 </span></span><span style="display:flex;"><span>		}
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Unauthenticated or Unauthorized
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Unauthenticated or Unauthorized</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>,
 </span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">status</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#a6e22e">codes</span>.<span style="color:#a6e22e">PermissionDenied</span>, <span style="color:#e6db74">&#34;permission denied&#34;</span>)
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>I won&rsquo;t labor the <code>User</code> struct but <code>UserInfo</code> decodes the incoming metadata header:</p>
@@ -388,9 +385,9 @@
 </span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;fmt&#34;</span>
 </span></span><span style="display:flex;"><span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// UserInfo is a type that represents `X-Endpoint-API-UserToken`
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// The Firebase field matches the service config auth provider
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">UserInfo</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// UserInfo is a type that represents `X-Endpoint-API-UserToken`</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// The Firebase field matches the service config auth provider</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">UserInfo</span> <span style="color:#66d9ef">struct</span> {
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Name</span>           <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;name&#34;`</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Issuer</span>         <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;iss&#34;`</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Audience</span>       <span style="color:#66d9ef">string</span>   <span style="color:#e6db74">`json:&#34;aud&#34;`</span>
@@ -404,8 +401,8 @@
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Firebase</span>       <span style="color:#a6e22e">Provider</span> <span style="color:#e6db74">`json:&#34;firebase&#34;`</span>
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Provider is a type that represents a service config auth provider
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Provider</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Provider is a type that represents a service config auth provider</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Provider</span> <span style="color:#66d9ef">struct</span> {
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Identities</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>][]<span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;identities&#34;`</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Provider</span>   <span style="color:#66d9ef">string</span>              <span style="color:#e6db74">`json:&#34;sign_in_provider&#34;`</span>
 </span></span><span style="display:flex;"><span>}
@@ -413,9 +410,9 @@
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewUserInfo</span>(<span style="color:#a6e22e">enc</span> <span style="color:#66d9ef">string</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">UserInfo</span>, <span style="color:#66d9ef">error</span>) {
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;NewUserInfo&#34;</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Value is base64url encoded
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// Decode it
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">base64</span>.<span style="color:#a6e22e">RawURLEncoding</span>.<span style="color:#a6e22e">DecodeString</span>(<span style="color:#a6e22e">enc</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Value is base64url encoded</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Decode it</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">base64</span>.<span style="color:#a6e22e">RawURLEncoding</span>.<span style="color:#a6e22e">DecodeString</span>(<span style="color:#a6e22e">enc</span>)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">userinfo</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">UserInfo</span>{}
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">b</span>, <span style="color:#a6e22e">userinfo</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
@@ -425,8 +422,7 @@
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">userinfo</span>, <span style="color:#66d9ef">nil</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> <code>Time</code> isn&rsquo;t Golang&rsquo;s <code>time.Time</code> but <a href="https://www.yellowduck.be/posts/handling-unix-timestamps-in-json/">YellowDuck&rsquo;s <code>Time</code></a>; Golang&rsquo;s default JSON unmarshaler doesn&rsquo;t unmarshal UNIX epoch times correctly.</p>
-</blockquote>
+<p><strong>NOTE</strong> <code>Time</code> isn&rsquo;t Golang&rsquo;s <code>time.Time</code> but <a href="https://www.yellowduck.be/posts/handling-unix-timestamps-in-json/">YellowDuck&rsquo;s <code>Time</code></a>; Golang&rsquo;s default JSON unmarshaler doesn&rsquo;t unmarshal UNIX epoch times correctly.</p></blockquote>
 <h2 id="test">Test</h2>
 <p>Now we can deploy and test the Interceptor. Cloud Endpoints will only permit authenticated users so we want an authenticated user (i.e. someone with valid e.g. Google, Microsoft, GitHub credentials) but who isn&rsquo;t authorized to use the service.</p>
 <p>In this case, anyone other than <code>my@email.com</code> is denied:</p>
@@ -566,7 +562,7 @@
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">

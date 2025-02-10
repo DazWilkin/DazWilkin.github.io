@@ -7,7 +7,7 @@
     <title>Scraping metrics exposed by Google Cloud Run services that require authentication | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Scraping metrics exposed by Google Cloud Run services that require authentication">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -227,8 +227,7 @@
 <p><a href="https://github.com/salrashid123">Salmaan</a> has a comprehensive repo <a href="https://github.com/salrashid123/google_id_token">Authenticating using Google OpenID Connect Tokens</a> and the Golang <a href="https://github.com/salrashid123/google_id_token/blob/master/golang/main.go">sample</a> got me working.</p>
 <p>The <a href="https://pkg.go.dev/google.golang.org/api/idtoken">idtoken</a> SDK mints identity tokens (ey&hellip;.) whereas <code>[google](https://pkg.go.dev/golang.org/x/oauth2/google) SDK mints access tokens (</code>ya29&hellip;.`).</p>
 <blockquote>
-<p><strong>NOTE</strong> Auth0&rsquo;s <a href="https://jwt.io"><code>jwt.io</code></a> tool is a safe (doesn&rsquo;t leave your browser) tool for decoding identity tokens.</p>
-</blockquote>
+<p><strong>NOTE</strong> Auth0&rsquo;s <a href="https://jwt.io"><code>jwt.io</code></a> tool is a safe (doesn&rsquo;t leave your browser) tool for decoding identity tokens.</p></blockquote>
 <p>Given a Google Service Account that has IAM permissions sufficient to invoke the desired (e.g. Cloud Run) service (for Cloud Run, <a href="https://cloud.google.com/run/docs/reference/iam/roles">`roles/run.invoker&rsquo;</a>), the proxy can be run:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;7777&#34;</span> <span style="color:#75715e"># Or your preference</span>
 </span></span><span style="display:flex;"><span>
@@ -258,13 +257,11 @@
 <li><code>token_url</code> is the proxy&rsquo;s URL</li>
 <li><code>endpoint_params</code> includes <code>audience</code> and this must be the Cloud Run service URL including <code>https://</code></li>
 <li><code>targets</code> used with the proxy can only include a single value of the Cloud Run service URL excluding the scheme (<code>https</code>) as this is defined previous.</li>
-</ul>
-</blockquote>
+</ul></blockquote>
 <p>The Application Default Credentials (provided through the environment variable <code>GOOGLE_APPLICATION_CREDENTIALS</code>) is used by the proxy along with the <code>audience</code> value to create a new Token Source. The Token Source can then be used to mint an identity token that will be Cloud Run service-specific.</p>
 <p>Because the proxy may be shared across multiple Prometheus <code>scrape_targets</code> and each of these may define a distinct endpoint, the proxy caches Token Sources by <code>audience</code> and it caches identity tokens that are issued by <code>audience</code>. Becaude identity tokens generally expire after 3600 seconds (one hour), the proxy can be more efficient by using tokens until they near expiry at which time a new identity token is minted.</p>
 <blockquote>
-<p><strong>NOTE</strong> One limitation of this solution is that, because identity token are minted for a specific Cloud Run service URL provided as the <code>audience</code> value in the request, if there are multiple Cloud Run services to be scraped, each much have its own Prometheus <code>scrape_targets</code> section.</p>
-</blockquote>
+<p><strong>NOTE</strong> One limitation of this solution is that, because identity token are minted for a specific Cloud Run service URL provided as the <code>audience</code> value in the request, if there are multiple Cloud Run services to be scraped, each much have its own Prometheus <code>scrape_targets</code> section.</p></blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">ts</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">idtoken</span>.<span style="color:#a6e22e">NewTokenSource</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">audience</span>)
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">tok</span>, <span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">Token</span>()
 </span></span></code></pre></div><p>The proxy simply maps the identity token (!) into a response as the value of <code>access_token</code>:</p>
@@ -275,8 +272,7 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>The response (<code>resp</code>) is then marshaled into a string and returned to Prometheus which uses the identity token as a header <code>Authorization: Bearer ${TOKEN}</code> to authenticate the request against the Cloud Run service&rsquo;s metrics endpoints.</p>
 <blockquote>
-<p><strong>NOTE</strong> The Prometheus server&rsquo;s incoming request object is ignored. The <code>client_id</code> and <code>client_secret</code> values are expected (cannot be nil or <code>&quot;&quot;</code>) but may be anything else.</p>
-</blockquote>
+<p><strong>NOTE</strong> The Prometheus server&rsquo;s incoming request object is ignored. The <code>client_id</code> and <code>client_secret</code> values are expected (cannot be nil or <code>&quot;&quot;</code>) but may be anything else.</p></blockquote>
 <p>The (<a href="https://github.com/DazWilkin/gcp-oidc-token-proxy"><code>gcp-oidc-token-proxy</code></a>) repo contains detailed instructions on running the proxy as a sidecar against Prometheus using Kubernetes and Docker Compose.</p>
 <div class="footnotes" role="doc-endnotes">
 <hr>
@@ -374,7 +370,7 @@
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">

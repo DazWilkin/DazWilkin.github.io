@@ -10,7 +10,7 @@
 I&rsquo;ve developed a companion, local daemon (called ackalctld) for Ackal that provides a functionally close version of the service.
 One way to deploy ackalctld is to use Kubernetes and it would be convenient if the Prometheus metrics were scrapeable by Prometheus Operator.
 In order for this to work, Prometheus Operator needs to be able to scrape Google Cloud Run targets because ackalctld creates Cloud Run services for its health check clients.">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -206,11 +206,9 @@ In order for this to work, Prometheus Operator needs to be able to scrape Google
 </span></span><span style="display:flex;"><span>    - <span style="color:#f92672">url</span>: <span style="color:#ae81ff">http://service-discovery-endpoint</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">proxy_url</span>: <span style="color:#ae81ff">http://proxy</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The above configuration is confusing but combines 2 uses of the (same) proxy. The first use of the proxy is to authenticate requests to the Service Discovery endpoint. This is described by the <code>proxy_url</code> setting as part of <code>http_sd_configs</code>. The second use of the proxy is to authenticate requests to the scrape targets returned by the Service Discovery endpoint.</p>
-</blockquote>
+<p><strong>NOTE</strong> The above configuration is confusing but combines 2 uses of the (same) proxy. The first use of the proxy is to authenticate requests to the Service Discovery endpoint. This is described by the <code>proxy_url</code> setting as part of <code>http_sd_configs</code>. The second use of the proxy is to authenticate requests to the scrape targets returned by the Service Discovery endpoint.</p></blockquote>
 <blockquote>
-<p><strong>NOTE</strong> The <code>scheme</code> is <code>http</code>. This is to simplify the use of the locally-running proxy. Rather than have it proxy TLS connections too, the proxy receives <code>HTTP</code> requests but it upgrades (every) request to <code>HTTPS</code>. Local connections are insecure. Remote (proxied) connections are secure.</p>
-</blockquote>
+<p><strong>NOTE</strong> The <code>scheme</code> is <code>http</code>. This is to simplify the use of the locally-running proxy. Rather than have it proxy TLS connections too, the proxy receives <code>HTTP</code> requests but it upgrades (every) request to <code>HTTPS</code>. Local connections are insecure. Remote (proxied) connections are secure.</p></blockquote>
 <p>In the case of <code>ackalctld</code>, Service Discovery is performed locally and so the desired configuration is simpler:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">scrape_configs</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#34;Service Discovery of Cloud Run services&#34;</span>
@@ -219,8 +217,7 @@ In order for this to work, Prometheus Operator needs to be able to scrape Google
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">http_sd_configs</span>:
 </span></span><span style="display:flex;"><span>    - <span style="color:#f92672">url</span>: <span style="color:#ae81ff">http://service-discovery-endpoint</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The second <code>proxy_url</code>, to configure the proxy to proxy requests to the Service Discovery endpoint is not needed. The remaining <code>proxy_url</code>, proxies requests to Google Cloud Run to authenticate the requests to the scrape targets (only).</p>
-</blockquote>
+<p><strong>NOTE</strong> The second <code>proxy_url</code>, to configure the proxy to proxy requests to the Service Discovery endpoint is not needed. The remaining <code>proxy_url</code>, proxies requests to Google Cloud Run to authenticate the requests to the scrape targets (only).</p></blockquote>
 <p>I discovered that Prometheus Operator includes a new Custom Resource <a href="https://prometheus-operator.dev/docs/user-guides/scrapeconfig/"><code>ScrapeConfig</code></a>. The documentation is slightly inconsistent and I&rsquo;ll include some updates in what follows.</p>
 <p>Here&rsquo;s the proposal for <a href="https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/proposals/202212-scrape-config.md">ScrapeConfig CRD</a>.</p>
 <p>Here&rsquo;s Prometheus Operator API documentation for:</p>
@@ -246,8 +243,7 @@ In order for this to work, Prometheus Operator needs to be able to scrape Google
 </span></span><span style="display:flex;"><span>    - <span style="color:#f92672">url</span>: <span style="color:#ae81ff">http://my-external-api/discovery</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">refreshInterval</span>: <span style="color:#ae81ff">15s</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> <code>ScrapeConfig</code> is <code>monitoring.coreos.com/v1alpha1</code></p>
-</blockquote>
+<p><strong>NOTE</strong> <code>ScrapeConfig</code> is <code>monitoring.coreos.com/v1alpha1</code></p></blockquote>
 <p>However, it&rsquo;s not currently possibly to represent proxies with Service Discovery with the Prometheus Operator and the version of Prometheus Operator that was deployed to my latest (!?) <a href="https://microk8s.io">MicroK8s</a> installation did not include the <code>ScrapeConfig</code> (<code>v1alpha</code>) CRDs.</p>
 <p>As we would expect, <code>HTTPSDConfig</code> follows Prometheus&rsquo; <a href="https://prometheus.io/docs/prometheus/latest/http_sd/">HTTP Service Discovery</a> and expects the discovery endpoint (!) to return JSON in the <a href="https://prometheus.io/docs/prometheus/latest/http_sd/#http_sd-format"><code>HTTP_SD format</code></a>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>[
@@ -392,8 +388,7 @@ In order for this to work, Prometheus Operator needs to be able to scrape Google
 </span></span><span style="display:flex;"><span>  <span style="color:#960050;background-color:#1e0010">...</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The <a href="https://prometheus-operator.dev/docs/user-guides/scrapeconfig/#configure-prometheus-or-prometheusagent-to-select-scrapeconfigs">documentation</a> suggests using a annotation <code>prometheus: system-monitoring-prometheus</code> but I left the configuration to include all (<code>{}</code>) <code>ScrapeConfig</code>&rsquo;s.</p>
-</blockquote>
+<p><strong>NOTE</strong> The <a href="https://prometheus-operator.dev/docs/user-guides/scrapeconfig/#configure-prometheus-or-prometheusagent-to-select-scrapeconfigs">documentation</a> suggests using a annotation <code>prometheus: system-monitoring-prometheus</code> but I left the configuration to include all (<code>{}</code>) <code>ScrapeConfig</code>&rsquo;s.</p></blockquote>
 <p>After this change was made, Prometheus Service Discovery included the <code>ScrapeConfig</code> and the Targets included the Cloud Run services returned by <code>ackalctld</code>&rsquo;s Service Discovery endpoint.</p>
 <p>However, as expected, absent the ability to proxy the Cloud Run services (to add auth), when Prometheus tries to scrape the endpoints, it&rsquo;s failing.</p>
 <p>I&rsquo;d hoped I could hack the <code>proxy_url</code> into the configuration that&rsquo;s generated by the Prometheus Operator and applied (by restarting) Prometheus.</p>
@@ -526,7 +521,7 @@ In order for this to work, Prometheus Operator needs to be able to scrape Google
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">

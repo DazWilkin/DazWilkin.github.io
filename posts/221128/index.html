@@ -7,7 +7,7 @@
     <title>Maintaining Container Images | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Maintaining container images">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -186,8 +186,7 @@
 <p>I wondered whether GitHub includes a mechanism to monitor for container images updates using <a href="https://docs.github.com/en/code-security/dependabot">Dependabot</a>. I find Dependabot to be useful but complicated. I&rsquo;m still unclear why some functionality is configurable through GitHub and some requires use of <code>dependabot.yml</code>. It&rsquo;s also difficult for me to understand its scope. I Googled around but didn&rsquo;t find anything immediately applicable.</p>
 <p>I&rsquo;m using <a href="https://cloud.google.com">Google Cloud</a> as a deployment target for my app. Services such as <a href="https://cloud.google.com/run">Cloud Run</a> require that container images be hosted by <a href="https://cloud.google.com/container-registry">Google Container Registry</a> or its replacement <a href="https://cloud.google.com/artifact-registry">Artifact Registry</a>. A companion service for both these registry implementations is <a href="https://cloud.google.com/container-analysis/docs/container-analysis">Container Analysis</a> and this includes vulnerability scanning of container images.</p>
 <blockquote>
-<p><strong>NOTE</strong> Be aware that Container Analysis vulnerability scanning is <strong>expensive</strong> (see <a href="https://cloud.google.com/container-analysis/pricing">Container Analysis pricing</a>). Yesterday, I spent $5.98 to scan 23 images (including updates) at $0.26/image. I&rsquo;d initially planned to run this service every day on each deployment of the service but I won&rsquo;t be doing that because the deployment creates a new Artifact Registry each day and scans the images each day on push.</p>
-</blockquote>
+<p><strong>NOTE</strong> Be aware that Container Analysis vulnerability scanning is <strong>expensive</strong> (see <a href="https://cloud.google.com/container-analysis/pricing">Container Analysis pricing</a>). Yesterday, I spent $5.98 to scan 23 images (including updates) at $0.26/image. I&rsquo;d initially planned to run this service every day on each deployment of the service but I won&rsquo;t be doing that because the deployment creates a new Artifact Registry each day and scans the images each day on push.</p></blockquote>
 <p>Here&rsquo;s an example of one of my container images with an outdated (CVE-full) base image:</p>
 <p><img src="/images/221128.distroless-debian10.png" alt="Vulnerabilities"></p>
 <p>I began trying to parse the vulnerabilities using <code>gcloud</code>:</p>
@@ -214,29 +213,29 @@
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">parent</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;projects/%s/locations/%s/repositories/%s&#34;</span>, <span style="color:#a6e22e">project</span>, <span style="color:#a6e22e">location</span>, <span style="color:#a6e22e">repository</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Define the request for the first page
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">artifactregistryService</span>.<span style="color:#a6e22e">Projects</span>.<span style="color:#a6e22e">Locations</span>.<span style="color:#a6e22e">Repositories</span>.<span style="color:#a6e22e">DockerImages</span>.<span style="color:#a6e22e">List</span>(<span style="color:#a6e22e">parent</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Define the request for the first page</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">artifactregistryService</span>.<span style="color:#a6e22e">Projects</span>.<span style="color:#a6e22e">Locations</span>.<span style="color:#a6e22e">Repositories</span>.<span style="color:#a6e22e">DockerImages</span>.<span style="color:#a6e22e">List</span>(<span style="color:#a6e22e">parent</span>)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">imageURIs</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">string</span>{}
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Invoke it
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Do</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Invoke it</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">Do</span>()
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Append the image&#39;s URI
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">image</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">DockerImages</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Append the image&#39;s URI</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">image</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">DockerImages</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">imageURIs</span> = append(<span style="color:#a6e22e">imageURIs</span>, <span style="color:#a6e22e">image</span>.<span style="color:#a6e22e">Uri</span>)
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Break if no more pages
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">pageToken</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">NextPageToken</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Break if no more pages</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">pageToken</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">NextPageToken</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">pageToken</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;&#34;</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">break</span>
 </span></span><span style="display:flex;"><span>	}
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Otherwise revise the request to get the next page
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">rqst</span> = <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">PageToken</span>(<span style="color:#a6e22e">pageToken</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Otherwise revise the request to get the next page</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rqst</span> = <span style="color:#a6e22e">rqst</span>.<span style="color:#a6e22e">PageToken</span>(<span style="color:#a6e22e">pageToken</span>)
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>Now we need to use Google&rsquo;s beta (!) <a href="https://pkg.go.dev/cloud.google.com/go/containeranalysis/apiv1">Container Analysis (Cloud) Client Library</a> to retrieve so-called <a href="https://cloud.google.com/container-analysis/docs/reference/rest/v1/projects.occurrences#Occurrence">Occurrence</a>&rsquo;s of CVEs detected by the vulnerability scanner.</p>
 <p>The code uses the <a href="https://cloud.google.com/container-analysis/docs/reference/rest/v1/projects.occurrences/list"><code>projects.ocurrences.list</code></a> method</p>
@@ -248,15 +247,15 @@
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">parent</span> = <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;projects/%s&#34;</span>, <span style="color:#a6e22e">project</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Maps CVE name to an array of images that contain the CVE
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">imagesByCVE</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>][]<span style="color:#66d9ef">string</span>{}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Maps CVE name to an array of images that contain the CVE</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">imagesByCVE</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>][]<span style="color:#66d9ef">string</span>{}
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">imageName</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">imageURIs</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Must be prefixed with https://
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">resourceURL</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;https://%s&#34;</span>, <span style="color:#a6e22e">imageName</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Must be prefixed with https://</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">resourceURL</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;https://%s&#34;</span>, <span style="color:#a6e22e">imageName</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Both values must be quoted
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">filter</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;resourceUrl=%q kind=%q&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Both values must be quoted</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">filter</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;resourceUrl=%q kind=%q&#34;</span>,
 </span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">resourceURL</span>,
 </span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;VULNERABILITY&#34;</span>,
 </span></span><span style="display:flex;"><span>    )
@@ -268,8 +267,8 @@
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">occurrences</span> <span style="color:#f92672">:=</span> []<span style="color:#f92672">*</span><span style="color:#a6e22e">grafeaspb</span>.<span style="color:#a6e22e">Occurrence</span>{}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Uses Google&#39;s iterator provided with Cloud Client libraries
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">it</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">GetGrafeasClient</span>().<span style="color:#a6e22e">ListOccurrences</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Uses Google&#39;s iterator provided with Cloud Client libraries</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">it</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">GetGrafeasClient</span>().<span style="color:#a6e22e">ListOccurrences</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">occurrence</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">it</span>.<span style="color:#a6e22e">Next</span>()
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">iterator</span>.<span style="color:#a6e22e">Done</span> {
@@ -279,18 +278,18 @@
 </span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
 </span></span><span style="display:flex;"><span>		}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Additional filtering of the results:
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#75715e">// Everything other than low severity
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#75715e">// Everything that&#39;s fixable
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">vulnerability</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">occurrence</span>.<span style="color:#a6e22e">GetVulnerability</span>()
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Additional filtering of the results:</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Everything other than low severity</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Everything that&#39;s fixable</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">vulnerability</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">occurrence</span>.<span style="color:#a6e22e">GetVulnerability</span>()
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">vulnerability</span>.<span style="color:#a6e22e">GetSeverity</span>() <span style="color:#f92672">!=</span> <span style="color:#a6e22e">grafeaspb</span>.<span style="color:#a6e22e">Severity_LOW</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">vulnerability</span>.<span style="color:#a6e22e">FixAvailable</span> {
 </span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">occurrences</span> = append(<span style="color:#a6e22e">occurrences</span>, <span style="color:#a6e22e">occurrence</span>)
 </span></span><span style="display:flex;"><span>		}
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Retain the `shortDescription` which is the full CVE name
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// Can be subsequently combined with CVE site prefix
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">occurrence</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">occurrences</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Retain the `shortDescription` which is the full CVE name</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Can be subsequently combined with CVE site prefix</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">occurrence</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">occurrences</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">shortDescription</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">occurrence</span>.<span style="color:#a6e22e">GetVulnerability</span>().<span style="color:#a6e22e">GetShortDescription</span>()
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">imagesByCVE</span>[<span style="color:#a6e22e">shortDescription</span>]; !<span style="color:#a6e22e">ok</span> {
 </span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">imagesByCVE</span>[<span style="color:#a6e22e">shortDescription</span>] = []<span style="color:#66d9ef">string</span>{}
@@ -493,7 +492,7 @@
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">

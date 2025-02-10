@@ -13,7 +13,7 @@ Firebase Authentication, Cloud Endpoints and gRPC (2of2)
 
 This works well with one caveat, the ID tokens (JWTs) minted by Firebase Authentication have a 3600 second (one hour) lifetime.
 The user flow in my app is that whenever the user invokes the app&rsquo;s CLI:">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -223,8 +223,7 @@ The user flow in my app is that whenever the user invokes the app’s CLI:">
 </ul>
 <p>Whenever it&rsquo;s invoked, the CLI checks for the existence of these credentials, if they don&rsquo;t exist, they&rsquo;re created. If they exist but they&rsquo;re expired, the CLI (!) invokes the <code>https://securetoken.googleapis.com/v1/token</code> method, with the app&rsquo;s (!) Firebase API key and the user&rsquo;s <code>refreshToken</code> and this returns updated values.</p>
 <blockquote>
-<p><strong>NOTE</strong> The endpoint is the general-purpose <a href="https://developers.google.com/identity/toolkit/reference/securetoken/rest/v1/token">Google Token Service</a> endpoint and not a specific Fireabse URL</p>
-</blockquote>
+<p><strong>NOTE</strong> The endpoint is the general-purpose <a href="https://developers.google.com/identity/toolkit/reference/securetoken/rest/v1/token">Google Token Service</a> endpoint and not a specific Fireabse URL</p></blockquote>
 <p>The refresh method uses the app&rsquo;s gRPC-based Authentication service. Apart from consistency (all the app&rsquo;s services are gRPC), a benefit of this approach is that only the server knows the Firebase API key; it is not exposed to the CLI client.</p>
 <p>So, a simple Golang client for Google Token Service:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">google</span>
@@ -249,32 +248,32 @@ The user flow in my app is that whenever the user invokes the app’s CLI:">
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">grantType</span> <span style="color:#66d9ef">string</span> = <span style="color:#e6db74">&#34;refresh_token&#34;</span>
 </span></span><span style="display:flex;"><span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// TokenRequest is a type that represents the request body posted to Google Token Service
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">TokenRequest</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// TokenRequest is a type that represents the request body posted to Google Token Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">TokenRequest</span> <span style="color:#66d9ef">struct</span> {
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">GrantType</span>    <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;grant_type&#34; description:&#34;The type of token being sent&#34;`</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">RefreshToken</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;refresh_token&#34; description:&#34;Refresh token to exchange for an access token&#34;`</span>
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// NewTokenRequest is a function that takes a refresh token and returns a new TokenRequest
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewTokenRequest</span>(<span style="color:#a6e22e">refreshToken</span> <span style="color:#66d9ef">string</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">TokenRequest</span> {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// NewTokenRequest is a function that takes a refresh token and returns a new TokenRequest</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewTokenRequest</span>(<span style="color:#a6e22e">refreshToken</span> <span style="color:#66d9ef">string</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">TokenRequest</span> {
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">TokenRequest</span>{
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">GrantType</span>:    <span style="color:#a6e22e">grantType</span>,
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">RefreshToken</span>: <span style="color:#a6e22e">refreshToken</span>,
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Values is a method that converts a TokenRequest into URL-encoded values
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">TokenRequest</span>) <span style="color:#a6e22e">Values</span>() <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">Values</span> {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Values is a method that converts a TokenRequest into URL-encoded values</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">TokenRequest</span>) <span style="color:#a6e22e">Values</span>() <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">Values</span> {
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">data</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">Values</span>{}
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;grant_type&#34;</span>, <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">GrantType</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;refresh_token&#34;</span>, <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">RefreshToken</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">data</span>
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// TokenResponse is a type that represents the response body received from Google Token Service
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">TokenResponse</span> <span style="color:#66d9ef">struct</span> {
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Probably 3600 (seconds)
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">ExpiresIn</span>    <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;expires_in&#34; description:&#34;The number of second in which the ID token expires&#34;`</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// TokenResponse is a type that represents the response body received from Google Token Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">TokenResponse</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Probably 3600 (seconds)</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ExpiresIn</span>    <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;expires_in&#34; description:&#34;The number of second in which the ID token expires&#34;`</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">TokenType</span>    <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;token_type&#34; description:&#34;The type of the access token; always Bearer&#34;`</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">RefreshToken</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;refresh_token&#34; description:&#34;The refresh token provided in the request or a new refresh token&#34;`</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">IDToken</span>      <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;id_token&#34; description:&#34;The ID token&#34;`</span>
@@ -282,8 +281,8 @@ The user flow in my app is that whenever the user invokes the app’s CLI:">
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ProjectID</span>    <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;project_id&#34; description:&#34;The Google Project ID&#34;`</span>
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// NewTokenResponse is a function that converts []byte representing a JSON string into TokenResponse
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewTokenResponse</span>(<span style="color:#a6e22e">j</span> []<span style="color:#66d9ef">byte</span>) (<span style="color:#a6e22e">tokenResponse</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">TokenResponse</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// NewTokenResponse is a function that converts []byte representing a JSON string into TokenResponse</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewTokenResponse</span>(<span style="color:#a6e22e">j</span> []<span style="color:#66d9ef">byte</span>) (<span style="color:#a6e22e">tokenResponse</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">TokenResponse</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>) {
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">j</span>, <span style="color:#a6e22e">tokenResponse</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">TokenResponse</span>{}, <span style="color:#a6e22e">err</span>
 </span></span><span style="display:flex;"><span>	}
@@ -291,15 +290,15 @@ The user flow in my app is that whenever the user invokes the app’s CLI:">
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">tokenResponse</span>, <span style="color:#66d9ef">nil</span>
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// TokenClient is a type that represents a client for Google&#39;s Token Service
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">TokenClient</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// TokenClient is a type that represents a client for Google&#39;s Token Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">TokenClient</span> <span style="color:#66d9ef">struct</span> {
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">client</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Client</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">log</span>    <span style="color:#a6e22e">logr</span>.<span style="color:#a6e22e">Logger</span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">url</span>    <span style="color:#66d9ef">string</span>
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// NewTokenClient is a function that creates a new Google Token Service client
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewTokenClient</span>(<span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">log</span> <span style="color:#a6e22e">logr</span>.<span style="color:#a6e22e">Logger</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">TokenClient</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// NewTokenClient is a function that creates a new Google Token Service client</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewTokenClient</span>(<span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">log</span> <span style="color:#a6e22e">logr</span>.<span style="color:#a6e22e">Logger</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">TokenClient</span>, <span style="color:#66d9ef">error</span>) {
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">key</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;&#34;</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">msg</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;Firebase API Key is expected&#34;</span>
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#a6e22e">msg</span>)
@@ -315,8 +314,8 @@ The user flow in my app is that whenever the user invokes the app’s CLI:">
 </span></span><span style="display:flex;"><span>	}, <span style="color:#66d9ef">nil</span>
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Token is a method that refreshes the user&#39;s ID (and refresh) tokens
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">TokenClient</span>) <span style="color:#a6e22e">Token</span>(<span style="color:#a6e22e">refresh_token</span> <span style="color:#66d9ef">string</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">TokenResponse</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Token is a method that refreshes the user&#39;s ID (and refresh) tokens</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">TokenClient</span>) <span style="color:#a6e22e">Token</span>(<span style="color:#a6e22e">refresh_token</span> <span style="color:#66d9ef">string</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">TokenResponse</span>, <span style="color:#66d9ef">error</span>) {
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">data</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewTokenRequest</span>(<span style="color:#a6e22e">refresh</span>).<span style="color:#a6e22e">Values</span>()
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">PostForm</span>(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">url</span>, <span style="color:#a6e22e">data</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
@@ -338,14 +337,14 @@ The user flow in my app is that whenever the user invokes the app’s CLI:">
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>This yields a straightforward implementation in the CLI:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">creds</span>.<span style="color:#a6e22e">Empty</span>() {
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Prompt the user to open the app&#39;s Firebase Authentication page
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// User provides:
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// + ID token
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// + Expiration
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// + Refresh Token
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Save these credentials
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Prompt the user to open the app&#39;s Firebase Authentication page</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// User provides:</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// + ID token</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// + Expiration</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// + Refresh Token</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Save these credentials</span>
+</span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">creds</span>.<span style="color:#a6e22e">Expired</span>() {
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">authn</span>.<span style="color:#a6e22e">NewClient</span>(<span style="color:#f92672">...</span>)
@@ -356,24 +355,23 @@ The user flow in my app is that whenever the user invokes the app’s CLI:">
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">resp</span>,<span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Refresh</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">rqst</span>)
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">creds</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewCredentials</span>(<span style="color:#a6e22e">resp</span>)
 </span></span><span style="display:flex;"><span>    
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Save these credentials
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Save these credentials</span>
+</span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> One omission in the above is the need to time the request in order to reduce the expiration time by the elapsed time; the credentials have limited (3600s) lifespan.</p>
-</blockquote>
+<p><strong>NOTE</strong> One omission in the above is the need to time the request in order to reduce the expiration time by the elapsed time; the credentials have limited (3600s) lifespan.</p></blockquote>
 <p>Then, lastly, the credentials can be bundled into the CLI&rsquo;s requests through Cloud Endpoints to be auth&rsquo;d:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#75715e">// Get the ID token as a `Bearer ${VALUE}`
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">bearer</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">creds</span>.<span style="color:#a6e22e">Bearer</span>()
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#75715e">// Get the ID token as a `Bearer ${VALUE}`</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">bearer</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">creds</span>.<span style="color:#a6e22e">Bearer</span>()
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Update the context appending the authorization 
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">ctx</span> = <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">AppendToOutgoingContext</span>(
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Update the context appending the authorization </span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> = <span style="color:#a6e22e">metadata</span>.<span style="color:#a6e22e">AppendToOutgoingContext</span>(
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ctx</span>,
 </span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;authorization&#34;</span>, <span style="color:#a6e22e">bearer</span>,
 </span></span><span style="display:flex;"><span>	)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Grab a new CLI client
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// The gRPC server uses an Interceptor that validates the Cloud Endpoints headers
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">cli</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewCLI</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">client</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">customerID</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Grab a new CLI client</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// The gRPC server uses an Interceptor that validates the Cloud Endpoints headers</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cli</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewCLI</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">client</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">customerID</span>)
 </span></span></code></pre></div><p>That&rsquo;s all!</p>
 <ul class="pa0">
   
@@ -464,7 +462,7 @@ The user flow in my app is that whenever the user invokes the app’s CLI:">
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">

@@ -7,7 +7,7 @@
     <title>Sigstore | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Adventures with Sigstore">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -179,8 +179,7 @@
 <p>This morning while walking with my dog, I <a href="https://www.heavybit.com/library/podcasts/the-kubelist-podcast/ep-20-sigstore-with-dan-lorenc-of-google/">listened</a> to Google&rsquo;s Dan Lorenc explain <a href="https://www.sigstore.dev/">Sigstore</a> (blog](<a href="https://blog.sigstore.dev/">https://blog.sigstore.dev/</a>)) on <a href="https://kubelist.com/podcast/">The Kubelist Podcast</a><sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
 <p>The plan today is to try to sign the <code>gcp-oidc-token-proxy</code> container <a href="https://github.com/DazWilkin/gcp-oidc-token-proxy/pkgs/container/gcp-oidc-token-proxy">images</a> in GitHub Container Registry.</p>
 <blockquote>
-<p><strong>NOTE</strong> I decided against trying the hardware key approach. I have a Google Titan key and only Yubikeys are <a href="https://github.com/go-piv/piv-go#non-yubikey-smartcards">well-tested</a> by <a href="https://github.com/go-piv/piv-go"><code>go-piv</code></a></p>
-</blockquote>
+<p><strong>NOTE</strong> I decided against trying the hardware key approach. I have a Google Titan key and only Yubikeys are <a href="https://github.com/go-piv/piv-go#non-yubikey-smartcards">well-tested</a> by <a href="https://github.com/go-piv/piv-go"><code>go-piv</code></a></p></blockquote>
 <h2 id="cosign-sign"><code>cosign sign</code></h2>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go install github.com/sigstore/cosign/cmd/cosign@latest
 </span></span></code></pre></div><p>Initially, I followed the <a href="https://github.com/sigstore/cosign#quick-start">Quick Start</a> but, after chatting on the team&rsquo;s Slack <a href="https://sigstore.slack.com">channel</a>, I was referred to Luke Hinds&rsquo; <a href="https://github.com/lukehinds/sigstore-the-hard-way">Sigstore The Hard Way</a> and specifically <a href="https://github.com/lukehinds/sigstore-the-hard-way/blob/main/docs/10-sign-container.md">Sign Container</a> which importantly uses <code>COSIGN_EXPERIMENTAL=1</code> and GitHub&rsquo;s secret squirrel OIDC federation functionality.</p>
@@ -196,8 +195,7 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -rekor-url https://rekor.sigstore.dev <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> <code>3e44...</code> is the image&rsquo;s tag and represents the <code>git rev-parse HEAD</code> of the repo when the image was built from it. As it occur below, the image&rsquo;s SHA-256 is <code>c26f799823766c54155653cb709df811b7ae73a68ba504a4da2e57153bcf4c40</code></p>
-</blockquote>
+<p><strong>NOTE</strong> <code>3e44...</code> is the image&rsquo;s tag and represents the <code>git rev-parse HEAD</code> of the repo when the image was built from it. As it occur below, the image&rsquo;s SHA-256 is <code>c26f799823766c54155653cb709df811b7ae73a68ba504a4da2e57153bcf4c40</code></p></blockquote>
 <p>The <code>oidc-issuer</code> is evident in the output below as it is the endpoint through which the user authenticates with Sigstore.</p>
 <p>The <code>fulcio-url</code> points to an instance of <a href="https://github.com/sigstore/fulcio">Fulcio</a> which is a root CA and issues certs that can be used to sign software artifacts.</p>
 <p>The command outputs:</p>
@@ -212,13 +210,11 @@
 </span></span><span style="display:flex;"><span>tlog entry created with index: 756105
 </span></span><span style="display:flex;"><span>Pushing signature to: ghcr.io/dazwilkin/gcp-oidc-token-proxy:sha256-c26f799823766c54155653cb709df811b7ae73a68ba504a4da2e57153bcf4c40.sig
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The signature follows the image reference but its tag is <code>sha256-${HASH}.sig</code> where <code>HASH</code> is the underlying image&rsquo;s SHA-256 hash.</p>
-</blockquote>
+<p><strong>NOTE</strong> The signature follows the image reference but its tag is <code>sha256-${HASH}.sig</code> where <code>HASH</code> is the underlying image&rsquo;s SHA-256 hash.</p></blockquote>
 <blockquote>
 <p><strong>NOTE</strong> Initially, I had errors when <code>cosign</code> tried to push to GHCR (<code>ghcr.io</code>):</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>POST https://ghcr.io/v2/dazwilkin/gcp-oidc-token-proxy/blobs/uploads/: DENIED: unauthenticated: User cannot be authenticated with the token provided.
-</span></span></code></pre></div><p>. Experience has taught me that this is because I&rsquo;m running Docker as a(n Ubuntu) Snap and the Snap stores the Docker config in the non-default location. <code>cosign</code> expects Docker to be installed and, more specifically, expects <code>${HOME}/.docker/config.json</code> to contain an <code>auths</code> key for (in this case) <code>ghcr.io</code> as it uses the token value to authenticate. I copied (but could probably have <code>ln -s</code>) <code>${HOME}/snap/docker/current/.docker/config.json</code> to the default location to resolve the issue.</p>
-</blockquote>
+</span></span></code></pre></div><p>. Experience has taught me that this is because I&rsquo;m running Docker as a(n Ubuntu) Snap and the Snap stores the Docker config in the non-default location. <code>cosign</code> expects Docker to be installed and, more specifically, expects <code>${HOME}/.docker/config.json</code> to contain an <code>auths</code> key for (in this case) <code>ghcr.io</code> as it uses the token value to authenticate. I copied (but could probably have <code>ln -s</code>) <code>${HOME}/snap/docker/current/.docker/config.json</code> to the default location to resolve the issue.</p></blockquote>
 <p>This is still slightly confusing to me but, a new artifact (a Sigstore signature artifact) has indeed been <code>POST</code>ed to the repositry (in this case <code>ghcr.io/dazwilkin/gcp-oidc-token-proxy</code>)</p>
 <h2 id="github-container-registry">GitHub Container Registry</h2>
 <p>We can query the GitHub REST API for Container Registry resources.</p>
@@ -272,8 +268,7 @@
 <p><code>cosign verify</code> verifies the signature of a signed (!) artifact.</p>
 <p>This is where <code>rekor</code> comes back into play. Rekor is a transparency log (built on Google&rsquo;s <a href="https://github.com/google/trillian">Trillian</a>) that includes entries (hashes) representing our signed artifacts. Since the log is immutable, deleting signatures from e.g. GHCR should have no effect on Rekor&rsquo;s log entries and, more importantly, we can query Rekor to get information about our artifact.</p>
 <blockquote>
-<p><strong>NOTE</strong> I give <code>cosign verify</code> the original container image. Presumably it looks for an articate with a specific tag (<code>sha256-${HASH}.sig</code>) and uses this for the verification. I guess if I delete that artifact, <code>cosign verify</code> should then fail?</p>
-</blockquote>
+<p><strong>NOTE</strong> I give <code>cosign verify</code> the original container image. Presumably it looks for an articate with a specific tag (<code>sha256-${HASH}.sig</code>) and uses this for the verification. I guess if I delete that artifact, <code>cosign verify</code> should then fail?</p></blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>COSIGN_EXPERIMENTAL<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>cosign verify  <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
@@ -312,8 +307,7 @@
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>]
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The <code>logIndex</code> and <code>logID</code> values</p>
-</blockquote>
+<p><strong>NOTE</strong> The <code>logIndex</code> and <code>logID</code> values</p></blockquote>
 <p>So, IIUC, anyone should be able to run <code>cosign verify</code> on an artifact and get the above data.</p>
 <p>I decoded the JWT value of <code>optional.Bundled.Payload.body</code> with <a href="https://jwt.io">jwt.io</a> yielding:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>{
@@ -343,8 +337,7 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--log-index<span style="color:#f92672">=</span><span style="color:#ae81ff">756105</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r .
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> There&rsquo;s that <code>logIndex</code> value</p>
-</blockquote>
+<p><strong>NOTE</strong> There&rsquo;s that <code>logIndex</code> value</p></blockquote>
 <p>Yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;Attestation&#34;: </span><span style="color:#e6db74">&#34;&#34;</span>,
@@ -372,11 +365,9 @@
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;LogID&#34;: </span><span style="color:#e6db74">&#34;c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d&#34;</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The <code>UUID</code></p>
-</blockquote>
+<p><strong>NOTE</strong> The <code>UUID</code></p></blockquote>
 <blockquote>
-<p><strong>NOTE</strong> I&rsquo;ve elided the <code>publicKey</code> for display purposes. I feel as though I should be able to do something useful with this key with regards my artifact but I&rsquo;m unclear how|what.</p>
-</blockquote>
+<p><strong>NOTE</strong> I&rsquo;ve elided the <code>publicKey</code> for display purposes. I feel as though I should be able to do something useful with this key with regards my artifact but I&rsquo;m unclear how|what.</p></blockquote>
 <p>And:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>rekor-cli get <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
@@ -491,7 +482,7 @@
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">

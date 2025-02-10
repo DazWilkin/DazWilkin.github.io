@@ -7,7 +7,7 @@
     <title>WASM Cloud Functions | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Running WASM binaries on Google Cloud Functions">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -277,8 +277,7 @@
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Imag</span> <span style="color:#66d9ef">float32</span> <span style="color:#e6db74">`protobuf:&#34;fixed32,2,opt,name=imag,proto3&#34; json:&#34;imag,omitempty&#34;`</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> these not only include <code>protobuf</code> but also <code>json</code> annotations</p>
-</blockquote>
+<p><strong>NOTE</strong> these not only include <code>protobuf</code> but also <code>json</code> annotations</p></blockquote>
 <p>Hopefully, it&rsquo;s clear that <code>${PARAMS}</code> represents a <code>ComplexRequest</code></p>
 <p>Then we just need to parse the JSON <code>Message</code>, extract a filename (representing <code>complex.wasm</code>) and a function (<code>c:mul</code> corresponds to the multiplication function) with extracted params.</p>
 <p>Extracting the params  is straightforward using Golang&rsquo;s new SDK (<code>google.golang.org/protobuf</code>) <code>protojson</code> package:</p>
@@ -290,8 +289,7 @@
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">resp</span>)
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">j</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">protojson</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">resp</span>)
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> <code>proto.Unmarshal</code> to go from bytes to <code>ComplexResult</code> and then <code>protojson.Marshal</code> to convert it into JSON.</p>
-</blockquote>
+<p><strong>NOTE</strong> <code>proto.Unmarshal</code> to go from bytes to <code>ComplexResult</code> and then <code>protojson.Marshal</code> to convert it into JSON.</p></blockquote>
 <h2 id="handler">Handler</h2>
 <p>Cloud Functions (re)uses Golang&rsquo;s <code>net/http</code> package&rsquo;s handlers:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Invoker</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) { <span style="color:#f92672">...</span> }
@@ -308,8 +306,7 @@
 <li>move protoc-generated files into the vendor directory under the correct module path</li>
 </ul>
 <blockquote>
-<p><strong>NOTE</strong> my practice is to hold protoc-generated files in a <code>./protos</code> directory. Unfortunately, this doesn&rsquo;t work with vendoring because e.g. <code>github.com/[[YOUR-PROJECT]]/protos</code> is unlikely to be present in the vendor directory. The solution is to move|copy the protoc-generated files into the vendor directory under the correct path (e.g. <code>./vendor/github.com/[[YOUR-PROJECT]]/protos</code>).</p>
-</blockquote>
+<p><strong>NOTE</strong> my practice is to hold protoc-generated files in a <code>./protos</code> directory. Unfortunately, this doesn&rsquo;t work with vendoring because e.g. <code>github.com/[[YOUR-PROJECT]]/protos</code> is unlikely to be present in the vendor directory. The solution is to move|copy the protoc-generated files into the vendor directory under the correct path (e.g. <code>./vendor/github.com/[[YOUR-PROJECT]]/protos</code>).</p></blockquote>
 <p>For simplicity, I copied the <code>complex.wasm</code> binary into the project root too. However, I noticed that, when switching between Go Modules and vendoring, the default file system path in the Cloud Function changed. When using:</p>
 <ul>
 <li>Go Modules, it&rsquo;s <code>serverless_function_source_code</code></li>
@@ -383,9 +380,9 @@
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Invoker</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Decode the incoming Request Body as a JSON WASM structure
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// This includes Params an enveloped JSON Protobuf
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">msg</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Message</span>{}
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Decode the incoming Request Body as a JSON WASM structure</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// This includes Params an enveloped JSON Protobuf</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">msg</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Message</span>{}
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">NewDecoder</span>(<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Body</span>).<span style="color:#a6e22e">Decode</span>(<span style="color:#a6e22e">msg</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Fprintf</span>(<span style="color:#a6e22e">w</span>, <span style="color:#e6db74">&#34;%+v\n&#34;</span>, <span style="color:#a6e22e">msg</span>)
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Fprintf</span>(<span style="color:#a6e22e">w</span>, <span style="color:#e6db74">&#34;Error: %s&#34;</span>, <span style="color:#a6e22e">err</span>)
@@ -397,9 +394,9 @@
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Prefix `filename` with the Cloud Functions default directory
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// https://cloud.google.com/functions/docs/concepts/exec#file_system
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">filename</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%s/%s&#34;</span>, <span style="color:#a6e22e">path</span>, <span style="color:#a6e22e">msg</span>.<span style="color:#a6e22e">Filename</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Prefix `filename` with the Cloud Functions default directory</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// https://cloud.google.com/functions/docs/concepts/exec#file_system</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">filename</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%s/%s&#34;</span>, <span style="color:#a6e22e">path</span>, <span style="color:#a6e22e">msg</span>.<span style="color:#a6e22e">Filename</span>)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">code</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadFile</span>(<span style="color:#a6e22e">filename</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
@@ -421,34 +418,34 @@
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">instance</span>.<span style="color:#a6e22e">Close</span>()
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Convert incoming Params bytes of JSON (!) into Protobuf
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">ComplexRequest</span>{}
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Convert incoming Params bytes of JSON (!) into Protobuf</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rqst</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">ComplexRequest</span>{}
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">protojson</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">msg</span>.<span style="color:#a6e22e">Params</span>, <span style="color:#a6e22e">rqst</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Fprintf</span>(<span style="color:#a6e22e">w</span>, <span style="color:#e6db74">&#34;protojson unmarshal error: %s&#34;</span>, <span style="color:#a6e22e">err</span>)
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Marshal it into bytes for waPC host:guest transition
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">params</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">rqst</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Marshal it into bytes for waPC host:guest transition</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">params</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">rqst</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Fprintf</span>(<span style="color:#a6e22e">w</span>, <span style="color:#e6db74">&#34;Unable to marshal protobuf: %+v&#34;</span>, <span style="color:#a6e22e">rqst</span>)
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Invoke the function
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Invoke the function</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">instance</span>.<span style="color:#a6e22e">Invoke</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">msg</span>.<span style="color:#a6e22e">Function</span>, <span style="color:#a6e22e">params</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Fprintf</span>(<span style="color:#a6e22e">w</span>, <span style="color:#e6db74">&#34;Invoke error: %s&#34;</span>, <span style="color:#a6e22e">err</span>)
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Unmarshal the bytes returned into Protobuf
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">ComplexResponse</span>{}
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Unmarshal the bytes returned into Protobuf</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">pb</span>.<span style="color:#a6e22e">ComplexResponse</span>{}
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">proto</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">resp</span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Unmarshal Protobuf into JSON
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">j</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">protojson</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">resp</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Unmarshal Protobuf into JSON</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">j</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">protojson</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">resp</span>)
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Fprintf</span>(<span style="color:#a6e22e">w</span>, <span style="color:#e6db74">&#34;Unable to marshal Protobuf into JSON: %s&#34;</span>, <span style="color:#a6e22e">err</span>)
 </span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
@@ -557,7 +554,7 @@
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">

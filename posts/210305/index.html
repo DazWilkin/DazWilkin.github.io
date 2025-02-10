@@ -7,7 +7,7 @@
     <title>Prometheus VPA Recommendations | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Visualizing VPA Recommendations with Prometheus">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -240,8 +240,7 @@
 </span></span></code></pre></div><p>There&rsquo;s a Helm chart (for everything) including VPA thanks to the <a href="https://www.fairwinds.com/">Fairwinds</a> team:</p>
 <p><a href="https://github.com/FairwindsOps/charts/tree/master/stable/vpa">https://github.com/FairwindsOps/charts/tree/master/stable/vpa</a></p>
 <blockquote>
-<p><strong>NOTE</strong> Fairwinds provides a tool called <a href="https://www.fairwinds.com/blog/introducing-goldilocks-a-tool-for-recommending-resource-requests">Goldilocks</a> which is VPA plus some UI tooling.</p>
-</blockquote>
+<p><strong>NOTE</strong> Fairwinds provides a tool called <a href="https://www.fairwinds.com/blog/introducing-goldilocks-a-tool-for-recommending-resource-requests">Goldilocks</a> which is VPA plus some UI tooling.</p></blockquote>
 <p>You can:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>helm3 repo add fairwinds-stable https://charts.fairwinds.com/stable
 </span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;fairwinds-stable&#34;</span> has been added to your repositories
@@ -384,8 +383,7 @@
 <p>For what follows, we will need Prometheus. I highly recommend the Prometheus Operator and, if you&rsquo;re using MicroK8s, you can deploy this trivially using:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>microk8s enable prometheus
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> This includes Grafana and &ndash; as I learned after another digression &ndash; <code>kube-state-metrics</code>. If only I&rsquo;d looked more closely at the service discovery page (see below) and noticed the <code>monitoring/kube-state-metrics</code> entries!</p>
-</blockquote>
+<p><strong>NOTE</strong> This includes Grafana and &ndash; as I learned after another digression &ndash; <code>kube-state-metrics</code>. If only I&rsquo;d looked more closely at the service discovery page (see below) and noticed the <code>monitoring/kube-state-metrics</code> entries!</p></blockquote>
 <p><img src="/images/210305.prometheus.sd.png" alt="Prometheus: Service Discovery"></p>
 <h3 id="kube-state-metrics"><code>kube-state-metrics</code></h3>
 <p>It turns out that what I really need is <a href="https://github.com/kubernetes/kube-state-metrics"><code>kube-state-metrics</code></a></p>
@@ -395,12 +393,10 @@
 <li><code>metrics-server</code> (<a href="https://github.com/kubernetes-sigs/metrics-server">https://github.com/kubernetes-sigs/metrics-server</a>)</li>
 <li><code>kube-state-metrics</code> (<a href="https://github.com/kubernetes/kube-state-metrics">https://github.com/kubernetes/kube-state-metrics</a>)</li>
 </ol>
-<p>Explained here: <a href="https://github.com/kubernetes/kube-state-metrics#kube-state-metrics-vs-metrics-server"><code>kube-state-metrics</code> vs. <code>metrics-server</code></a></p>
-</blockquote>
+<p>Explained here: <a href="https://github.com/kubernetes/kube-state-metrics#kube-state-metrics-vs-metrics-server"><code>kube-state-metrics</code> vs. <code>metrics-server</code></a></p></blockquote>
 <p>I cloned the <code>kube-state-metrics</code> repo and deployed the <code>./examples/standard</code> but was unable to get Prometheus to enumerate metrics for VPA that should be prefixed <code>kube_verticalpodautoscaler</code>. Eventually, I realized that I was using a duplicate <code>kube-state-metrics</code> in <code>kube-system</code> and I could simply use the <code>kube-state-metrics</code> in <code>monitoring</code> that came with the Prometheus Operator!</p>
 <blockquote>
-<p><strong>LESSON</strong> <code>kube-state-metrics</code> is bundled with the Prometheus Operator but it needs to reconfigured.</p>
-</blockquote>
+<p><strong>LESSON</strong> <code>kube-state-metrics</code> is bundled with the Prometheus Operator but it needs to reconfigured.</p></blockquote>
 <p><code>kube-state-metrics</code> includes metrics for Vertical Pod Autoscaler (<a href="https://github.com/kubernetes/kube-state-metrics#enabling-verticalpodautoscalers">note</a>). The documentation states that these are disabled by default <strong>and</strong> require a specific version (<code>v1beta2</code>) of the VPA CRDs.</p>
 <p>Fortunately, I was good on the CRD versions:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get crd/verticalpodautoscalers.autoscaling.k8s.io <span style="color:#ae81ff">\
@@ -445,8 +441,7 @@
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;terminationMessagePolicy&#34;</span>: <span style="color:#e6db74">&#34;File&#34;</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The Operator doesn&rsquo;t specify Pod <code>&quot;resources&quot;: {}</code> either :-)</p>
-</blockquote>
+<p><strong>NOTE</strong> The Operator doesn&rsquo;t specify Pod <code>&quot;resources&quot;: {}</code> either :-)</p></blockquote>
 <p>I don&rsquo;t understand why but the Operator deploys sidecars with this container too which complicates the next step:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get deployment/kube-state-metrics <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
@@ -464,8 +459,7 @@
 <ol>
 <li>JSON Patch doesn&rsquo;t permit JSONPath&rsquo;s array filtering so we must select the 0th <code>containers/0</code></li>
 <li>JSON Patch provides <code>-</code> to add something to the end (<code>-</code>) of the <code>args</code> array</li>
-</ol>
-</blockquote>
+</ol></blockquote>
 <p>We need only provide the value that we wish to add. This will be all the resources that were available by default <strong>plus</strong> <code>verticalpodautoscalers</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>RESOURCES<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;certificatesigningrequests,configmaps,cronjobs,&#34;</span><span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;daemonsets,deployments,endpoints,horizontalpodautoscalers,&#34;</span><span style="color:#ae81ff">\
@@ -487,8 +481,7 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--patch<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>PATCH<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> I was unable to get <code>--dry-run=...</code> to work :-(</p>
-</blockquote>
+<p><strong>NOTE</strong> I was unable to get <code>--dry-run=...</code> to work :-(</p></blockquote>
 <p>And then:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl get deployment/kube-state-metrics <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>monitoring <span style="color:#ae81ff">\
@@ -615,7 +608,7 @@
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">

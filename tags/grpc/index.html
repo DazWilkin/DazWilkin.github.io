@@ -7,7 +7,7 @@
     <title>(p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -43,8 +43,8 @@
   <meta property="og:type" content="website">
 
   <meta itemprop="name" content="GRPC">
-  <meta itemprop="datePublished" content="2024-09-27T00:00:00-07:00">
-  <meta itemprop="dateModified" content="2024-09-27T00:00:00-07:00">
+  <meta itemprop="datePublished" content="2025-02-10T00:00:00-08:00">
+  <meta itemprop="dateModified" content="2025-02-10T00:00:00-08:00">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="GRPC">
 
@@ -161,6 +161,67 @@
   <div class="bg-white mb3 pa4 gray overflow-hidden">
     <span class="f6 db">Posts</span>
     <h1 class="f3 near-black">
+      <a href="/posts/250210/" class="link black dim">
+        gRPC Firestore `Listen`
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>A question on Stack overflow <a href="https://stackoverflow.com/questions/79422094">Firestore gRPC Listen does not send deletions</a> piqued by interest but created a second problem for me: I&rsquo;m unable to get its <a href="https://cloud.google.com/firestore/docs/reference/rpc/google.firestore.v1#google.firestore.v1.Firestore.Listen"><code>Listen</code></a> method to work using <a href="https://github.com/fullstorydev/grpcurl">gRPCurl</a>. If anyone understands why, please let me know.</p>
+<p>For what follows, you will need:</p>
+<ol>
+<li>a Google Project with Firestore enabled and a database (default: <code>(default)</code>) containing a Collection (e.g. <code>Dogs</code>) with at least one Document (e.g. <code>freddie</code>)</li>
+<li><a href="https://github.com/googleapis/googleapis"><code>googleapis</code></a> cloned locally in order to access Protobufs</li>
+</ol>
+<h2 id="summary">Summary</h2>
+<table>
+  <thead>
+      <tr>
+          <th>client</th>
+          <th>server</th>
+          <th>R</th>
+          <th>See</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>gRPCurl</code></td>
+          <td><code>firestore.googleapis.com:443</code></td>
+          <td>❎</td>
+          <td><a href="#grpcurl-listen-against-google-endpoint">link</a></td>
+      </tr>
+      <tr>
+          <td>Go client</td>
+          <td><code>firestore.googleapis.com:443</code></td>
+          <td>✅</td>
+          <td><a href="#go-client-listen-against-google-endpoint">link</a></td>
+      </tr>
+      <tr>
+          <td><code>gRPCurl</code></td>
+          <td>Go server</td>
+          <td>✅</td>
+          <td><a href="#grpcurl-listen-against-go-server">link</a></td>
+      </tr>
+      <tr>
+          <td>Go client</td>
+          <td>Go server</td>
+          <td>✅</td>
+          <td><a href="#go-client-listen-against-go-server">link</a></td>
+      </tr>
+  </tbody>
+</table>
+<p>I subsequently tried this using <a href="https://www.postman.com/">Postman</a> and it also works (✅).</p>
+    </div>
+    <a href="/posts/250210/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        </div>
+      
+        <div class="relative w-100  mb4 bg-white">
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
       <a href="/posts/240927/" class="link black dim">
         Cloud Run with a gRPC probe
       </a>
@@ -183,51 +244,51 @@
 </span></span><span style="display:flex;"><span>SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
 </span></span></code></pre></div><p>I like to use <a href="https://jsonnet.org/">Jsonnet</a> (specifically <a href="https://github.com/google/go-jsonnet"><code>go-jsonnet</code></a>) to help templating Kubernetes(-like) deployments.</p>
 <p><code>cloudrun.jsonnet</code>:</p>
-<pre tabindex="0"><code class="language-jsonnet" data-lang="jsonnet">local project = std.extVar(&#34;project&#34;);
-local region = std.extVar(&#34;region&#34;);
-local service = std.extVar(&#34;service&#34;);
-local image = std.extVar(&#34;image&#34;);
-
-local port = 8080;
-local health_checking_service = &#34;foo&#34;;
-
-{
-    &#34;labels&#34;:{
-        &#34;type&#34;: &#34;test&#34;
-    },
-    &#34;annotations&#34;: {
-        &#34;type&#34;: &#34;test&#34;
-    },
-    &#34;template&#34;:{
-        &#34;containers&#34;: {
-            &#34;name&#34;: service,
-            &#34;image&#34;: image,
-            &#34;args&#34;: [],
-            &#34;resources&#34;: {
-                &#34;limits&#34;: {
-                    &#34;cpu&#34;: &#34;1000m&#34;,
-                    &#34;memory&#34;: &#34;512Mi&#34;
-                }
-            },
-            &#34;ports&#34;: [
-                {
-                    &#34;name&#34;: &#34;http1&#34;,
-                    &#34;containerPort&#34;: port
-                }
-            ],
-            &#34;startupProbe&#34;: {
-                &#34;grpc&#34;: {
-                    &#34;port&#34;: port,
-                    &#34;service&#34;: health_checking_service
-                }
-            }
-        },
-        &#34;scaling&#34;: {
-            &#34;maxInstanceCount&#34;: 1
-        }
-    }
-}
-</code></pre><p>And deploy it using:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-jsonnet" data-lang="jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> project <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;project&#34;</span>);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> region <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;region&#34;</span>);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> service <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;service&#34;</span>);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> image <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;image&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> port <span style="color:#f92672">=</span> <span style="color:#ae81ff">8080</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> health_checking_service <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;foo&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    &#34;labels&#34;:{
+</span></span><span style="display:flex;"><span>        &#34;type&#34;: <span style="color:#e6db74">&#34;test&#34;</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    &#34;annotations&#34;: {
+</span></span><span style="display:flex;"><span>        &#34;type&#34;: <span style="color:#e6db74">&#34;test&#34;</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    &#34;template&#34;:{
+</span></span><span style="display:flex;"><span>        &#34;containers&#34;: {
+</span></span><span style="display:flex;"><span>            &#34;name&#34;: service,
+</span></span><span style="display:flex;"><span>            &#34;image&#34;: image,
+</span></span><span style="display:flex;"><span>            &#34;args&#34;: [],
+</span></span><span style="display:flex;"><span>            &#34;resources&#34;: {
+</span></span><span style="display:flex;"><span>                &#34;limits&#34;: {
+</span></span><span style="display:flex;"><span>                    &#34;cpu&#34;: <span style="color:#e6db74">&#34;1000m&#34;</span>,
+</span></span><span style="display:flex;"><span>                    &#34;memory&#34;: <span style="color:#e6db74">&#34;512Mi&#34;</span>
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            &#34;ports&#34;: [
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    &#34;name&#34;: <span style="color:#e6db74">&#34;http1&#34;</span>,
+</span></span><span style="display:flex;"><span>                    &#34;containerPort&#34;: port
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>            &#34;startupProbe&#34;: {
+</span></span><span style="display:flex;"><span>                &#34;grpc&#34;: {
+</span></span><span style="display:flex;"><span>                    &#34;port&#34;: port,
+</span></span><span style="display:flex;"><span>                    &#34;service&#34;: health_checking_service
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        &#34;scaling&#34;: {
+</span></span><span style="display:flex;"><span>            &#34;maxInstanceCount&#34;: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And deploy it using:</p>
     </div>
     <a href="/posts/240927/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
@@ -463,8 +524,7 @@ local health_checking_service = &#34;foo&#34;;
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
       <blockquote>
-<p><strong>NOTE</strong> <a href="https://cert-manager.io"><code>cert-manager</code></a> is a better solution to what follows.</p>
-</blockquote>
+<p><strong>NOTE</strong> <a href="https://cert-manager.io"><code>cert-manager</code></a> is a better solution to what follows.</p></blockquote>
 <p>I wrote about deploying <a href="/posts/220603/">Secure (TLS) gRPC services with Vultr Kubernetes Engine (VKE)</a>. This week, I&rsquo;ve reproduced this deployment using Linode Kubernetes Engine (LKE).</p>
 <p>Thanks to the consistency provided by Kubernetes, the Kubernetes programming is almost identical. The main differences are between the CLI&rsquo;s provided by these platforms. Both are good. They&rsquo;re just different.</p>
 <p>I&rsquo;m going to include the <code>linode-cli</code> commands I&rsquo;m using in this post as I found it slightly more quirky.</p>
@@ -486,8 +546,7 @@ local health_checking_service = &#34;foo&#34;;
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
       <blockquote>
-<p><strong>NOTE</strong> <a href="https://cert-manager.io"><code>cert-manager</code></a> is a better solution to what follows.</p>
-</blockquote>
+<p><strong>NOTE</strong> <a href="https://cert-manager.io"><code>cert-manager</code></a> is a better solution to what follows.</p></blockquote>
 <p>I&rsquo;ve a need to deploy a Vultr Kubernetes Engine (VKE) cluster on a daily basis (create and delete within a few hours) and expose (securely|TLS) a gRPC service.</p>
 <p>I have an existing solution <a href="/posts/211130/">Automatic Certs w/ Golang gRPC service on Compute Engine</a> that combines a gRPC Healthchecking and an ACME service and decided to reuse this.</p>
 <p>In order for it work, we need:</p>
@@ -832,8 +891,7 @@ local health_checking_service = &#34;foo&#34;;
     </h1>
     <div class="nested-links f5 lh-copy nested-copy-line-height">
       <blockquote>
-<p><strong>Update: 2020-03-24</strong>: Since writing this post, I&rsquo;ve contributed <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/pull/12">Golang</a> and <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/pull/15">Rust</a> samples to Google&rsquo;s project. I recommend you start there.</p>
-</blockquote>
+<p><strong>Update: 2020-03-24</strong>: Since writing this post, I&rsquo;ve contributed <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/pull/12">Golang</a> and <a href="https://github.com/grpc-ecosystem/grpc-cloud-run-example/pull/15">Rust</a> samples to Google&rsquo;s project. I recommend you start there.</p></blockquote>
 <p>Google explained how to run gRPC servers with Cloud Run. The examples are good but only Python and Node.JS:</p>
 <ul>
 <li><a href="https://cloud.google.com/blog/products/compute/serve-cloud-run-requests-with-grpc-not-just-http">gRPC comes to Cloud Run</a></li>
@@ -878,8 +936,8 @@ local health_checking_service = &#34;foo&#34;;
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">hostsList</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;&#34;</span> {
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#e6db74">&#34;&#39;PROXY_HOST&#39; environment variable should contain comma-separated list of hosts&#34;</span>)
 </span></span><span style="display:flex;"><span>	}
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Comma-separated lists of hosts
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">hosts</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Split</span>(<span style="color:#a6e22e">hostsList</span>, <span style="color:#e6db74">&#34;,&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Comma-separated lists of hosts</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">hosts</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Split</span>(<span style="color:#a6e22e">hostsList</span>, <span style="color:#e6db74">&#34;,&#34;</span>)
 </span></span><span style="display:flex;"><span>    
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">urls</span> <span style="color:#f92672">:=</span> make([]<span style="color:#f92672">*</span><span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">URL</span>, len(<span style="color:#a6e22e">hosts</span>))
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">host</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">hosts</span> {
@@ -898,11 +956,11 @@ local health_checking_service = &#34;foo&#34;;
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">q</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">s</span>)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Handler</span> = <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Request</span>) {
-</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Pick one of the URLs at random
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">url</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">urls</span>[<span style="color:#a6e22e">q</span>.<span style="color:#a6e22e">Int31n</span>(int32(len(<span style="color:#a6e22e">urls</span>)))]
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Pick one of the URLs at random</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">url</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">urls</span>[<span style="color:#a6e22e">q</span>.<span style="color:#a6e22e">Int31n</span>(int32(len(<span style="color:#a6e22e">urls</span>)))]
 </span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;[Handler] Forwarding: %s&#34;</span>, <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">String</span>())
-</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Forward to it
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">reverseproxy</span>(<span style="color:#a6e22e">url</span>, <span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">r</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Forward to it</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">reverseproxy</span>(<span style="color:#a6e22e">url</span>, <span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">r</span>)
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>This requires a minor tweak to the deployment to escape the commas within the <code>PROXY_HOST</code> string to disambiguate these for <code>gcloud</code>:</p>
@@ -940,7 +998,7 @@ local health_checking_service = &#34;foo&#34;;
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">

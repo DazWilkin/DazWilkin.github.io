@@ -7,7 +7,7 @@
     <title>Cloud Firestore Triggers in Golang | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Using Cloud Firestore Triggers in Golang">
-    <meta name="generator" content="Hugo 0.139.0-DEV">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
     
     
     
@@ -217,8 +217,8 @@
 </span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;github.com/go-logr/stdr&#34;</span>
 </span></span><span style="display:flex;"><span>)
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// CustomerEvent is the payload of a Firestore event triggered by Customer change.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerEvent</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// CustomerEvent is the payload of a Firestore event triggered by Customer change.</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerEvent</span> <span style="color:#66d9ef">struct</span> {
 </span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">OldValue</span>   <span style="color:#a6e22e">CustomerValue</span> <span style="color:#e6db74">`json:&#34;oldValue&#34;`</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Value</span>      <span style="color:#a6e22e">CustomerValue</span> <span style="color:#e6db74">`json:&#34;value&#34;`</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">UpdateMask</span> <span style="color:#66d9ef">struct</span> {
@@ -226,16 +226,16 @@
 </span></span><span style="display:flex;"><span>  } <span style="color:#e6db74">`json:&#34;updateMask&#34;`</span>
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// CustomerValue holds Customer fields.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerValue</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// CustomerValue holds Customer fields.</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerValue</span> <span style="color:#66d9ef">struct</span> {
 </span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Name</span>       <span style="color:#66d9ef">string</span>          <span style="color:#e6db74">`json:&#34;name&#34;`</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Fields</span>     <span style="color:#a6e22e">CustomerFields</span>  <span style="color:#e6db74">`json:&#34;fields&#34;`</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">CreateTime</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>       <span style="color:#e6db74">`json:&#34;createTime&#34;`</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">UpdateTime</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>       <span style="color:#e6db74">`json:&#34;updateTime&#34;`</span>
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// CustomerFields is a mapping of the type of Firestore Customer record
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerFields</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// CustomerFields is a mapping of the type of Firestore Customer record</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomerFields</span> <span style="color:#66d9ef">struct</span> {
 </span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">Name</span> <span style="color:#66d9ef">struct</span> {
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">StringValue</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;stringValue&#34;`</span>
 </span></span><span style="display:flex;"><span>  } <span style="color:#e6db74">`json:&#34;Name&#34;`</span>
@@ -294,11 +294,9 @@
 </span></span></code></pre></div><p>The <code>trigger-event</code> is well described in <a href="https://cloud.google.com/functions/docs/calling/cloud-firestore#event_types">Event Types</a>. I&rsquo;m choosing to trigger the Fucntion on creates, updates and deletes for <code>trigger-resource</code>.</p>
 <p>The <code>trigger-resource</code> as explained above has a fixed prefix <code>projects/${PROJECT}/databases/(default)/documents</code> and then I want to focus on <code>/customers</code> and I want to capture the <code>{customerId}</code>.</p>
 <blockquote>
-<p><strong>NOTE</strong> I&rsquo;m unsure why <code>default</code> is <code>(default)</code>.</p>
-</blockquote>
+<p><strong>NOTE</strong> I&rsquo;m unsure why <code>default</code> is <code>(default)</code>.</p></blockquote>
 <blockquote>
-<p><strong>NOTE</strong> <code>{customerId}</code> is arbitrary here as a merely signals to the runtime to capture the value in this part of the path.</p>
-</blockquote>
+<p><strong>NOTE</strong> <code>{customerId}</code> is arbitrary here as a merely signals to the runtime to capture the value in this part of the path.</p></blockquote>
 <h2 id="trigger">Trigger</h2>
 <p>I&rsquo;ve been using the <a href="https://console.cloud.google.com/firestore/data/">Firestore Console</a> and editing a <code>customers</code> document to trigger the Cloud Function.</p>
 <p>And then using the Logs to see what&rsquo;s happened (since my code merely logs that it&rsquo;s been called).</p>
@@ -422,7 +420,7 @@
     <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
   <div class="flex justify-between">
   <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
-    &copy;  (p)retired 2024 
+    &copy;  (p)retired 2025 
   </a>
     <div>
 <div class="ananke-socials">
