@@ -157,6 +157,51 @@
   <div class="bg-white mb3 pa4 gray overflow-hidden">
     <span class="f6 db">Posts</span>
     <h1 class="f3 near-black">
+      <a href="/posts/231222/" class="link black dim">
+        Listing Cloud Logging log-based metrics using gRPC
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>Referring to <a href="/posts/230314/">Accessing Google Services using gRPC</a>, I wanted to query a project&rsquo;s <a href="https://cloud.google.com/logging">Cloud Logging</a> for <a href="https://cloud.google.com/logging/docs/logs-based-metrics">log-based metrics</a> using gRPC.</p>
+<p>In summary:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;logging.googleapis.com:443&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ROOT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/path/to/googleapis&#34;</span> <span style="color:#75715e"># https://github.com/googleapis/googleapis</span>
+</span></span><span style="display:flex;"><span>PACKAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;google/logging/v2&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># NB Not logging.proto</span>
+</span></span><span style="display:flex;"><span>PROTO<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ROOT<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>PACKAGE<span style="color:#e6db74">}</span><span style="color:#e6db74">/logging_metrics.proto&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>TOKEN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud auth print-access-token<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PACKAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;google.logging.v2&#34;</span>
+</span></span><span style="display:flex;"><span>SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;MetricsServiceV2&#34;</span>
+</span></span><span style="display:flex;"><span>METHOD<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>PACKAGE<span style="color:#e6db74">}</span><span style="color:#e6db74">.</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span><span style="color:#e6db74">/ListLogMetrics&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># ListLogMetricsRequest fields</span>
+</span></span><span style="display:flex;"><span>PARENT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;projects/</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--import-path<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ROOT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proto<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROTO<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-H <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;{\&#34;parent\&#34;: \&#34;</span><span style="color:#e6db74">${</span>PARENT<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span> <span style="color:#e6db74">${</span>METHOD<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>From <a href="https://developers.google.com/apis-explorer">APIs Explorer</a>, <a href="https://cloud.google.com/logging/docs/reference/api-overview">Cloud Logging API v2</a>, instead of the <a href="https://cloud.google.com/logging/docs/reference/v2/rest">REST reference</a>, browse the <a href="https://cloud.google.com/logging/docs/reference/v2/rpc">gRPC reference</a> specifically the package <a href="https://cloud.google.com/logging/docs/reference/v2/rpc/google.logging.v2"><code>google.logging.v2</code></a> which includes <a href="https://cloud.google.com/logging/docs/reference/v2/rpc/google.logging.v2#google.logging.v2.MetricsServiceV2"><code>MetricsServiceV2</code></a>. We&rsquo;re interested in the <code>ListLogMetrics</code> method (which unfortunately isn&rsquo;t directly hyperlinkable) but is defined to be:</p>
+    </div>
+    <a href="/posts/231222/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        </div>
+      
+        <div class="relative w-100 w-30-l mb4 bg-white">
+          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
+  <div class="bg-white mb3 pa4 gray overflow-hidden">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
       <a href="/posts/231018/" class="link black dim">
         Prometheus Operator support an auth proxy for Service Discovery
       </a>
@@ -435,31 +480,6 @@ replicaset.apps/prometheus-operator-admission-webhook-68bc9f885   1         1   
 
         </div>
       
-        <div class="relative w-100 w-30-l mb4 bg-white">
-          <div class="relative w-100 mb4 bg-white nested-copy-line-height">
-  <div class="bg-white mb3 pa4 gray overflow-hidden">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/230427/" class="link black dim">
-        Robusta KRR w/ GMP
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;ve been spending time recently optimizing <a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a>&rsquo;s use of Google <a href="https://cloud.google.com/logging">Cloud Logging</a> and <a href="https://cloud.google.com/monitoring">Cloud Monitoring</a> in posts:</p>
-<ul>
-<li><a href="/posts/230413/">Filtering metrics w/ Google Managed Prometheus</a></li>
-<li><a href="/posts/230419/">Kubernetes metrics, metrics everywhere</a></li>
-<li><a href="/posts/230425/">Google Metric Diagnostics and Metric Data Ingested</a></li>
-</ul>
-<p>Yesterday, I read that <a href="https://home.robusta.dev/">Robusta</a> has a new open source project <a href="https://github.com/robusta-dev/krr">Kubernetes Resource Recommendations (KRR)</a> so I took some time to evaluate it.</p>
-<p>This post describes the changes I had to make to get KRR working with <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus">Google Managed Prometheus (GMP)</a>:</p>
-    </div>
-    <a href="/posts/230427/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        </div>
-      
     </section>
     <ul class="pagination pagination-default">
       <li class="page-item">
@@ -487,7 +507,7 @@ replicaset.apps/prometheus-operator-admission-webhook-68bc9f885   1         1   
         <a href="/posts/page/4/" aria-label="Next" class="page-link" role="button"><span aria-hidden="true">&raquo;</span></a>
       </li>
       <li class="page-item">
-        <a href="/posts/page/14/" aria-label="Last" class="page-link" role="button"><span aria-hidden="true">&raquo;&raquo;</span></a>
+        <a href="/posts/page/15/" aria-label="Last" class="page-link" role="button"><span aria-hidden="true">&raquo;&raquo;</span></a>
       </li>
     </ul></article>
 

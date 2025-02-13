@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>gRPC Firestore `Listen` in Rust | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="Obsessing on gRPC Firestore Listen somewhat but it&rsquo;s also a good learning opportunity for me to write stuff in Rust. This doesn&rsquo;t work against Google&rsquo;s public endpoint (possibly for the same reason that gRPCurl doesn&rsquo;t work either) but this does work against the Go server described in the other post.
+I&rsquo;m also documenting here because I always encounter challenges using TLS with Rust (and this documents 2 working ways to do this with gRPC) as well as references two interesting (rust) examples that use Google services.">
+    <meta name="generator" content="Hugo 0.144.0-DEV">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.6034ebad1bcaca305e5bfb3c7e4e0693f922718ecee81314bab17d117b4bab5b.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:url" content="https://pretired.dazwilkin.com/posts/250213/">
+  <meta property="og:site_name" content="(p)retired">
+  <meta property="og:title" content="gRPC Firestore `Listen` in Rust">
+  <meta property="og:description" content="Obsessing on gRPC Firestore Listen somewhat but it’s also a good learning opportunity for me to write stuff in Rust. This doesn’t work against Google’s public endpoint (possibly for the same reason that gRPCurl doesn’t work either) but this does work against the Go server described in the other post.
+I’m also documenting here because I always encounter challenges using TLS with Rust (and this documents 2 working ways to do this with gRPC) as well as references two interesting (rust) examples that use Google services.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-02-10T00:00:00-08:00">
+    <meta property="article:modified_time" content="2025-02-10T00:00:00-08:00">
+    <meta property="article:tag" content="Google">
+    <meta property="article:tag" content="Firesotore">
+    <meta property="article:tag" content="GRPC">
+    <meta property="article:tag" content="Rust">
+
+  <meta itemprop="name" content="gRPC Firestore `Listen` in Rust">
+  <meta itemprop="description" content="Obsessing on gRPC Firestore Listen somewhat but it’s also a good learning opportunity for me to write stuff in Rust. This doesn’t work against Google’s public endpoint (possibly for the same reason that gRPCurl doesn’t work either) but this does work against the Go server described in the other post.
+I’m also documenting here because I always encounter challenges using TLS with Rust (and this documents 2 working ways to do this with gRPC) as well as references two interesting (rust) examples that use Google services.">
+  <meta itemprop="datePublished" content="2025-02-10T00:00:00-08:00">
+  <meta itemprop="dateModified" content="2025-02-10T00:00:00-08:00">
+  <meta itemprop="wordCount" content="765">
+  <meta itemprop="keywords" content="Google,Firesotore,GRPC,Rust">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="gRPC Firestore `Listen` in Rust">
+  <meta name="twitter:description" content="Obsessing on gRPC Firestore Listen somewhat but it’s also a good learning opportunity for me to write stuff in Rust. This doesn’t work against Google’s public endpoint (possibly for the same reason that gRPCurl doesn’t work either) but this does work against the Go server described in the other post.
+I’m also documenting here because I always encounter challenges using TLS with Rust (and this documents 2 working ways to do this with gRPC) as well as references two interesting (rust) examples that use Google services.">
+
+      
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked ttu">
+          
+        Posts
+      </aside>
+      
+
+
+
+
+      <h1 class="f1 athelas mt3 mb1">gRPC Firestore `Listen` in Rust</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2025-02-10T00:00:00-08:00">February 10, 2025</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 4 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 765 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>Obsessing on <a href="/posts/250210/">gRPC Firestore <code>Listen</code></a> somewhat but it&rsquo;s also a good learning opportunity for me to write stuff in Rust. This doesn&rsquo;t work against Google&rsquo;s public endpoint (possibly for the same reason that gRPCurl doesn&rsquo;t work either) but this does work against the Go server described in the other post.</p>
+<p>I&rsquo;m also documenting here because I always encounter challenges using TLS with Rust (and this documents 2 working ways to do this with gRPC) as well as references two interesting (rust) examples that use Google services.</p>
+<p>Apologies in advance that the code would benefit from refactoring but I find it easier to chunk out a single function (<code>main</code>) when I&rsquo;m testing.</p>
+<p><code>Cargo.toml</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-TOML" data-lang="TOML"><span style="display:flex;"><span>[<span style="color:#a6e22e">package</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;rust&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;0.1.0&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">edition</span> = <span style="color:#e6db74">&#34;2024&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">dependencies</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">prost</span> = <span style="color:#e6db74">&#34;0.13.5&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">prost-types</span> = <span style="color:#e6db74">&#34;0.13.5&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">tonic</span> = { <span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;0.12.3&#34;</span>, <span style="color:#a6e22e">features</span> = [<span style="color:#e6db74">&#34;tls-native-roots&#34;</span>] }
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">tokio</span> = { <span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;1.43.0&#34;</span>, <span style="color:#a6e22e">features</span> = [<span style="color:#e6db74">&#34;full&#34;</span>] }
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">tokio-stream</span> = <span style="color:#e6db74">&#34;0.1.17&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">build-dependencies</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">tonic-build</span> = <span style="color:#e6db74">&#34;0.12.3&#34;</span>
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> <code>tonic</code>&rsquo;s <code>tls-native-roots</code> <a href="https://docs.rs/crate/tonic/0.12.3/features">features</a></p></blockquote>
+<p><code>build.rs</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::{env, path::PathBuf};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">GOOGLEAPIS</span>: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;/path/to/googleapis&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() -&gt; Result<span style="color:#f92672">&lt;</span>(), Box<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">dyn</span> std::error::Error<span style="color:#f92672">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Required by prost-reflection to create firestore.binpb in correct OUT_DIR
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> out_dir <span style="color:#f92672">=</span> PathBuf::from(env::var(<span style="color:#e6db74">&#34;OUT_DIR&#34;</span>).expect(<span style="color:#e6db74">&#34;unable to determine `OUT_DIR`&#34;</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    tonic_build::configure()
+</span></span><span style="display:flex;"><span>        .build_client(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>        .build_server(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>        .file_descriptor_set_path(out_dir.join(<span style="color:#e6db74">&#34;firestore.binpb&#34;</span>))
+</span></span><span style="display:flex;"><span>        .compile_protos(
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&amp;</span>[format!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{GOOGLEAPIS}</span><span style="color:#e6db74">/google/firestore/v1/firestore.proto&#34;</span>)],
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&amp;</span>[<span style="color:#66d9ef">GOOGLEAPIS</span>],
+</span></span><span style="display:flex;"><span>        )<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> Uses a clone of Google&rsquo;s gRPC GitHub repo called <a href="https://github.com/googleapis/googleapis"><code>googleapis</code></a></p></blockquote>
+<p>Then:</p>
+<p><code>main.rs</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">mod</span> google {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">mod</span> firestore {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">mod</span> v1 {
+</span></span><span style="display:flex;"><span>            tonic::include_proto!(<span style="color:#e6db74">&#34;google.firestore.v1&#34;</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">mod</span> rpc {
+</span></span><span style="display:flex;"><span>        tonic::include_proto!(<span style="color:#e6db74">&#34;google.rpc&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">mod</span> r#<span style="color:#66d9ef">type</span> {
+</span></span><span style="display:flex;"><span>        tonic::include_proto!(<span style="color:#e6db74">&#34;google.r#type&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> google::firestore::v1::{
+</span></span><span style="display:flex;"><span>    ListenRequest, StructuredQuery, Target, firestore_client::FirestoreClient,
+</span></span><span style="display:flex;"><span>    listen_request::TargetChange, structured_query::CollectionSelector, target::QueryTarget,
+</span></span><span style="display:flex;"><span>    target::TargetType, target::query_target::QueryType,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::env;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tokio_stream::StreamExt;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tonic::{
+</span></span><span style="display:flex;"><span>    metadata::MetadataMap,
+</span></span><span style="display:flex;"><span>    transport::{Channel, ClientTlsConfig},
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[tokio::main]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() -&gt; Result<span style="color:#f92672">&lt;</span>(), Box<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">dyn</span> std::error::Error<span style="color:#f92672">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> collection <span style="color:#f92672">=</span> env::var(<span style="color:#e6db74">&#34;COLLECTION&#34;</span>)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> endpoint <span style="color:#f92672">=</span> env::var(<span style="color:#e6db74">&#34;ENDPOINT&#34;</span>)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> project <span style="color:#f92672">=</span> env::var(<span style="color:#e6db74">&#34;PROJECT&#34;</span>)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> token <span style="color:#f92672">=</span> env::var(<span style="color:#e6db74">&#34;TOKEN&#34;</span>)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> uri: <span style="color:#a6e22e">tonic</span>::transport::Uri <span style="color:#f92672">=</span> endpoint.parse()<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Uses the host&#39;s trusted certs
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> tls_config <span style="color:#f92672">=</span> ClientTlsConfig::new().with_native_roots();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> channel <span style="color:#f92672">=</span> Channel::builder(uri)
+</span></span><span style="display:flex;"><span>        .tls_config(tls_config)<span style="color:#f92672">?</span>
+</span></span><span style="display:flex;"><span>        .connect()
+</span></span><span style="display:flex;"><span>        .<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> bearer_token <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;Bearer </span><span style="color:#e6db74">{token}</span><span style="color:#e6db74">&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> database <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;projects/</span><span style="color:#e6db74">{project}</span><span style="color:#e6db74">/databases/(default)&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> parent <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{database}</span><span style="color:#e6db74">/documents&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> metadata <span style="color:#f92672">=</span> MetadataMap::new();
+</span></span><span style="display:flex;"><span>    metadata.insert(<span style="color:#e6db74">&#34;authorization&#34;</span>, bearer_token.parse()<span style="color:#f92672">?</span>);
+</span></span><span style="display:flex;"><span>    metadata.insert(<span style="color:#e6db74">&#34;google-cloud-resource-prefix&#34;</span>, database.parse()<span style="color:#f92672">?</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> rqst <span style="color:#f92672">=</span> ListenRequest {
+</span></span><span style="display:flex;"><span>        database: <span style="color:#a6e22e">database</span>,
+</span></span><span style="display:flex;"><span>        labels: Default::default(),
+</span></span><span style="display:flex;"><span>        target_change: Some(TargetChange::AddTarget(Target {
+</span></span><span style="display:flex;"><span>            target_id: <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>            once: <span style="color:#a6e22e">false</span>,
+</span></span><span style="display:flex;"><span>            expected_count: None,
+</span></span><span style="display:flex;"><span>            target_type: Some(TargetType::Query(QueryTarget {
+</span></span><span style="display:flex;"><span>                parent: <span style="color:#a6e22e">parent</span>,
+</span></span><span style="display:flex;"><span>                query_type: Some(QueryType::StructuredQuery(StructuredQuery {
+</span></span><span style="display:flex;"><span>                    select: None,
+</span></span><span style="display:flex;"><span>                    from: <span style="color:#a6e22e">vec</span><span style="color:#f92672">!</span>[CollectionSelector {
+</span></span><span style="display:flex;"><span>                        collection_id: <span style="color:#a6e22e">collection</span>,
+</span></span><span style="display:flex;"><span>                        all_descendants: <span style="color:#a6e22e">false</span>,
+</span></span><span style="display:flex;"><span>                    }],
+</span></span><span style="display:flex;"><span>                    r#where: None,
+</span></span><span style="display:flex;"><span>                    order_by: <span style="color:#a6e22e">vec</span><span style="color:#f92672">!</span>[],
+</span></span><span style="display:flex;"><span>                    start_at: None,
+</span></span><span style="display:flex;"><span>                    end_at: None,
+</span></span><span style="display:flex;"><span>                    offset: <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>                    limit: None,
+</span></span><span style="display:flex;"><span>                })),
+</span></span><span style="display:flex;"><span>            })),
+</span></span><span style="display:flex;"><span>            resume_type: None,
+</span></span><span style="display:flex;"><span>        })),
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> stream <span style="color:#f92672">=</span> tokio_stream::iter(vec![rqst]);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> rqst <span style="color:#f92672">=</span> tonic::Request::new(stream);
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">*</span>rqst.metadata_mut() <span style="color:#f92672">=</span> metadata;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> client <span style="color:#f92672">=</span> FirestoreClient::new(channel);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> stream <span style="color:#f92672">=</span> client.listen(rqst).<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>.into_inner();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">while</span> <span style="color:#66d9ef">let</span> Some(resp) <span style="color:#f92672">=</span> stream.next().<span style="color:#66d9ef">await</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">match</span> resp {
+</span></span><span style="display:flex;"><span>            Ok(resp) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, resp);
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            Err(e) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, e);
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong></p>
+<ol>
+<li>The code would benefit from a renewing token source but, for now, <code>TOKEN=$(gcloud auth print-access-token)</code></li>
+<li><a href="https://docs.rs/tonic/latest/tonic/transport/channel/struct.ClientTlsConfig.html#method.with_native_roots"><code>with_native_certs</code></a> is critical albeit slightly obscure and saves creating/loading a CA PEM</li>
+</ol></blockquote>
+<p>I&rsquo;m using <code>tailscale serve</code> to get a TLS-enabled endpoint to the local Go service. With the above code:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>HOST<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>TAILNET<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>HOST<span style="color:#e6db74">}</span><span style="color:#e6db74">.</span><span style="color:#e6db74">${</span>TAILNET<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>TOKEN<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>gcloud auth print-access-token<span style="color:#66d9ef">)</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://</span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>PROJECT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;PROJECT&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>COLLECTION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;collection&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>cargo run
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>ListenResponse { response_type: Some(DocumentChange(DocumentChange { document: Some(Document { name: &#34;d-1739487512&#34;, fields: {}, create_time: Some(Timestamp { seconds: 1739487512, nanos: 963638476 }), update_time: Some(Timestamp { seconds: 1739487512, nanos: 963638476 }) }), target_ids: [0], removed_target_ids: [] })) }
+</span></span><span style="display:flex;"><span>ListenResponse { response_type: Some(DocumentChange(DocumentChange { document: Some(Document { name: &#34;d-1739487517&#34;, fields: {}, create_time: Some(Timestamp { seconds: 1739487517, nanos: 964152089 }), update_time: Some(Timestamp { seconds: 1739487517, nanos: 964152089 }) }), target_ids: [0], removed_target_ids: [] })) }
+</span></span><span style="display:flex;"><span>ListenResponse { response_type: Some(DocumentChange(DocumentChange { document: Some(Document { name: &#34;d-1739487522&#34;, fields: {}, create_time: Some(Timestamp { seconds: 1739487522, nanos: 965279940 }), update_time: Some(Timestamp { seconds: 1739487522, nanos: 965279940 }) }), target_ids: [0], removed_target_ids: [] })) }
+</span></span></code></pre></div><p>Replacing <code>ENDPOINT=&quot;https://firestore.googleapis.com&quot;</code>, a corrected <code>PROJECT</code> and <code>COLLECTION</code> yields no errors and no results.</p>
+<p>An alternative to <code>with_native_certs</code> requires obtaining a CA PEM and loading this into the client code:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>openssl s_client -showcerts -connect <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>:443
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>depth=2 C=US, O=Internet Security Research Group, CN=ISRG Root X1
+</span></span><span style="display:flex;"><span>verify return:1
+</span></span><span style="display:flex;"><span>depth=1 C=US, O=Let&#39;s Encrypt, CN=E6
+</span></span><span style="display:flex;"><span>verify return:1
+</span></span><span style="display:flex;"><span>depth=0 CN={HOST}
+</span></span><span style="display:flex;"><span>verify return:1
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span>Certificate chain
+</span></span><span style="display:flex;"><span> 0 s:CN={HOST}
+</span></span><span style="display:flex;"><span>   i:C=US, O=Let&#39;s Encrypt, CN=E6
+</span></span><span style="display:flex;"><span>   a:PKEY: id-ecPublicKey, 256 (bit); sigalg: ecdsa-with-SHA384
+</span></span><span style="display:flex;"><span>   v:NotBefore: Feb 13 00:00:00 2025 GMT; NotAfter: Apr 13 23:59:59 2025 GMT
+</span></span><span style="display:flex;"><span>-----BEGIN CERTIFICATE-----
+</span></span><span style="display:flex;"><span>-----END CERTIFICATE-----
+</span></span></code></pre></div><p>Using Let&rsquo;s Encrypt&rsquo;s <a href="https://letsencrypt.org/certificates/#subordinate-intermediate-cas">Intermediate CAs</a>, I captured the value from the Certificate details pem link:</p>
+<pre tabindex="0"><code>Let’s Encrypt E6
+Subject: O = Let&#39;s Encrypt, CN = E6
+Key type: ECDSA P-384
+Validity: until 2027-03-12
+CA details: crt.sh, issued certs
+Certificate details (signed by ISRG Root X2): der, pem, txt
+Certificate details (cross-signed by ISRG Root X1): der, pem, txt
+</code></pre><p>And then:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">let</span> pem <span style="color:#f92672">=</span> std::fs::read_to_string(<span style="color:#e6db74">&#34;ca.pem&#34;</span>)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> ca <span style="color:#f92672">=</span> Certificate::from_pem(pem);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> tls_config <span style="color:#f92672">=</span> ClientTlsConfig::new()
+</span></span><span style="display:flex;"><span>   .ca_certificate(ca)
+</span></span><span style="display:flex;"><span>   .domain_name(domain_name);
+</span></span></code></pre></div><ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/google/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Google</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/firesotore/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Firesotore</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/grpc/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">GRPC</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/rust/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Rust</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/250210/">gRPC Firestore `Listen`</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240409/">Google Cloud Translation w/ gRPC 3 ways</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200403/">Rust Crate Transparency &amp;&amp; Rust SDK for Google Trillian</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200325/">gRPC, Cloud Run &amp; Endpoints</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/241113/">gRPC-Web w/ FauxRPC and Rust</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200326/">Google Trillian on Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200320/">Golang gRPC Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/241025/">FauxRPC using gRPCurl, Golang and rust</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240927/">Cloud Run with a gRPC probe</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240529/">Using Rust to generate Kubernetes CRD</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240430/">Securing gRPC services using Tailscale</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240405/">Google Cloud Events protobufs and SDKs</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240325/">Prost! Tonic w/ a dash of JSON</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240307/">Prometheus Protobufs and Native Histograms</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240130/">Navigating Koyeb&#39;s API with Rust</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2025 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
