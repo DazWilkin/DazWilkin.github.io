@@ -7,7 +7,7 @@
     <title>Prometheus Exporters for fly.io and Vultr | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Prometheus Exporters for fly.io and Vultr">
-    <meta name="generator" content="Hugo 0.144.0-DEV">
+    <meta name="generator" content="Hugo 0.146.0-DEV">
     
     
     
@@ -189,7 +189,7 @@
 </ul>
 <p>Each of them monitors resource deployments and produces resource count metrics that can be scraped by Prometheus and alerted with Alertmanager. I have Alertmanager <a href="https://prometheus.io/docs/alerting/latest/configuration/#pushover_config">configured</a> to send notifications to <a href="https://pushover.net">Pushover</a>. Last week I wrote an integration between <a href="/posts/220514/">Google Cloud Monitoring to send notifications to Pushover</a> too.</p>
 <p>So, I&rsquo;m confident that I can track my resources across these disparate platforms. Next step, I guess, is to monitor the monitoring the tools. It&rsquo;s turtles all the way down!</p>
-<h2 id="prometheus-exporter-for-flyiohttpsgithubcomdazwilkinfly-exporter"><a href="https://github.com/DazWilkin/fly-exporter">Prometheus Exporter for Fly.io</a></h2>
+<h2 id="prometheus-exporter-for-flyio"><a href="https://github.com/DazWilkin/fly-exporter">Prometheus Exporter for Fly.io</a></h2>
 <p>This one may be entirely redundant but I was unable to determine how to configure AlertManager to consume the <a href="https://fly.io/blog/measuring-fly/">Fly&rsquo;s Prometheus Metrics</a>]. If I understand correctly, Fly publishes a (virtual) Prometheus API which you can access, by (your) organization (slug): <code>https://api.fly.io/prometheus/$(your-org)</code>. The documentation suggests consuming this endpoint using Grafana which is great but I prefer to use Prometheus and Alertmanager for metrics and Grafana for dashboards.</p>
 <p>I tried to configure a Prometheus server to scrape Fly&rsquo;s Prometheus API as a <code>/federate</code> and a <code>/remote-read</code> but neither (appear to) work(ed).</p>
 <p>What I mostly want to track is apps deployed to Fly to ensure I&rsquo;m not incurring too many $$$.</p>
@@ -235,7 +235,7 @@
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">annotations</span>:
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">summary</span>: <span style="color:#ae81ff">fly.io apps deployed</span>
 </span></span></code></pre></div><p>If there are more than zero apps deployed for a period of 6 hours, notify me!</p>
-<h2 id="prometheus-exporter-for-vultrhttpsgithubcomdazwilkinvultr-exporter"><a href="https://github.com/DazWilkin/vultr-exporter">Prometheus Exporter for Vultr</a></h2>
+<h2 id="prometheus-exporter-for-vultr"><a href="https://github.com/DazWilkin/vultr-exporter">Prometheus Exporter for Vultr</a></h2>
 <p>I&rsquo;m a sucker for managed Kubernetes offerings. My &ldquo;thing&rdquo; uses Google Kubernetes Engine which is the trailblazing service (as is expected) but I&rsquo;ve used Digital Ocean Kubernetes Engine (DOKE), Linode Kubernetes Engine (LKE) and decided to give Vultr Kubernetes Engine (VKE) a whirl too, yesterday.</p>
 <p>I was compelled by the <a href="https://www.vultr.com/news/Vultr-Kubernetes-Engine-is-Now-Generally-Available/">General Availability of VKE</a> but, I was committed once I saw that there&rsquo;s a Golang-based <a href="https://github.com/vultr/vultr-cli">CLI</a> too. Not only because Golang CLIs aren&rsquo;t Node.JS CLIs (and I dislike running Node.JS) but because, as with Fly, a Golang CLIs generally (!) entails a Golang API SDK too.</p>
 <p>One thing I dislike (!) about Vultr&rsquo;s CLI is that there&rsquo;s no evident way to format command output as anything other than text. And, while my [awk]&rsquo;s improving, I find it curious that a Golang CLI would retrieve (probably JSON but perhaps protobuf) data from its API service, unmarshal it into a Golang struct type and then <strong>not</strong> provide <code>json.Marshal</code> and <code>yaml.Marshal</code> on the way out. I digress. Vote here <a href="https://github.com/vultr/vultr-cli/issues/72">Issue #72</a>.</p>

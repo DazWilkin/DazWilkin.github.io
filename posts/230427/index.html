@@ -7,7 +7,7 @@
     <title>Robusta KRR w/ GMP | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Robusta KRR with Google Managed Prometheus">
-    <meta name="generator" content="Hugo 0.144.0-DEV">
+    <meta name="generator" content="Hugo 0.146.0-DEV">
     
     
     
@@ -192,7 +192,7 @@
 <li>Create a <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/rules-managed#clusterrules"><code>ClusterRules</code></a> recording rule for KRR&rsquo;s PromQL for CPU</li>
 <li>Revise KRR source to tweak the KRR&rsquo;s PromQL for Memory</li>
 </ol>
-<h3 id="enable-kubeletcadvisorhttpscloudgooglecomstackdriverdocsmanaged-prometheusexporterskubelet-cadvisor">Enable <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/exporters/kubelet-cadvisor">Kubelet|cAdvisor</a></h3>
+<h3 id="enable-kubeletcadvisor">Enable <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/exporters/kubelet-cadvisor">Kubelet|cAdvisor</a></h3>
 <p>The GMP configuration file <code>operatorconfig/config</code> in Namespace <code>gmp-public</code> needs to be revised (per the instructions) to include:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">collection</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">kubeletScraping</span>:
@@ -206,13 +206,13 @@
 </span></span><span style="display:flex;"><span>    - <span style="color:#e6db74">&#39;{__name__=~&#34;container_memory_working_set_bytes&#34;}&#39;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">kubeletScraping</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">interval</span>: <span style="color:#ae81ff">30s</span>
-</span></span></code></pre></div><h3 id="enable-kube-state-metricshttpscloudgooglecomstackdriverdocsmanaged-prometheusexporterskube_state_metrics">Enable <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/exporters/kube_state_metrics">kube-state-metrics</a></h3>
+</span></span></code></pre></div><h3 id="enable-kube-state-metrics">Enable <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/exporters/kube_state_metrics">kube-state-metrics</a></h3>
 <p>You will need to apply the configuration described in <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/exporters/kube_state_metrics#install-exporter">Install Kube State Metrics</a>.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://raw.githubusercontent.com/GoogleCloudPlatform/prometheus-engine/main/examples/kube-state-metrics/kube-state-metrics.yaml <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>-
-</span></span></code></pre></div><h3 id="create-a-clusterruleshttpscloudgooglecomstackdriverdocsmanaged-prometheusrules-managedclusterrules">Create a <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/rules-managed#clusterrules"><code>ClusterRules</code></a></h3>
+</span></span></code></pre></div><h3 id="create-a-clusterrules">Create a <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/rules-managed#clusterrules"><code>ClusterRules</code></a></h3>
 <p>KRR uses 2 PromQL queries as described in the repo&rsquo;s README <a href="https://github.com/robusta-dev/krr#metrics-gathering">metrics gathering</a>. The first, corresponding to CPU is defined:</p>
 <pre tabindex="0"><code>sum(
   node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{

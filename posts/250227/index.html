@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Prometheus Exporter for USGS Water Data service | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="I&rsquo;m a little obsessed with creating Prometheus Exporters:
+
+Prometheus Exporter for Azure
+Prometheus Exporter for crt.sh
+Prometheus Exporter for Fly.io
+Prometheus Exporter for GoatCounter
+Prometheus Exporter for Google Cloud
+Prometheus Exporter for Koyeb
+Prometheus Exporter for Linode
+Prometheus Exporter for PorkBun
+Prometheus Exporter for updown.io
+Prometheus Exporter for Vultr
+
+All of these were written to scratch an itch.
+In the case of the cloud platform exporters (Azure, Fly, Google, Linode, Vultr etc.), it&rsquo;s an overriding anxiety that I&rsquo;ll leave resources deployed on these platforms and, running an exporter that ships alerts to Pushover and Gmail, provides me a support mechanism for me.">
+    <meta name="generator" content="Hugo 0.146.0-DEV">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.6034ebad1bcaca305e5bfb3c7e4e0693f922718ecee81314bab17d117b4bab5b.css" >
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:url" content="https://pretired.dazwilkin.com/posts/250227/">
+  <meta property="og:site_name" content="(p)retired">
+  <meta property="og:title" content="Prometheus Exporter for USGS Water Data service">
+  <meta property="og:description" content="I’m a little obsessed with creating Prometheus Exporters:
+Prometheus Exporter for Azure Prometheus Exporter for crt.sh Prometheus Exporter for Fly.io Prometheus Exporter for GoatCounter Prometheus Exporter for Google Cloud Prometheus Exporter for Koyeb Prometheus Exporter for Linode Prometheus Exporter for PorkBun Prometheus Exporter for updown.io Prometheus Exporter for Vultr All of these were written to scratch an itch.
+In the case of the cloud platform exporters (Azure, Fly, Google, Linode, Vultr etc.), it’s an overriding anxiety that I’ll leave resources deployed on these platforms and, running an exporter that ships alerts to Pushover and Gmail, provides me a support mechanism for me.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-02-27T00:00:00-08:00">
+    <meta property="article:modified_time" content="2025-02-27T00:00:00-08:00">
+    <meta property="article:tag" content="Prometheus">
+    <meta property="article:tag" content="Golang">
+    <meta property="article:tag" content="USGS">
+    <meta property="article:tag" content="Exporter">
+
+  <meta itemprop="name" content="Prometheus Exporter for USGS Water Data service">
+  <meta itemprop="description" content="I’m a little obsessed with creating Prometheus Exporters:
+Prometheus Exporter for Azure Prometheus Exporter for crt.sh Prometheus Exporter for Fly.io Prometheus Exporter for GoatCounter Prometheus Exporter for Google Cloud Prometheus Exporter for Koyeb Prometheus Exporter for Linode Prometheus Exporter for PorkBun Prometheus Exporter for updown.io Prometheus Exporter for Vultr All of these were written to scratch an itch.
+In the case of the cloud platform exporters (Azure, Fly, Google, Linode, Vultr etc.), it’s an overriding anxiety that I’ll leave resources deployed on these platforms and, running an exporter that ships alerts to Pushover and Gmail, provides me a support mechanism for me.">
+  <meta itemprop="datePublished" content="2025-02-27T00:00:00-08:00">
+  <meta itemprop="dateModified" content="2025-02-27T00:00:00-08:00">
+  <meta itemprop="wordCount" content="836">
+  <meta itemprop="keywords" content="Prometheus,Golang,USGS,Exporter">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Prometheus Exporter for USGS Water Data service">
+  <meta name="twitter:description" content="I’m a little obsessed with creating Prometheus Exporters:
+Prometheus Exporter for Azure Prometheus Exporter for crt.sh Prometheus Exporter for Fly.io Prometheus Exporter for GoatCounter Prometheus Exporter for Google Cloud Prometheus Exporter for Koyeb Prometheus Exporter for Linode Prometheus Exporter for PorkBun Prometheus Exporter for updown.io Prometheus Exporter for Vultr All of these were written to scratch an itch.
+In the case of the cloud platform exporters (Azure, Fly, Google, Linode, Vultr etc.), it’s an overriding anxiety that I’ll leave resources deployed on these platforms and, running an exporter that ships alerts to Pushover and Gmail, provides me a support mechanism for me.">
+
+      
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked ttu">
+          
+        Posts
+      </aside>
+      
+
+
+
+
+      <h1 class="f1 athelas mt3 mb1">Prometheus Exporter for USGS Water Data service</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2025-02-27T00:00:00-08:00">February 27, 2025</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 4 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 836 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;m a little obsessed with creating Prometheus Exporters:</p>
+<ul>
+<li><a href="https://github.com/DazWilkin/azure-exporter">Prometheus Exporter for Azure</a></li>
+<li><a href="https://github.com/DazWilkin/crtsh-exporter">Prometheus Exporter for crt.sh</a></li>
+<li><a href="https://github.com/DazWilkin/fly-exporter">Prometheus Exporter for Fly.io</a></li>
+<li><a href="https://github.com/DazWilkin/goatcounter-exporter">Prometheus Exporter for GoatCounter</a></li>
+<li><a href="https://github.com/DazWilkin/gcp-exporter">Prometheus Exporter for Google Cloud</a></li>
+<li><a href="https://github.com/DazWilkin/koyeb-exporter">Prometheus Exporter for Koyeb</a></li>
+<li><a href="https://github.com/DazWilkin/linode-exporter">Prometheus Exporter for Linode</a></li>
+<li><a href="https://github.com/DazWilkin/porkbun-exporter">Prometheus Exporter for PorkBun</a></li>
+<li><a href="https://github.com/DazWilkin/updown-exporter">Prometheus Exporter for updown.io</a></li>
+<li><a href="https://github.com/DazWilkin/vultr-exporter">Prometheus Exporter for Vultr</a></li>
+</ul>
+<p>All of these were written to scratch an itch.</p>
+<p>In the case of the cloud platform exporters (Azure, Fly, Google, Linode, Vultr etc.), it&rsquo;s an overriding anxiety that I&rsquo;ll leave resources deployed on these platforms and, running an exporter that ships alerts to <a href="https://pushover.net/">Pushover</a> and Gmail, provides me a support mechanism for me.</p>
+<p>The latest is:</p>
+<h2 id="usgs-water-data-service">USGS Water Data service</h2>
+<ul>
+<li><a href="https://github.com/DazWilkin/go-usgs-waterdata-exporter">Prometheus Exporter for USGS Water Data service</a></li>
+</ul>
+<p>In the case of <a href="https://www.usgs.gov/">USGS</a> Water Data actually <a href="https://waterservices.usgs.gov/docs/instantaneous-values/instantaneous-values-details/">Instantaneous Values service</a>, the &ldquo;itch&rdquo; was to be able to interact with gauge (gage) data for the Snoqualmie river which floods from snow melt and after heavy rain.</p>
+<blockquote>
+<p><strong>NOTE</strong> The USGS uses the <a href="https://www.usgs.gov/faqs/why-does-usgs-use-spelling-gage-instead-gauge">spelling &ldquo;Gage&rdquo; instead of &ldquo;Gauge&rdquo;</a></p></blockquote>
+<p>When I stumbled upon the service via King County&rsquo;s <a href="https://flood.kingcounty.gov/river/3/">Flood warning system: Snoqualmie Basin</a> and e.g. <a href="https://flood.kingcounty.gov/gauge/32/">Duvall</a> and finally to <a href="https://waterdata.usgs.gov/wa/nwis/uv/?site_no=12150400">Gage: 12150400</a>, I was slightly concerned to see that it uses XML data. <strong>Not</strong> that I didn&rsquo;t love XML back in the day (early 2000s) but I dislike it more than JSON in 2025. Fortunately, the service provides JSON formatting too (requests and responses) and there&rsquo;s a useful <a href="https://waterservices.usgs.gov/test-tools/?service=iv">test service</a></p>
+<p>Using the test service, it was easy to assemble a query for some of the data that interests me:</p>
+<p><a href="https://waterservices.usgs.gov/nwis/iv/?format=json&amp;sites=12150400&amp;siteStatus=all">https://waterservices.usgs.gov/nwis/iv/?format=json&sites=12150400&siteStatus=all</a></p>
+<blockquote>
+<p><strong>NOTE</strong> recreating the URL for this post, I realize I should probably use <code>siteStatus=active</code></p></blockquote>
+<p>But this returns a wealth of data see <a href="#response">response</a></p>
+<p>The exporter includes a limited (not all fields and not all types!) SDK implementation of Instantaneous Values service in <a href="https://github.com/DazWilkin/go-usgs-waterdata-exporter/tree/master/waterdata"><code>waterdata</code></a> sufficient to invoke the above URL (for arbitrary sites) and return a (mostly) parsed value.</p>
+<p>The exporter comprises a single metric (<code>GageHeightFeet</code>) from the service (<code>variableCode: 00065</code>) and generates a Prometheus metric called <code>usgs_waterdata_iv_gage_height</code>:</p>
+<p><img src="/images/250227.snoqualmie.gages.png" alt="Snoqualmie river gage height"></p>
+<h2 id="insights">Insights</h2>
+<p>I don&rsquo;t fully understand the structure of the service&rsquo;s data. I assume (but haven&rsquo;t found) it documented.</p>
+<h3 id="credentials">Credentials</h3>
+<p>The service does <strong>not</strong> require API keys or other credentials.</p>
+<h3 id="gage-height">Gage Height</h3>
+<p>It&rsquo;s measured in feet which always feels a little&hellip; unscientific.</p>
+<p>It&rsquo;s specifically defined by <code>variableCode</code> value <code>00065</code> (string) and ID 45807202</p>
+<p>Multiple timeseries are returned by the query and must be filtered for the above value.</p>
+<h3 id="site-codes">Site Codes</h3>
+<p>The Snoqualmie River at Duvall has <code>siteCode</code> value &ldquo;12150400&rdquo; (string)..</p>
+<p>I assume there&rsquo;s some lookup feature that maps these values to names but have been navigating the site to uncover these.</p>
+<h3 id="values">Values</h3>
+<p>Of the single timeseries returned that matches gage height (<code>00065</code>), there can be multiple <code>values</code> (I&rsquo;ve called these <code>TimeSeries_Values</code>) returned. I&rsquo;m unsure what differentiates each of the values (it&rsquo;s not time). For ease, I&rsquo;ve been selecting the zero-th.</p>
+<p>Each value contains further <code>values</code> (I&rsquo;ve called these <code>TimeSeries_Values_Values</code>) and each of these corresponds to a time period. For ease, I&rsquo;ve been selecting the zero-th value (again).</p>
+<p>The final value is the measurement. The value is a string type. Strings are often used in JSON data as a way to preserve floating point values cross-platform but this meaans that the value must be parsed into a <code>float64</code> to be published as a Prometheus metric (using the Golang SDK).</p>
+<h2 id="response">Response</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;ns1:timeSeriesResponseType&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;declaredType&#34;</span>: <span style="color:#e6db74">&#34;org.cuahsi.waterml.TimeSeriesResponseType&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;scope&#34;</span>: <span style="color:#e6db74">&#34;javax.xml.bind.JAXBElement$GlobalScope&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;value&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;queryInfo&#34;</span>: {
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;queryURL&#34;</span>: <span style="color:#e6db74">&#34;http://waterservices.usgs.gov/nwis/iv/format=json&amp;sites=12150400&amp;siteStatus=active&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;criteria&#34;</span>: {
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;locationParam&#34;</span>: <span style="color:#e6db74">&#34;[ALL:12150400]&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;variableParam&#34;</span>: <span style="color:#e6db74">&#34;ALL&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;parameter&#34;</span>: []
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;note&#34;</span>: [
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;[ALL:12150400]&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;filter:sites&#34;</span>
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;[mode=LATEST, modifiedSince=null]&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;filter:timeRange&#34;</span>
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;methodIds=[ALL]&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;filter:methodId&#34;</span>
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;2025-02-27T17:15:55.082Z&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;requestDT&#34;</span>
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;80d94c80-f52e-11ef-ad7b-005056beda50&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;requestId&#34;</span>
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;Provisional data are subject to revision. Go to http://waterdata.usgs.gov/nwis/help/?provisional for more information.&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;disclaimer&#34;</span>
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;caas01&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;server&#34;</span>
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            ]
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;timeSeries&#34;</span>: [
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;sourceInfo&#34;</span>: {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;siteName&#34;</span>: <span style="color:#e6db74">&#34;SNOQUALMIE RIVER AT DUVALL, WA&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;siteCode&#34;</span>: [
+</span></span><span style="display:flex;"><span>                        {
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;12150400&#34;</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;network&#34;</span>: <span style="color:#e6db74">&#34;NWIS&#34;</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;agencyCode&#34;</span>: <span style="color:#e6db74">&#34;USGS&#34;</span>
+</span></span><span style="display:flex;"><span>                        }
+</span></span><span style="display:flex;"><span>                    ],
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;timeZoneInfo&#34;</span>: {
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;defaultTimeZone&#34;</span>: {
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;zoneOffset&#34;</span>: <span style="color:#e6db74">&#34;-08:00&#34;</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;zoneAbbreviation&#34;</span>: <span style="color:#e6db74">&#34;PST&#34;</span>
+</span></span><span style="display:flex;"><span>                        },
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;daylightSavingsTimeZone&#34;</span>: {
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;zoneOffset&#34;</span>: <span style="color:#e6db74">&#34;-07:00&#34;</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;zoneAbbreviation&#34;</span>: <span style="color:#e6db74">&#34;PDT&#34;</span>
+</span></span><span style="display:flex;"><span>                        },
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;siteUsesDaylightSavingsTime&#34;</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>                    },
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;geoLocation&#34;</span>: {
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;geogLocation&#34;</span>: {
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;srs&#34;</span>: <span style="color:#e6db74">&#34;EPSG:4326&#34;</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;latitude&#34;</span>: <span style="color:#ae81ff">47.74315509</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;longitude&#34;</span>: <span style="color:#ae81ff">-121.9879004</span>
+</span></span><span style="display:flex;"><span>                        },
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;localSiteXY&#34;</span>: []
+</span></span><span style="display:flex;"><span>                    },
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;note&#34;</span>: [],
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;siteType&#34;</span>: [],
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;siteProperty&#34;</span>: [
+</span></span><span style="display:flex;"><span>                        {
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;ST&#34;</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;siteTypeCd&#34;</span>
+</span></span><span style="display:flex;"><span>                        },
+</span></span><span style="display:flex;"><span>                        {
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;17110010&#34;</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;hucCd&#34;</span>
+</span></span><span style="display:flex;"><span>                        },
+</span></span><span style="display:flex;"><span>                        {
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;53&#34;</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;stateCd&#34;</span>
+</span></span><span style="display:flex;"><span>                        },
+</span></span><span style="display:flex;"><span>                        {
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;53033&#34;</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;countyCd&#34;</span>
+</span></span><span style="display:flex;"><span>                        }
+</span></span><span style="display:flex;"><span>                    ]
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;variable&#34;</span>: {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;variableCode&#34;</span>: [
+</span></span><span style="display:flex;"><span>                        {
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;00065&#34;</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;network&#34;</span>: <span style="color:#e6db74">&#34;NWIS&#34;</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;vocabulary&#34;</span>: <span style="color:#e6db74">&#34;NWIS:UnitValues&#34;</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;variableID&#34;</span>: <span style="color:#ae81ff">45807202</span>,
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;default&#34;</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>                        }
+</span></span><span style="display:flex;"><span>                    ],
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;variableName&#34;</span>: <span style="color:#e6db74">&#34;Gage height, ft&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;variableDescription&#34;</span>: <span style="color:#e6db74">&#34;Gage height, feet&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;valueType&#34;</span>: <span style="color:#e6db74">&#34;Derived Value&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;unit&#34;</span>: {
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;unitCode&#34;</span>: <span style="color:#e6db74">&#34;ft&#34;</span>
+</span></span><span style="display:flex;"><span>                    },
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;options&#34;</span>: {
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;option&#34;</span>: [
+</span></span><span style="display:flex;"><span>                            {
+</span></span><span style="display:flex;"><span>                                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Statistic&#34;</span>,
+</span></span><span style="display:flex;"><span>                                <span style="color:#f92672">&#34;optionCode&#34;</span>: <span style="color:#e6db74">&#34;00000&#34;</span>
+</span></span><span style="display:flex;"><span>                            }
+</span></span><span style="display:flex;"><span>                        ]
+</span></span><span style="display:flex;"><span>                    },
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;note&#34;</span>: [],
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;noDataValue&#34;</span>: <span style="color:#ae81ff">-999999</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;variableProperty&#34;</span>: [],
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;oid&#34;</span>: <span style="color:#e6db74">&#34;45807202&#34;</span>
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;values&#34;</span>: [
+</span></span><span style="display:flex;"><span>                    {
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;value&#34;</span>: [
+</span></span><span style="display:flex;"><span>                            {
+</span></span><span style="display:flex;"><span>                                <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;28.56&#34;</span>,
+</span></span><span style="display:flex;"><span>                                <span style="color:#f92672">&#34;qualifiers&#34;</span>: [
+</span></span><span style="display:flex;"><span>                                    <span style="color:#e6db74">&#34;P&#34;</span>
+</span></span><span style="display:flex;"><span>                                ],
+</span></span><span style="display:flex;"><span>                                <span style="color:#f92672">&#34;dateTime&#34;</span>: <span style="color:#e6db74">&#34;2025-02-27T08:30:00.000-08:00&#34;</span>
+</span></span><span style="display:flex;"><span>                            }
+</span></span><span style="display:flex;"><span>                        ],
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;qualifier&#34;</span>: [
+</span></span><span style="display:flex;"><span>                            {
+</span></span><span style="display:flex;"><span>                                <span style="color:#f92672">&#34;qualifierCode&#34;</span>: <span style="color:#e6db74">&#34;P&#34;</span>,
+</span></span><span style="display:flex;"><span>                                <span style="color:#f92672">&#34;qualifierDescription&#34;</span>: <span style="color:#e6db74">&#34;Provisional data subject to revision.&#34;</span>,
+</span></span><span style="display:flex;"><span>                                <span style="color:#f92672">&#34;qualifierID&#34;</span>: <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>                                <span style="color:#f92672">&#34;network&#34;</span>: <span style="color:#e6db74">&#34;NWIS&#34;</span>,
+</span></span><span style="display:flex;"><span>                                <span style="color:#f92672">&#34;vocabulary&#34;</span>: <span style="color:#e6db74">&#34;uv_rmk_cd&#34;</span>
+</span></span><span style="display:flex;"><span>                            }
+</span></span><span style="display:flex;"><span>                        ],
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;qualityControlLevel&#34;</span>: [],
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;method&#34;</span>: [
+</span></span><span style="display:flex;"><span>                            {
+</span></span><span style="display:flex;"><span>                                <span style="color:#f92672">&#34;methodDescription&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>                                <span style="color:#f92672">&#34;methodID&#34;</span>: <span style="color:#ae81ff">151241</span>
+</span></span><span style="display:flex;"><span>                            }
+</span></span><span style="display:flex;"><span>                        ],
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;source&#34;</span>: [],
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;offset&#34;</span>: [],
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;sample&#34;</span>: [],
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;censorCode&#34;</span>: []
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>                ],
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;USGS:12150400:00065:00000&#34;</span>
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        ]
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;nil&#34;</span>: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;globalScope&#34;</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;typeSubstituted&#34;</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/prometheus/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Prometheus</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/golang/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Golang</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/usgs/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">USGS</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/exporter/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Exporter</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/200107/">Google Home Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191220/">Google Cloud Platform (GCP) Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191218/">Linode Prometheus Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230709/">Prometheus Exporter for Koyeb</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230420/">Prometheus Exporter for Azure (Container Apps)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/241025/">FauxRPC using gRPCurl, Golang and rust</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240325/">Prost! Tonic w/ a dash of JSON</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240307/">Prometheus Protobufs and Native Histograms</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240105/">Navigating Koyeb&#39;s Golang SDK</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240104/">Capturing e.g. CronJob metrics with GMP</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230427/">Robusta KRR w/ GMP</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230425/">Google Metric Diagnostics and Metric Data Ingested</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230419/">Kubernetes metrics, metrics everywhere</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230413/">Filtering metrics w/ Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230314/">Access Google Services using gRPC</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2025 
+  </a>
+    <div>
+<div class="ananke-socials">
+  
+    
+    <a href="https://github.com/DazWilkin" target="_blank" rel="noopener" class="github ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="GitHub link" aria-label="follow on GitHub——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 512 512;" version="1.1" viewBox="0 0 512 512"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+  <path d="M256,32C132.3,32,32,134.8,32,261.7c0,101.5,64.2,187.5,153.2,217.9c11.2,2.1,15.3-5,15.3-11.1   c0-5.5-0.2-19.9-0.3-39.1c-62.3,13.9-75.5-30.8-75.5-30.8c-10.2-26.5-24.9-33.6-24.9-33.6c-20.3-14.3,1.5-14,1.5-14   c22.5,1.6,34.3,23.7,34.3,23.7c20,35.1,52.4,25,65.2,19.1c2-14.8,7.8-25,14.2-30.7c-49.7-5.8-102-25.5-102-113.5   c0-25.1,8.7-45.6,23-61.6c-2.3-5.8-10-29.2,2.2-60.8c0,0,18.8-6.2,61.6,23.5c17.9-5.1,37-7.6,56.1-7.7c19,0.1,38.2,2.6,56.1,7.7   c42.8-29.7,61.5-23.5,61.5-23.5c12.2,31.6,4.5,55,2.2,60.8c14.3,16.1,23,36.6,23,61.6c0,88.2-52.4,107.6-102.3,113.3   c8,7.1,15.2,21.1,15.2,42.5c0,30.7-0.3,55.5-0.3,63c0,6.1,4,13.3,15.4,11C415.9,449.1,480,363.1,480,261.7   C480,134.8,379.7,32,256,32z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://www.linkedin.com/in/dazwilkin/" target="_blank" rel="noopener" class="linkedin ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="LinkedIn link" aria-label="follow on LinkedIn——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 65 65;" version="1.1" viewBox="0 0 65 65"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path d="M50.837,48.137V36.425c0-6.275-3.35-9.195-7.816-9.195  c-3.604,0-5.219,1.983-6.119,3.374V27.71h-6.79c0.09,1.917,0,20.427,0,20.427h6.79V36.729c0-0.609,0.044-1.219,0.224-1.655  c0.49-1.22,1.607-2.483,3.482-2.483c2.458,0,3.44,1.873,3.44,4.618v10.929H50.837z M22.959,24.922c2.367,0,3.842-1.57,3.842-3.531  c-0.044-2.003-1.475-3.528-3.797-3.528s-3.841,1.524-3.841,3.528c0,1.961,1.474,3.531,3.753,3.531H22.959z M34,64  C17.432,64,4,50.568,4,34C4,17.431,17.432,4,34,4s30,13.431,30,30C64,50.568,50.568,64,34,64z M26.354,48.137V27.71h-6.789v20.427  H26.354z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://medium.com/@DazWilkin" target="_blank" rel="noopener" class="medium ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Medium link" aria-label="follow on Medium——Opens in a new window">
+      
+        <span class="icon"><svg style="enable-background:new 0 0 170 170;" version="1.1" viewBox="0 0 170 170"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M46.5340803,65.2157554 C46.6968378,63.6076572 46.0836,62.018231 44.8828198,60.93592 L32.6512605,46.2010582 L32.6512605,44 L70.6302521,44 L99.9859944,108.380952 L125.794585,44 L162,44 L162,46.2010582 L151.542017,56.2281011 C150.640424,56.9153477 150.193188,58.0448862 150.380019,59.1628454 L150.380019,132.837155 C150.193188,133.955114 150.640424,135.084652 151.542017,135.771899 L161.755369,145.798942 L161.755369,148 L110.38282,148 L110.38282,145.798942 L120.963119,135.527337 C122.002801,134.487948 122.002801,134.182246 122.002801,132.592593 L122.002801,73.0417402 L92.585901,147.755438 L88.6106443,147.755438 L54.3622782,73.0417402 L54.3622782,123.115814 C54.0767278,125.221069 54.7759199,127.3406 56.2581699,128.863022 L70.0186741,145.55438 L70.0186741,147.755438 L31,147.755438 L31,145.55438 L44.7605042,128.863022 C46.2319621,127.338076 46.8903838,125.204485 46.5340803,123.115814 L46.5340803,65.2157554 Z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+    
+    <a href="https://stackoverflow.com/users/609290/dazwilkin" target="_blank" rel="noopener" class="stackoverflow ananke-social-link link-transition stackoverflow link dib z-999 pt3 pt0-l mr1" title="Stack Overflow link" aria-label="follow on Stack Overflow——Opens in a new window">
+      
+        <span class="icon"><svg
+    style="enable-background:new 0 0 67 67;"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    
+>
+    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.869 5.903l3.114 4.567-.975.665-3.115-4.567.976-.665zm-2.812 2.585l4.84 2.838-.6 1.017-4.842-2.838.602-1.017zm-1.276 2.724l5.413 1.521-.291 1.077-5.428-1.458.306-1.14zm-.588 2.461l5.687.569-.103 1.12-5.691-.513.107-1.176zm-.169 2.16h5.835v1.167h-5.835v-1.167zm7.976 3.167h-10v-6h1v5h8v-5h1v6zm.195-8.602l-.945-5.446 1.162-.202.947 5.446-1.164.202z"/>
+</svg>
+</span>
+      
+<span class="new-window"><svg  height="8px"  style="enable-background:new 0 0 1000 1000;" version="1.1" viewBox="0 0 1000 1000"  xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" >
+<path d="M598 128h298v298h-86v-152l-418 418-60-60 418-418h-152v-86zM810 810v-298h86v298c0 46-40 86-86 86h-596c-48 0-86-40-86-86v-596c0-46 38-86 86-86h298v86h-298v596h596z" style="fill-rule:evenodd;clip-rule:evenodd;"/>
+</svg>
+</span></a>
+  
+</div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
