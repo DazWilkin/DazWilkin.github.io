@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Migrating Prometheus Exporters to Kubernetes | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="I have built Prometheus Exporters for multiple cloud platforms to track resources deployed across clouds:
+
+Prometheus Exporter for Azure
+Prometheus Exporter for crt.sh
+Prometheus Exporter for Fly.io
+Prometheus Exporter for GoatCounter
+Prometheus Exporter for Google Analytics
+Prometheus Exporter for Google Cloud
+Prometheus Exporter for Koyeb
+Prometheus Exporter for Linode
+Prometheus Exporter for PorkBun
+Prometheus Exporter for updown.io
+Prometheus Exporter for Vultr
+
+Additionally, I&rsquo;ve written two status service exporters:
+
+Prometheus Exporter for GCP Status
+Prometheus Exporter for Vultr Status
+
+These exporters are all derived from an exemplar DigitalOcean Exporter written by metalmatze for which I maintain a fork.">
+    <meta name="generator" content="Hugo 0.146.0-DEV">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.d05fb5f317fcf33b3a52936399bdf6f47dc776516e1692e412ec7d76f4a5faa2.css" >
+
+
+
+
+    
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:url" content="https://pretired.dazwilkin.com/posts/250325/">
+  <meta property="og:site_name" content="(p)retired">
+  <meta property="og:title" content="Migrating Prometheus Exporters to Kubernetes">
+  <meta property="og:description" content="I have built Prometheus Exporters for multiple cloud platforms to track resources deployed across clouds:
+Prometheus Exporter for Azure Prometheus Exporter for crt.sh Prometheus Exporter for Fly.io Prometheus Exporter for GoatCounter Prometheus Exporter for Google Analytics Prometheus Exporter for Google Cloud Prometheus Exporter for Koyeb Prometheus Exporter for Linode Prometheus Exporter for PorkBun Prometheus Exporter for updown.io Prometheus Exporter for Vultr Additionally, I’ve written two status service exporters:
+Prometheus Exporter for GCP Status Prometheus Exporter for Vultr Status These exporters are all derived from an exemplar DigitalOcean Exporter written by metalmatze for which I maintain a fork.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-03-25T00:00:00-07:00">
+    <meta property="article:modified_time" content="2025-03-25T00:00:00-07:00">
+    <meta property="article:tag" content="Prometheus">
+    <meta property="article:tag" content="Kubernetes">
+    <meta property="article:tag" content="Jsonnet">
+
+  <meta itemprop="name" content="Migrating Prometheus Exporters to Kubernetes">
+  <meta itemprop="description" content="I have built Prometheus Exporters for multiple cloud platforms to track resources deployed across clouds:
+Prometheus Exporter for Azure Prometheus Exporter for crt.sh Prometheus Exporter for Fly.io Prometheus Exporter for GoatCounter Prometheus Exporter for Google Analytics Prometheus Exporter for Google Cloud Prometheus Exporter for Koyeb Prometheus Exporter for Linode Prometheus Exporter for PorkBun Prometheus Exporter for updown.io Prometheus Exporter for Vultr Additionally, I’ve written two status service exporters:
+Prometheus Exporter for GCP Status Prometheus Exporter for Vultr Status These exporters are all derived from an exemplar DigitalOcean Exporter written by metalmatze for which I maintain a fork.">
+  <meta itemprop="datePublished" content="2025-03-25T00:00:00-07:00">
+  <meta itemprop="dateModified" content="2025-03-25T00:00:00-07:00">
+  <meta itemprop="wordCount" content="1622">
+  <meta itemprop="keywords" content="Prometheus,Kubernetes,Jsonnet">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Migrating Prometheus Exporters to Kubernetes">
+  <meta name="twitter:description" content="I have built Prometheus Exporters for multiple cloud platforms to track resources deployed across clouds:
+Prometheus Exporter for Azure Prometheus Exporter for crt.sh Prometheus Exporter for Fly.io Prometheus Exporter for GoatCounter Prometheus Exporter for Google Analytics Prometheus Exporter for Google Cloud Prometheus Exporter for Koyeb Prometheus Exporter for Linode Prometheus Exporter for PorkBun Prometheus Exporter for updown.io Prometheus Exporter for Vultr Additionally, I’ve written two status service exporters:
+Prometheus Exporter for GCP Status Prometheus Exporter for Vultr Status These exporters are all derived from an exemplar DigitalOcean Exporter written by metalmatze for which I maintain a fork.">
+
+      
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l justify-between items-center center">
+    <a href="/" class="f3 fw2 hover-white no-underline white-90 dib">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      <div class="ananke-socials"></div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  
+  <article class="flex-l flex-wrap justify-between mw8 center ph3">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked ttu">
+          
+        Posts
+      </aside><div id="sharing" class="mt3 ananke-socials"></div>
+<h1 class="f1 athelas mt3 mb1">Migrating Prometheus Exporters to Kubernetes</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2025-03-25T00:00:00-07:00">March 25, 2025</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 8 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 1622 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I have built <a href="https://prometheus.io">Prometheus</a> <a href="https://prometheus.io/docs/instrumenting/exporters/">Exporters</a> for multiple cloud platforms to track resources deployed across clouds:</p>
+<ul>
+<li><a href="https://github.com/DazWilkin/azure-exporter">Prometheus Exporter for Azure</a></li>
+<li><a href="https://github.com/DazWilkin/crtsh-exporter">Prometheus Exporter for crt.sh</a></li>
+<li><a href="https://github.com/DazWilkin/fly-exporter">Prometheus Exporter for Fly.io</a></li>
+<li><a href="https://github.com/DazWilkin/goatcounter-exporter">Prometheus Exporter for GoatCounter</a></li>
+<li><a href="https://github.com/DazWilkin/ga-exporter">Prometheus Exporter for Google Analytics</a></li>
+<li><a href="https://github.com/DazWilkin/gcp-exporter">Prometheus Exporter for Google Cloud</a></li>
+<li><a href="https://github.com/DazWilkin/koyeb-exporter">Prometheus Exporter for Koyeb</a></li>
+<li><a href="https://github.com/DazWilkin/linode-exporter">Prometheus Exporter for Linode</a></li>
+<li><a href="https://github.com/DazWilkin/porkbun-exporter">Prometheus Exporter for PorkBun</a></li>
+<li><a href="https://github.com/DazWilkin/updown-exporter">Prometheus Exporter for updown.io</a></li>
+<li><a href="https://github.com/DazWilkin/vultr-exporter">Prometheus Exporter for Vultr</a></li>
+</ul>
+<p>Additionally, I&rsquo;ve written two status service exporters:</p>
+<ul>
+<li><a href="https://github.com/DazWilkin/gcp-status">Prometheus Exporter for GCP Status</a></li>
+<li><a href="https://github.com/DazWilkin/vultr-status-exporter">Prometheus Exporter for Vultr Status</a></li>
+</ul>
+<p>These exporters are all derived from an exemplar <a href="https://github.com/metalmatze/digitalocean_exporter"><code>DigitalOcean Exporter</code></a> written by <a href="https://github.com/metalmatze">metalmatze</a> for which I maintain a <a href="https://github.com/DazWilkin/digitalocean_exporter">fork</a>.</p>
+<p>The Exporters share common flags: <code>--endpoint=0.0.0.0:{PORT} --path=/metrics</code> but necessarily have unique configuration (combinations of environment and flags) for secrets.</p>
+<p>I&rsquo;ve been running these Exporters locally under <a href="https://podman.io/"><code>podman</code></a> as a <a href="https://developers.redhat.com/blog/2019/01/15/podman-managing-containers-pods"><code>Pod</code></a> primarily because a Pod provides an aggregation of the containers and simplifies port publishing. However, with the migration to Kubernetes, each Exporter is configured as a <code>Deployment</code>, <code>Service</code> and associated <a href="https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler"><code>VerticalPodAutoscaler</code></a>. The latter to monitor resource requirements.</p>
+<p>My cluster includes the excellent <a href="https://github.com/prometheus-operator/kube-prometheus"><code>kube-prometheus</code></a> which includes <a href="https://github.com/prometheus-operator/prometheus-operator">Prometheus Operator</a>. To use this, each <code>Deployment</code>|<code>Service</code> has associated <code>ServiceMonitor</code> and <code>PrometheusRule</code> resources (see <a href="https://github.com/prometheus-operator/prometheus-operator/tree/main?tab=readme-ov-file#customresourcedefinitions">CRDs</a>).</p>
+<p>There&rsquo;s also an <code>AlertmanagerConfig</code> to configure Alertmanager.</p>
+<p>I use <a href="https://helm.sh/">Helm</a> among other things to manage the <a href="https://tailscale.com">Tailscale</a> <a href="https://tailscale.com/kb/1236/kubernetes-operator">Kubernetes Operator</a>, <a href="https://kustomize.io/">kustomize</a> because it&rsquo;s part of <a href="https://github.com/kubernetes-sigs/kubebuilder"><code>Kubebuilder</code></a> for Ackal&rsquo;s Operator and occasionally <a href="https://jqlang.org/"><code>jq</code></a> and <a href="https://github.com/mikefarah/yq"><code>yq</code></a> for ad hoc templating but, my preference is <a href="https://jsonnet.org/">Jsonnet</a> and I used Jsonnet for this project, specifically the <a href="https://github.com/google/go-jsonnet">Go implementation of Jsonnet</a>.</p>
+<p>Unwilling to sacrifice or revise the existing Podman script, I decided to reuse the existing solution&rsquo;s environment variables and, <code>rules.yml</code> but was unsuccessful reusing <code>alertmanager.yml</code> (see below).</p>
+<p>The original repo comprised:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>.
+</span></span><span style="display:flex;"><span>├── .env
+</span></span><span style="display:flex;"><span>├── alertmanager.yml
+</span></span><span style="display:flex;"><span>├── podman.sh
+</span></span><span style="display:flex;"><span>├── prometheus.yml
+</span></span><span style="display:flex;"><span>└── rules.yml
+</span></span></code></pre></div><p>As a result, I have the following additional (!) files and will explain most of these below:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>.
+</span></span><span style="display:flex;"><span>├── alertmanager.json
+</span></span><span style="display:flex;"><span>├── alertmanager.jsonnet
+</span></span><span style="display:flex;"><span>├── alertmanager.sh
+</span></span><span style="display:flex;"><span>├── kubernetes.jsonnet
+</span></span><span style="display:flex;"><span>├── kubernetes.sh
+</span></span><span style="display:flex;"><span>├── rules.json
+</span></span><span style="display:flex;"><span>├── rules.jsonnet
+</span></span><span style="display:flex;"><span>└── rules.sh
+</span></span></code></pre></div><p>The primarily Jsonnet file is <code>kubernetes.jsonnet</code> and this creates <code>Deployment</code>, <code>Service</code>, <code>ServiceMonitor</code> and <code>VerticalPodAutoscaler</code> resources.</p>
+<p>Because there are multiple (similar) Exporters, the Jsonnet file is essentially a loop over a list of exporters that is mapped to a Kubernetes <code>List</code> type that includes a <code>Deployment</code>, <code>Service</code>, <code>ServiceMonitor</code> and <code>VerticalPodAutoscaler</code> for each Exporter:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> exporters <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Must use [name] here to replace with the variable value
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#e6db74">&#34;[name]: {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    // Exporter
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;</span>image<span style="color:#e6db74">&#34;: &#34;</span>...<span style="color:#e6db74">&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;</span>args<span style="color:#e6db74">&#34;: [],
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;</span>env<span style="color:#e6db74">&#34;: [],
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    ...
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">];
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">// Output
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;</span>apiVersion<span style="color:#e6db74">&#34;: &#34;</span>v1<span style="color:#e6db74">&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;</span>kind<span style="color:#e6db74">&#34;: &#34;</span>List<span style="color:#e6db74">&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;</span>items<span style="color:#e6db74">&#34;: [
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    ] + std.map(
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        function(name) deployment(...),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        std.objectFields(exporters),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    ) + std.map(
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        function(name) service(...),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        std.objectFields(exporters),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    ) + std.map(
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        function(name) serviceMonitor(...),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        std.objectFields(exporters),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    ) + std.map(
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        function(name) vpa(...),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        std.objectFields(exporters),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    )
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}
+</span></span></span></code></pre></div><p>Where each Kubernetes Resource (e.g. <code>Deployment</code>)has a Jsonnet function that generates the Resource config:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> <span style="color:#a6e22e">deployment</span>(name, exporter, <span style="color:#960050;background-color:#1e0010">...</span>) <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    &#34;apiVersion&#34;: <span style="color:#e6db74">&#34;apps/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    &#34;kind&#34;: <span style="color:#e6db74">&#34;Deployment&#34;</span>,
+</span></span><span style="display:flex;"><span>    &#34;metadata&#34;: {
+</span></span><span style="display:flex;"><span>        &#34;name&#34;: name,
+</span></span><span style="display:flex;"><span>        &#34;labels&#34;: { <span style="color:#960050;background-color:#1e0010">...</span> },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    &#34;spec&#34;: {
+</span></span><span style="display:flex;"><span>        &#34;selector&#34;: {
+</span></span><span style="display:flex;"><span>            &#34;matchLabels&#34;: { <span style="color:#960050;background-color:#1e0010">...</span> },
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        &#34;template&#34;: {
+</span></span><span style="display:flex;"><span>            &#34;metadata&#34;: {
+</span></span><span style="display:flex;"><span>                &#34;labels&#34;: { <span style="color:#960050;background-color:#1e0010">...</span> },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            &#34;spec&#34;: {
+</span></span><span style="display:flex;"><span>                &#34;serviceAccount&#34;: serviceaccount,
+</span></span><span style="display:flex;"><span>                &#34;containers&#34;: [
+</span></span><span style="display:flex;"><span>                    {
+</span></span><span style="display:flex;"><span>                        <span style="color:#75715e">// Exporter
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                    }
+</span></span><span style="display:flex;"><span>                ]
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This is mostly straightforward. The only complexity is that the <a href="https://github.com/DazWilkin/crtsh-exporter"><code>crtsh-exporter</code></a> uses a <code>--hosts</code> flag that lists the set of fully-qualified host names to be queried. The data is represents by an object where the key is the domain name and the value is the list of hosts:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> hosts <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    &#34;example.com&#34;: [
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;foo&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;bar&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;baz&#34;</span>,
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><p>And this needs to be presented as e.g. <code>--args=foo.example,com,bar.example.com,bar.example.com</code> and it must repeatedly generate a <code>crtsh-exporter</code> for each domain name:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> <span style="color:#a6e22e">crtsh_exporters</span>() <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">local</span> fqdn(host, domain<span style="color:#960050;background-color:#1e0010">)</span> <span style="color:#960050;background-color:#1e0010">=</span> <span style="color:#960050;background-color:#1e0010">host</span> <span style="color:#960050;background-color:#1e0010">+</span> <span style="color:#960050;background-color:#1e0010">&#34;.&#34;</span> <span style="color:#960050;background-color:#1e0010">+</span> <span style="color:#960050;background-color:#1e0010">domain,</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">local</span> <span style="color:#960050;background-color:#1e0010">fqdns(hosts,</span> <span style="color:#960050;background-color:#1e0010">domain)</span> <span style="color:#960050;background-color:#1e0010">=</span> <span style="color:#960050;background-color:#1e0010">std.map(</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#960050;background-color:#1e0010">function(host)</span> <span style="color:#960050;background-color:#1e0010">fqdn(host,</span> <span style="color:#960050;background-color:#1e0010">domain),</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#960050;background-color:#1e0010">hosts,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">),</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Must use [...] to evaluate the statement value
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#960050;background-color:#1e0010">[&#34;crtsh-&#34;</span> <span style="color:#960050;background-color:#1e0010">+</span> <span style="color:#960050;background-color:#1e0010">std.strReplace(domain,</span> <span style="color:#960050;background-color:#1e0010">&#34;.&#34;,</span> <span style="color:#960050;background-color:#1e0010">&#34;-&#34;)]</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">local</span> port <span style="color:#f92672">=</span> <span style="color:#ae81ff">8080</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        &#34;image&#34;: <span style="color:#e6db74">&#34;...&#34;</span>,
+</span></span><span style="display:flex;"><span>        &#34;args&#34;: [
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;--endpoint=0.0.0.0:&#34;</span> <span style="color:#f92672">+</span> port,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;--hosts=&#34;</span> <span style="color:#f92672">+</span> std.join(<span style="color:#e6db74">&#34;,&#34;</span>,<span style="color:#a6e22e">fqdns</span>(hosts[domain], domain)),
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// &#34;--path=/metrics&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        ],
+</span></span><span style="display:flex;"><span>        &#34;env&#34;: [],
+</span></span><span style="display:flex;"><span>        &#34;port&#34;: port,
+</span></span><span style="display:flex;"><span>        &#34;volumes&#34;: [],
+</span></span><span style="display:flex;"><span>        &#34;volumeMounts&#34;: [],
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Iterate over the domains&#39; keys
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    for <span style="color:#960050;background-color:#1e0010">domain</span> <span style="color:#960050;background-color:#1e0010">in</span> <span style="color:#960050;background-color:#1e0010">std.objectFields(hosts)</span>
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">};</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">crtsh_exporters()</span>
+</span></span></code></pre></div><p>This yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">&#34;crtsh-example-com&#34;</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;args&#34;</span>: [
+</span></span><span style="display:flex;"><span>         <span style="color:#e6db74">&#34;--endpoint=0.0.0.0:8080&#34;</span>,
+</span></span><span style="display:flex;"><span>         <span style="color:#e6db74">&#34;--hosts=foo.example.com,bar.example.com,baz.example.com&#34;</span>
+</span></span><span style="display:flex;"><span>      ],
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;env&#34;</span>: [ ],
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;image&#34;</span>: <span style="color:#e6db74">&#34;...&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;port&#34;</span>: <span style="color:#ae81ff">8080</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;volumeMounts&#34;</span>: [ ],
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;volumes&#34;</span>: [ ]
+</span></span><span style="display:flex;"><span>   },
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">&#34;crtsh-example-org&#34;</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;args&#34;</span>: [
+</span></span><span style="display:flex;"><span>         <span style="color:#e6db74">&#34;--endpoint=0.0.0.0:8080&#34;</span>,
+</span></span><span style="display:flex;"><span>         <span style="color:#e6db74">&#34;--hosts=foo.example.org,bar.example.org,baz.example.org&#34;</span>
+</span></span><span style="display:flex;"><span>      ],
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;env&#34;</span>: [ ],
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;image&#34;</span>: <span style="color:#e6db74">&#34;...&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;port&#34;</span>: <span style="color:#ae81ff">8080</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;volumeMounts&#34;</span>: [ ],
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;volumes&#34;</span>: [ ]
+</span></span><span style="display:flex;"><span>   }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And this corresponds to the revised (!) <code>exporters</code> variable and so must be added to the static value:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> exporters <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">...</span>
+</span></span><span style="display:flex;"><span>} <span style="color:#f92672">+</span> <span style="color:#a6e22e">crtsh_exporters</span>();
+</span></span></code></pre></div><p>Each of the Jsonnet files is invoked using a similarly named script (e.g. <code>kubernetes.sh</code>) and it simply:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/env bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>source .env
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>jsonnet <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--ext-str <span style="color:#e6db74">&#34;VARIABLE=</span><span style="color:#e6db74">${</span>VARIABLE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>kubernetes.jsonnet
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> Where <code>VARIABLE</code> recurs for each value in <code>.env</code> that needs to be surfaced in the Jsonnet file.</p></blockquote>
+<p>It would be simpler to:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>jsonnet <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--ext-str <span style="color:#e6db74">&#34;VARIABLE=</span><span style="color:#e6db74">${</span>VARIABLE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>kubernetes.jsonnet <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| kubectl apply --filename<span style="color:#f92672">=</span>- --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>But I like having the flexibility to test <code>kubernetes.sh</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>./kubernetes.sh <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.items[]|select(.kind==&#34;Deployment&#34; and .metadata.name==&#34;foo&#34;)&#39;</span>
+</span></span></code></pre></div><p>And generally:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>./kubernetes.sh <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| kubectl apply <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --filename<span style="color:#f92672">=</span>- <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> With the seemingly redundant <code>| jq -r '.' |</code> but it helps to rewind editing during testing</p></blockquote>
+<p>I realized that while Prometheus <a href="https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/">Alerting Rules</a> match <code>kube-prometheus</code> <a href="https://doc.crds.dev/github.com/prometheus-operator/prometheus-operator/monitoring.coreos.com/PrometheusRule/v1"><code>PrometheusRule</code></a>, Prometheus <a href="https://prometheus.io/docs/alerting/latest/alertmanager/">Alertmanager</a> <a href="https://prometheus.io/docs/alerting/latest/configuration/">config</a> differs (!?) from <a href="https://doc.crds.dev/github.com/prometheus-operator/prometheus-operator/monitoring.coreos.com/AlertmanagerConfig/v1alpha1"><code>AlertmanagerConfig</code></a>, e.g.</p>
+<blockquote>
+<p><strong>NOTE</strong> <a href="https://docs.crd.dev"><code>docs.crd.dev</code></a> is excellent though it would benefit from better searching.</p></blockquote>
+<p><code>alertmanager.yml</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">route</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">group_by</span>: [<span style="color:#e6db74">&#34;...&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">receiver</span>: <span style="color:#ae81ff">gmail</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">routes</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">receiver</span>: <span style="color:#ae81ff">pushover</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">match</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">severity</span>: <span style="color:#ae81ff">page</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">receivers</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">gmail</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">email_configs</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">to</span>: <span style="color:#ae81ff">my@gmail.com</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">from</span>: <span style="color:#ae81ff">my@gmail.com</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">smarthost</span>: <span style="color:#ae81ff">smtp.gmail.com:587</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">auth_username</span>: <span style="color:#ae81ff">my@gmail.com</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">auth_identity</span>: <span style="color:#ae81ff">my@gmail.com</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">auth_password</span>: <span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">pushover</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">pushover_configs</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">user_key</span>: <span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">token</span>: <span style="color:#e6db74">&#34;...&#34;</span>
+</span></span></code></pre></div><p>is equivalent to:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;route&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;group_by&#34;</span>: [
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;receiver&#34;</span>: <span style="color:#e6db74">&#34;gmail&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;routes&#34;</span>: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;receiver&#34;</span>: <span style="color:#e6db74">&#34;pushover&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;match&#34;</span>: {
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;severity&#34;</span>: <span style="color:#e6db74">&#34;page&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;receivers&#34;</span>: [
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;gmail&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;email_configs&#34;</span>: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;to&#34;</span>: <span style="color:#e6db74">&#34;my@gmail.com&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;from&#34;</span>: <span style="color:#e6db74">&#34;my@gmail.com&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;smarthost&#34;</span>: <span style="color:#e6db74">&#34;smtp.gmail.com:587&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;auth_username&#34;</span>: <span style="color:#e6db74">&#34;my@gmail.com&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;auth_identity&#34;</span>: <span style="color:#e6db74">&#34;my@gmail.com&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;auth_password&#34;</span>: <span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      ]
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;pushover&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;pushover_configs&#34;</span>: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;user_key&#34;</span>: <span style="color:#e6db74">&#34;...&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;...&#34;</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      ]
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Becomes:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>   &#34;apiVersion&#34;: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>   &#34;kind&#34;: <span style="color:#e6db74">&#34;List&#34;</span>,
+</span></span><span style="display:flex;"><span>   &#34;items&#34;: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>         &#34;apiVersion&#34;: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>         &#34;kind&#34;: <span style="color:#e6db74">&#34;Secret&#34;</span>,
+</span></span><span style="display:flex;"><span>         &#34;metadata&#34;: {
+</span></span><span style="display:flex;"><span>            &#34;name&#34;: <span style="color:#e6db74">&#34;gmail&#34;</span>
+</span></span><span style="display:flex;"><span>         },
+</span></span><span style="display:flex;"><span>         &#34;type&#34;: <span style="color:#e6db74">&#34;Opaque&#34;</span>,
+</span></span><span style="display:flex;"><span>        &#34;data&#34;: {
+</span></span><span style="display:flex;"><span>            &#34;authPassword&#34;: authPassword,
+</span></span><span style="display:flex;"><span>         },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>         &#34;apiVersion&#34;: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>         &#34;kind&#34;: <span style="color:#e6db74">&#34;Secret&#34;</span>,
+</span></span><span style="display:flex;"><span>         &#34;metadata&#34;: {
+</span></span><span style="display:flex;"><span>            &#34;name&#34;: <span style="color:#e6db74">&#34;pushover&#34;</span>
+</span></span><span style="display:flex;"><span>         },
+</span></span><span style="display:flex;"><span>         &#34;type&#34;: <span style="color:#e6db74">&#34;Opaque&#34;</span>,
+</span></span><span style="display:flex;"><span>         &#34;data&#34;: {
+</span></span><span style="display:flex;"><span>            &#34;token&#34;: token,
+</span></span><span style="display:flex;"><span>            &#34;userKey&#34;: userkey
+</span></span><span style="display:flex;"><span>         },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>         &#34;apiVersion&#34;: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1alpha1&#34;</span>,
+</span></span><span style="display:flex;"><span>         &#34;kind&#34;: <span style="color:#e6db74">&#34;AlertmanagerConfig&#34;</span>,
+</span></span><span style="display:flex;"><span>         &#34;metadata&#34;: {
+</span></span><span style="display:flex;"><span>            &#34;name&#34;: <span style="color:#e6db74">&#34;clouds-monitoring&#34;</span>
+</span></span><span style="display:flex;"><span>         },
+</span></span><span style="display:flex;"><span>         &#34;spec&#34;: {
+</span></span><span style="display:flex;"><span>            &#34;receivers&#34;: [
+</span></span><span style="display:flex;"><span>               {
+</span></span><span style="display:flex;"><span>                  &#34;emailConfigs&#34;: [
+</span></span><span style="display:flex;"><span>                     {
+</span></span><span style="display:flex;"><span>                        &#34;authIdentity&#34;: <span style="color:#e6db74">&#34;my@gmail.com&#34;</span>,
+</span></span><span style="display:flex;"><span>                        &#34;authPassword&#34;: {
+</span></span><span style="display:flex;"><span>                           &#34;key&#34;: <span style="color:#e6db74">&#34;authPassword&#34;</span>,
+</span></span><span style="display:flex;"><span>                           &#34;name&#34;: <span style="color:#e6db74">&#34;gmail&#34;</span>,
+</span></span><span style="display:flex;"><span>                           &#34;optional&#34;: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>                        },
+</span></span><span style="display:flex;"><span>                        &#34;authUsername&#34;: <span style="color:#e6db74">&#34;my@gmail.com&#34;</span>,
+</span></span><span style="display:flex;"><span>                        &#34;from&#34;: <span style="color:#e6db74">&#34;my@gmail.com&#34;</span>,
+</span></span><span style="display:flex;"><span>                        &#34;smarthost&#34;: <span style="color:#e6db74">&#34;smtp.gmail.com:587&#34;</span>,
+</span></span><span style="display:flex;"><span>                        &#34;to&#34;: <span style="color:#e6db74">&#34;my@gmail.com&#34;</span>
+</span></span><span style="display:flex;"><span>                     }
+</span></span><span style="display:flex;"><span>                  ],
+</span></span><span style="display:flex;"><span>                  &#34;name&#34;: <span style="color:#e6db74">&#34;gmail&#34;</span>
+</span></span><span style="display:flex;"><span>               },
+</span></span><span style="display:flex;"><span>               {
+</span></span><span style="display:flex;"><span>                  &#34;name&#34;: <span style="color:#e6db74">&#34;pushover&#34;</span>,
+</span></span><span style="display:flex;"><span>                  &#34;pushoverConfigs&#34;: [
+</span></span><span style="display:flex;"><span>                     {
+</span></span><span style="display:flex;"><span>                        &#34;token&#34;: {
+</span></span><span style="display:flex;"><span>                           &#34;key&#34;: <span style="color:#e6db74">&#34;token&#34;</span>,
+</span></span><span style="display:flex;"><span>                           &#34;name&#34;: <span style="color:#e6db74">&#34;pushover&#34;</span>,
+</span></span><span style="display:flex;"><span>                           &#34;optional&#34;: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>                        },
+</span></span><span style="display:flex;"><span>                        &#34;userKey&#34;: {
+</span></span><span style="display:flex;"><span>                           &#34;key&#34;: <span style="color:#e6db74">&#34;userKey&#34;</span>,
+</span></span><span style="display:flex;"><span>                           &#34;name&#34;: <span style="color:#e6db74">&#34;pushover&#34;</span>,
+</span></span><span style="display:flex;"><span>                           &#34;optional&#34;: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>                        }
+</span></span><span style="display:flex;"><span>                     }
+</span></span><span style="display:flex;"><span>                  ]
+</span></span><span style="display:flex;"><span>               }
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>            &#34;route&#34;: {
+</span></span><span style="display:flex;"><span>               &#34;groupBy&#34;: [
+</span></span><span style="display:flex;"><span>                  <span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>               ],
+</span></span><span style="display:flex;"><span>               &#34;receiver&#34;: <span style="color:#e6db74">&#34;gmail&#34;</span>,
+</span></span><span style="display:flex;"><span>               &#34;routes&#34;: [
+</span></span><span style="display:flex;"><span>                  {
+</span></span><span style="display:flex;"><span>                     &#34;match&#34;: {
+</span></span><span style="display:flex;"><span>                        &#34;severity&#34;: <span style="color:#e6db74">&#34;page&#34;</span>
+</span></span><span style="display:flex;"><span>                     },
+</span></span><span style="display:flex;"><span>                     &#34;receiver&#34;: <span style="color:#e6db74">&#34;pushover&#34;</span>
+</span></span><span style="display:flex;"><span>                  }
+</span></span><span style="display:flex;"><span>               ]
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>         }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>   ],
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> <code>AlertmanagerConfig</code>:</p>
+<ol>
+<li>uses <code>camelCase</code> (whereas <code>alertmanager.yml</code> is <code>snake_case</code>)</li>
+<li>appropriately (!) refactors <code>Config</code> secret values e.g. <code>authPassword</code> as Kubernetes Secrets</li>
+</ol></blockquote>
+<p>Let&rsquo;s dwell on that second point, <code>alertmanager.yml</code> has the <code>gmail</code> receiver&rsquo;s <code>authPassword</code> in plaintext:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">authPassword:</span> <span style="color:#e6db74">&#34;...&#34;</span>
+</span></span></code></pre></div><p>But <code>AlertmanagerConfig</code> replaces the secret value with a Kubernetes Secret (see below), in this example called <code>gmail</code> (for obvious reasons) and the secret has a key called <code>authPassword</code> with the base64-encoded value:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">authPassword:</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;key&#34;</span>: <span style="color:#e6db74">&#34;authPassword&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;gmail&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;optional&#34;</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>So, we have to do 2 things for this transformation:</p>
+<ol>
+<li>Create <code>Secret</code>s for each receiver;</li>
+<li>Reference the <code>Secret</code> names in a new receiver object</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> receivers <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    &#34;gmail&#34;: {
+</span></span><span style="display:flex;"><span>        &#34;authPassword&#34;: std.extVar(<span style="color:#e6db74">&#34;GMAIL_AUTH_PASSWORD&#34;</span>),
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    &#34;pushover&#34;: {
+</span></span><span style="display:flex;"><span>        &#34;userKey&#34;: std.extVar(<span style="color:#e6db74">&#34;PUSHOVER_USER_KEY&#34;</span>),
+</span></span><span style="display:flex;"><span>        &#34;token&#34;: std.extVar(<span style="color:#e6db74">&#34;PUSHOVER_TOKEN&#34;</span>),
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Generate Kubernetes Secret
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> <span style="color:#a6e22e">secret</span>(name, receiver) <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Secret
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Generate AlertmanagerConfig receiver config
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> <span style="color:#a6e22e">configs</span>(name) <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Must use [key] here to replace with the variable value
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#f92672">[</span>key<span style="color:#f92672">]</span>: {
+</span></span><span style="display:flex;"><span>        &#34;key&#34;: key,
+</span></span><span style="display:flex;"><span>        &#34;name&#34;: name,
+</span></span><span style="display:flex;"><span>        &#34;optional&#34;: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    for <span style="color:#960050;background-color:#1e0010">key</span> <span style="color:#960050;background-color:#1e0010">in</span> <span style="color:#960050;background-color:#1e0010">std.objectFields(receivers[name])</span>
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">};</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Output
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">&#34;apiVersion&#34;</span>: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    &#34;kind&#34;: <span style="color:#e6db74">&#34;List&#34;</span>,
+</span></span><span style="display:flex;"><span>    &#34;items&#34;: [
+</span></span><span style="display:flex;"><span>    ] <span style="color:#f92672">+</span> std.map(
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">function</span>(name) <span style="color:#a6e22e">secret</span>(...),
+</span></span><span style="display:flex;"><span>        std.objectFields(receivers),
+</span></span><span style="display:flex;"><span>    ) <span style="color:#f92672">+</span> [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            &#34;apiVersion&#34;: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1alpha1&#34;</span>,
+</span></span><span style="display:flex;"><span>            &#34;kind&#34;: <span style="color:#e6db74">&#34;AlertmanagerConfig&#34;</span>,
+</span></span><span style="display:flex;"><span>            &#34;metadata&#34;: {
+</span></span><span style="display:flex;"><span>                &#34;name&#34;: name,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            &#34;spec&#34;: {
+</span></span><span style="display:flex;"><span>                &#34;route&#34;: { <span style="color:#960050;background-color:#1e0010">...</span> } 
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;receivers&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> [
+</span></span><span style="display:flex;"><span>                    {
+</span></span><span style="display:flex;"><span>                        &#34;name&#34;: <span style="color:#e6db74">&#34;gmail&#34;</span>,
+</span></span><span style="display:flex;"><span>                        &#34;emailConfigs&#34;: [
+</span></span><span style="display:flex;"><span>                            {
+</span></span><span style="display:flex;"><span>                                <span style="color:#75715e">// Static values
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                                &#34;to&#34;: email,
+</span></span><span style="display:flex;"><span>                                <span style="color:#960050;background-color:#1e0010">...</span>
+</span></span><span style="display:flex;"><span>                            } <span style="color:#f92672">+</span> <span style="color:#a6e22e">configs</span>(<span style="color:#e6db74">&#34;gmail&#34;</span>),
+</span></span><span style="display:flex;"><span>                        ],
+</span></span><span style="display:flex;"><span>                    },
+</span></span><span style="display:flex;"><span>                    {
+</span></span><span style="display:flex;"><span>                        &#34;name&#34;: <span style="color:#e6db74">&#34;pushover&#34;</span>,
+</span></span><span style="display:flex;"><span>                        &#34;pushoverConfigs&#34;: [
+</span></span><span style="display:flex;"><span>                            {
+</span></span><span style="display:flex;"><span>                                <span style="color:#75715e">// No Static values
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                            } <span style="color:#f92672">+</span> <span style="color:#a6e22e">configs</span>(<span style="color:#e6db74">&#34;pushover&#34;</span>),
+</span></span><span style="display:flex;"><span>                        ],
+</span></span><span style="display:flex;"><span>                    },
+</span></span><span style="display:flex;"><span>                ],
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I mentioned previous that <code>rules.yml</code> can be mapped mostly directly. Because we&rsquo;re using Jsonnet, we first need to convert <code>rules.yml</code> into JSON:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>podman run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workdir <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>docker.io/mikefarah/yq <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output-format<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>rules.yml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>&gt; rules.json
+</span></span></code></pre></div><p>And then, from within the Jsonnet file, we can import it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> rules <span style="color:#f92672">=</span> <span style="color:#66d9ef">import</span> <span style="color:#e6db74">&#34;rules.json&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> <span style="color:#a6e22e">prometheusrule</span>(name, rules) <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    &#34;apiVersion&#34;: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    &#34;kind&#34;: <span style="color:#e6db74">&#34;PrometheusRule&#34;</span>,
+</span></span><span style="display:flex;"><span>    &#34;metadata&#34;: {
+</span></span><span style="display:flex;"><span>        &#34;name&#34;: name,
+</span></span><span style="display:flex;"><span>        &#34;labels&#34;: {},
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    &#34;spec&#34;: {
+</span></span><span style="display:flex;"><span>        &#34;groups&#34;: [
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                &#34;name&#34;: name,
+</span></span><span style="display:flex;"><span>                &#34;rules&#34;: rules,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Output
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>{
+</span></span><span style="display:flex;"><span>    &#34;apiVersion&#34;: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    &#34;kind&#34;: <span style="color:#e6db74">&#34;List&#34;</span>,
+</span></span><span style="display:flex;"><span>    &#34;items&#34;: [
+</span></span><span style="display:flex;"><span>    ] <span style="color:#f92672">+</span> std.map(
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">function</span>(group) <span style="color:#a6e22e">prometheusrule</span>(
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Fixup group names replacing understores with hyphens
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            std.strReplace(group.name,<span style="color:#e6db74">&#34;_&#34;</span>,<span style="color:#e6db74">&#34;-&#34;</span>),
+</span></span><span style="display:flex;"><span>            group.rules,
+</span></span><span style="display:flex;"><span>        ),
+</span></span><span style="display:flex;"><span>        rules.groups,
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> The only change (because I want to continue to treat <code>rules.yml</code> as a source of truth) is that, in my case, I need to rename the rule group names which contain underscores with hyphens.</p></blockquote>
+<p>Once the system is deployed and alerts begin firing, it&rsquo;s good to have some sanity checks:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>.
+</span></span><span style="display:flex;"><span>├── kubernetes.test.sh
+</span></span><span style="display:flex;"><span>├── prometheus.test.sh
+</span></span><span style="display:flex;"><span>└── vpa.check.sh
+</span></span></code></pre></div><p><code>kubernetes.test.sh</code> verifies that the correct number of <code>Deployment</code>&rsquo;s, <code>Service</code>&rsquo;s etc. are created. This is quite a useful pattern:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>WANT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Some number</span>
+</span></span><span style="display:flex;"><span>GOT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  kubectl get deployments <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>name <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | wc --lines<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>GOT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> !<span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>WANT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>  printf <span style="color:#e6db74">&#34;got: %s; want: %s\n&#34;</span> <span style="color:#e6db74">&#34;</span>$GOT<span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span>$WANT<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span></code></pre></div><p><code>prometheus.test.sh</code> verifies Prometheus targets, rules etc. using the Prometheus API:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://localhost:9090&#34;</span> <span style="color:#75715e"># Or ...</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;.data.activeTargets|length&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>WANT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Some number</span>
+</span></span><span style="display:flex;"><span>GOT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --get <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --header <span style="color:#e6db74">&#34;Accept: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/api/v1/targets <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | jq -r <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>GOT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> !<span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>WANT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>  printf <span style="color:#e6db74">&#34;got: %s; want: %s\n&#34;</span> <span style="color:#e6db74">&#34;</span>$GOT<span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span>$WANT<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span></code></pre></div><p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/prometheus/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Prometheus</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/kubernetes/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Kubernetes</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/jsonnet/" class="link f5 grow no-underline br-pill ba ph3 pv2 mb2 dib black sans-serif">Jsonnet</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/230427/">Robusta KRR w/ GMP</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230425/">Google Metric Diagnostics and Metric Data Ingested</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230419/">Kubernetes metrics, metrics everywhere</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230310/">Kubernetes Operators</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/250227/">Prometheus Exporter for USGS Water Data service</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240314/">Fly Kubernetes</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240307/">Prometheus Protobufs and Native Histograms</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240104/">Capturing e.g. CronJob metrics with GMP</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230709/">Prometheus Exporter for Koyeb</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230708/">Kubernetes Python SDK w/ CRDs</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230530/">Routing Firestore events to GKE with Eventarc</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230420/">Prometheus Exporter for Azure (Container Apps)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230413/">Filtering metrics w/ Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230104/">Authenticate PromLens to Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200207/">Accessing GCR repos from Kubernetes</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2025 
+  </a>
+    <div><div class="ananke-socials"></div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
