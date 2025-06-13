@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>MCP for gRPC Health Checking protocol | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="Model Context Protocol (MCP) is &ldquo;all the rage&rdquo; these days.
+I stumbled upon protoc-gen-go-mcp and think it&rsquo;s an elegant application of two technologies: programmatically generating an MCP server from a gRPC protobuf.
+I&rsquo;m considering building an MCP server for Ackal but, thought I&rsquo;d start with something simple: gRPC Health Checking protocol.
+I was surprised to learn as I was doing this that there&rsquo;s a new List (Add List method to gRPC Health service #143) added to grpc.health.v1.Health. My (Ackal) healthcheck server does not yet implement it (see later).">
+    <meta name="generator" content="Hugo 0.148.0-DEV">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.8d048772ae72ab11245a0e296d1f2a36d3e3dd376c6c867394d6cc659c68fc37.css" >
+
+
+
+
+    
+
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:url" content="https://pretired.dazwilkin.com/posts/250612/">
+  <meta property="og:site_name" content="(p)retired">
+  <meta property="og:title" content="MCP for gRPC Health Checking protocol">
+  <meta property="og:description" content="Model Context Protocol (MCP) is “all the rage” these days.
+I stumbled upon protoc-gen-go-mcp and think it’s an elegant application of two technologies: programmatically generating an MCP server from a gRPC protobuf.
+I’m considering building an MCP server for Ackal but, thought I’d start with something simple: gRPC Health Checking protocol.
+I was surprised to learn as I was doing this that there’s a new List (Add List method to gRPC Health service #143) added to grpc.health.v1.Health. My (Ackal) healthcheck server does not yet implement it (see later).">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-06-12T00:00:00-07:00">
+    <meta property="article:modified_time" content="2025-06-12T00:00:00-07:00">
+    <meta property="article:tag" content="Grpc">
+    <meta property="article:tag" content="Healthcheck">
+    <meta property="article:tag" content="Mcp">
+
+  <meta itemprop="name" content="MCP for gRPC Health Checking protocol">
+  <meta itemprop="description" content="Model Context Protocol (MCP) is “all the rage” these days.
+I stumbled upon protoc-gen-go-mcp and think it’s an elegant application of two technologies: programmatically generating an MCP server from a gRPC protobuf.
+I’m considering building an MCP server for Ackal but, thought I’d start with something simple: gRPC Health Checking protocol.
+I was surprised to learn as I was doing this that there’s a new List (Add List method to gRPC Health service #143) added to grpc.health.v1.Health. My (Ackal) healthcheck server does not yet implement it (see later).">
+  <meta itemprop="datePublished" content="2025-06-12T00:00:00-07:00">
+  <meta itemprop="dateModified" content="2025-06-12T00:00:00-07:00">
+  <meta itemprop="wordCount" content="669">
+  <meta itemprop="keywords" content="Grpc,Healthcheck,Mcp">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="MCP for gRPC Health Checking protocol">
+  <meta name="twitter:description" content="Model Context Protocol (MCP) is “all the rage” these days.
+I stumbled upon protoc-gen-go-mcp and think it’s an elegant application of two technologies: programmatically generating an MCP server from a gRPC protobuf.
+I’m considering building an MCP server for Ackal but, thought I’d start with something simple: gRPC Health Checking protocol.
+I was surprised to learn as I was doing this that there’s a new List (Add List method to gRPC Health service #143) added to grpc.health.v1.Health. My (Ackal) healthcheck server does not yet implement it (see later).">
+
+      
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l center items-center justify-between">
+    <a href="/" class="f3 fw2 hover-white white-90 dib no-underline">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      <div class="ananke-socials"></div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  
+  <article class="flex-l mw8 center ph3 flex-wrap justify-between">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked ttu">
+          
+        Posts
+      </aside><div id="sharing" class="mt3 ananke-socials"></div>
+<h1 class="f1 athelas mt3 mb1">MCP for gRPC Health Checking protocol</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2025-06-12T00:00:00-07:00">June 12, 2025</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 4 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 669 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p><a href="https://modelcontextprotocol.io/introduction">Model Context Protocol (MCP)</a> is &ldquo;all the rage&rdquo; these days.</p>
+<p>I stumbled upon <a href="https://github.com/redpanda-data/protoc-gen-go-mcp"><code>protoc-gen-go-mcp</code></a> and think it&rsquo;s an elegant application of two technologies: programmatically generating an MCP server from a gRPC protobuf.</p>
+<p>I&rsquo;m considering building an MCP server for <a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a> but, thought I&rsquo;d start with something simple: <a href="https://grpc.io/docs/guides/health-checking/">gRPC Health Checking protocol</a>.</p>
+<p>I was surprised to learn as I was doing this that there&rsquo;s a new <a href="https://github.com/grpc/grpc-proto/blob/23f5b568eefcb876e6ebc3b01725f1f20cff999e/grpc/health/v1/health.proto#L74"><code>List</code></a> (<a href="https://github.com/grpc/grpc-proto/pull/143">Add <code>List</code> method to gRPC Health service #143</a>) added to <code>grpc.health.v1.Health</code>. My (Ackal) healthcheck server does not yet implement it (see later).</p>
+<p>Curiously, the protocol&rsquo;s <a href="https://github.com/grpc/grpc-proto/blob/23f5b568eefcb876e6ebc3b01725f1f20cff999e/grpc/health/v1/health.proto#L91"><code>Watch</code></a> method is not generated by <code>protoc-gen-go-mcp</code> and is not available as part of the MCP server&rsquo;s &ldquo;tools&rdquo;. I assume (!?) this is because it&rsquo;s not a unary RPC (request-response) but a server-streaming RPC (requests-responses) and that this doesn&rsquo;t fit well with LLMs. Don&rsquo;t know.</p>
+<h3 id="protoc"><code>protoc</code></h3>
+<p><code>protoc-gen-go-mcp</code> uses an (underlying|backing) gRPC protobuf to generate the sources for the MCP server. <a href="https://raw.githubusercontent.com/grpc/grpc-proto/refs/heads/master/grpc/health/v1/health.proto"><code>health.proto</code></a> is part of the <a href="https://github.com/grpc/grpc-proto"><code>grpc-proto</code></a> repo. The plugin generates MCP-specific code in <code>{$servicename}mcp</code> sub-folder and references the backing service&rsquo;s methods.</p>
+<p>I hacked this in my repo but you should let it do its thing:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>GRPC_PROTO<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/path/to/grpc-proto&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>MODULE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Your repo</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PROTO<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;grpc/health/v1/health.proto&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>protoc <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proto_path<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>GRPC_PROTO<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--go-mcp_out<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--go-mcp_opt<span style="color:#f92672">=</span>module<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>MODULE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--go-mcp_opt<span style="color:#f92672">=</span>M<span style="color:#e6db74">${</span>PROTO<span style="color:#e6db74">}</span><span style="color:#f92672">=</span><span style="color:#e6db74">${</span>MODULE<span style="color:#e6db74">}</span>/protos <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>GRPC_PROTO<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>PROTO<span style="color:#e6db74">}</span>
+</span></span></code></pre></div><p>The generated file imports <code>{your-repo}/protos</code> aliased to <code>protos</code>. This is incorrect and we also want to use the published <code>healthpb</code> repo <code>&quot;google.golang.org/grpc/health/grpc_health_v1&quot;</code>.</p>
+<p>You can:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>HEALTHPB<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;google.golang.org/grpc/health/grpc_health_v1&#34;</span>
+</span></span><span style="display:flex;"><span>sed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--in-place <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--expression<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;s|</span><span style="color:#e6db74">${</span>MODULE<span style="color:#e6db74">}</span><span style="color:#e6db74">/protos|</span><span style="color:#e6db74">${</span>HEALTHPB<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/protos/grpc_health_v1mcp/health.pb.mcp.go
+</span></span></code></pre></div><p>For consistency, you may also want to replace <code>protos</code> with <code>healthpb</code>.</p>
+<h3 id="mcp">MCP</h3>
+<p>The rest of the code follows the example in the <a href="https://github.com/redpanda-data/protoc-gen-go-mcp"><code>protoc-gen-go-mcp</code></a>:</p>
+<p><code>main.go</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;flag&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log/slog&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;os&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">grpc_health_v1mcp</span> <span style="color:#e6db74">&#34;your/repo/protos/grpc_health_v1mcp&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/mark3labs/mcp-go/server&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc/credentials/insecure&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">healthpb</span> <span style="color:#e6db74">&#34;google.golang.org/grpc/health/grpc_health_v1&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">logger</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">NewJSONHandler</span>(<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Stdout</span>, <span style="color:#66d9ef">nil</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">endpoint</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;endpoint.grpc&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;The gRPC endpoint (host:port) of the Healthcheck server.&#34;</span>,
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">serverOpts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">ServerOption</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">WithLogging</span>(),
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">s</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">NewMCPServer</span>(
+</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;mcp&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#e6db74">&#34;0.0.1&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">serverOpts</span><span style="color:#f92672">...</span>,
+</span></span><span style="display:flex;"><span>	)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">srv</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Server</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">logger</span>: <span style="color:#a6e22e">logger</span>,
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">grpc_health_v1mcp</span>.<span style="color:#a6e22e">RegisterHealthHandler</span>(<span style="color:#a6e22e">s</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">srv</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">dialOpts</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">DialOption</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">WithTransportCredentials</span>(<span style="color:#a6e22e">insecure</span>.<span style="color:#a6e22e">NewCredentials</span>()),
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">conn</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">grpc</span>.<span style="color:#a6e22e">NewClient</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">endpoint</span>, <span style="color:#a6e22e">dialOpts</span><span style="color:#f92672">...</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#e6db74">&#34;unable to create gRPC client&#34;</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;endpoint&#34;</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">endpoint</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;err&#34;</span>, <span style="color:#a6e22e">err</span>,
+</span></span><span style="display:flex;"><span>		)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">defer</span> <span style="color:#66d9ef">func</span>() {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">conn</span>.<span style="color:#a6e22e">Close</span>(); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;unable to close gRPC connection&#34;</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">grpcClient</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">healthpb</span>.<span style="color:#a6e22e">NewHealthClient</span>(<span style="color:#a6e22e">conn</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">grpc_health_v1mcp</span>.<span style="color:#a6e22e">ForwardToHealthClient</span>(<span style="color:#a6e22e">s</span>, <span style="color:#a6e22e">grpcClient</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Starting MCP server&#34;</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">ServeStdio</span>(<span style="color:#a6e22e">s</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#e6db74">&#34;unable to start stdio server&#34;</span>, <span style="color:#e6db74">&#34;err&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And <code>server.go</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log/slog&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;your/repo/protos/grpc_health_v1mcp&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">healthpb</span> <span style="color:#e6db74">&#34;google.golang.org/grpc/health/grpc_health_v1&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc/codes&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;google.golang.org/grpc/status&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">_</span> <span style="color:#a6e22e">grpc_health_v1mcp</span>.<span style="color:#a6e22e">HealthServer</span> = (<span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>)(<span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Server</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">logger</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">slog</span>.<span style="color:#a6e22e">Logger</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">Check</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">in</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">healthpb</span>.<span style="color:#a6e22e">HealthCheckRequest</span>,
+</span></span><span style="display:flex;"><span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">healthpb</span>.<span style="color:#a6e22e">HealthCheckResponse</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Check called&#34;</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// return &amp;healthpb.HealthCheckResponse{Status: healthpb.HealthCheckResponse_SERVING}, nil</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">healthpb</span>.<span style="color:#a6e22e">HealthCheckResponse</span>{},
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">status</span>.<span style="color:#a6e22e">Errorf</span>(
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">codes</span>.<span style="color:#a6e22e">Unimplemented</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;method Check not implemented&#34;</span>,
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">List</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">in</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">healthpb</span>.<span style="color:#a6e22e">HealthListRequest</span>,
+</span></span><span style="display:flex;"><span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">healthpb</span>.<span style="color:#a6e22e">HealthListResponse</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;List called&#34;</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">healthpb</span>.<span style="color:#a6e22e">HealthListResponse</span>{},
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">status</span>.<span style="color:#a6e22e">Errorf</span>(
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">codes</span>.<span style="color:#a6e22e">Unimplemented</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;method List not implemented&#34;</span>,
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">Watch</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">in</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">healthpb</span>.<span style="color:#a6e22e">HealthCheckRequest</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">srv</span> <span style="color:#a6e22e">healthpb</span>.<span style="color:#a6e22e">Health_WatchServer</span>,
+</span></span><span style="display:flex;"><span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Watch called&#34;</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">status</span>.<span style="color:#a6e22e">Errorf</span>(
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">codes</span>.<span style="color:#a6e22e">Unimplemented</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;method Watch not implemented&#34;</span>,
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>What&rsquo;s curious is that, while these <code>Server</code> methods must exist in order that <code>Server</code> implements the interface, they are never (!?) called.</p>
+<blockquote>
+<p><strong>NOTE</strong> all the methods return &ldquo;not implemented&rdquo;.</p></blockquote>
+<h3 id="test">Test</h3>
+<p>Run the server and pipe <code>stdout</code> through <code>jq</code> to pretty print it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go run . | jq -r .
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;time&#34;</span>:<span style="color:#e6db74">&#34;2025-06-12T00:00:00.000000000-07:00&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;level&#34;</span>:<span style="color:#e6db74">&#34;INFO&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;msg&#34;</span>:<span style="color:#e6db74">&#34;Starting MCP server&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And then to list the MCP server&rsquo;s methods, we use <code>&quot;method&quot;: &quot;tools/list&quot;</code></p>
+<blockquote>
+<p><strong>NOTE</strong> MCP uses <a href="https://www.jsonrpc.org/"><code>JSON-RPC</code></a> and <a href="https://modelcontextprotocol.io"><code>modelcontextprotocol.io</code></a> documents the JSON-RPC messages including <a href="https://modelcontextprotocol.io/specification/draft/server/tools#listing-tools"><code>tools/list</code></a> and <a href="https://modelcontextprotocol.io/specification/draft/server/tools#calling-tools"><code>tools/call</code></a> as used below.</p></blockquote>
+<blockquote>
+<p><strong>NOTE</strong> The JSON-RPC requests should contain no newlines as these are used by this server&rsquo;s stdin parsing to delimit the commands.</p></blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{<span style="color:#f92672">&#34;jsonrpc&#34;</span>:<span style="color:#e6db74">&#34;2.0&#34;</span>,<span style="color:#f92672">&#34;id&#34;</span>:<span style="color:#ae81ff">1</span>,<span style="color:#f92672">&#34;method&#34;</span>:<span style="color:#e6db74">&#34;tools/list&#34;</span>,<span style="color:#f92672">&#34;params&#34;</span>:{}}
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;jsonrpc&#34;</span>:<span style="color:#e6db74">&#34;2.0&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;id&#34;</span>:<span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;result&#34;</span>:{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;tools&#34;</span>:[
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;description&#34;</span>:<span style="color:#e6db74">&#34;Check gets the health...&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;inputSchema&#34;</span>:{
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;properties&#34;</span>:{
+</span></span><span style="display:flex;"><span>                        <span style="color:#f92672">&#34;service&#34;</span>:{
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">&#34;type&#34;</span>:<span style="color:#e6db74">&#34;string&#34;</span>
+</span></span><span style="display:flex;"><span>                        }
+</span></span><span style="display:flex;"><span>                    },
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;required&#34;</span>:[],
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;type&#34;</span>:<span style="color:#e6db74">&#34;object&#34;</span>
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>:<span style="color:#e6db74">&#34;grpc_health_v1_Health_Check&#34;</span>
+</span></span><span style="display:flex;"><span>            },{
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;description&#34;</span>:<span style="color:#e6db74">&#34;List provides a ...&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;inputSchema&#34;</span>:{
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;properties&#34;</span>:{},
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;required&#34;</span>:[],
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;type&#34;</span>:<span style="color:#e6db74">&#34;object&#34;</span>
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;name&#34;</span>:<span style="color:#e6db74">&#34;grpc_health_v1_Health_List&#34;</span>
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        ]
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> The gRPC fully-qualified method names are mapped from e.g. <code>grpc.health.v1.Health/Check</code> to <code>grpc_health_v1_Health_Check</code> by this MCP implementation.</p></blockquote>
+<p>And to invoke the <code>grpc.health.v1.Health/Check</code> method:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{<span style="color:#f92672">&#34;jsonrpc&#34;</span>:<span style="color:#e6db74">&#34;2.0&#34;</span>,<span style="color:#f92672">&#34;id&#34;</span>:<span style="color:#ae81ff">2</span>,<span style="color:#f92672">&#34;method&#34;</span>:<span style="color:#e6db74">&#34;tools/call&#34;</span>,<span style="color:#f92672">&#34;params&#34;</span>:{<span style="color:#f92672">&#34;name&#34;</span>:<span style="color:#e6db74">&#34;grpc_health_v1_Health_Check&#34;</span>,<span style="color:#f92672">&#34;arguments&#34;</span>:{<span style="color:#f92672">&#34;service&#34;</span>:<span style="color:#e6db74">&#34;foo&#34;</span>}}}
+</span></span></code></pre></div><p>Yields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;jsonrpc&#34;</span>:<span style="color:#e6db74">&#34;2.0&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;id&#34;</span>:<span style="color:#ae81ff">2</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;result&#34;</span>:{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;content&#34;</span>:[
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;type&#34;</span>:<span style="color:#e6db74">&#34;text&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;text&#34;</span>:<span style="color:#e6db74">&#34;{\&#34;status\&#34;:\&#34;SERVING\&#34;}&#34;</span>
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        ]
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/grpc/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Grpc</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/healthcheck/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Healthcheck</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/mcp/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Mcp</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/210412/">Fly.io</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230215/">Secure (TLS) gRPC services with LKE</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/220603/">Secure (TLS) gRPC services with VKE</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/220421/">Using Google&#39;s Public Certificate Authority with Golang autocert</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/211130/">Automatic Certs w/ Golang gRPC service on Compute Engine</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210724/">gRPC Interceptors and in-memory gRPC connections</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210618/">Firebase Authentication, Cloud Endpoints and gRPC (2of2)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210614/">Firebase Authentication, Cloud Endpoints and gRPC (1of2)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210608/">Cloud Endpoints combine OpenAPI and gRPC... or not!</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210519/">Multiplexing gRPC and HTTP (Prometheus) endpoints with Cloud Run</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/210222/">Dapr</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200717/">Remotely invoking WASM functions using gRPC and waPC</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200429/">Rust implementation of Crate Transparency using Google Trillian</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white white-70 dn dib-ns pv2 ph3 no-underline" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2025 
+  </a>
+    <div><div class="ananke-socials"></div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
