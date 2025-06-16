@@ -58,7 +58,7 @@ I wrote a series of stdin and HTTP tests to have confidence that the service is 
 I discovered that Visual Studio Code through its GitHub Copilot extension functions has a preview to use MCP servers i.e. function as an MCP host and access MCP servers.">
   <meta itemprop="datePublished" content="2025-06-16T00:00:00-07:00">
   <meta itemprop="dateModified" content="2025-06-16T00:00:00-07:00">
-  <meta itemprop="wordCount" content="225">
+  <meta itemprop="wordCount" content="275">
   <meta itemprop="keywords" content="MCP,Prometheus">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Prometheus MCP Server">
@@ -122,7 +122,7 @@ I discovered that Visual Studio Code through its GitHub Copilot extension functi
       
       
         <span class="f6 mv4 dib tracked"> - 2 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 225 words </span>
+        <span class="f6 mv4 dib tracked"> - 275 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>So, I was unable to find a Model Context Protocol (MCP) server implementation for <a href="https://prometheus.io">Prometheus</a>. I had a quite weekend and so I&rsquo;ve been writing one: <a href="https://github.com/DazWilkin/prometheus-mcp-server"><code>prometheus-mcp-server</code></a>.</p>
@@ -159,13 +159,56 @@ I discovered that Visual Studio Code through its GitHub Copilot extension functi
 <p>Unfortunately <code>metrics</code> (which lists all metrics) isn&rsquo;t working correctly:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>#metrics
 </span></span></code></pre></div><p><img src="/images/250616.code.copilot.prometheus-mcp-server.metrics.rqst.png" alt="GitHub Copilot tools/call &ldquo;metrics&rdquo;"></p>
-<p>And:</p>
+<p>But:</p>
 <p><img src="/images/250616.code.copilot.prometheus-mcp-server.metrics.resp.png" alt="GitHub Copilot tools/call &ldquo;metrics&rdquo; response"></p>
-<p>But, it is possible to query a metric:</p>
+<p>But, it is possible to query the metrics:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>#query up<span style="color:#f92672">{</span>job<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;prometheus&#34;</span><span style="color:#f92672">}</span>
 </span></span></code></pre></div><p><img src="/images/250616.code.copilot.prometheus-mcp-server.query.rqst.png" alt="GitHub Copilot tools/call &ldquo;query&rdquo;"></p>
 <p>And:</p>
 <p><img src="/images/250616.code.copilot.prometheus-mcp-server.query.resp.png" alt="GitHub Copilot tools/call &ldquo;query&rdquo; response"></p>
+<p>So, I followed up (with the agent itself) about the fact that it ran the <code>metrics</code> tool but did not provide the results.</p>
+<p>Here&rsquo;s the interaction:</p>
+<hr/>
+<b>Agent</b>: The list of Prometheus metrics has already been retrieved. If you need information or values for a specific metric, please specify which one you are interested in.
+<hr/>
+<b style="font-color:"blue">Me</b>: Please rerun
+<hr/>
+<b>Agent</b>: The Prometheus metrics have been refreshed. If you need the value or details for any specific metric, please specify which one you want to query.
+<hr/>
+<b>Me</b>: Nothing is listed. Was the response too long?
+<hr/>
+<b>Agent</b>: The response contained a very long list of Prometheus metrics, which may not have displayed fully in your interface. If you want, I can filter and show only a subset (e.g., metrics starting with "go_", "process_", "prometheus_", or any keyword you specify), or provide the full list in a file for easier viewing. Let me know your preference!
+<hr/>
+<b>Me</b>: Please list the metrics beginning with go_
+<hr/>
+<b>Agent</b>: Here are the Prometheus metrics beginning with `go_`:
+<ul>
+<li>go_gc_cycles_automatic_gc_cycles_total</li>
+<li>go_gc_cycles_forced_gc_cycles_total</li>
+<li>go_gc_cycles_total_gc_cycles_total</li>
+<li>&hellip;</li>
+</ul>
+<p>If you want details or values for any of these, let me know!</p>
+<hr/>
+<b>Me</b>: How should I configured the tool so that you respond with the number of results and prompt me to provide a filter for the results?
+<hr/>
+<b>Agent</b>: To configure the tool for a better user experience, you should:
+<ol>
+<li>Display the number of results found (e.g., &ldquo;There are 120 metrics available.&rdquo;).</li>
+<li>Prompt the user to provide a filter (e.g., &ldquo;Please specify a keyword or prefix to filter the results, such as go_, process_, or prometheus_.&rdquo;).</li>
+</ol>
+<p>This approach helps avoid overwhelming output and guides the user to get relevant information efficiently. If you want, I can help you implement this logic in your code or workflow. Let me know your preferred language or tool!</p>
+<hr/>
+<b>Me</b>: When using you (GitHub Copilot agent mode) to query the MCP server, you retrieved the results but you did not display them nor did you prompt me that you'd retrieved the results but the list was too long and that I should provide a filter. So, I want to reconfigure the server's tool to do this but I don't know how to do it. I'm using github.com/mark3labs/mcp-go, how should I configure the tool 
+<hr/>
+<b>Agent</b>: Thank you for clarifying. The behavior you’re describing—where the GitHub Copilot agent (me) summarizes the number of results and prompts for a filter instead of displaying a long list—is not controlled by the MCP server or the `github.com/mark3labs/mcp-go` library itself. Instead, it is determined by how the client (the agent or your own code) handles and presents the results.
+<p>What you can do:</p>
+<ul>
+<li>&hellip;</li>
+<li>If you want the Copilot agent to always behave this way, you would need to request this as a feature from the Copilot team or adjust your workflow to always ask for a filter.</li>
+</ul>
+<hr/>
+<p>Per the Agent&rsquo;s suggestion, I filed an <a href="https://github.com/microsoft/vscode-copilot-release/issues/12576">issue</a></p>
 <p>That&rsquo;s all (for now)!</p>
 <ul class="pa0">
   
