@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Prometheus MCP Server | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="So, I was unable to find a Model Context Protocol (MCP) server implementation for Prometheus. I had a quite weekend and so I&rsquo;ve been writing one: prometheus-mcp-server.
+I used the code from the MCP for gRPC Health Checking protocol that I wrote about previously as a guide.
+I wrote a series of stdin and HTTP tests to have confidence that the service is working correctly but I had no MCP host.
+I discovered that Visual Studio Code through its GitHub Copilot extension functions has a preview to use MCP servers i.e. function as an MCP host and access MCP servers.">
+    <meta name="generator" content="Hugo 0.148.0-DEV">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.8d048772ae72ab11245a0e296d1f2a36d3e3dd376c6c867394d6cc659c68fc37.css" >
+
+
+
+
+    
+
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:url" content="https://pretired.dazwilkin.com/posts/250616/">
+  <meta property="og:site_name" content="(p)retired">
+  <meta property="og:title" content="Prometheus MCP Server">
+  <meta property="og:description" content="So, I was unable to find a Model Context Protocol (MCP) server implementation for Prometheus. I had a quite weekend and so I’ve been writing one: prometheus-mcp-server.
+I used the code from the MCP for gRPC Health Checking protocol that I wrote about previously as a guide.
+I wrote a series of stdin and HTTP tests to have confidence that the service is working correctly but I had no MCP host.
+I discovered that Visual Studio Code through its GitHub Copilot extension functions has a preview to use MCP servers i.e. function as an MCP host and access MCP servers.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-06-16T00:00:00-07:00">
+    <meta property="article:modified_time" content="2025-06-16T00:00:00-07:00">
+    <meta property="article:tag" content="MCP">
+    <meta property="article:tag" content="Prometheus">
+
+  <meta itemprop="name" content="Prometheus MCP Server">
+  <meta itemprop="description" content="So, I was unable to find a Model Context Protocol (MCP) server implementation for Prometheus. I had a quite weekend and so I’ve been writing one: prometheus-mcp-server.
+I used the code from the MCP for gRPC Health Checking protocol that I wrote about previously as a guide.
+I wrote a series of stdin and HTTP tests to have confidence that the service is working correctly but I had no MCP host.
+I discovered that Visual Studio Code through its GitHub Copilot extension functions has a preview to use MCP servers i.e. function as an MCP host and access MCP servers.">
+  <meta itemprop="datePublished" content="2025-06-16T00:00:00-07:00">
+  <meta itemprop="dateModified" content="2025-06-16T00:00:00-07:00">
+  <meta itemprop="wordCount" content="225">
+  <meta itemprop="keywords" content="MCP,Prometheus">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Prometheus MCP Server">
+  <meta name="twitter:description" content="So, I was unable to find a Model Context Protocol (MCP) server implementation for Prometheus. I had a quite weekend and so I’ve been writing one: prometheus-mcp-server.
+I used the code from the MCP for gRPC Health Checking protocol that I wrote about previously as a guide.
+I wrote a series of stdin and HTTP tests to have confidence that the service is working correctly but I had no MCP host.
+I discovered that Visual Studio Code through its GitHub Copilot extension functions has a preview to use MCP servers i.e. function as an MCP host and access MCP servers.">
+
+      
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l center items-center justify-between">
+    <a href="/" class="f3 fw2 hover-white white-90 dib no-underline">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      <div class="ananke-socials"></div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  
+  <article class="flex-l mw8 center ph3 flex-wrap justify-between">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked ttu">
+          
+        Posts
+      </aside><div id="sharing" class="mt3 ananke-socials"></div>
+<h1 class="f1 athelas mt3 mb1">Prometheus MCP Server</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2025-06-16T00:00:00-07:00">June 16, 2025</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 2 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 225 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>So, I was unable to find a Model Context Protocol (MCP) server implementation for <a href="https://prometheus.io">Prometheus</a>. I had a quite weekend and so I&rsquo;ve been writing one: <a href="https://github.com/DazWilkin/prometheus-mcp-server"><code>prometheus-mcp-server</code></a>.</p>
+<p>I used the code from the <a href="/posts/250612/">MCP for gRPC Health Checking protocol</a> that I wrote about previously as a guide.</p>
+<p>I wrote a series of <code>stdin</code> and HTTP tests to have confidence that the service is working correctly but I had no MCP host.</p>
+<p>I discovered that <a href="https://code.visualstudio.com/">Visual Studio Code</a> through its <a href="https://marketplace.visualstudio.com/items?itemName=GitHub.copilot">GitHub Copilot</a> extension functions has a <a href="https://code.visualstudio.com/docs/copilot/chat/mcp-servers">preview to use MCP servers</a> i.e. function as an MCP host and access MCP servers.</p>
+<p>And, it works just great!</p>
+<ol>
+<li>Ensure you have the [GitHub Copilot] extension installed.</li>
+<li>Run <code>prometheus-mcp-server</code> (assuming on default <code>http://localhost:7777</code>)</li>
+<li>Add the <code>prometheus-mcp-server</code> either by CTRL-SHIFT-P &ldquo;MCP: Add Server&rdquo; or manually adding <code>.vscode/mcp.json</code> (see below)</li>
+<li>Configure GitHub Copilot to use &ldquo;Agent&rdquo; mode (see below)</li>
+<li>From the GitHub Copilot change click the tools icon (see below)</li>
+</ol>
+<p><code>.vscode/mcp.json</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;servers&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;prometheus-mcp-server&#34;</span>: {
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;url&#34;</span>: <span style="color:#e6db74">&#34;http://localhost:7777/mcp&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> The <code>url</code> must include the <code>/mcp</code> path</p></blockquote>
+<p>GitHub Copilot &ldquo;Agent&rdquo; mode
+<img src="/images/250616.code.copilot.chat.png" alt="GitHub Copilot &ldquo;Agent&rdquo; mode"></p>
+<p>GitHub Copilot tools
+<img src="/images/250616.code.copilot.tools.list.png" alt="GitHub Copilot tools/list"></p>
+<p>Now, you should (!) be able to interact with <code>prometheus-mcp-server</code> from the GitHub Copilot chat window, e.g.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>#ping
+</span></span></code></pre></div><p><img src="/images/250616.code.copilot.prometheus-mcp-server.ping.rqst.png" alt="GitHub Copilot tools/call &ldquo;ping&rdquo;"></p>
+<p>And:</p>
+<p><img src="/images/250616.code.copilot.prometheus-mcp-server.ping.resp.png" alt="GitHub Copilot tools/call &ldquo;ping&rdquo; response"></p>
+<p>Unfortunately <code>metrics</code> (which lists all metrics) isn&rsquo;t working correctly:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>#metrics
+</span></span></code></pre></div><p><img src="/images/250616.code.copilot.prometheus-mcp-server.metrics.rqst.png" alt="GitHub Copilot tools/call &ldquo;metrics&rdquo;"></p>
+<p>And:</p>
+<p><img src="/images/250616.code.copilot.prometheus-mcp-server.metrics.resp.png" alt="GitHub Copilot tools/call &ldquo;metrics&rdquo; response"></p>
+<p>But, it is possible to query a metric:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>#query up<span style="color:#f92672">{</span>job<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;prometheus&#34;</span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p><img src="/images/250616.code.copilot.prometheus-mcp-server.query.rqst.png" alt="GitHub Copilot tools/call &ldquo;query&rdquo;"></p>
+<p>And:</p>
+<p><img src="/images/250616.code.copilot.prometheus-mcp-server.query.resp.png" alt="GitHub Copilot tools/call &ldquo;query&rdquo; response"></p>
+<p>That&rsquo;s all (for now)!</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/mcp/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">MCP</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/prometheus/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Prometheus</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/250612/">MCP for gRPC Health Checking protocol</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/250325/">Migrating Prometheus Exporters to Kubernetes</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/250227/">Prometheus Exporter for USGS Water Data service</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240307/">Prometheus Protobufs and Native Histograms</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240104/">Capturing e.g. CronJob metrics with GMP</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230709/">Prometheus Exporter for Koyeb</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230427/">Robusta KRR w/ GMP</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230425/">Google Metric Diagnostics and Metric Data Ingested</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230420/">Prometheus Exporter for Azure (Container Apps)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230419/">Kubernetes metrics, metrics everywhere</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230413/">Filtering metrics w/ Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230310/">Kubernetes Operators</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230104/">Authenticate PromLens to Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200107/">Google Home Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191220/">Google Cloud Platform (GCP) Exporter</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white white-70 dn dib-ns pv2 ph3 no-underline" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2025 
+  </a>
+    <div><div class="ananke-socials"></div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
