@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Tailscale client metrics service discovery to Prometheus | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="I couldn&rsquo;t summarize this in a title (even with an LLM&rsquo;s help):
+I wanted to:
+
+Run a Tailscale service discovery agent
+On a Tailscale node outside of the Kubernetes cluster
+Using Podman Quadlet
+Accessing it from the Kubernetes Cluster using the Tailscale&rsquo;s egress proxy
+Accessing the proxy with a kube-prometheus ScrapeConfig
+In order that Prometheus would scrape the container for Tailscale client metrics
+
+Long-winded? Yes but I had an underlying need in running the Tailscale Service Discoovery remotely and this configuration helped me achieve that.">
+    <meta name="generator" content="Hugo 0.148.0-DEV">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.8d048772ae72ab11245a0e296d1f2a36d3e3dd376c6c867394d6cc659c68fc37.css" >
+
+
+
+
+    
+
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:url" content="https://pretired.dazwilkin.com/posts/250620/">
+  <meta property="og:site_name" content="(p)retired">
+  <meta property="og:title" content="Tailscale client metrics service discovery to Prometheus">
+  <meta property="og:description" content="I couldn’t summarize this in a title (even with an LLM’s help):
+I wanted to:
+Run a Tailscale service discovery agent On a Tailscale node outside of the Kubernetes cluster Using Podman Quadlet Accessing it from the Kubernetes Cluster using the Tailscale’s egress proxy Accessing the proxy with a kube-prometheus ScrapeConfig In order that Prometheus would scrape the container for Tailscale client metrics Long-winded? Yes but I had an underlying need in running the Tailscale Service Discoovery remotely and this configuration helped me achieve that.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-06-20T00:00:00-07:00">
+    <meta property="article:modified_time" content="2025-06-20T00:00:00-07:00">
+    <meta property="article:tag" content="Tailscale">
+    <meta property="article:tag" content="Kubernetes">
+    <meta property="article:tag" content="Operator">
+    <meta property="article:tag" content="Kube-Prometheus">
+
+  <meta itemprop="name" content="Tailscale client metrics service discovery to Prometheus">
+  <meta itemprop="description" content="I couldn’t summarize this in a title (even with an LLM’s help):
+I wanted to:
+Run a Tailscale service discovery agent On a Tailscale node outside of the Kubernetes cluster Using Podman Quadlet Accessing it from the Kubernetes Cluster using the Tailscale’s egress proxy Accessing the proxy with a kube-prometheus ScrapeConfig In order that Prometheus would scrape the container for Tailscale client metrics Long-winded? Yes but I had an underlying need in running the Tailscale Service Discoovery remotely and this configuration helped me achieve that.">
+  <meta itemprop="datePublished" content="2025-06-20T00:00:00-07:00">
+  <meta itemprop="dateModified" content="2025-06-20T00:00:00-07:00">
+  <meta itemprop="wordCount" content="652">
+  <meta itemprop="keywords" content="Tailscale,Kubernetes,Operator,Kube-Prometheus">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Tailscale client metrics service discovery to Prometheus">
+  <meta name="twitter:description" content="I couldn’t summarize this in a title (even with an LLM’s help):
+I wanted to:
+Run a Tailscale service discovery agent On a Tailscale node outside of the Kubernetes cluster Using Podman Quadlet Accessing it from the Kubernetes Cluster using the Tailscale’s egress proxy Accessing the proxy with a kube-prometheus ScrapeConfig In order that Prometheus would scrape the container for Tailscale client metrics Long-winded? Yes but I had an underlying need in running the Tailscale Service Discoovery remotely and this configuration helped me achieve that.">
+
+      
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l center items-center justify-between">
+    <a href="/" class="f3 fw2 hover-white white-90 dib no-underline">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      <div class="ananke-socials"></div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  
+  <article class="flex-l mw8 center ph3 flex-wrap justify-between">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked ttu">
+          
+        Posts
+      </aside><div id="sharing" class="mt3 ananke-socials"></div>
+<h1 class="f1 athelas mt3 mb1">Tailscale client metrics service discovery to Prometheus</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2025-06-20T00:00:00-07:00">June 20, 2025</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 4 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 652 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I couldn&rsquo;t summarize this in a title (even with an LLM&rsquo;s help):</p>
+<p>I wanted to:</p>
+<ol>
+<li>Run a Tailscale service discovery agent</li>
+<li>On a Tailscale node outside of the Kubernetes cluster</li>
+<li>Using Podman Quadlet</li>
+<li>Accessing it from the Kubernetes Cluster using the Tailscale&rsquo;s egress proxy</li>
+<li>Accessing the proxy with a <code>kube-prometheus</code> <code>ScrapeConfig</code></li>
+<li>In order that Prometheus would scrape the container for Tailscale client metrics</li>
+</ol>
+<p>Long-winded? Yes but I had an underlying need in running the Tailscale Service Discoovery remotely and this configuration helped me achieve that.</p>
+<h2 id="run-tailscale-sd-on-a-tailscale-node">Run <code>tailscale-sd</code> on a Tailscale node</h2>
+<p>One way to run rootless containers indefinitely is to use <a href="https://www.redhat.com/en/blog/quadlet-podman">Quadlet</a> to generate a systemd service to run a container:</p>
+<p>I created <code>${HOME}/.config/containers/system/tailscale-sd.container</code>:</p>
+<pre tabindex="0"><code>[Unit]
+Description=Tailscale Service Discovery container
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+ContainerName=tailscale-sd
+Image=ghcr.io/.../tailscale-sd:...
+Environment=TAILSCALE_API_TOKEN=&#34;...&#34;
+Environment=TAILSCALE_TAILNET=&#34;....ts.net&#34;
+PublishPort=8080:8080
+
+[Service]
+KillMode=mixed
+
+[Install]
+WantedBy=default.target
+</code></pre><p>And learned that, for debugging purposes, it&rsquo;s good to run the following to check for errors:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>/usr/lib/systemd/user-generators/podman-user-generator <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  ~/.config/systemd/user <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  /dev/null <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  /dev/null
+</span></span></code></pre></div><p>Before running:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>systemctl --user daemon-reload
+</span></span><span style="display:flex;"><span>systemctl --user start tailscale-sd.service
+</span></span><span style="display:flex;"><span>systemctl --user status tailscale-sd.service
+</span></span></code></pre></div><p>Yielding:</p>
+<pre tabindex="0"><code>● tailscale-sd.service - Tailscale Service Discovery Container
+     Loaded: loaded (/{HOME}/.config/containers/systemd/tailscale-sd.container; enabled; preset: enabled)
+     Active: active (running) since Fri 2025-06-20 00:00:00 PDT;
+   Main PID: 12345 (conmon)
+      Tasks: 23 (limit: 3853)
+     Memory: 6.0M (peak: 16.4M)
+        CPU: 661ms
+     CGroup: /user.slice/user-1000.slice/user@1000.service/app.slice/tailscale-sd.service
+             ├─libpod-payload-77863e02aa15100a40139398657f6fab1c797a22d2a16b8d0f8700e68c84af35
+             │ └─15539 /server --address=:8080
+             └─runtime
+               ├─15518 /usr/bin/slirp4netns --disable-host-loopback --mtu=65520 --enable-sandbox --enable-seccomp --enable-ipv6 -c -r 3 -e 4 --netns-type=path /run/user/1000/netns/netns-9c5a9fa8-4208-8a48-85e5-22795ec4f937 tap0
+               ├─15520 rootlessport
+               ├─15528 rootlessport-child
+               └─15537 /usr/bin/conmon --api-version 1 -c 77863e02aa15100a40139398657f6fab1c797a22d2a16b8d0f8700e68c84af35 -u 77863e02aa15100a40139398657f6fab1c797a22d2a16b8d0f8700e68c84af35 -r /usr/bin/crun -b /{HOME}/.local/share/containers/storage/overlay-cont&gt;
+</code></pre><p>And, then I could confirm that the expected number of Tailscale nodes is being discovered with:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl --silent --get http://<span style="color:#f92672">{</span>node<span style="color:#f92672">}</span>.<span style="color:#f92672">{</span>tailnet<span style="color:#f92672">}</span>:8080 | jq -r <span style="color:#e6db74">&#39;.|length&#39;</span>
+</span></span></code></pre></div><h2 id="create-a-proxy-egress-service-on-kubernetes">Create a <code>proxy-egress</code> Service on Kubernetes</h2>
+<p>I&rsquo;m running Tailscale&rsquo;s excellent <a href="https://tailscale.com/kb/1236/kubernetes-operator">Kubernetes Operator</a> on MicroK8s.</p>
+<p>I wanted to be able to access the <code>tailscale-sd</code> service running on the remote node.</p>
+<p>To do this the operator provides <a href="https://tailscale.com/kb/1438/kubernetes-operator-cluster-egress">epxose a Tailnet service to your Kubernetes cluster</a> aka &ldquo;cluster egress&rdquo;.</p>
+<p>I&rsquo;m using Jsonnet but here&rsquo;s the equivalent Service YAML, <code>externalName</code> is replaced by the Tailscale Operator and so is a placeholder as the name here indicates:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">tailscale.com/tailnet-fqdn</span>: {<span style="color:#ae81ff">node}.{tailnet}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">tailscale-sd</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">tailscale-sd</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">externalName</span>: <span style="color:#ae81ff">placeholder</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">ExternalName</span>
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> Because the Operator patches the Service, if you try to reapply the Service to the cluster, it will be updated because it will differ to the server&rsquo;s value.</p></blockquote>
+<p>All being well, the Operator should patch the <code>externalName</code> with the name of the Service (associated with a StatefulSet and Pod) that it&rsquo;s created in the (default) <code>tailscale</code> namespace. These are the resources that proxy the traffic to the external service.</p>
+<p>You can verify the Operator&rsquo;s e.g backing Pod with:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;tailscale-sd&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl get pod <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--selector<span style="color:#f92672">=</span>tailscale.com/parent-resource<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>tailscale
+</span></span></code></pre></div><p>I wanted to verify that the service is working correctly:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl run busyboxplus <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--stdin --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--image<span style="color:#f92672">=</span>docker.io/radial/busyboxplus:curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>default <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-- sh
+</span></span></code></pre></div><blockquote>
+<p><strong>NOTE</strong> The only time I &ldquo;advertently&rdquo; (!?) use <code>default</code> namespace</p></blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nslookup tailscale-sd.tailscale-sd.svc.cluster.local
+</span></span><span style="display:flex;"><span>curl http://tailscale-sd.tailscale-sd.svc.cluster.local:8080
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>[
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;targets&#34;</span>:<span style="color:#960050;background-color:#1e0010">...</span>
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#960050;background-color:#1e0010">...</span>
+</span></span><span style="display:flex;"><span>]
+</span></span></code></pre></div><p>Outputs the Prometheus <a href="https://prometheus.io/docs/prometheus/latest/http_sd/">Service Discovery format</a> as expected. No <code>jq</code> on the busybox container image.</p>
+<h2 id="configure-kube-prometheus-to-scrape-the-service">Configure <code>kube-prometheus</code> to scrape the Service</h2>
+<p><code>kube-prometheus</code> (v0.81.0) provides the following <a href="https://doc.crds.dev/github.com/prometheus-operator/prometheus-operator@v0.81.0">CRDs</a> including <a href="https://doc.crds.dev/github.com/prometheus-operator/prometheus-operator/monitoring.coreos.com/ScrapeConfig/v1alpha1@v0.81.0"><code>ScrapeConfig</code></a></p>
+<p>This is straightforward and simply points to the <code>http</code> endpoint exposed by the service:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">monitoring.coreos.com/v1alpha1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ScrapeConfig</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">tailscale-sd</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">tailscale-sd</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">httpSDConfigs</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">url</span>: <span style="color:#ae81ff">http://tailscale-sd.tailscale-sd.svc.cluster.local:8080/</span>
+</span></span></code></pre></div><p>And then verify that the resulting Serice Discovery (<code>kube-prometheus</code> names these <code>scrapeConfig/{namespace}/{node}</code>) exists and is finding the expect number of nodes:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PROMETHEUS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;tailscale-sd&#34;</span>
+</span></span><span style="display:flex;"><span>NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;tailscale-sd&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>POOL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;scrapeConfig/</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;[
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    .data.activeTargets[]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    |select(.scrapePool==\&#34;</span><span style="color:#e6db74">${</span>POOL<span style="color:#e6db74">}</span><span style="color:#e6db74">\&#34;)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">|length&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PROMETHEUS<span style="color:#e6db74">}</span>/api/v1/targets <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span></code></pre></div><p>And, query the unique number of metrics available from the resulting <code>job</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--get <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--data-urlencode <span style="color:#e6db74">&#34;query=count(count by(__name__) ({job=\&#34;scrapeConfig/tailscale-sd/tailscale-sd\&#34;}))&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PROMETHEUS<span style="color:#e6db74">}</span>/api/v1/query
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;status&#34;</span>:<span style="color:#e6db74">&#34;success&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;data&#34;</span>:{
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;resultType&#34;</span>:<span style="color:#e6db74">&#34;vector&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;result&#34;</span>:[
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;metric&#34;</span>:{},
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">&#34;value&#34;</span>:[<span style="color:#ae81ff">1750444592.219</span>,<span style="color:#e6db74">&#34;14&#34;</span>]
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        ]
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>To delete everything:</p>
+<p>Kubernetes resources:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl delete scrapeconfig/tailscale-sd --namespace<span style="color:#f92672">=</span>tailscale-sd
+</span></span><span style="display:flex;"><span>kubectl delete service/tailscale-sd --namespace<span style="color:#f92672">=</span>tailscale-sd
+</span></span></code></pre></div><p>Quadlet:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>systemctl --user stop tailscale-sd.service
+</span></span><span style="display:flex;"><span>systemctl --user disable tailscale-sd.service
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>rm ~/.config/containers/systemd/tailscale-sd.container
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>systemctl --user daemon-reload
+</span></span><span style="display:flex;"><span>systemctl --user status tailscale-sd.service
+</span></span></code></pre></div><p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/tailscale/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Tailscale</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/kubernetes/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Kubernetes</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/operator/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Operator</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/kube-prometheus/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Kube-Prometheus</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/250325/">Migrating Prometheus Exporters to Kubernetes</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240811/">XML-RPC in Rust and Python</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240430/">Securing gRPC services using Tailscale</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240314/">Fly Kubernetes</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240216/">MicroK8s operability add-on</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230708/">Kubernetes Python SDK w/ CRDs</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230530/">Routing Firestore events to GKE with Eventarc</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230427/">Robusta KRR w/ GMP</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230425/">Google Metric Diagnostics and Metric Data Ingested</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230419/">Kubernetes metrics, metrics everywhere</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230310/">Kubernetes Operators</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200207/">Accessing GCR repos from Kubernetes</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/190924/">Kubernetes Engine and Free Tier</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white white-70 dn dib-ns pv2 ph3 no-underline" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2025 
+  </a>
+    <div><div class="ananke-socials"></div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
