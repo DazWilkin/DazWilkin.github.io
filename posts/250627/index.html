@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Gemini Code Assist &#39;agent&#39; mode without `npx mcp-remote` (2/2) | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="Solved!
+Ugh.
+The most helpful change was to take a hint from the NPM mcp-remote and create a log file. This helps because, otherwise the mcp-remote process, because it&rsquo;s launched by Visual Studio Code, well Gemini Code Assist agent, isn&rsquo;t trivial to debug.
+The solution involves not double-printing the request and filtering empty responses. As I progressed through the solution, I began receiving the following error and I learned that JSON-RPC notification messages should not receive a response. mcp-remote was sending an empty body:">
+    <meta name="generator" content="Hugo 0.148.0-DEV">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.8d048772ae72ab11245a0e296d1f2a36d3e3dd376c6c867394d6cc659c68fc37.css" >
+
+
+
+
+    
+
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:url" content="https://pretired.dazwilkin.com/posts/250627/">
+  <meta property="og:site_name" content="(p)retired">
+  <meta property="og:title" content="Gemini Code Assist &#39;agent&#39; mode without `npx mcp-remote` (2/2)">
+  <meta property="og:description" content="Solved!
+Ugh.
+The most helpful change was to take a hint from the NPM mcp-remote and create a log file. This helps because, otherwise the mcp-remote process, because it’s launched by Visual Studio Code, well Gemini Code Assist agent, isn’t trivial to debug.
+The solution involves not double-printing the request and filtering empty responses. As I progressed through the solution, I began receiving the following error and I learned that JSON-RPC notification messages should not receive a response. mcp-remote was sending an empty body:">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-06-27T00:00:00-07:00">
+    <meta property="article:modified_time" content="2025-06-27T00:00:00-07:00">
+    <meta property="article:tag" content="MCP">
+    <meta property="article:tag" content="Ackal">
+    <meta property="article:tag" content="Gemini">
+    <meta property="article:tag" content="Gemini Code Assist">
+    <meta property="article:tag" content="Rust">
+
+  <meta itemprop="name" content="Gemini Code Assist &#39;agent&#39; mode without `npx mcp-remote` (2/2)">
+  <meta itemprop="description" content="Solved!
+Ugh.
+The most helpful change was to take a hint from the NPM mcp-remote and create a log file. This helps because, otherwise the mcp-remote process, because it’s launched by Visual Studio Code, well Gemini Code Assist agent, isn’t trivial to debug.
+The solution involves not double-printing the request and filtering empty responses. As I progressed through the solution, I began receiving the following error and I learned that JSON-RPC notification messages should not receive a response. mcp-remote was sending an empty body:">
+  <meta itemprop="datePublished" content="2025-06-27T00:00:00-07:00">
+  <meta itemprop="dateModified" content="2025-06-27T00:00:00-07:00">
+  <meta itemprop="wordCount" content="590">
+  <meta itemprop="keywords" content="MCP,Ackal,Gemini,Gemini Code Assist,Rust">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Gemini Code Assist &#39;agent&#39; mode without `npx mcp-remote` (2/2)">
+  <meta name="twitter:description" content="Solved!
+Ugh.
+The most helpful change was to take a hint from the NPM mcp-remote and create a log file. This helps because, otherwise the mcp-remote process, because it’s launched by Visual Studio Code, well Gemini Code Assist agent, isn’t trivial to debug.
+The solution involves not double-printing the request and filtering empty responses. As I progressed through the solution, I began receiving the following error and I learned that JSON-RPC notification messages should not receive a response. mcp-remote was sending an empty body:">
+
+      
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l center items-center justify-between">
+    <a href="/" class="f3 fw2 hover-white white-90 dib no-underline">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      <div class="ananke-socials"></div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  
+  <article class="flex-l mw8 center ph3 flex-wrap justify-between">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked ttu">
+          
+        Posts
+      </aside><div id="sharing" class="mt3 ananke-socials"></div>
+<h1 class="f1 athelas mt3 mb1">Gemini Code Assist &#39;agent&#39; mode without `npx mcp-remote` (2/2)</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2025-06-27T00:00:00-07:00">June 27, 2025</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 3 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 590 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>Solved!</p>
+<p>Ugh.</p>
+<p>The most helpful change was to take a hint from the NPM <a href="https://www.npmjs.com/package/mcp-remote"><code>mcp-remote</code></a> and create a log file. This helps because, otherwise the <code>mcp-remote</code> process, because it&rsquo;s launched by Visual Studio Code, well Gemini Code Assist agent, isn&rsquo;t trivial to debug.</p>
+<p>The solution involves <strong>not</strong> double-printing the request <strong>and</strong> filtering empty responses. As I progressed through the solution, I began receiving the following error and I learned that JSON-RPC notification messages should not receive a response. <code>mcp-remote</code> was sending an empty body:</p>
+<pre tabindex="0"><code>MCP ERROR (wrapper): SyntaxError: Unexpected end of JSON input
+</code></pre><p>Add <a href="https://crates.io/crates/chrono"><code>chrono</code></a> to write log timestamps:</p>
+<p><code>Cargo.toml</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-TOML" data-lang="TOML"><span style="display:flex;"><span>[<span style="color:#a6e22e">package</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;mcp-remote&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;0.0.1&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">edition</span> = <span style="color:#e6db74">&#34;2024&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">dependencies</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chrono</span> = <span style="color:#e6db74">&#34;0.4.41&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">reqwest</span> = { <span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;0.11&#34;</span>, <span style="color:#a6e22e">features</span> = [<span style="color:#e6db74">&#34;json&#34;</span>, <span style="color:#e6db74">&#34;rustls-tls&#34;</span>], <span style="color:#a6e22e">default-features</span> = <span style="color:#66d9ef">false</span> }
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">tokio</span> = { <span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;1&#34;</span>, <span style="color:#a6e22e">features</span> = [<span style="color:#e6db74">&#34;full&#34;</span>] }
+</span></span></code></pre></div><p><code>main.rs</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> chrono::Utc;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::collections::hash_map::DefaultHasher;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::env;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::fs::OpenOptions;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::hash::{Hash, Hasher};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::io::{self, BufRead, BufReader, Write};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> reqwest;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tokio;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[tokio::main]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() -&gt; Result<span style="color:#f92672">&lt;</span>(), Box<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">dyn</span> std::error::Error<span style="color:#f92672">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> args: Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> env::args().collect();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> args.len() <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">2</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">eprintln!</span>(<span style="color:#e6db74">&#34;Usage: </span><span style="color:#e6db74">{}</span><span style="color:#e6db74"> &lt;remote-mcp-url&gt; [--insecure]&#34;</span>, args[<span style="color:#ae81ff">0</span>]);
+</span></span><span style="display:flex;"><span>        std::process::exit(<span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> remote_url <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>args[<span style="color:#ae81ff">1</span>];
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> insecure <span style="color:#f92672">=</span> args.len() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">&amp;&amp;</span> args[<span style="color:#ae81ff">2</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;--insecure&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create a log file name from a hash of the remote_url
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> hasher <span style="color:#f92672">=</span> DefaultHasher::new();
+</span></span><span style="display:flex;"><span>    remote_url.hash(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> hasher);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> hash <span style="color:#f92672">=</span> hasher.finish();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> log_filename <span style="color:#f92672">=</span> <span style="color:#a6e22e">format!</span>(<span style="color:#e6db74">&#34;mcp-remote-</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">.log&#34;</span>, hash);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Open the log file in append mode
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> log_file <span style="color:#f92672">=</span> OpenOptions::new()
+</span></span><span style="display:flex;"><span>        .create(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>        .append(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>        .open(<span style="color:#f92672">&amp;</span>log_filename)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">eprintln!</span>(<span style="color:#e6db74">&#34;Logging requests and responses to </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, log_filename);
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> client <span style="color:#f92672">=</span> reqwest::Client::builder()
+</span></span><span style="display:flex;"><span>        .danger_accept_invalid_certs(insecure)
+</span></span><span style="display:flex;"><span>        .build()<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> stdin <span style="color:#f92672">=</span> io::stdin();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> reader <span style="color:#f92672">=</span> BufReader::new(stdin.lock());
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> line <span style="color:#66d9ef">in</span> reader.lines() {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> line <span style="color:#f92672">=</span> line<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Write the request to the log
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">writeln!</span>(log_file, <span style="color:#e6db74">&#34;[{}] Request:</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">{}&#34;</span>, Utc::now(), <span style="color:#f92672">&amp;</span>line)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// The request has been printed to stdio by the user
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#75715e">// No need to write it again
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#75715e">// print!(&#34;{}&#34;, line);
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Forward the JSON-RPC message to the remote server
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#66d9ef">let</span> response <span style="color:#f92672">=</span> client
+</span></span><span style="display:flex;"><span>            .post(remote_url)
+</span></span><span style="display:flex;"><span>            .header(<span style="color:#e6db74">&#34;Content-Type&#34;</span>, <span style="color:#e6db74">&#34;application/json&#34;</span>)
+</span></span><span style="display:flex;"><span>            .body(line)
+</span></span><span style="display:flex;"><span>            .send()
+</span></span><span style="display:flex;"><span>            .<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> body <span style="color:#f92672">=</span> response.text().<span style="color:#66d9ef">await</span><span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Write the response to the log
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">writeln!</span>(log_file, <span style="color:#e6db74">&#34;[{}] Response:</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">{}&#34;</span>, Utc::now(), <span style="color:#f92672">&amp;</span>body)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// But only write non-empty trimmed responses to stdio
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> <span style="color:#f92672">!</span>body.trim().is_empty() {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">println!</span>(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, body);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    Ok(())
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And then:
+<code>~/.gemini/settings.json</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;mcpServers&#34;</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;ackal-mcp-server&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;command&#34;</span>: <span style="color:#e6db74">&#34;/path/to/mcp-remote&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;args&#34;</span>: [
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;http://localhost:7777/mcp&#34;</span>
+</span></span><span style="display:flex;"><span>        ]
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And, this now works!! Well, I continue to receive the following error but it doesn&rsquo;t appear (!?) to inhibit the proxy from functioning:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>MCP ERROR (prometheus-mcp-server): SyntaxError: Unexpected end of JSON input
+</span></span></code></pre></div><p>A second problem was more subtle and possibly compounded by my insistence on not wanting to install Node.JS on my host.</p>
+<p>On a Chromebook (running Linux), I was able to get Node.JS running under Podman working as a proxy:</p>
+<p><code>~/.gemini/settings.json</code>&quot;</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;mcpServers&#34;</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;prometheus-mcp-server&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;command&#34;</span>: <span style="color:#e6db74">&#34;podman&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;args&#34;</span>: [
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;run&#34;</span>,
+</span></span><span style="display:flex;"><span>             <span style="color:#e6db74">&#34;--rm&#34;</span>,<span style="color:#e6db74">&#34;--interactive&#34;</span>,
+</span></span><span style="display:flex;"><span>             <span style="color:#e6db74">&#34;node:24.3.0-alpine&#34;</span>,
+</span></span><span style="display:flex;"><span>             <span style="color:#e6db74">&#34;npx&#34;</span>,
+</span></span><span style="display:flex;"><span>             <span style="color:#e6db74">&#34;--yes&#34;</span>,
+</span></span><span style="display:flex;"><span>             <span style="color:#e6db74">&#34;mcp-remote&#34;</span>,
+</span></span><span style="display:flex;"><span>             <span style="color:#e6db74">&#34;http://localhost:7777/mcp&#34;</span>,
+</span></span><span style="display:flex;"><span>             <span style="color:#e6db74">&#34;--allow-http&#34;</span>
+</span></span><span style="display:flex;"><span>            ]
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>But, when I tried this on my (Ubuntu) machine, it continued to fail:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>[CoderAgentExecutor] Overriding workspace path to: /path/to/ackal-mcp-server
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>failed to start or connect to MCP server &#39;ackal-mcp-server&#39; {&#34;command&#34;:&#34;podman&#34;};
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>McpError: MCP error -32000: Connection closed
+</span></span></code></pre></div><p>And I could not understand the difference until I tracked down <code>CoderAgentExecutor</code> as <code>agent.mjs</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ps aux | grep <span style="color:#f92672">[</span>a<span style="color:#f92672">]</span>gent
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>/snap/code-insiders/2014/usr/share/code-insiders/code-insiders /path/to/google.geminicodeassist-2.38.0-insiders.3/agent/agent.mjs
+</span></span><span style="display:flex;"><span>/snap/code-insiders/2014/usr/share/code-insiders/code-insiders /path/to/google.geminicodeassist-2.39.0-insiders.0/agent/agent.mjs
+</span></span><span style="display:flex;"><span>/snap/code-insiders/2014/usr/share/code-insiders/code-insiders /path/to/google.geminicodeassist-2.39.0-insiders.0/agent/agent.mjs
+</span></span></code></pre></div><p>The critical element here is <code>/snap/code-insiders/...</code> because I&rsquo;m running Visual Studio Code as a <a href="https://snapcraft.io/docs">Snap</a> and, having experienced security challenges with Snap in the past, I suspect this is the cause; Visual Studio Code is not permitted to invoke Podman.</p>
+<p>In good news, Visual Studio Code is able to invoke the Rust binary generated from the above.</p>
+<p>And so I may now:</p>
+<p><img src="/images/250627.mcp.png" alt="List MCP servers">
+<img src="/images/250627.targets.request.png" alt="List Targets (Request)">
+<img src="/images/250627.targets.response.png" alt="List Targets (Response)">
+<img src="/images/250627.query.png" alt="Containers using &gt;12MB"></p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/mcp/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">MCP</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/ackal/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Ackal</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/gemini/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Gemini</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/gemini-code-assist/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Gemini Code Assist</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/rust/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Rust</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/250626/">Gemini Code Assist &#39;agent&#39; mode without `npx mcp-remote` (1/2)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/250616/">Prometheus MCP Server</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/250612/">MCP for gRPC Health Checking protocol</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240811/">XML-RPC in Rust and Python</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230708/">Kubernetes Python SDK w/ CRDs</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230404/">Azure Container Apps</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230310/">Kubernetes Operators</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/190930/">PyPi Transparency Client (Rust)</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white white-70 dn dib-ns pv2 ph3 no-underline" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2025 
+  </a>
+    <div><div class="ananke-socials"></div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
