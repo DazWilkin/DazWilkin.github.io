@@ -6,9 +6,8 @@
     
     <title>Bare Metal: DS18B20 | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
-    <meta name="description" content="I&rsquo;ve been working through Google&rsquo;s Comprehensive Rust and, for the past couple of weeks, the Bare Metal Rust standalone course that uses the (excellent) micro:bit v2 that uses a Nordic Semiconductor nRF52833 (an ARM Cortex-M4; interestingly its USB interface is also implemented using an ARM Cortex M0).
-There&rsquo;s a wealth of Rust tutorials for MCUs and I bought an ESP32-C3-DevKit-RUST-1 for another and spent some time with my favorite Pi Pico and a newly-acquired Debug Probe.
-I&rsquo;m going to blog in reverse order on these experiences starting with several unsuccessful attempts to interact with 5 DS18B20 (thermometer) sensors using Rust and an ESP32-C3 and Python and a Pico primarily for my own documentation and hope it helps others. DS18B20s use 1-Wire. 1-Wire is a very straightforward protocol (akin to 12C, SPI etc.) is a serial communication protocol that, as its name hints, uses a single wire for data (can also use this data wire for &ldquo;parasitic&rdquo; power).">
+    <meta name="description" content="I&rsquo;ve been working through Google&rsquo;s Comprehensive Rust and, for the past couple of weeks, the Bare Metal Rust standalone course that uses the (excellent) micro:bit v2 that has a Nordic Semiconductor nRF52833 (an ARM Cortex-M4; interestingly its USB interface is also implemented using an ARM Cortex M0).
+There&rsquo;s a wealth of Rust tutorials for MCUs and I bought an ESP32-C3-DevKit-RUST-1 for another tutorial and spent some time with my favorite Pi Pico and a newly-acquired Debug Probe.">
     <meta name="generator" content="Hugo 0.150.0-DEV">
     
     
@@ -38,9 +37,8 @@ I&rsquo;m going to blog in reverse order on these experiences starting with seve
     <meta property="og:url" content="https://pretired.dazwilkin.com/posts/250903/">
   <meta property="og:site_name" content="(p)retired">
   <meta property="og:title" content="Bare Metal: DS18B20">
-  <meta property="og:description" content="I’ve been working through Google’s Comprehensive Rust and, for the past couple of weeks, the Bare Metal Rust standalone course that uses the (excellent) micro:bit v2 that uses a Nordic Semiconductor nRF52833 (an ARM Cortex-M4; interestingly its USB interface is also implemented using an ARM Cortex M0).
-There’s a wealth of Rust tutorials for MCUs and I bought an ESP32-C3-DevKit-RUST-1 for another and spent some time with my favorite Pi Pico and a newly-acquired Debug Probe.
-I’m going to blog in reverse order on these experiences starting with several unsuccessful attempts to interact with 5 DS18B20 (thermometer) sensors using Rust and an ESP32-C3 and Python and a Pico primarily for my own documentation and hope it helps others. DS18B20s use 1-Wire. 1-Wire is a very straightforward protocol (akin to 12C, SPI etc.) is a serial communication protocol that, as its name hints, uses a single wire for data (can also use this data wire for “parasitic” power).">
+  <meta property="og:description" content="I’ve been working through Google’s Comprehensive Rust and, for the past couple of weeks, the Bare Metal Rust standalone course that uses the (excellent) micro:bit v2 that has a Nordic Semiconductor nRF52833 (an ARM Cortex-M4; interestingly its USB interface is also implemented using an ARM Cortex M0).
+There’s a wealth of Rust tutorials for MCUs and I bought an ESP32-C3-DevKit-RUST-1 for another tutorial and spent some time with my favorite Pi Pico and a newly-acquired Debug Probe.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="posts">
@@ -52,18 +50,16 @@ I’m going to blog in reverse order on these experiences starting with several 
     <meta property="article:tag" content="Wokwi">
 
   <meta itemprop="name" content="Bare Metal: DS18B20">
-  <meta itemprop="description" content="I’ve been working through Google’s Comprehensive Rust and, for the past couple of weeks, the Bare Metal Rust standalone course that uses the (excellent) micro:bit v2 that uses a Nordic Semiconductor nRF52833 (an ARM Cortex-M4; interestingly its USB interface is also implemented using an ARM Cortex M0).
-There’s a wealth of Rust tutorials for MCUs and I bought an ESP32-C3-DevKit-RUST-1 for another and spent some time with my favorite Pi Pico and a newly-acquired Debug Probe.
-I’m going to blog in reverse order on these experiences starting with several unsuccessful attempts to interact with 5 DS18B20 (thermometer) sensors using Rust and an ESP32-C3 and Python and a Pico primarily for my own documentation and hope it helps others. DS18B20s use 1-Wire. 1-Wire is a very straightforward protocol (akin to 12C, SPI etc.) is a serial communication protocol that, as its name hints, uses a single wire for data (can also use this data wire for “parasitic” power).">
+  <meta itemprop="description" content="I’ve been working through Google’s Comprehensive Rust and, for the past couple of weeks, the Bare Metal Rust standalone course that uses the (excellent) micro:bit v2 that has a Nordic Semiconductor nRF52833 (an ARM Cortex-M4; interestingly its USB interface is also implemented using an ARM Cortex M0).
+There’s a wealth of Rust tutorials for MCUs and I bought an ESP32-C3-DevKit-RUST-1 for another tutorial and spent some time with my favorite Pi Pico and a newly-acquired Debug Probe.">
   <meta itemprop="datePublished" content="2025-09-03T00:00:00-07:00">
   <meta itemprop="dateModified" content="2025-09-03T00:00:00-07:00">
-  <meta itemprop="wordCount" content="1168">
+  <meta itemprop="wordCount" content="1179">
   <meta itemprop="keywords" content="Rust,Pico,ESP32-C3,Wokwi">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Bare Metal: DS18B20">
-  <meta name="twitter:description" content="I’ve been working through Google’s Comprehensive Rust and, for the past couple of weeks, the Bare Metal Rust standalone course that uses the (excellent) micro:bit v2 that uses a Nordic Semiconductor nRF52833 (an ARM Cortex-M4; interestingly its USB interface is also implemented using an ARM Cortex M0).
-There’s a wealth of Rust tutorials for MCUs and I bought an ESP32-C3-DevKit-RUST-1 for another and spent some time with my favorite Pi Pico and a newly-acquired Debug Probe.
-I’m going to blog in reverse order on these experiences starting with several unsuccessful attempts to interact with 5 DS18B20 (thermometer) sensors using Rust and an ESP32-C3 and Python and a Pico primarily for my own documentation and hope it helps others. DS18B20s use 1-Wire. 1-Wire is a very straightforward protocol (akin to 12C, SPI etc.) is a serial communication protocol that, as its name hints, uses a single wire for data (can also use this data wire for “parasitic” power).">
+  <meta name="twitter:description" content="I’ve been working through Google’s Comprehensive Rust and, for the past couple of weeks, the Bare Metal Rust standalone course that uses the (excellent) micro:bit v2 that has a Nordic Semiconductor nRF52833 (an ARM Cortex-M4; interestingly its USB interface is also implemented using an ARM Cortex M0).
+There’s a wealth of Rust tutorials for MCUs and I bought an ESP32-C3-DevKit-RUST-1 for another tutorial and spent some time with my favorite Pi Pico and a newly-acquired Debug Probe.">
 
       
     
@@ -120,21 +116,22 @@ I’m going to blog in reverse order on these experiences starting with several 
       
       
         <span class="f6 mv4 dib tracked"> - 6 minutes read </span>
-        <span class="f6 mv4 dib tracked"> - 1168 words </span>
+        <span class="f6 mv4 dib tracked"> - 1179 words </span>
       
     </header>
-    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve been working through Google&rsquo;s <a href="https://google.github.io/comprehensive-rust/">Comprehensive Rust</a> and, for the past couple of weeks, the <a href="https://google.github.io/comprehensive-rust/bare-metal.html">Bare Metal Rust</a> standalone course that uses the (excellent) <a href="https://tech.microbit.org/hardware/2-0-revision/">micro:bit v2</a> that uses a Nordic Semiconductor <a href="https://tech.microbit.org/hardware/2-0-revision/#nrf52-application-processor">nRF52833</a> (an ARM Cortex-M4; interestingly its USB interface is also implemented using an ARM Cortex M0).</p>
-<p>There&rsquo;s a wealth of Rust tutorials for MCUs and I bought an <a href="https://www.espressif.com/en/dev-board/esp32-c3-devkit-rust-1-en">ESP32-C3-DevKit-RUST-1</a> for another and spent some time with my favorite <a href="https://www.raspberrypi.com/products/raspberry-pi-pico/">Pi Pico</a> and a newly-acquired <a href="https://www.raspberrypi.com/products/debug-probe/">Debug Probe</a>.</p>
-<p>I&rsquo;m going to blog in reverse order on these experiences starting with several <strong>unsuccessful</strong> attempts to interact with 5 <a href="https://www.analog.com/en/products/ds18b20.html">DS18B20</a> (thermometer) sensors using Rust and an ESP32-C3 and Python and a Pico primarily for my own documentation and hope it helps others. DS18B20s use <a href="https://www.analog.com/en/product-category/1wire-devices.html">1-Wire</a>. 1-Wire is a very straightforward protocol (akin to 1<sup>2</sup>C, SPI etc.) is a serial communication protocol that, as its name hints, uses a single wire for data (can also use this data wire for &ldquo;parasitic&rdquo; power).</p>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;ve been working through Google&rsquo;s <a href="https://google.github.io/comprehensive-rust/">Comprehensive Rust</a> and, for the past couple of weeks, the <a href="https://google.github.io/comprehensive-rust/bare-metal.html">Bare Metal Rust</a> standalone course that uses the (excellent) <a href="https://tech.microbit.org/hardware/2-0-revision/">micro:bit v2</a> that has a Nordic Semiconductor <a href="https://tech.microbit.org/hardware/2-0-revision/#nrf52-application-processor">nRF52833</a> (an ARM Cortex-M4; interestingly its USB interface is also implemented using an ARM Cortex M0).</p>
+<p>There&rsquo;s a wealth of Rust tutorials for MCUs and I bought an <a href="https://www.espressif.com/en/dev-board/esp32-c3-devkit-rust-1-en">ESP32-C3-DevKit-RUST-1</a> for another tutorial and spent some time with my favorite <a href="https://www.raspberrypi.com/products/raspberry-pi-pico/">Pi Pico</a> and a newly-acquired <a href="https://www.raspberrypi.com/products/debug-probe/">Debug Probe</a>.</p>
+<p>I&rsquo;m going to blog in reverse order on these experiences starting with several <strong>unsuccessful</strong> attempts to interact with 5 <a href="https://www.analog.com/en/products/ds18b20.html">DS18B20</a> (thermometer) sensors using Rust on an ESP32-C3 and then, trying to find a solution that worked, Python on a Pico.</p>
+<p>DS18B20s use <a href="https://www.analog.com/en/product-category/1wire-devices.html">1-Wire</a>. 1-Wire is a very straightforward protocol (akin to 1<sup>2</sup>C, SPI etc.). It is a serial communication protocol that, as its name hints, uses a single wire for data (the data wire can also be used for &ldquo;parasitic&rdquo; power).</p>
 <p>Here are some diagrams:</p>
 <p><img src="/images/250903.esp32-c3.ds18b20.png" alt="1-Wire ESP32-C3 w/ 5 DS18B20"></p>
 <p><a href="https://gist.github.com/DazWilkin/65bda633715986023d0d76fc1e9319ff#file-esp32-c3-diagram-json"><code>diagram.json</code></a></p>
 <p><img src="/images/250903.pico.ds18b20.png" alt="1-Wire Pi Pico w/ 5 DS18B20"></p>
 <p><a href="https://gist.github.com/DazWilkin/65bda633715986023d0d76fc1e9319ff#file-pico-diagram-json"><code>diagram.json</code></a></p>
-<p>Those of you who are familiar with it, will recognize this as the really excellent <a href="https://wokwi.com">Wokwi</a> simulator that includes a wealth of MCUs (also including Arduinos) and peripherals.</p>
+<p>Those of you who are familiar with it, will recognize this as the really excellent <a href="https://wokwi.com">Wokwi</a> simulator that includes several microcontrollers (including Arduinos but not micro:bits) and a slew of peripherals.</p>
 <blockquote>
 <p><strong>NOTE</strong> It is <em>possible</em> that the reason these examples don&rsquo;t work is a 1-Wire timing issue running under Wokwi. I should buy some <a href="https://www.adafruit.com/product/374">DS18B20</a> and try this in our simulation.</p></blockquote>
-<p>Wokwi is extensible and comprises multiple repos that implement the MCUs and peripherals including a C implementation of the <a href="https://github.com/bonnyr/wokwi-ds1820-custom-chip">DS18B20</a>. This enables the <code>DS18B20</code> device in Wokwi including permitting the following <code>diagram.json</code> entry:</p>
+<p>Wokwi is extensible, comprising multiple repos that implement the MCUs and peripherals including a C implementation of the <a href="https://github.com/bonnyr/wokwi-ds1820-custom-chip">DS18B20</a>. This enables the <code>DS18B20</code> device in Wokwi including permitting the following <code>diagram.json</code> entry:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;board-ds18b20&#34;</span>,
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;temp1&#34;</span>,
@@ -149,7 +146,7 @@ I’m going to blog in reverse order on these experiences starting with several 
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The values in the <code>attrs</code> object are documented <a href="https://github.com/bonnyr/wokwi-ds1820-custom-chip?tab=readme-ov-file#attributes">here</a></p></blockquote>
-<p>This represents peripheral&rsquo;s implementation and it functions somewhat like a server. Even though the Rust and Python (clients) running on the MCUs doesn&rsquo;t work, the peripheral appears (!?) to work correctly. Here&rsquo;s the output from Wokwi&rsquo;s &ldquo;CHIP CONSOLE&rdquo;:</p>
+<p>This repo is this peripheral&rsquo;s implementation and it functions somewhat like a server. Even though I haven&rsquo;t been able to get the Rust and Python (clients) running on the microcontrollers doesn&rsquo;t work, the peripheral appears (!?) to work correctly. Here&rsquo;s the output from Wokwi&rsquo;s &ldquo;CHIP CONSOLE&rdquo;:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>*** DS18B20 chip initialising...
 </span></span><span style="display:flex;"><span>reading temp mode: sine
 </span></span><span style="display:flex;"><span>*** DS18B20 setting attributes:
@@ -216,7 +213,7 @@ I’m going to blog in reverse order on these experiences starting with several 
 </span></span><span style="display:flex;"><span>  deviceID: 2800000000000521
 </span></span><span style="display:flex;"><span>DS18B20 chip initialised
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> There are 5 <code>DS18B20 chip initialised</code>. Each of which has <code>familyCode: 0x28</code> and, although the <code>deviceID</code> are presented <code>family-code:address:CRC</code> (instead of <code>CRC:address:family-code</code>) and, the CRCs disagree with my calculations (see below), you can see e.g. <code>000000000001</code> and on.</p></blockquote>
+<p><strong>NOTE</strong> There are 5 <code>DS18B20 chip initialised</code>. Each of which has <code>familyCode: 0x28</code> and, although the <code>deviceID</code> are present <code>family-code:address:CRC</code> (instead of <code>CRC:address:family-code</code>) and, the CRCs disagree with my calculations (see below), you can see e.g. <code>000000000001</code> and on.</p></blockquote>
 <p>1-Wire devices have a hard-coded ROM 64-bit (8-byte) address comprising most-significant byte CRC, 6 bytes of &ldquo;address&rdquo; and a least-significant byte called the family code, uniquely identifying the type of sensor (in this case DS18B20 are <code>0x28</code> (<code>40</code>)).</p>
 <p>Interestingly if your printer rejects a cartridge or your Apple computer dislikes a power supply, it&rsquo;s likely because these peripherals use 1-Wire devices and the host device is decoding the peripheral&rsquo;s ROM to determine whether it&rsquo;s a valid peripheral.</p>
 <p>There are 2 CRCs used by 1-Wire. These are <a href="https://www.analog.com/en/resources/technical-articles/understanding-and-using-cyclic-redundancy-checks-with-maxim-1wire-and-ibutton-products.html">documented</a>. My (Rust) code appears to be an accurate implementation of the 8-bit 1-Wire CRC <strong>but</strong> my CRC calculations don&rsquo;t agree with those produced by the Wokwi device:</p>
