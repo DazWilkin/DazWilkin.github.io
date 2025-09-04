@@ -7,6 +7,7 @@
     <title>Bare Metal: WS2812 | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="This one works!
+Virtual WS2812s
 
 
     
@@ -46,7 +47,7 @@ Addressable LEDs are hugely popular in tinkerer circles. Addressable LEDs come i
   <meta property="og:site_name" content="(p)retired">
   <meta property="og:title" content="Bare Metal: WS2812">
   <meta property="og:description" content="This one works!
-diagram.json
+Virtual WS2812s diagram.json
 I’d gone cough many years and never heard of 1-Wire and, suddenly, it’s everywhere.
 Addressable LEDs are hugely popular in tinkerer circles. Addressable LEDs come in myriad forms (wheels, matrices) but commonly they’re sold as long strips. The part number is WS2812 and they use 1-Wire too. Each, often multi-color (RGB) LED (often known as a pixel), is combined with an IC that enables the “addressable” behavior.">
   <meta property="og:locale" content="en_us">
@@ -55,25 +56,24 @@ Addressable LEDs are hugely popular in tinkerer circles. Addressable LEDs come i
     <meta property="article:published_time" content="2025-09-04T00:00:00-07:00">
     <meta property="article:modified_time" content="2025-09-04T00:00:00-07:00">
     <meta property="article:tag" content="Rust">
-    <meta property="article:tag" content="Pico">
     <meta property="article:tag" content="ESP32-C3">
     <meta property="article:tag" content="Wokwi">
-    <meta property="article:tag" content="DS2812">
+    <meta property="article:tag" content="WS2812">
     <meta property="article:tag" content="1-Wire">
 
   <meta itemprop="name" content="Bare Metal: WS2812">
   <meta itemprop="description" content="This one works!
-diagram.json
+Virtual WS2812s diagram.json
 I’d gone cough many years and never heard of 1-Wire and, suddenly, it’s everywhere.
 Addressable LEDs are hugely popular in tinkerer circles. Addressable LEDs come in myriad forms (wheels, matrices) but commonly they’re sold as long strips. The part number is WS2812 and they use 1-Wire too. Each, often multi-color (RGB) LED (often known as a pixel), is combined with an IC that enables the “addressable” behavior.">
   <meta itemprop="datePublished" content="2025-09-04T00:00:00-07:00">
   <meta itemprop="dateModified" content="2025-09-04T00:00:00-07:00">
-  <meta itemprop="wordCount" content="160">
-  <meta itemprop="keywords" content="Rust,Pico,ESP32-C3,Wokwi,DS2812,1-Wire">
+  <meta itemprop="wordCount" content="534">
+  <meta itemprop="keywords" content="Rust,ESP32-C3,Wokwi,WS2812,1-Wire">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Bare Metal: WS2812">
   <meta name="twitter:description" content="This one works!
-diagram.json
+Virtual WS2812s diagram.json
 I’d gone cough many years and never heard of 1-Wire and, suddenly, it’s everywhere.
 Addressable LEDs are hugely popular in tinkerer circles. Addressable LEDs come in myriad forms (wheels, matrices) but commonly they’re sold as long strips. The part number is WS2812 and they use 1-Wire too. Each, often multi-color (RGB) LED (often known as a pixel), is combined with an IC that enables the “addressable” behavior.">
 
@@ -131,28 +131,69 @@ Addressable LEDs are hugely popular in tinkerer circles. Addressable LEDs come i
 
       
       
-        <span class="f6 mv4 dib tracked"> - One minute read </span>
-        <span class="f6 mv4 dib tracked"> - 160 words </span>
+        <span class="f6 mv4 dib tracked"> - 3 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 534 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>This one works!</p>
+<h2 id="virtual-ws2812s">Virtual WS2812s</h2>
 <!--![1-Wire ESP32-C3 w/ WS2812](/images/250904.esp32-c3.ws2812.png)-->
 <video autoplay controls loop>
-    <source src="/videos/250904.esp32-c3.ws2812.webm" type="video/webm" />
+    <source src="/videos/250904.esp32-c3.ws2812.gpio4.webm" type="video/webm" />
 </video>
 <p><a href="https://gist.github.com/DazWilkin/7c2deded3ec5f7899f5d850ebd624cfb#file-diagram-json"><code>diagram.json</code></a></p>
 <p>I&rsquo;d gone <em>cough</em> many years and never heard of 1-Wire and, suddenly, it&rsquo;s everywhere.</p>
 <p>Addressable LEDs are hugely popular in tinkerer circles. Addressable LEDs come in myriad forms (wheels, matrices) but commonly they&rsquo;re sold as long strips. The part number is <a href="https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf">WS2812</a> and they use 1-Wire too. Each, often multi-color (RGB) LED (often known as a pixel), is combined with an IC that enables the &ldquo;addressable&rdquo; behavior.</p>
 <p>In essence, a message stream is sent alone the strip&rsquo;s 1-Wire network each &ldquo;pixel&rdquo;, in turn, takes a message (encoded RGB color) from the stream, colors its LEDs to match and passes the rest (!) of the stream on to the next pixel in the strip.</p>
 <p>The result is that the strip of pixels can be programmed easily to display complex patterns. The &ldquo;addressability&rdquo; is accurate since the stream originator deterministically controls which pixel gets which RGB encoding but it results entirely from each pixel&rsquo;s position on the strip.</p>
+<p>Each pixel is colored by a 24-bit RGB: <code style="color:green">GGGGGGGG</code><code style="color:red">RRRRRRRR</code><code style="color:blue">BBBBBBBB</code></p>
+<p>In Rust, it&rsquo;s convenient to represent these using <code>RGB8==RGB&lt;u8&gt;</code> and to pack these:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">let</span> color: <span style="color:#66d9ef">u32</span> <span style="color:#f92672">=</span> ((rgb.g <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">u32</span>) <span style="color:#f92672">&lt;&lt;</span> <span style="color:#ae81ff">16</span>) <span style="color:#f92672">|</span> ((rgb.r <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">u32</span>) <span style="color:#f92672">&lt;&lt;</span> <span style="color:#ae81ff">8</span>) <span style="color:#f92672">|</span> rgb.b <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">u32</span>;
+</span></span></code></pre></div><p>ESP32&rsquo;s include an <a href="https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/rmt.html">RMT</a> peripheral which permits fine control over signals and, somewhat similar to the (greater) ability of <a href="https://www.raspberrypi.com/news/what-is-pio/">PIO</a> on the RP2XX0, it can be used to implement protocols such as 1-Wire.</p>
+<p>The <a href="https://crates.io/crates/esp-hal"><code>esp-hal</code></a> crate (for the <a href="https://docs.espressif.com/projects/rust/esp-hal/1.0.0-rc.0/esp32c3/esp_hal/">ESP32-C3</a>) supports <a href="https://docs.espressif.com/projects/rust/esp-hal/1.0.0-rc.0/esp32c3/esp_hal/rmt/index.html"><code>rmt</code></a> and includes <a href="https://docs.espressif.com/projects/rust/esp-hal/1.0.0-rc.0/esp32c3/esp_hal/rmt/trait.PulseCode.html"><code>rmt::PulseCode</code></a> which allows the creation of the correct signals required by 1-Wire where a <code>1</code> has a longer high signal than low signal and a <code>0</code> has a shorter high signal than low signal.</p>
+<p>So, in rust, we can iterate over 24-bits of <code>color</code>&rsquo;s 32 (<code>u32</code>) in reverse (most significant bit first!) to generate the appropriate pules:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">for</span> (i, pulse) <span style="color:#66d9ef">in</span> pulses.iter_mut().enumerate().take(<span style="color:#ae81ff">24</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> bit <span style="color:#f92672">=</span> (color <span style="color:#f92672">&gt;&gt;</span> (<span style="color:#ae81ff">23</span> <span style="color:#f92672">-</span> i)) <span style="color:#f92672">&amp;</span> <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> bit <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">*</span>pulse <span style="color:#f92672">=</span> PulseCode::new(Level::High, <span style="color:#66d9ef">T1H</span>, Level::Low, <span style="color:#66d9ef">T1L</span>);
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">*</span>pulse <span style="color:#f92672">=</span> PulseCode::new(Level::High, <span style="color:#66d9ef">T0H</span>, Level::Low, <span style="color:#66d9ef">T0L</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And then simply aggregate 24 pulses (1 pixel) for the number of pixels in our chain. The first 24 pulses will be consumed by the first pixel in the chain, the next 24 pulses will be consumed by the 2nd etc.</p>
+<h2 id="onboard-ws2812">Onboard WS2812</h2>
+<video autoplay controls loop>
+    <source src="/videos/250904.esp32-c3.ws2812.gpio2.webm" type="video/webm" />
+</video>
+<p>The <a href="https://www.espressif.com/en/dev-board/esp32-c3-devkit-rust-1-en"><code>ESP32-C3-DevKit-RUST</code></a> includes an on-board Addressable LED (WS2812) bound to GPIO2 (see <a href="https://github.com/esp-rs/esp-rust-board/blob/master/assets/rust_board_v1.2_diagram.png">board diagram</a>).</p>
+<p>This provides a way in which I can use a physical WS2812 to test code.</p>
+<p>This has a trivial <code>diagram.json</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;version&#34;</span>: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;author&#34;</span>: <span style="color:#e6db74">&#34;Daz&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;editor&#34;</span>: <span style="color:#e6db74">&#34;wokwi&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;parts&#34;</span>: [
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;board-esp32-c3-rust-1&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;esp&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;top&#34;</span>: <span style="color:#ae81ff">-211.5</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;left&#34;</span>: <span style="color:#ae81ff">-3.78</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;rotate&#34;</span>: <span style="color:#ae81ff">0.0</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;attrs&#34;</span>: { <span style="color:#f92672">&#34;builder&#34;</span>: <span style="color:#e6db74">&#34;rust-nostd-esp&#34;</span> }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;connections&#34;</span>: [],
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;serialMonitor&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;display&#34;</span>: <span style="color:#e6db74">&#34;terminal&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;convertEol&#34;</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Rust compilations on Wokwi (currently) fail. A neat solution to this problem is to build locally (targeting the appropriate device) and then upload the binary to a vanilla Rust project.</p>
+<p>It&rsquo;s difficult to capture the screenshot but even with an empty <code>main.rs</code> file on Wokwi, from anywhere on that editor page, <code>F1</code> will bring up a submenu from which you can select &ldquo;Upload Firmware and Start Simulation`, select this option and select the binary and, the simulation should begin.</p>
 <ul class="pa0">
   
    <li class="list di">
      <a href="/tags/rust/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Rust</a>
-   </li>
-  
-   <li class="list di">
-     <a href="/tags/pico/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Pico</a>
    </li>
   
    <li class="list di">
@@ -164,7 +205,7 @@ Addressable LEDs are hugely popular in tinkerer circles. Addressable LEDs come i
    </li>
   
    <li class="list di">
-     <a href="/tags/ds2812/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">DS2812</a>
+     <a href="/tags/ws2812/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">WS2812</a>
    </li>
   
    <li class="list di">
@@ -189,6 +230,10 @@ Addressable LEDs are hugely popular in tinkerer circles. Addressable LEDs come i
 	   
 	     <li  class="mb2">
           <a href="/posts/250903/">Bare Metal: DS18B20</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/250905/">Bare Metal: Pico and CYW43</a>
         </li>
 	    
 	     <li  class="mb2">
