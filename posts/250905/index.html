@@ -7,8 +7,8 @@
     <title>Bare Metal: Pico and CYW43 | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="The &ldquo;W&rdquo; signifies that the board includes wireless. Interestingly, the wireless chip is an Infineon CYW43439) which is itself a microcontroller running its own ARM Cortex chip (M3). The Pico&rsquo;s USB device includes another ARM microcontroller. So, with the dual Cortex (or Hazard) chips that are user programmable, and the 8 PIOs, these devices really pack a punch.
-As a result of adding the wireless (microcontroller) chip to the Pico, the Pico&rsquo;s WS2812 (pixel) is accessible only through the CYW43439.">
-    <meta name="generator" content="Hugo 0.150.0-DEV">
+As a result of adding the wireless (microcontroller) chip to the Pico, the Pico W&rsquo;s on-board LED is accessible only through the CYW43439. Yeah, weird but it makes for an interesting solution.">
+    <meta name="generator" content="Hugo 0.151.0-DEV">
     
     
     
@@ -40,7 +40,7 @@ As a result of adding the wireless (microcontroller) chip to the Pico, the Pico&
   <meta property="og:site_name" content="(p)retired">
   <meta property="og:title" content="Bare Metal: Pico and CYW43">
   <meta property="og:description" content="The “W” signifies that the board includes wireless. Interestingly, the wireless chip is an Infineon CYW43439) which is itself a microcontroller running its own ARM Cortex chip (M3). The Pico’s USB device includes another ARM microcontroller. So, with the dual Cortex (or Hazard) chips that are user programmable, and the 8 PIOs, these devices really pack a punch.
-As a result of adding the wireless (microcontroller) chip to the Pico, the Pico’s WS2812 (pixel) is accessible only through the CYW43439.">
+As a result of adding the wireless (microcontroller) chip to the Pico, the Pico W’s on-board LED is accessible only through the CYW43439. Yeah, weird but it makes for an interesting solution.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="article">
     <meta property="article:section" content="posts">
@@ -53,15 +53,15 @@ As a result of adding the wireless (microcontroller) chip to the Pico, the Pico�
 
   <meta itemprop="name" content="Bare Metal: Pico and CYW43">
   <meta itemprop="description" content="The “W” signifies that the board includes wireless. Interestingly, the wireless chip is an Infineon CYW43439) which is itself a microcontroller running its own ARM Cortex chip (M3). The Pico’s USB device includes another ARM microcontroller. So, with the dual Cortex (or Hazard) chips that are user programmable, and the 8 PIOs, these devices really pack a punch.
-As a result of adding the wireless (microcontroller) chip to the Pico, the Pico’s WS2812 (pixel) is accessible only through the CYW43439.">
+As a result of adding the wireless (microcontroller) chip to the Pico, the Pico W’s on-board LED is accessible only through the CYW43439. Yeah, weird but it makes for an interesting solution.">
   <meta itemprop="datePublished" content="2025-09-04T00:00:00-07:00">
   <meta itemprop="dateModified" content="2025-09-04T00:00:00-07:00">
-  <meta itemprop="wordCount" content="80">
+  <meta itemprop="wordCount" content="453">
   <meta itemprop="keywords" content="Rust,Pico,Wokwi,CYW43">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Bare Metal: Pico and CYW43">
   <meta name="twitter:description" content="The “W” signifies that the board includes wireless. Interestingly, the wireless chip is an Infineon CYW43439) which is itself a microcontroller running its own ARM Cortex chip (M3). The Pico’s USB device includes another ARM microcontroller. So, with the dual Cortex (or Hazard) chips that are user programmable, and the 8 PIOs, these devices really pack a punch.
-As a result of adding the wireless (microcontroller) chip to the Pico, the Pico’s WS2812 (pixel) is accessible only through the CYW43439.">
+As a result of adding the wireless (microcontroller) chip to the Pico, the Pico W’s on-board LED is accessible only through the CYW43439. Yeah, weird but it makes for an interesting solution.">
 
       
     
@@ -117,12 +117,69 @@ As a result of adding the wireless (microcontroller) chip to the Pico, the Pico�
 
       
       
-        <span class="f6 mv4 dib tracked"> - One minute read </span>
-        <span class="f6 mv4 dib tracked"> - 80 words </span>
+        <span class="f6 mv4 dib tracked"> - 3 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 453 words </span>
       
     </header>
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>The &ldquo;W&rdquo; signifies that the board includes wireless. Interestingly, the wireless chip is an <a href="https://www.infineon.com/part/CYW43439">Infineon CYW43439</a>) which is itself a microcontroller running its own ARM Cortex chip (M3). The Pico&rsquo;s USB device includes another ARM microcontroller. So, with the dual Cortex (or Hazard) chips that are user programmable, and the 8 PIOs, these devices really pack a punch.</p>
-<p>As a result of adding the wireless (microcontroller) chip to the Pico, the Pico&rsquo;s WS2812 (pixel) is accessible only through the CYW43439.</p>
+<p>As a result of adding the wireless (microcontroller) chip to the Pico, the Pico W&rsquo;s on-board LED is accessible only through the CYW43439. Yeah, weird but it makes for an interesting solution.</p>
+<p>The Pico interacts with its wireless chip (the CYW4349) using <a href="https://en.wikipedia.org/wiki/Serial_Peripheral_Interface">SPI</a>. I used the example code from the Embassy project <a href="https://github.com/embassy-rs/embassy/blob/main/examples/rp/src/bin/wifi_blinky.rs"><code>wifi_blinky.rs</code></a>.</p>
+<p>I find this example very interesting. It loads firmware onto the CYW43439 and it uses PIO to implement the communication between the Pico and CYW43439 even though the Pico supports 2 SPIs. This is because the protocol used by the CYW43439 is non-standard.</p>
+<p>For consistency, I wanted to try running the 12 WS2812 pixels against the Pico but I&rsquo;ve been unsuccessful. Moreover, I&rsquo;ve been unsuccessful generating serial console output on wokwi so it&rsquo;s extra challenging to debug. I think this <em>should</em> work because, even though the Pico only provides 3.3v (not the 5v required by WS2812s), I&rsquo;m unsure how relevant the voltages are in the wokwi sim.</p>
+<p><img src="/images/250905.pico.ws2812.png" alt="1-Wire Pico w/ WS2812"></p>
+<p><a href="https://gist.github.com/DazWilkin/b1c051c037d836b078ff05a167d8209a"><code>diagram.json</code></a></p>
+<p>While trying (unsuccessfully) to get this to generate serial output in wokwi, I was able to get serial output (and SWD debugging) using a physical Pico.</p>
+<p>I reverted the code to use <code>defmt</code> and added:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">use</span> embassy_rp::peripherals::{<span style="color:#66d9ef">PIO0</span>,<span style="color:#66d9ef">UART0</span>};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> embedded_io::Write;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">bind_interrupts!</span>(<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Irqs</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">PIO0_IRQ_0</span> <span style="color:#f92672">=&gt;</span> InterruptHandler<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">PIO0</span><span style="color:#f92672">&gt;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">UART0_IRQ</span> <span style="color:#f92672">=&gt;</span> embassy_rp::uart::InterruptHandler<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">UART0</span><span style="color:#f92672">&gt;</span>;
+</span></span><span style="display:flex;"><span>});
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Include carriage return (`\r`) and newline (`\n`)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#[macro_export]</span>
+</span></span><span style="display:flex;"><span>macro_rules<span style="color:#f92672">!</span> serial_writeln {
+</span></span><span style="display:flex;"><span>    (<span style="color:#75715e">$serial</span>:<span style="color:#a6e22e">expr</span>) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>        core::<span style="color:#a6e22e">write!</span>(<span style="color:#75715e">$serial</span>, <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">&#34;</span>).unwrap()
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>    (<span style="color:#75715e">$serial</span>:<span style="color:#a6e22e">expr</span>, <span style="color:#75715e">$($arg</span>:<span style="color:#a6e22e">tt</span>)<span style="color:#f92672">*</span>) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>        core::<span style="color:#a6e22e">write!</span>(<span style="color:#75715e">$serial</span>, <span style="color:#e6db74">&#34;{}</span><span style="color:#ae81ff">\r\n</span><span style="color:#e6db74">&#34;</span>, <span style="color:#a6e22e">format_args!</span>(<span style="color:#75715e">$($arg</span>)<span style="color:#f92672">*</span>)).unwrap()
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>And then within the <code>embassy_executor::main</code> loop:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">loop</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> j <span style="color:#66d9ef">in</span> <span style="color:#ae81ff">0</span><span style="color:#f92672">..</span>(<span style="color:#ae81ff">256</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">5</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> i <span style="color:#66d9ef">in</span> <span style="color:#ae81ff">0</span><span style="color:#f92672">..</span><span style="color:#66d9ef">NUM_LEDS</span> {
+</span></span><span style="display:flex;"><span>            data[i] <span style="color:#f92672">=</span> wheel((((i <span style="color:#f92672">*</span> <span style="color:#ae81ff">256</span>) <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">u16</span> <span style="color:#f92672">/</span> <span style="color:#66d9ef">NUM_LEDS</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">u16</span> <span style="color:#f92672">+</span> j <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">u16</span>) <span style="color:#f92672">&amp;</span> <span style="color:#ae81ff">255</span>) <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">u8</span>);
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Use the augmented macro defined above that includes carriage return and newline
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#a6e22e">serial_writeln!</span>(serial, <span style="color:#e6db74">&#34;R: {:02x} G: {:02x} B: {:02x}&#34;</span>, data[i].r, data[i].g, data[i].b);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        ws2812.write(<span style="color:#f92672">&amp;</span>data).<span style="color:#66d9ef">await</span>;
+</span></span><span style="display:flex;"><span>        ticker.next().<span style="color:#66d9ef">await</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>After</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cargo run
+</span></span></code></pre></div><p>Which resolves to:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>probe-rs run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--chip<span style="color:#f92672">=</span>RP2040 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--protocol<span style="color:#f92672">=</span>swd <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--probe<span style="color:#f92672">=</span>2e8a:000c
+</span></span></code></pre></div><p>And:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>minicom -b <span style="color:#ae81ff">115200</span> -o -D /dev/ttyACM0
+</span></span></code></pre></div><p>Yields e.g.:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>R: 51 G: 00 B: ae
+</span></span><span style="display:flex;"><span>R: 90 G: 00 B: 6f
+</span></span><span style="display:flex;"><span>R: cf G: 00 B: 30
+</span></span><span style="display:flex;"><span>R: f0 G: 0f B: 00
+</span></span><span style="display:flex;"><span>R: b1 G: 4e B: 00
+</span></span><span style="display:flex;"><span>R: 72 G: 8d B: 00
+</span></span><span style="display:flex;"><span>R: 30 G: cf B: 00
+</span></span><span style="display:flex;"><span>R: 00 G: f0 B: 0f
+</span></span></code></pre></div><p>But I get no serial output if I upload the binary to wokwi.</p>
+<p>I&rsquo;ll update this post if that changes.</p>
 <ul class="pa0">
   
    <li class="list di">
