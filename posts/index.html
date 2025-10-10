@@ -7,7 +7,7 @@
     <title>(p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="">
-    <meta name="generator" content="Hugo 0.151.0-DEV">
+    <meta name="generator" content="Hugo 0.152.0-DEV">
     
     
     
@@ -16,7 +16,7 @@
     
 
     
-<link rel="stylesheet" href="/ananke/css/main.min.b89013985a078d0be77ff0f1ae39ec6d9f2c3c36e0f1aa8195900276fa8a5ad6.css" >
+<link rel="stylesheet" href="/ananke/css/main.min.cf4aecb341f2e16e80e407465df095cee730d71e19c4574f8e9b28d163dc4225.css" >
 
 
 
@@ -47,8 +47,8 @@
   <meta property="og:type" content="website">
 
   <meta itemprop="name" content="Posts">
-  <meta itemprop="datePublished" content="2025-09-04T00:00:00-07:00">
-  <meta itemprop="dateModified" content="2025-09-04T00:00:00-07:00">
+  <meta itemprop="datePublished" content="2025-10-10T00:00:00-07:00">
+  <meta itemprop="dateModified" content="2025-10-10T00:00:00-07:00">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Posts">
 
@@ -95,6 +95,81 @@
   <article class="pa3 pa4-ns nested-copy-line-height">
     <section class="cf ph3 ph5-l pv3 pv4-l f4 tc-l center measure-wide lh-copy nested-links mid-gray"></section>
     <section class="flex-ns mt5 flex-wrap justify-around">
+      
+        <div class="w-100 w-30-l mb4 relative bg-white">
+          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
+  <div class="mb3 pa4 gray overflow-hidden bg-white">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/251010/" class="link black dim">
+        Using FauxRPC to debug transcoding HTTP/JSON to gRPC
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>A Stack overflow <a href="https://stackoverflow.com/questions/79779463">question</a> involving transcoding HTTP/JSON to gRPC, piqued my interest. I had a hunch on the solution but was initially dissuaded from attempting a repro because of the complexity:</p>
+<ol>
+<li>recreate proto</li>
+<li>implement stubs</li>
+<li>deploy <a href="https://github.com/grpc-ecosystem/grpc-gateway">gRPC-Gateway</a></li>
+</ol>
+<p>I then realized that <a href="https://fauxrpc.com/">FauxRPC</a> would probably address much of the complexity and it did.</p>
+<p>I created <code>foo.proto</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-protobuf" data-lang="protobuf"><span style="display:flex;"><span>syntax <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;proto3&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">import</span> <span style="color:#e6db74">&#34;google/api/annotations.proto&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">import</span> <span style="color:#e6db74">&#34;google/api/field_behavior.proto&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">import</span> <span style="color:#e6db74">&#34;protoc-gen-openapiv2/options/annotations.proto&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">// Was not defined in the question.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">service</span> Foo {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">rpc</span> FetchResource(GetResourceRequest) <span style="color:#66d9ef">returns</span> (ResourceResponse) {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>        <span style="color:#66d9ef">option</span> (google.api.http) <span style="color:#f92672">=</span> {get<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;/v1/resource/{resource_id}/group&#34;</span>};<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>        <span style="color:#66d9ef">option</span> (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) <span style="color:#f92672">=</span> {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>            summary<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Get Resource from group&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>            description<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Retrieve resource info&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>        };<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    }<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>};<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">// Should be named FetchResourceRequest to match the RPC method name.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">GetResourceRequest</span> {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">string</span> resource_id <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span> [<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    (google.api.field_behavior) <span style="color:#f92672">=</span> REQUIRED,<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) <span style="color:#f92672">=</span> {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>      description<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Resource UUID v4.&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>      example<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;\&#34;</span><span style="color:#ae81ff">81042622</span><span style="color:#f92672">-</span><span style="color:#ae81ff">4f</span><span style="color:#ae81ff">02</span><span style="color:#f92672">-</span><span style="color:#ae81ff">4e85</span><span style="color:#f92672">-</span>a896<span style="color:#f92672">-</span><span style="color:#ae81ff">172</span>edd5381b6<span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">&#34;&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    }<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  ];<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  ResourceFilter resource_filter <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span> [<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    (google.api.field_behavior) <span style="color:#f92672">=</span> OPTIONAL,<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) <span style="color:#f92672">=</span> {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>      description<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;\&#34;</span>RESOURCE_FILTER_FIRST<span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">&#34;&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    }<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  ];<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">// Empty response for demonstration purposes.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Was not defined in the question.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Should be named FetchResourceResponse to match the RPC method name.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">message</span> <span style="color:#a6e22e">ResourceResponse</span> {}<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">enum</span> ResourceFilter {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">option</span> (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_enum) <span style="color:#f92672">=</span> {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    title<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Resource Filter&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    example<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;\&#34;</span>RESOURCE_FILTER_FIRST<span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">&#34;&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  };<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  RESOURCE_FILTER_UNSPECIFIED <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  RESOURCE_FILTER_FIRST <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><p>The proto depends on <a href="https://github.com/googleapis/googleapis"><code>googleapis</code></a> (Google&rsquo;s repo containing definitions for Google&rsquo;s services) and <a href="https://github.com/grpc-ecosystem/grpc-gateway"><code>grpc-gateway</code></a> (containing <code>protoc</code> plugins and protobuf sources).</p>
+    </div>
+    <a href="/posts/251010/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        </div>
       
         <div class="w-100 w-30-l mb4 relative bg-white">
           <div class="w-100 mb4 nested-copy-line-height relative bg-white">
@@ -305,26 +380,6 @@
 <p>I was surprised to learn as I was doing this that there&rsquo;s a new <a href="https://github.com/grpc/grpc-proto/blob/23f5b568eefcb876e6ebc3b01725f1f20cff999e/grpc/health/v1/health.proto#L74"><code>List</code></a> (<a href="https://github.com/grpc/grpc-proto/pull/143">Add <code>List</code> method to gRPC Health service #143</a>) added to <code>grpc.health.v1.Health</code>. My (Ackal) healthcheck server does not yet implement it (see later).</p>
     </div>
     <a href="/posts/250612/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        </div>
-      
-        <div class="w-100 w-30-l mb4 relative bg-white">
-          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
-  <div class="mb3 pa4 gray overflow-hidden bg-white">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/250429/" class="link black dim">
-        Configuring Envoy to proxy Google Cloud Run v2
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;m building an emulator for <a href="https://cloud.google.com/run">Cloud Run</a>. As I considered the solution, I assumed (more later) that I could implement Google&rsquo;s gRPC interface for <a href="https://github.com/googleapis/googleapis/tree/83df85b45a5d3e85b48f2571e1c8e57cdfd57e6c/google/cloud/run">Cloud Run</a> and use <a href="https://www.envoyproxy.io/">Envoy</a> to proxy HTTP/REST requests to the gRPC service using Envoy&rsquo;s <a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/grpc_json_transcoder_filter">gRPC-JSON transcoder</a>.</p>
-<p>Google calls this process <a href="https://cloud.google.com/endpoints/docs/grpc/transcoding">Transcoding HTTP/JSON to gRPC</a> which I think it a better description.</p>
-<p>Google&rsquo;s Cloud Run <code>v2</code> (<code>v1</code> is no longer published to the <a href="https://github.com/googleapis/googleapis"><code>googleapis</code></a> repo) <a href="https://github.com/googleapis/googleapis/blob/83df85b45a5d3e85b48f2571e1c8e57cdfd57e6c/google/cloud/run/v2/service.proto"><code>service.proto</code></a> includes the following <code>Services</code> definition for <code>CreateService</code>:</p>
-    </div>
-    <a href="/posts/250429/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
 </div>
 
