@@ -7,7 +7,7 @@
     <title>WASM Transparency | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="A Google Trillian solution that enables WASM binaries to be shipped to and run from a remote gRPC server">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -152,7 +152,8 @@
 </span></span><span style="display:flex;"><span>2020/08/14 18:42:28 [main:loop:dynamic-invoke] Success: car:{manufacturer:&#34;X&#34;  model:&#34;X&#34;  color:&#34;X&#34;  owner:&#34;X&#34;}
 </span></span><span style="display:flex;"><span>2020/08/14 18:42:28 [main:loop:dynamic-invoke] Complete
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> I need to improve the randon message generator for strings so that the value is not always <code>X</code>; <code>change_owner</code> does work (<a href="https://github.com/DazWilkin/go-protobuf-extras/issues/1">issue</a>)</p></blockquote>
+<p><strong>NOTE</strong> I need to improve the randon message generator for strings so that the value is not always <code>X</code>; <code>change_owner</code> does work (<a href="https://github.com/DazWilkin/go-protobuf-extras/issues/1">issue</a>)</p>
+</blockquote>
 <p>Way back when I first began exploring blockchain technologies, I played around with Hyperledger. It has a prototypical example called <a href="https://hyperledger-fabric.readthedocs.io/en/release-1.4/write_first_app.html">fabcar</a> and the above shows a WASM Transparency version of this app. After the <code>fabcarx.wasm</code> binary is shipped to the WAM Transparency server, the client invokes <code>create</code>, <code>query</code> and then <code>change_owner</code> methods exposed by it.</p>
 <p>So, why is any of this complexity of any value?</p>
 <p>The WASM binaries use <a href="https://github.com/wapc">waPC</a> to transfer arbitrary data between the Transparency server&rsquo;s Golang WASM host and the Rust WASM guests. In order to provide structure to this data, the solution uses <a href="https://developers.google.com/protocol-buffers">protocol buffers</a>. Specifically, starting with a protobuf definition that includes one of more <code>service</code> definitions, the Rust-based WASM code implements the protobuf services. A protobuf Descriptor file is generated from the protobuf sources too. The Descriptor (as metadata) is associated with the WASM binary. Descriptors are machine-readable variants of protobuf files and permit the Golang host to dynamically create clients.</p>
@@ -216,7 +217,8 @@
   </tbody>
 </table>
 <blockquote>
-<p><strong>NOTE</strong> in this prototype, the input message is randomly-generated</p></blockquote>
+<p><strong>NOTE</strong> in this prototype, the input message is randomly-generated</p>
+</blockquote>
 <p>There are 2 levels of Protobuf serivces|messages here. The primary level is the WASM Transparency Service&rsquo;s protobufs, e.g.:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-protobuf" data-lang="protobuf"><span style="display:flex;"><span><span style="color:#f92672">package</span> wasm_transparency<span style="color:#f92672">.</span>v1;<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
@@ -235,7 +237,8 @@
 </span></span></span></code></pre></div><p>This level defines the messages used by the client to invoke methods on the server.</p>
 <p>However, because the server must be capable of invoking <em>arbitrary</em> WASM functions and because these WASM functions are defined by protobufs and because protobufs does not support generic message types, the solution envelopes this second level of protobufs using <code>Any</code> as described by the previous reference.</p>
 <blockquote>
-<p><strong>NOTE</strong> Protobuf <code>Any</code> combine a type and a value (<code>[]byte</code>) and conveniently waPC uses <code>[]byte</code> as the data type between hosts and guests.</p></blockquote>
+<p><strong>NOTE</strong> Protobuf <code>Any</code> combine a type and a value (<code>[]byte</code>) and conveniently waPC uses <code>[]byte</code> as the data type between hosts and guests.</p>
+</blockquote>
 <p>So, for example <code>complex.proto</code> defines the 4 functions exported by <code>complex.wasm</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-protobuf" data-lang="protobuf"><span style="display:flex;"><span><span style="color:#f92672">package</span> examples;<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
@@ -296,7 +299,8 @@
 </span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">m</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> this function is incomplete and does not (yet) cover all possible <code>kinds</code>.</p></blockquote>
+<p><strong>NOTE</strong> this function is incomplete and does not (yet) cover all possible <code>kinds</code>.</p>
+</blockquote>
 <h2 id="client">Client</h2>
 <p>The function uses the Golang APIv2 <code>dynamicpb</code> package to create an empty protobuf message of the desired type (<code>protoreflect.MessageDescriptor</code>). For each of the <code>Fields</code> in the <code>MessageDescriptor</code> the function simply determines the type and creates a random value of that type. As you&rsquo;ll see, <code>MessageDescriptor</code> is determined by parsing the protobuf Descriptor file.</p>
 <p>The client creates a <code>FileDescriptorSet</code> and unmarshals the Descriptor Set file&rsquo;s contents into it. It then creates a <code>protodesc</code> files registry that enables <code>FindDescriptorByName</code>. In this case, it uses a specific service descriptor i.e. <code>examples.ComplexServer</code> (the full name is scoped by the package name). It then iterates over all the methods (<code>add</code>, <code>sub</code>, <code>mul</code> and <code>div</code>) that are defined within the service. For a specific method e.g. <code>mul</code> defined to be <code>rpc mul(ComplexRequest) returns (ComplexResponse)</code>, it grabs the input (<code>ComplexRequest</code>) message descriptor and creates a new dynamic, random message using it.</p>
@@ -382,7 +386,8 @@
 </span></span><span style="display:flex;"><span>	}, <span style="color:#66d9ef">nil</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> even though <code>Any</code> requires <code>TypeURL</code> to uniquely identify these, they&rsquo;re unused in this solution because the Client has the protobuf Descriptor and knows what to expect.</p></blockquote>
+<p><strong>NOTE</strong> even though <code>Any</code> requires <code>TypeURL</code> to uniquely identify these, they&rsquo;re unused in this solution because the Client has the protobuf Descriptor and knows what to expect.</p>
+</blockquote>
 <p>waPC uses a string to identify functions exported by a WASM binary. The convention in this solution is that the protobuf method name (e.g. <code>mul</code>) matches the waPC operation name that corresponds to the exported function. Here&rsquo;s where this matching of <code>mul</code> to an actual (Rust) function is defined in the source of the WASM binary:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">handle_wapc</span>(operation: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, msg: <span style="color:#66d9ef">&amp;</span>[<span style="color:#66d9ef">u8</span>]) -&gt; <span style="color:#a6e22e">CallResult</span> {
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">match</span> operation {

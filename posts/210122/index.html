@@ -7,7 +7,7 @@
     <title>Krustlet on DO Managed Kubernetes | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Deislab&#39;s Krustlet running w/ DigitalOcean Manged Kubernetes">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -169,7 +169,8 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--tag-names krustlet,wasm <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--image <span style="color:#e6db74">${</span>IMAGE<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> While <code>doctl</code> permits referring to droplets by name or ID, the platform permits you to have multiple Droplets with the same name.</p></blockquote>
+<p><strong>NOTE</strong> While <code>doctl</code> permits referring to droplets by name or ID, the platform permits you to have multiple Droplets with the same name.</p>
+</blockquote>
 <p>To get the Droplet&rsquo;s IP address, you can either:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>doctl compute droplet get <span style="color:#e6db74">${</span>INSTANCE<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><p>Or, if you have <a href="https://stedolan.github.io/jq/"><code>jq</code></a> and assuming you have one instance named <code>${INSTANCE}</code>, you can:</p>
@@ -178,7 +179,8 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | jq -r <span style="color:#e6db74">&#39;.[0].networks.v4[] | select (.type|contains(&#34;public&#34;)) | .ip_address&#39;</span><span style="color:#66d9ef">)</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>IP<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> You&rsquo;ll need this IP address after ssh&rsquo;ing in to the Droplet too so, note the value.</p></blockquote>
+<p><strong>NOTE</strong> You&rsquo;ll need this IP address after ssh&rsquo;ing in to the Droplet too so, note the value.</p>
+</blockquote>
 <h3 id="bootstrap-token">Bootstrap Token</h3>
 <p><a href="https://github.com/deislabs/krustlet"><code>Krustlet</code></a> includes a useful <a href="https://github.com/deislabs/krustlet/blob/master/docs/howto/assets/bootstrap.sh"><code>bootstrap.sh</code></a> script. From your host workstation, run this command to create a Bootstrap Token for the Krustlet to use to join your Kubernetes cluster:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>bash &lt;<span style="color:#f92672">(</span>curl --silent https://raw.githubusercontent.com/deislabs/krustlet/master/docs/howto/assets/bootstrap.sh<span style="color:#f92672">)</span>
@@ -230,7 +232,8 @@
 <li><code>cert-file</code> and <code>private-key-file</code> if omitted, a default location is used, this is clearer.</li>
 </ul>
 <blockquote>
-<p><strong>NOTE</strong> The Krustlet output will include various error messages. These result from the cluster attempting to schedule infrastructure Pods (e.g. <code>kube-proxy</code>) onto the Krustlet thinking that it&rsquo;s a regular Kubernetes node. The Krustlet behaves very much like a regular kubelet but it is different and it is unable to run these Pods. You may ignore the errors.</p></blockquote>
+<p><strong>NOTE</strong> The Krustlet output will include various error messages. These result from the cluster attempting to schedule infrastructure Pods (e.g. <code>kube-proxy</code>) onto the Krustlet thinking that it&rsquo;s a regular Kubernetes node. The Krustlet behaves very much like a regular kubelet but it is different and it is unable to run these Pods. You may ignore the errors.</p>
+</blockquote>
 <p>Among the output from this command, you should see:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>kubectl certificate approve ${HOSTNAME}-tls
 </span></span></code></pre></div><p>You&rsquo;ll need to return to your host machine and invoke this command there to confirm that the Krustlet is a legitimate user of the cluster:</p>
@@ -274,7 +277,8 @@
 </span></span><span style="display:flex;"><span><span style="color:#e6db74">${</span>CLUSTER<span style="color:#e6db74">}</span>-default-pool-3z4ka   Ready    &lt;none&gt;   102m   v1.19.3
 </span></span><span style="display:flex;"><span>krustlet                        Ready    &lt;none&gt;   8s     0.5.0
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> If you stop the Krustlet, before restarting it, particularly if you&rsquo;re swapping between WASI and WASCC, it&rsquo;s a good idea to delete the node <code>kubectl delete node/${NODENAME}</code></p></blockquote>
+<p><strong>NOTE</strong> If you stop the Krustlet, before restarting it, particularly if you&rsquo;re swapping between WASI and WASCC, it&rsquo;s a good idea to delete the node <code>kubectl delete node/${NODENAME}</code></p>
+</blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>DEMOS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://raw.githubusercontent.com/deislabs/krustlet/master/demos&#34;</span>
 </span></span></code></pre></div><p>If you&rsquo;re using <code>krustlet-wasi</code>, you can test:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply <span style="color:#ae81ff">\
@@ -284,7 +288,8 @@
 </span></span><span style="display:flex;"><span>NAME                    READY   STATUS       RESTARTS   AGE
 </span></span><span style="display:flex;"><span>hello-world-wasi-rust   0/1     ExitCode:0   <span style="color:#ae81ff">0</span>          3m10s
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The <code>ExitCode:0</code> is OK because the Pods runs and completes (exits)</p></blockquote>
+<p><strong>NOTE</strong> The <code>ExitCode:0</code> is OK because the Pods runs and completes (exits)</p>
+</blockquote>
 <p>And:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl logs pod/hello-world-wasi-rust
 </span></span><span style="display:flex;"><span>hello from stdout!
@@ -324,7 +329,8 @@
 </span></span></code></pre></div><p>And the cluster:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>doctl kubernetes cluster delete <span style="color:#e6db74">${</span>CLUSTER<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The <code>cluster delete</code> command should (!) also remove the <code>cluster</code>, <code>context</code> and <code>user</code> from your <code>${KUBECONFIG}</code> file (usually <code>${HOME}/.kube/config</code>). It will leave the <code>current-context</code> value unset so you may wish to revise this to point to the cluster context that you were using previously.</p></blockquote>
+<p><strong>NOTE</strong> The <code>cluster delete</code> command should (!) also remove the <code>cluster</code>, <code>context</code> and <code>user</code> from your <code>${KUBECONFIG}</code> file (usually <code>${HOME}/.kube/config</code>). It will leave the <code>current-context</code> value unset so you may wish to revise this to point to the cluster context that you were using previously.</p>
+</blockquote>
 <p>Please, always double-check that the resources have indeed been deleted so that you are no longer paying for them!</p>
 <h2 id="anticipated-errors">Anticipated Errors</h2>
 <p>Because the Kubernetes cluster thinks that the Krustlet node is a regular kubectl (worker node), it attempts to schedule Pods onto it as it would with any other worker node. These will fail because, although the Krustlet acts like a kubelet, it is not a kubelet.</p>

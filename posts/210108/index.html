@@ -7,7 +7,7 @@
     <title>Kubernetes cert-manager | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Kubernetes cert-manager for Webhooks">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -130,7 +130,8 @@
 </span></span><span style="display:flex;"><span>SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;yirella&#34;</span>
 </span></span><span style="display:flex;"><span>NAMESPACE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;salvation&#34;</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>Optional</strong> <code>kubectl create namespace ${NAMESPACE}</code></p></blockquote>
+<p><strong>Optional</strong> <code>kubectl create namespace ${NAMESPACE}</code></p>
+</blockquote>
 <p>Second, use <code>openssl</code> to generate a private key and certificate for our CA.</p>
 <p>In practice, you&rsquo;d use a legitimate CA-signer and would skip this step.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>openssl req <span style="color:#ae81ff">\
@@ -142,14 +143,16 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-subj <span style="color:#e6db74">&#34;/CN=</span><span style="color:#e6db74">${</span>CA<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-days <span style="color:#ae81ff">365</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> Common Names (<code>CN</code>) are deprecated but used here primarily for labelling. If you prefer, you could write a config files, generate a CSR and (self-)sign that.</p></blockquote>
+<p><strong>NOTE</strong> Common Names (<code>CN</code>) are deprecated but used here primarily for labelling. If you prefer, you could write a config files, generate a CSR and (self-)sign that.</p>
+</blockquote>
 <p>Third, cert-manager manages Certificates using Kubernetes Secrets. So, let&rsquo;s create a Secret from the private key and certificate we just created:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl create secret tls <span style="color:#e6db74">${</span>CA<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--cert<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>DIR<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>.<span style="color:#e6db74">${</span>CA<span style="color:#e6db74">}</span>.crt <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--key<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>DIR<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>.<span style="color:#e6db74">${</span>CA<span style="color:#e6db74">}</span>.key
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> I&rsquo;m create this in a working namespace (<code>${NAMESPACE}</code>) because I&rsquo;m going to use <code>Issuer</code>. If you want cluster-wide issuance, this would need to be created (by default) in <code>cert-manager</code> namespace (configurable) and you&rsquo;d use <code>ClusterIssuer</code>.</p></blockquote>
+<p><strong>NOTE</strong> I&rsquo;m create this in a working namespace (<code>${NAMESPACE}</code>) because I&rsquo;m going to use <code>Issuer</code>. If you want cluster-wide issuance, this would need to be created (by default) in <code>cert-manager</code> namespace (configurable) and you&rsquo;d use <code>ClusterIssuer</code>.</p>
+</blockquote>
 <p>Fourth, create an <code>Issuer</code> from the Secret:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">apiVersion: cert-manager.io/v1
@@ -170,7 +173,8 @@
 </span></span><span style="display:flex;"><span>ca     True    Signing CA verified   15s
 </span></span></code></pre></div><p>Fifth, create a <code>Certificate</code> (and Secret) for the Service using the <code>Issuer</code>.</p>
 <blockquote>
-<p><strong>NOTE</strong> In my case, with the Webhook, I found it necessary to include the Webhook&rsquo;s Endpoint in its certificate. You <em>may</em> be able to drop both <code>commonName</code> and <code>ipAddresses</code> entries from the following specification.</p></blockquote>
+<p><strong>NOTE</strong> In my case, with the Webhook, I found it necessary to include the Webhook&rsquo;s Endpoint in its certificate. You <em>may</em> be able to drop both <code>commonName</code> and <code>ipAddresses</code> entries from the following specification.</p>
+</blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Endpoint for Service `${SERVICE}.${NAMESPACE}.svc`</span>
 </span></span><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=(</span><span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  kubectl get service/<span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
@@ -347,11 +351,14 @@
 </span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">v1</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">sideEffects</span>: <span style="color:#ae81ff">None</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> You&rsquo;ll need to revise the <code>ValidatingWebhookConfiguration</code> for your purposes but this shows the overall structure. It&rsquo;s important that the <code>webhook.name</code> be <code>${SERVICE}.${NAMESPACE}.svc</code> and the use of <code>caBundle</code></p></blockquote>
+<p><strong>NOTE</strong> You&rsquo;ll need to revise the <code>ValidatingWebhookConfiguration</code> for your purposes but this shows the overall structure. It&rsquo;s important that the <code>webhook.name</code> be <code>${SERVICE}.${NAMESPACE}.svc</code> and the use of <code>caBundle</code></p>
+</blockquote>
 <blockquote>
-<p><strong>NOTE</strong> Not shown here, the Service that exposes the Deployment&rsquo;s Pods maps the Pod&rsquo;s port <code>:8443</code> to a Service port: <code>:443</code> which is more conventional for TLS and required (!?) by Kubernetes Webhooks.</p></blockquote>
+<p><strong>NOTE</strong> Not shown here, the Service that exposes the Deployment&rsquo;s Pods maps the Pod&rsquo;s port <code>:8443</code> to a Service port: <code>:443</code> which is more conventional for TLS and required (!?) by Kubernetes Webhooks.</p>
+</blockquote>
 <blockquote>
-<p><strong>NOTE</strong> Kubernetes is configured with the Service&rsquo;s (!) CA bundle and it validates the Webhook service&rsquo;s certificate but the Webhook service does not validate the client (i.e. Kubernetes&rsquo; API Server).</p></blockquote>
+<p><strong>NOTE</strong> Kubernetes is configured with the Service&rsquo;s (!) CA bundle and it validates the Webhook service&rsquo;s certificate but the Webhook service does not validate the client (i.e. Kubernetes&rsquo; API Server).</p>
+</blockquote>
 <p>When you&rsquo;re done, you can tidy simply by deleting the <code>${NAMESPACE}</code> namespace or, more delicately:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># NB Webhooks aren&#39;t namespaced</span>
 </span></span><span style="display:flex;"><span>kubectl delete validatingwebhookconfiguration/<span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>

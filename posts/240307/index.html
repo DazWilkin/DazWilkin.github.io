@@ -9,7 +9,7 @@
     <meta name="description" content="I responded to a question Prometheus metric protocol buffer in gRPC on Stackoverflow and it piqued my curiosity and got me yak shaving.
 Prometheus used to support two exposition formats including Protocol Buffers, then dropped Protocol Buffer and has since re-added it (see Protobuf format). The Protobuf format has returned to support the experimental Native Histograms feature.
 I&rsquo;m interested in adding Native Histogram support to Ackal so thought I&rsquo;d learn more about this metric.">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -50,7 +50,7 @@ I’m interested in adding Native Histogram support to Ackal so thought I’d le
     <meta property="article:modified_time" content="2024-03-07T00:00:00-08:00">
     <meta property="article:tag" content="Prometheus">
     <meta property="article:tag" content="Protobufs">
-    <meta property="article:tag" content="GRPC">
+    <meta property="article:tag" content="Grpc">
     <meta property="article:tag" content="Prom2json">
     <meta property="article:tag" content="Protobuf Format">
 
@@ -61,7 +61,7 @@ I’m interested in adding Native Histogram support to Ackal so thought I’d le
   <meta itemprop="datePublished" content="2024-03-07T00:00:00-08:00">
   <meta itemprop="dateModified" content="2024-03-07T00:00:00-08:00">
   <meta itemprop="wordCount" content="1462">
-  <meta itemprop="keywords" content="Prometheus,Protobufs,GRPC,Prom2json,Protobuf Format">
+  <meta itemprop="keywords" content="Prometheus,Protobufs,Grpc,Prom2json,Protobuf Format">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Prometheus Protobufs and Native Histograms">
   <meta name="twitter:description" content="I responded to a question Prometheus metric protocol buffer in gRPC on Stackoverflow and it piqued my curiosity and got me yak shaving.
@@ -281,7 +281,8 @@ Accept: application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;
 </span></span><span style="display:flex;"><span>  }
 </span></span><span style="display:flex;"><span>]
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> I was unable to get this working by piping the <code>curl</code> output into <code>prom2json</code>. The nuance of this approach is being able to explicitly request <code>application/vnd.google.protobuf</code>.</p></blockquote>
+<p><strong>NOTE</strong> I was unable to get this working by piping the <code>curl</code> output into <code>prom2json</code>. The nuance of this approach is being able to explicitly request <code>application/vnd.google.protobuf</code>.</p>
+</blockquote>
 <p>I cloned and debugged <code>prom2json</code>. It uses <a href="https://github.com/matttproud/golang_protobuf_extensions"><code>google_protobuf_extensions</code></a> (you guessed it, another tool I was unaware of!).</p>
 <p>Debugging the code helped me confirm the approach of receiving the response body, looking for a <code>varint</code>  message size, and then unmarshaling it into <code>MetricFamily</code>.</p>
 <p>However, the code is functionally richer than I need in this case, so I simplified it:</p>
@@ -490,7 +491,8 @@ Accept: application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--enable-feature<span style="color:#f92672">=</span>native-histograms <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--web.enable-lifecycle
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> For the containerized Prometheus to access the local Go process, it&rsquo;s easiest to bind the container to the host network (<code>--net=host</code>) voiding the need for <code>--publish=9090:9090/tcp</code>.</p></blockquote>
+<p><strong>NOTE</strong> For the containerized Prometheus to access the local Go process, it&rsquo;s easiest to bind the container to the host network (<code>--net=host</code>) voiding the need for <code>--publish=9090:9090/tcp</code>.</p>
+</blockquote>
 <p>It is easier to interact with Native Histograms from the Prometheus Web UI:</p>
 <pre tabindex="0"><code>rate(foo{}[5m])
 </code></pre><p><img src="/images/240307.prometheus.native-histogram.png" alt="Prometheus Native Histogram"></p>
@@ -506,7 +508,7 @@ Accept: application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;
    </li>
   
    <li class="list di">
-     <a href="/tags/grpc/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">GRPC</a>
+     <a href="/tags/grpc/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Grpc</a>
    </li>
   
    <li class="list di">

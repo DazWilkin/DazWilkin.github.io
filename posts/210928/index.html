@@ -7,7 +7,7 @@
     <title>Golang Structured Logging w/ Google Cloud Logging | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Emitting structured logs from Golang containers for Google Cloud Logging">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -148,9 +148,11 @@
 </span></span><span style="display:flex;"><span>    )
 </span></span></code></pre></div><p>See: <a href="https://play.golang.org/p/m5QQbJqFMKc">https://play.golang.org/p/m5QQbJqFMKc</a></p>
 <blockquote>
-<p><strong>NOTE</strong> Using <code>os.Stdout</code> avoids sending everything to stderr and having Cloud Logging mark all log lines with <code>severity: &quot;ERROR&quot;</code></p></blockquote>
+<p><strong>NOTE</strong> Using <code>os.Stdout</code> avoids sending everything to stderr and having Cloud Logging mark all log lines with <code>severity: &quot;ERROR&quot;</code></p>
+</blockquote>
 <blockquote>
-<p><strong>NOTE</strong> I&rsquo;m using strings but the key values are <code>interface{}</code> and slices, maps and structs all work too.</p></blockquote>
+<p><strong>NOTE</strong> I&rsquo;m using strings but the key values are <code>interface{}</code> and slices, maps and structs all work too.</p>
+</blockquote>
 <p>Outputs:</p>
 <pre tabindex="0"><code>2021/09/28 17:37:45 MyName: &#34;caller&#34;={&#34;file&#34;:&#34;prog.go&#34;,&#34;line&#34;:22} &#34;level&#34;=0 &#34;msg&#34;=&#34;something&#34; &#34;k1&#34;=&#34;v1&#34; &#34;k2&#34;=&#34;v2&#34;
 </code></pre><p>It works very well. However, log entries are encapsulated as <code>textPayload</code> (i.e. text strings not parsed JSON) values in Google Cloud Logging, something similar to:</p>
@@ -177,7 +179,8 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;msg&#34;=&#34;something&#34; &#34;k1&#34;=&#34;v1&#34; &#34;k2&#34;=&#34;v2&#34;</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">timestamp</span>: <span style="color:#e6db74">&#34;2021-09-28T17:37:45.009974311Z&#34;</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> Yes, I&rsquo;m talking about JSON and then presenting log entries as YAML. This is the default format used by <code>gcloud logging</code> and is easier to read. When we get to the conclusion, using YAML for the log helps highlight what&rsquo;s possible.</p></blockquote>
+<p><strong>NOTE</strong> Yes, I&rsquo;m talking about JSON and then presenting log entries as YAML. This is the default format used by <code>gcloud logging</code> and is easier to read. When we get to the conclusion, using YAML for the log helps highlight what&rsquo;s possible.</p>
+</blockquote>
 <p>With the exception of Cloud Functions, my other app components are deployed as containers and Google Cloud Platform uses a <a href="https://cloud.google.com/logging/docs/agent/logging">logging agent</a> (built upon <a href="https://www.fluentd.org/">fluentd</a>) to obtain container logs and ship these to Cloud Logging. In order to get the logs parsed as JSON, they need to:</p>
 <ul>
 <li>Be JSON ;-)</li>
@@ -209,7 +212,8 @@
 </span></span><span style="display:flex;"><span>  )
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The use of <a href="https://pkg.go.dev/github.com/rs/zerolog#Logger.With"><code>With()</code></a> followed by <a href="https://pkg.go.dev/github.com/rs/zerolog#Context.Caller"><code>Caller()</code></a> which adds the file and line number of the log&rsquo;s caller and <a href="https://pkg.go.dev/github.com/rs/zerolog#Context.Timestamp"><code>Timestamp()</code></a>.</p></blockquote>
+<p><strong>NOTE</strong> The use of <a href="https://pkg.go.dev/github.com/rs/zerolog#Logger.With"><code>With()</code></a> followed by <a href="https://pkg.go.dev/github.com/rs/zerolog#Context.Caller"><code>Caller()</code></a> which adds the file and line number of the log&rsquo;s caller and <a href="https://pkg.go.dev/github.com/rs/zerolog#Context.Timestamp"><code>Timestamp()</code></a>.</p>
+</blockquote>
 <p>See: <a href="https://play.golang.org/p/pQEfBA0mAco">https://play.golang.org/p/pQEfBA0mAco</a></p>
 <p>Outputs (formatted for ease of viewing):</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
@@ -268,7 +272,8 @@
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;message&#34;</span>:<span style="color:#e6db74">&#34;something&#34;</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> This example demonstrates the use of a map and a struct as label values too.</p></blockquote>
+<p><strong>NOTE</strong> This example demonstrates the use of a map and a struct as label values too.</p>
+</blockquote>
 <p>But, the magic happens when we deploy this code to e.g. Google Kubernetes Engine. Now we get log entries of the form:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">insertId</span>: <span style="color:#ae81ff">iqz96zqax8g7f32x</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">jsonPayload</span>:
@@ -298,7 +303,8 @@
 </span></span><span style="display:flex;"><span><span style="color:#f92672">severity</span>: <span style="color:#ae81ff">INFO</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">timestamp</span>: <span style="color:#e6db74">&#34;2021-09-28T00:00:00.000000000Z&#34;</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> See how <code>&quot;logging.googleapis.com/labels&quot;</code> is added to the root&rsquo;s <code>labels</code>.</p></blockquote>
+<p><strong>NOTE</strong> See how <code>&quot;logging.googleapis.com/labels&quot;</code> is added to the root&rsquo;s <code>labels</code>.</p>
+</blockquote>
 <p>Not only does this look useful but it is useful because we can now use the Cloud Console&rsquo;s log viewer to query by these values or:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>FILTER<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&#34;</span><span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;resource.type=\&#34;k8s_container\&#34; &#34;</span><span style="color:#ae81ff">\

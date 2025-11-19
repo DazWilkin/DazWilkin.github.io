@@ -7,7 +7,7 @@
     <title>Prometheus Service Discovery w/ Consul for Cloud Run | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Configuring Prometheus to use service discovery with Consul to find Cloud Run services">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -121,7 +121,8 @@
     <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I&rsquo;m working on a project that will programmatically create Google <a href="https://cloud.google.com/run">Cloud Run</a> services and I want to be able to dynamically discover these services using Prometheus.</p>
 <p>This is one solution.</p>
 <blockquote>
-<p><strong>NOTE</strong> Google Cloud Run is the service I&rsquo;m using, but the principle described herein applies to any runtime service that you&rsquo;d wish to use.</p></blockquote>
+<p><strong>NOTE</strong> Google Cloud Run is the service I&rsquo;m using, but the principle described herein applies to any runtime service that you&rsquo;d wish to use.</p>
+</blockquote>
 <p>Why is this challenging? IIUC, it&rsquo;s primarily because Prometheus has a limited set of plugins for service discovery, see the sections that include <code>_sd_</code> in Prometheus <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/">Configuration</a> documentation. Unfortunately, Cloud Run is not explicitly supported. The alternative appears to be to use file-based discovery but this seems &lsquo;challenging&rsquo;; it requires, for example, reloading Prometheus on file changes.</p>
 <p>After contemplating the alternatives, I started by using <a href="https://coredns.io">CoreDNS</a> and <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#dns_sd_config"><code>dns_sd_config</code></a> but, after struggling with <code>resolv.conf</code> and using the 3rd-part <code>records</code> plugin, I gave up.</p>
 <p>I&rsquo;ve not used <a href="https://www.consul.io/">Consul</a> extensively but, like many, have a high opinion of <a href="https://www.hashicorp.com/">HashiCorp</a> and was not surprised to find Consul very easy to use.</p>
@@ -201,7 +202,8 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        sleep 15
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      done</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTES</strong><br/>If you include <code>cadvisor</code>, choose the correct (either <code>default</code> or <code>snap</code>) configuration for your Docker installation; I use the Docker Snap.<br/>The <code>consul</code> service only needs the DNS (UDP) ports exposed to the host (<code>8600:8600/udp</code>) for testing.<br/>There are two (of the same) <code>node-exporter-xx</code> services running.</p></blockquote>
+<p><strong>NOTES</strong><br/>If you include <code>cadvisor</code>, choose the correct (either <code>default</code> or <code>snap</code>) configuration for your Docker installation; I use the Docker Snap.<br/>The <code>consul</code> service only needs the DNS (UDP) ports exposed to the host (<code>8600:8600/udp</code>) for testing.<br/>There are two (of the same) <code>node-exporter-xx</code> services running.</p>
+</blockquote>
 <p>The <code>prometheus</code> service requires <code>prometheus.yml</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">global</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">1m</span>
@@ -228,7 +230,8 @@
 </span></span><span style="display:flex;"><span>      - <span style="color:#f92672">targets</span>:
 </span></span><span style="display:flex;"><span>          - <span style="color:#e6db74">&#34;cadvisor:8080&#34;</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTES</strong> The only <code>job_name</code> that&rsquo;s required here is <code>consul</code>. In the following, sections, I&rsquo;ve excluded the other two jobs for clarity.<br/>The <code>server</code> entry <code>consul:8500</code> refers to the <code>docker-compose</code> service called <code>consul</code> that exposes port <code>8500</code>.</p></blockquote>
+<p><strong>NOTES</strong> The only <code>job_name</code> that&rsquo;s required here is <code>consul</code>. In the following, sections, I&rsquo;ve excluded the other two jobs for clarity.<br/>The <code>server</code> entry <code>consul:8500</code> refers to the <code>docker-compose</code> service called <code>consul</code> that exposes port <code>8500</code>.</p>
+</blockquote>
 <p>After running <code>docker-compose up</code>, let&rsquo;s immediately browse to Prometheus&rsquo; Service Discovery page:</p>
 <p><code>http://localhost:9099/service-discovery</code></p>
 <p><img src="/images/210419.prometheus.sd.empty.png" alt="Prometheus Service Discovery: Empty"></p>
@@ -252,7 +255,8 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }&#34;</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The service <code>name</code> changes e.g. <code>node-exporter-02</code> but the <code>port</code> and <code>address</code> point to the docker-compose service called <code>node-exporter</code> that exposes metrics on port <code>9100</code>. Both services are tagged with 2 labels <code>foo</code> and <code>bar</code>.</p></blockquote>
+<p><strong>NOTE</strong> The service <code>name</code> changes e.g. <code>node-exporter-02</code> but the <code>port</code> and <code>address</code> point to the docker-compose service called <code>node-exporter</code> that exposes metrics on port <code>9100</code>. Both services are tagged with 2 labels <code>foo</code> and <code>bar</code>.</p>
+</blockquote>
 <p>If we now return to the Consul UI:</p>
 <p><img src="/images/210419.consul.services.node-exporter-xx.png" alt="Consul: Services: Node Exporters"></p>
 <p>And, back to Prometheus&rsquo; Service Discovery:</p>
@@ -306,7 +310,8 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }&#34;</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> We need to remove the prefixing <code>https://</code> from the endpoint values using <code>${ENDPOINT#https://}</code></p></blockquote>
+<p><strong>NOTE</strong> We need to remove the prefixing <code>https://</code> from the endpoint values using <code>${ENDPOINT#https://}</code></p>
+</blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check Consul</span>
 </span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request GET <span style="color:#ae81ff">\
@@ -376,7 +381,8 @@
 </span></span><span style="display:flex;"><span>        <span style="color:#f92672">target_label</span>: <span style="color:#ae81ff">__scheme__</span>
 </span></span><span style="display:flex;"><span>        <span style="color:#f92672">replacement</span>: <span style="color:#ae81ff">https</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTES</strong> The <code>metrics_path</code> defaults to <code>/metrics</code> but is included here to better document what&rsquo;s going on<br/>The <code>tls_config</code> sets <code>insecure_skip_verify</code> to <code>false</code>. This verifies (!) that the certs returned by Cloud Run are verified. It&rsquo;s possible to enumerate a list of <code>services</code> but it&rsquo;s more elegant (and dynamic) to select those services with specific <code>tags</code>. As shown above, when creating the services, <code>tags</code> of <code>foo</code> and <code>bar</code> were set and so these are used to filter the services discovered from Consule.<br/>The <code>relabel_configs</code> finds the occurrences of <code>__scheme = &quot;http&quot;</code> in the labels discovered by Prometheus and rewrites these to be <code>__scheme = &quot;https&quot;</code>, interestingly (!) this causes the protocol switch to TLS.</p></blockquote>
+<p><strong>NOTES</strong> The <code>metrics_path</code> defaults to <code>/metrics</code> but is included here to better document what&rsquo;s going on<br/>The <code>tls_config</code> sets <code>insecure_skip_verify</code> to <code>false</code>. This verifies (!) that the certs returned by Cloud Run are verified. It&rsquo;s possible to enumerate a list of <code>services</code> but it&rsquo;s more elegant (and dynamic) to select those services with specific <code>tags</code>. As shown above, when creating the services, <code>tags</code> of <code>foo</code> and <code>bar</code> were set and so these are used to filter the services discovered from Consule.<br/>The <code>relabel_configs</code> finds the occurrences of <code>__scheme = &quot;http&quot;</code> in the labels discovered by Prometheus and rewrites these to be <code>__scheme = &quot;https&quot;</code>, interestingly (!) this causes the protocol switch to TLS.</p>
+</blockquote>
 <p><img src="/images/210419.prometheus.sd.cloud-run.png" alt="Prometheus: Service Discovery: Cloud Run"></p>
 <p>And:</p>
 <p><img src="/images/210419.prometheus.targets.cloud-run.png" alt="Prometheus: Targets: Cloud Run"></p>

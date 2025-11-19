@@ -7,7 +7,7 @@
     <title>Hugo and Google Cloud Storage | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="How to use Hugo to generate a static site and deploy the result to Google Cloud Storage (GCS)">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -122,7 +122,8 @@
 <p>I assume you&rsquo;ve installed Hugo; I&rsquo;m running Ubuntu and I run <a href="https://gohugo.io/getting-started/installing/#snap-package">Hugo as a Snap Package</a></p>
 <p>I assume you own a domain (<code>${DOMAIN}</code>) and wish to create a website on it (<code>www.${DOMAIN}</code>).</p>
 <blockquote>
-<p><strong>NOTE</strong> The site we&rsquo;re going to create will not use TLS; you can add a Load-balancer in front of a GCS bucket if you wish to use TLS but this costs $$$</p></blockquote>
+<p><strong>NOTE</strong> The site we&rsquo;re going to create will not use TLS; you can add a Load-balancer in front of a GCS bucket if you wish to use TLS but this costs $$$</p>
+</blockquote>
 <p>You will need:</p>
 <ul>
 <li>Domain</li>
@@ -154,9 +155,11 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-p <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>gs://<span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> GCS bucket names are unique and using <code>${WEBSITE}</code> as the value may require verification</p></blockquote>
+<p><strong>NOTE</strong> GCS bucket names are unique and using <code>${WEBSITE}</code> as the value may require verification</p>
+</blockquote>
 <blockquote>
-<p><strong>NOTE</strong> <code>-b on</code> provides <a href="https://cloud.google.com/storage/docs/gsutil/commands/mb#uniform-bucket-level-access">Uniform Bucket-Level Access</a></p></blockquote>
+<p><strong>NOTE</strong> <code>-b on</code> provides <a href="https://cloud.google.com/storage/docs/gsutil/commands/mb#uniform-bucket-level-access">Uniform Bucket-Level Access</a></p>
+</blockquote>
 <h2 id="configure-access-and-define-indexhtml-and-404html">Configure access and define <code>index.html</code> and <code>404.html</code></h2>
 <p>We want to make the bucket&rsquo;s contents world-viewable and we achieve this by making everyone object viewers (<code>allUsers:objectViewer</code>).</p>
 <p>We will also configure the site to default to <code>./index.html</code> and, on errors, <code>./404.html</code>. We&rsquo;ve not yet created either of these files but will do so in a subsequent step.</p>
@@ -181,13 +184,15 @@
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>gsutil iam ch <span style="color:#e6db74">${</span>BINDING<span style="color:#e6db74">}</span> gs://<span style="color:#e6db74">${</span>WEBSITE<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> <code>gsutil iam ch</code> grants the service account <code>storage.objectAdmin</code> to the bucket (only)</p></blockquote>
+<p><strong>NOTE</strong> <code>gsutil iam ch</code> grants the service account <code>storage.objectAdmin</code> to the bucket (only)</p>
+</blockquote>
 <h2 id="create-github-repo">Create GitHub repo</h2>
 <p>Create an empty, private GitHub repo and follow GitHub&rsquo;s instructions to initialize the local clone:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git init
 </span></span><span style="display:flex;"><span>git remote add origin https://github.com/...
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> Even though we copying the site&rsquo;s <code>./public</code> directory content to the GCS bucket, we will commit our source files to the GitHub repo that we created previously.</p></blockquote>
+<p><strong>NOTE</strong> Even though we copying the site&rsquo;s <code>./public</code> directory content to the GCS bucket, we will commit our source files to the GitHub repo that we created previously.</p>
+</blockquote>
 <h2 id="add-ananke-gohugo-theme">Add Ananke Gohugo theme</h2>
 <p>The <a href="https://themes.gohugo.io/gohugo-theme-ananke/">Ananke Gohugo theme</a> is one of <a href="https://themes.gohugo.io/">many</a> but, it&rsquo;s an exemplar. It is recommended to add it as a submodule and we must then revise the site&rsquo;s configuration file (<code>./config.toml</code>) to reflect it:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git submodule add https://github.com/budparr/gohugo-theme-ananke.git themes/ananke
@@ -226,7 +231,8 @@
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">cacheControl</span> = <span style="color:#e6db74">&#34;max-age=31536000, no-transform, public&#34;</span>
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">gzip</span> = <span style="color:#66d9ef">true</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> Replace <code>[[WEBSITE]]</code> with the value of <code>${WEBSITE}</code></p></blockquote>
+<p><strong>NOTE</strong> Replace <code>[[WEBSITE]]</code> with the value of <code>${WEBSITE}</code></p>
+</blockquote>
 <h2 id="create-basic-content">Create Basic Content</h2>
 <p>We&rsquo;re closely following Hugo&rsquo;s <a href="https://gohugo.io/getting-started/quick-start/">Quick Start</a> guide with one exception. The guide assumes we&rsquo;re building a blog site. If that&rsquo;s what you want, follow the quick start. For this tutorial, we&rsquo;re using Hugo and the Ananke theme to create a web site. Rather than periodic posts, we&rsquo;ll create a possibly more complex structured site rooted on <code>index.html</code>.</p>
 <p>See:</p>

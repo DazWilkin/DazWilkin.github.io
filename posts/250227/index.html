@@ -21,7 +21,7 @@ Prometheus Exporter for Vultr
 
 All of these were written to scratch an itch.
 In the case of the cloud platform exporters (Azure, Fly, Google, Linode, Vultr etc.), it&rsquo;s an overriding anxiety that I&rsquo;ll leave resources deployed on these platforms and, running an exporter that ships alerts to Pushover and Gmail, provides me a support mechanism for me.">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -159,12 +159,14 @@ In the case of the cloud platform exporters (Azure, Fly, Google, Linode, Vultr e
 </ul>
 <p>In the case of <a href="https://www.usgs.gov/">USGS</a> Water Data actually <a href="https://waterservices.usgs.gov/docs/instantaneous-values/instantaneous-values-details/">Instantaneous Values service</a>, the &ldquo;itch&rdquo; was to be able to interact with gauge (gage) data for the Snoqualmie river which floods from snow melt and after heavy rain.</p>
 <blockquote>
-<p><strong>NOTE</strong> The USGS uses the <a href="https://www.usgs.gov/faqs/why-does-usgs-use-spelling-gage-instead-gauge">spelling &ldquo;Gage&rdquo; instead of &ldquo;Gauge&rdquo;</a></p></blockquote>
+<p><strong>NOTE</strong> The USGS uses the <a href="https://www.usgs.gov/faqs/why-does-usgs-use-spelling-gage-instead-gauge">spelling &ldquo;Gage&rdquo; instead of &ldquo;Gauge&rdquo;</a></p>
+</blockquote>
 <p>When I stumbled upon the service via King County&rsquo;s <a href="https://flood.kingcounty.gov/river/3/">Flood warning system: Snoqualmie Basin</a> and e.g. <a href="https://flood.kingcounty.gov/gauge/32/">Duvall</a> and finally to <a href="https://waterdata.usgs.gov/wa/nwis/uv/?site_no=12150400">Gage: 12150400</a>, I was slightly concerned to see that it uses XML data. <strong>Not</strong> that I didn&rsquo;t love XML back in the day (early 2000s) but I dislike it more than JSON in 2025. Fortunately, the service provides JSON formatting too (requests and responses) and there&rsquo;s a useful <a href="https://waterservices.usgs.gov/test-tools/?service=iv">test service</a></p>
 <p>Using the test service, it was easy to assemble a query for some of the data that interests me:</p>
 <p><a href="https://waterservices.usgs.gov/nwis/iv/?format=json&amp;sites=12150400&amp;siteStatus=all">https://waterservices.usgs.gov/nwis/iv/?format=json&sites=12150400&siteStatus=all</a></p>
 <blockquote>
-<p><strong>NOTE</strong> recreating the URL for this post, I realize I should probably use <code>siteStatus=active</code></p></blockquote>
+<p><strong>NOTE</strong> recreating the URL for this post, I realize I should probably use <code>siteStatus=active</code></p>
+</blockquote>
 <p>But this returns a wealth of data see <a href="#response">response</a></p>
 <p>The exporter includes a limited (not all fields and not all types!) SDK implementation of Instantaneous Values service in <a href="https://github.com/DazWilkin/go-usgs-waterdata-exporter/tree/master/waterdata"><code>waterdata</code></a> sufficient to invoke the above URL (for arbitrary sites) and return a (mostly) parsed value.</p>
 <p>The exporter comprises a single metric (<code>GageHeightFeet</code>) from the service (<code>variableCode: 00065</code>) and generates a Prometheus metric called <code>usgs_waterdata_iv_gage_height</code>:</p>

@@ -7,7 +7,7 @@
     <title>Golang Xiaomi Bluetooth Temperature|Humidity (LYWSD03MMC) 2nd Gen | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Golang Xiami Bluetooth temperature|humidity (LYWSD03MMC) 2nd gen">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -191,7 +191,8 @@ Done
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">WithSigHandler</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">WithTimeout</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#ae81ff">1</span><span style="color:#f92672">*</span><span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Minute</span>))
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">device</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">host</span>.<span style="color:#a6e22e">Dial</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">NewAddr</span>(<span style="color:#e6db74">&#34;a4:c1:38:00:00:00&#34;</span>))
 </span></span></code></pre></div><blockquote>
-<p><strong>TODO</strong>: I&rsquo;ve been meaning to run each device in its own Goroutine. When I tried this previously, I think I experienced concurrency problems. Will retry.</p></blockquote>
+<p><strong>TODO</strong>: I&rsquo;ve been meaning to run each device in its own Goroutine. When I tried this previously, I think I experienced concurrency problems. Will retry.</p>
+</blockquote>
 <p>The next step is the magical step that writes a magical value <code>0x1000</code> to the magical handler <code>0x0038</code>.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">c</span><span style="color:#f92672">:=</span><span style="color:#a6e22e">ble</span>.<span style="color:#a6e22e">MustParse</span>(<span style="color:#e6db74">&#34;00002902-0000-1000-8000-00805f9b34fb&#34;</span>)
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">p</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">bleClient</span>.<span style="color:#a6e22e">DiscoverProfile</span>(<span style="color:#66d9ef">true</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
@@ -202,11 +203,13 @@ Done
 </span></span><span style="display:flex;"><span>	}
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NB</strong> I don&rsquo;t know why this works!</p></blockquote>
+<p><strong>NB</strong> I don&rsquo;t know why this works!</p>
+</blockquote>
 <p>The Golang library requires characteristics to be used instead of handles. Using one of the command-line tools, I was able to enumerate all the handles and their associated characteristics. From other code, I learned that <code>0x0038</code> is critical and <code>00002902-0000-1000-8000-00805f9b34fb</code> is the characteristic that corresponds to this handle.</p>
 <p>I learned (!?) that the library requires <code>DiscoverProfile(true)</code> to be called against the device before other commands will work correctly. After discovering the profile, the code then searches it for the characteristic we&rsquo;re interested in and then it writes <code>0x1000</code> to it.</p>
 <blockquote>
-<p><strong>TODO</strong>: I&rsquo;ve been meaning to duplicate this approach of <code>Find(...)</code> in the next section to avoid iterating over services and characteristics.</p></blockquote>
+<p><strong>TODO</strong>: I&rsquo;ve been meaning to duplicate this approach of <code>Find(...)</code> in the next section to avoid iterating over services and characteristics.</p>
+</blockquote>
 <p>Now that the value is written to <code>0x0038</code>, we can look for <code>0x0036</code> and subscribe to notifications from it.</p>
 <p>This involves (currently but see <code>TODO</code> above) iterating over services that match the filter for the service (<code>ebe0ccb07a0a4b0c8a1a6ff2997da3a6</code>) shown in the GATT above that includes the characteristic (<code>ebe0ccc17a0a4b0c8a1a6ff2997da3a6</code>) that corresponds to <code>&quot;Temperature and Humidi[ty]&quot;</code>.</p>
 <p>Again, It appears a requirement to iterate over all the characteristics Descriptors even though I don&rsquo;t reference these!</p>
@@ -222,7 +225,8 @@ Done
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NB</strong> <code>CCCD</code> means <code>Client Characteristic Configuration Descriptor</code> and this must be non-nil to be able tos subscribe to the characteristic.</p></blockquote>
+<p><strong>NB</strong> <code>CCCD</code> means <code>Client Characteristic Configuration Descriptor</code> and this must be non-nil to be able tos subscribe to the characteristic.</p>
+</blockquote>
 <p>The initial <code>if</code> checks whether this characteristic supports notifications (<code>ble.CharNotify</code>)</p>
 <p>If this characteristic is the one corresponding to <code>0x0036</code> (i.e. <code>ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6</code>) then we add a handler to its notifications.</p>
 <p>The handler is trivial:</p>
@@ -257,7 +261,8 @@ Done
 </span></span><span style="display:flex;"><span>	}, <span style="color:#66d9ef">nil</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NB</strong> I don&rsquo;t know what the other 2 bytes represent :-(</p></blockquote>
+<p><strong>NB</strong> I don&rsquo;t know what the other 2 bytes represent :-(</p>
+</blockquote>
 <h3 id="mqtt--mqttgateway">MQTT | <a href="https://github.com/inuits/mqttgateway">MQTTGateway</a></h3>
 <p>The MQTT publishing is straightforward. I&rsquo;m using Inuits <a href="https://github.com/inuits/mqttgateway">MQTTGateway</a> as described in the other post on ESPHome. The MQTTGateway subscribes to MQTT topics and converts these into Prometheus metrics. It&rsquo;s then trivial to scrape these using Prometheus to produce the graph shown at the top of the post.</p>
 <h3 id="useful">Useful</h3>

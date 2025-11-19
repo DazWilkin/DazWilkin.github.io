@@ -7,7 +7,7 @@
     <title>Playing with GitHub Container Registry REST API | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Playing with GitHub Container Registry REST API">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -134,7 +134,8 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://api.github.com/orgs/<span style="color:#e6db74">${</span>ORG<span style="color:#e6db74">}</span>/packages?package_type<span style="color:#f92672">=</span>container
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> For container images you must append <code>package_type=container</code></p></blockquote>
+<p><strong>NOTE</strong> For container images you must append <code>package_type=container</code></p>
+</blockquote>
 <p>To just enumerate the container URLs, pipe the results through <code>jq -r '.[]|.html_url'</code></p>
 <h2 id="get-package-versions-for-an-organization">Get package versions for an organization</h2>
 <p>REST API: <a href="https://docs.github.com/en/rest/packages#get-all-package-versions-for-a-package-owned-by-an-organization">`/orgs/{org}/packages/container/${name}/versions</a></p>
@@ -149,7 +150,8 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://api.github.com/orgs/<span style="color:#e6db74">${</span>ORG<span style="color:#e6db74">}</span>/packages/container/<span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span>/versions
 </span></span></code></pre></div><p>Where <code>NAME</code> is the container (package) name and the last component of the URL returned by the <code>list</code> method above.</p>
 <blockquote>
-<p><strong>NOTE</strong> You can&rsquo;t just plug what was returned from the <code>list</code> method into this method because the URL structure differs :-(</p></blockquote>
+<p><strong>NOTE</strong> You can&rsquo;t just plug what was returned from the <code>list</code> method into this method because the URL structure differs :-(</p>
+</blockquote>
 <p>To just enumerate the 2 most recent (!) versions, pipe the results through <code>js -r '.[0:2]'</code></p>
 <p>Why am I interested in the 2 most recent versions? Because I&rsquo;m using <a href="https://www.sigstore.dev/">Sigstore</a> to <a href="https://github.blog/2021-12-06-safeguard-container-signing-capability-actions/">sign containers in GitHub Actions</a>.</p>
 <p>This generates 2 versions per push. In my case container tags are the SHA-1 of the source&rsquo;s git commit (that&rsquo;s just my system) and so I get tags of the form:</p>
@@ -180,11 +182,13 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://api.github.com/orgs/<span style="color:#f92672">{</span>ORG<span style="color:#f92672">}}</span>/packages/container/<span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span>/versions | jq -r <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 </span></span></code></pre></div><p><code>SIGSTORE</code> defines a regex that is applied to <code>jq</code>&rsquo;s <a href="https://stedolan.github.io/jq/manual/#test%28val%29,test%28regex;flags%29"><code>test</code></a> which returns a boolean. We pick one of our 2 options (<code>[0]</code>) and if matches the regex, then it&rsquo;s the Sigstore signature package and we want the other package (<code>[1]</code>) our image.</p>
 <blockquote>
-<p><strong>NOTE</strong> This assumes that the REST API preserves this ordering of most recent first and that there&rsquo;s a Sigstore signature image produced for each container image.</p></blockquote>
+<p><strong>NOTE</strong> This assumes that the REST API preserves this ordering of most recent first and that there&rsquo;s a Sigstore signature image produced for each container image.</p>
+</blockquote>
 <h2 id="most-recent-images-cache">Most Recent Images cache</h2>
 <p>I use this mechanism to iterate across a subset of my organization&rsquo;s container images to maintain a local cache of the most recent versions.</p>
 <blockquote>
-<p><strong>NOTE</strong> I&rsquo;m using <code>git rev-parse HEAD</code> to tag my images. Your container images will have different tags.</p></blockquote>
+<p><strong>NOTE</strong> I&rsquo;m using <code>git rev-parse HEAD</code> to tag my images. Your container images will have different tags.</p>
+</blockquote>
 <p><code>.env</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>IMAGE_A<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;a:1234567890123456789012345678901234567890&#34;</span>
 </span></span><span style="display:flex;"><span>IMAGE_B<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;a:1234567890123456789012345678901234567890&#34;</span>

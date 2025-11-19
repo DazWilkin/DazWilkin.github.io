@@ -26,7 +26,7 @@ Prometheus Exporter for GCP Status
 Prometheus Exporter for Vultr Status
 
 These exporters are all derived from an exemplar DigitalOcean Exporter written by metalmatze for which I maintain a fork.">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -318,7 +318,8 @@ Prometheus Exporter for GCP Status Prometheus Exporter for Vultr Status These ex
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--ext-str <span style="color:#e6db74">&#34;VARIABLE=</span><span style="color:#e6db74">${</span>VARIABLE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>kubernetes.jsonnet
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> Where <code>VARIABLE</code> recurs for each value in <code>.env</code> that needs to be surfaced in the Jsonnet file.</p></blockquote>
+<p><strong>NOTE</strong> Where <code>VARIABLE</code> recurs for each value in <code>.env</code> that needs to be surfaced in the Jsonnet file.</p>
+</blockquote>
 <p>It would be simpler to:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>jsonnet <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--ext-str <span style="color:#e6db74">&#34;VARIABLE=</span><span style="color:#e6db74">${</span>VARIABLE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
@@ -334,10 +335,12 @@ Prometheus Exporter for GCP Status Prometheus Exporter for Vultr Status These ex
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --filename<span style="color:#f92672">=</span>- <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> With the seemingly redundant <code>| jq -r '.' |</code> but it helps to rewind editing during testing</p></blockquote>
+<p><strong>NOTE</strong> With the seemingly redundant <code>| jq -r '.' |</code> but it helps to rewind editing during testing</p>
+</blockquote>
 <p>I realized that while Prometheus <a href="https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/">Alerting Rules</a> match <code>kube-prometheus</code> <a href="https://doc.crds.dev/github.com/prometheus-operator/prometheus-operator/monitoring.coreos.com/PrometheusRule/v1"><code>PrometheusRule</code></a>, Prometheus <a href="https://prometheus.io/docs/alerting/latest/alertmanager/">Alertmanager</a> <a href="https://prometheus.io/docs/alerting/latest/configuration/">config</a> differs (!?) from <a href="https://doc.crds.dev/github.com/prometheus-operator/prometheus-operator/monitoring.coreos.com/AlertmanagerConfig/v1alpha1"><code>AlertmanagerConfig</code></a>, e.g.</p>
 <blockquote>
-<p><strong>NOTE</strong> <a href="https://docs.crd.dev"><code>docs.crd.dev</code></a> is excellent though it would benefit from better searching.</p></blockquote>
+<p><strong>NOTE</strong> <a href="https://docs.crd.dev"><code>docs.crd.dev</code></a> is excellent though it would benefit from better searching.</p>
+</blockquote>
 <p><code>alertmanager.yml</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">route</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">group_by</span>: [<span style="color:#e6db74">&#34;...&#34;</span>]
@@ -497,7 +500,8 @@ Prometheus Exporter for GCP Status Prometheus Exporter for Vultr Status These ex
 <ol>
 <li>uses <code>camelCase</code> (whereas <code>alertmanager.yml</code> is <code>snake_case</code>)</li>
 <li>appropriately (!) refactors <code>Config</code> secret values e.g. <code>authPassword</code> as Kubernetes Secrets</li>
-</ol></blockquote>
+</ol>
+</blockquote>
 <p>Let&rsquo;s dwell on that second point, <code>alertmanager.yml</code> has the <code>gmail</code> receiver&rsquo;s <code>authPassword</code> in plaintext:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">authPassword:</span> <span style="color:#e6db74">&#34;...&#34;</span>
 </span></span></code></pre></div><p>But <code>AlertmanagerConfig</code> replaces the secret value with a Kubernetes Secret (see below), in this example called <code>gmail</code> (for obvious reasons) and the secret has a key called <code>authPassword</code> with the base64-encoded value:</p>
@@ -622,7 +626,8 @@ Prometheus Exporter for GCP Status Prometheus Exporter for Vultr Status These ex
 </span></span><span style="display:flex;"><span>    )
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The only change (because I want to continue to treat <code>rules.yml</code> as a source of truth) is that, in my case, I need to rename the rule group names which contain underscores with hyphens.</p></blockquote>
+<p><strong>NOTE</strong> The only change (because I want to continue to treat <code>rules.yml</code> as a source of truth) is that, in my case, I need to rename the rule group names which contain underscores with hyphens.</p>
+</blockquote>
 <p>Once the system is deployed and alerts begin firing, it&rsquo;s good to have some sanity checks:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>.
 </span></span><span style="display:flex;"><span>├── kubernetes.test.sh

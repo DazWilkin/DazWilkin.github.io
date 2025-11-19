@@ -7,7 +7,7 @@
     <title>Firestore Export &amp; Import | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Firestore Export &amp; Import">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -133,7 +133,8 @@
 </span></span><span style="display:flex;"><span>gcloud storage ls gs://<span style="color:#e6db74">${</span>OUTPUT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--recursive
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> Google is (finally!) adding Cloud Storage functionality to <code>gcloud</code> and there&rsquo;s now a <a href="https://cloud.google.com/sdk/gcloud/reference/storage"><code>storage</code> command group</a> which is functionally equivalent to a subset of <code>gsutil</code> and saves some of the impedance mismatch in having to use <code>gcloud</code> for everything other than storage. I wanted to be able to use <a href="https://cloud.google.com/sdk/gcloud/reference/storage/objects/list"><code>gcloud storage objects list</code></a> instead of the quirky <a href="https://cloud.google.com/sdk/gcloud/reference/storage/ls"><code>gcloud storage ls</code></a> in the above but <code>gcloud storage objects list</code> doesn&rsquo;t work (correctly).</p></blockquote>
+<p><strong>NOTE</strong> Google is (finally!) adding Cloud Storage functionality to <code>gcloud</code> and there&rsquo;s now a <a href="https://cloud.google.com/sdk/gcloud/reference/storage"><code>storage</code> command group</a> which is functionally equivalent to a subset of <code>gsutil</code> and saves some of the impedance mismatch in having to use <code>gcloud</code> for everything other than storage. I wanted to be able to use <a href="https://cloud.google.com/sdk/gcloud/reference/storage/objects/list"><code>gcloud storage objects list</code></a> instead of the quirky <a href="https://cloud.google.com/sdk/gcloud/reference/storage/ls"><code>gcloud storage ls</code></a> in the above but <code>gcloud storage objects list</code> doesn&rsquo;t work (correctly).</p>
+</blockquote>
 <p>Here&rsquo;s an example of the objects created:</p>
 <pre tabindex="0"><code class="language-command" data-lang="command">{OUTPUT}/{PREFIX}.overall_export_metadata
 {OUTPUT}/all_namespaces/all_kinds/all_namespaces_all_kinds.export_metadata
@@ -149,7 +150,8 @@
 <p>Note: You must <strong>export specific collections</strong> if you plan to:</p>
 <ul>
 <li>Import only specific collections</li>
-</ul></blockquote>
+</ul>
+</blockquote>
 <p>Here&rsquo;s an example exporting (all) collections using the flag:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud firestore export gs://<span style="color:#e6db74">${</span>OUTPUT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--collection-ids<span style="color:#f92672">={</span>FOO<span style="color:#f92672">}</span>,<span style="color:#f92672">{</span>BAR<span style="color:#f92672">}</span>,...<span style="color:#f92672">{</span>BAZ<span style="color:#f92672">}</span>
@@ -162,7 +164,8 @@
 {OUTPUT}/all_namespaces/kind_{BAZ}/all_namespaces_kind_{BAZ}.export_metadata
 {OUTPUT}/all_namespaces/kind_{BAZ}/output-2
 </code></pre><blockquote>
-<p><strong>NOTE</strong> In the previous export without the <code>--collection-ids</code> flag, there was an object prefix of <code>all_kinds</code>. In this export, with the <code>--collections-ids</code> flag specified, there is an object prefix for each collection. Presumably (!) this is the mechanism that then permits <code>gcloud firestore import</code> to import specific collections.</p></blockquote>
+<p><strong>NOTE</strong> In the previous export without the <code>--collection-ids</code> flag, there was an object prefix of <code>all_kinds</code>. In this export, with the <code>--collections-ids</code> flag specified, there is an object prefix for each collection. Presumably (!) this is the mechanism that then permits <code>gcloud firestore import</code> to import specific collections.</p>
+</blockquote>
 <blockquote>
 <p><span style="color:red">IMPORTANT CAVEAT</span> Google&rsquo;s documentation for <a href="https://firebase.google.com/docs/firestore/manage-data/export-import#export_specific_collections">exporting specific collections</a> is ambiguous. It refers to &ldquo;collection groups&rdquo; and says that &ldquo;The collection group includes all collections and subcollections (at any path) with the specified collection ID&rdquo;.</p>
 <p>If you <code>gcloud firestore export --collection-ids={FOO}</code> and <code>{FOO}</code> contains subcollections, the subscollections are <span style="color:red">not</span> exported. The documentation references <code>[SUBCOLLECTION_ID_1]</code> in its example command but does not explain how a subcollection is referenced. Through trial and error, it appears that you must specify the subcollections (I&rsquo;ve only tried subcollections of collections not anything deeper) as if there were root collections, i.e. if <code>{FOO}</code> contains a subcollection <code>{BAR}</code>, then you can:</p>

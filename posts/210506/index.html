@@ -7,7 +7,7 @@
     <title>Firestore Golang Timestamps &amp; Merging | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="How to persist timestamps when using Firestore">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -128,7 +128,8 @@
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Updated</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`firestore:&#34;updated,omitempty&#34;`</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> It&rsquo;s good practice to include <code>description</code> tags too but these are omitted here for succinctness</p></blockquote>
+<p><strong>NOTE</strong> It&rsquo;s good practice to include <code>description</code> tags too but these are omitted here for succinctness</p>
+</blockquote>
 <p>This approach provides some Golang syntactic sugar for working with Firestore documents. Conceptually, I think (!?), it&rsquo;s good to consider Firestore documents as JSON documents. This model also helps explain some of what follows.</p>
 <p>The tag <code>serverTimestamp</code> indicates that the Golang field (Firestore document property) should be replaced by the service&rsquo;s timestamp when the document is created.</p>
 <p>Let&rsquo;s test that:</p>
@@ -156,7 +157,8 @@
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">d</span>)
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> <a href="https://pkg.go.dev/cloud.google.com/go/firestore#DocumentRef">DocumentRef</a>s do <strong>not</strong> consume network bandwidth but it pays to not unnecessarily recompute them.</p></blockquote>
+<p><strong>NOTE</strong> <a href="https://pkg.go.dev/cloud.google.com/go/firestore#DocumentRef">DocumentRef</a>s do <strong>not</strong> consume network bandwidth but it pays to not unnecessarily recompute them.</p>
+</blockquote>
 <p>This yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>    Name:Freddie
@@ -171,9 +173,11 @@
 </span></span><span style="display:flex;"><span>    Updated:0001-01-01 00:00:00 +0000 UTC
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> pretty-printed to aid comprehension</p></blockquote>
+<p><strong>NOTE</strong> pretty-printed to aid comprehension</p>
+</blockquote>
 <blockquote>
-<p><strong>NOTE</strong> The Firestore document does <strong>not</strong> contain an <code>Updated</code> property but the Golang struct defaults this value to Golang&rsquo;s zero time (see <a href="https://golang.org/pkg/time/#Time.IsZero"><code>IsZero</code></a>)</p></blockquote>
+<p><strong>NOTE</strong> The Firestore document does <strong>not</strong> contain an <code>Updated</code> property but the Golang struct defaults this value to Golang&rsquo;s zero time (see <a href="https://golang.org/pkg/time/#Time.IsZero"><code>IsZero</code></a>)</p>
+</blockquote>
 <p>But, great, the <code>Created</code> field is set.</p>
 <p>Let&rsquo;s update the retrieved (!) record, <code>Set</code> then <code>Get</code> it again:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span><span style="color:#a6e22e">freddie</span>.<span style="color:#a6e22e">Name</span> = <span style="color:#e6db74">&#34;Frederik Jack&#34;</span>
@@ -265,7 +269,8 @@
 <p>The first important detail is that, using <code>Set</code> as above, the document that&rsquo;s written to Firestore <strong>only</strong> includes fields that are included in the Golang struct.</p>
 <p>The second important detail is that, because <code>Created</code> is nil (still) when it&rsquo;s written to Firestore, the service applies <code>serverTimestamp</code> again (!) and effectively updates the Created timestamp. We don&rsquo;t want it to do this!</p>
 <blockquote>
-<p><strong>NOTE</strong> <code>Updated</code> is earlier than <code>Created</code> because we set <code>Updated</code> to <code>time.Now()</code> before persisting the record when the server updates the <code>Created</code> timestamp.</p></blockquote>
+<p><strong>NOTE</strong> <code>Updated</code> is earlier than <code>Created</code> because we set <code>Updated</code> to <code>time.Now()</code> before persisting the record when the server updates the <code>Created</code> timestamp.</p>
+</blockquote>
 <p>What&rsquo;s the solution?</p>
 <p>If I understand this correctly, the solution is that, unless we&rsquo;re always <code>Set</code>ing every field and we&rsquo;re not using <code>serverTimestamp</code>, we <strong>must</strong> include <a href="https://pkg.go.dev/cloud.google.com/go/firestore#SetOption"><code>SetOption</code></a> when using <code>Set</code>.</p>
 <p>The first time a document is created with <code>Set</code>, there&rsquo;s no document in Firestore and so the concept of merging is moot. Firestore doesn&rsquo;t balk at include merge options but, I think they&rsquo;re redundant at this point:</p>
@@ -309,9 +314,11 @@
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;%+v&#34;</span>, <span style="color:#a6e22e">d</span>)
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> <code>firestore.Merge</code> is variadic and takes an <code>[]string{}</code> for <strong>each</strong> field. There appears to be no simpler mechanism (i.e. to provide just a string) and this complexity appears to result from the need to be able to support complex JSON documents with nested structs in which it&rsquo;s necessary to path to a field.</p></blockquote>
+<p><strong>NOTE</strong> <code>firestore.Merge</code> is variadic and takes an <code>[]string{}</code> for <strong>each</strong> field. There appears to be no simpler mechanism (i.e. to provide just a string) and this complexity appears to result from the need to be able to support complex JSON documents with nested structs in which it&rsquo;s necessary to path to a field.</p>
+</blockquote>
 <blockquote>
-<p><strong>NOTE</strong> <code>Created</code> is <strong>not</strong> included in <code>Merge(...)</code> because we don&rsquo;t plan to overwrite it; it won&rsquo;t be merged (just left)</p></blockquote>
+<p><strong>NOTE</strong> <code>Created</code> is <strong>not</strong> included in <code>Merge(...)</code> because we don&rsquo;t plan to overwrite it; it won&rsquo;t be merged (just left)</p>
+</blockquote>
 <p>This yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>    Name:Freddie
@@ -330,7 +337,8 @@
 </span></span><span style="display:flex;"><span>    Updated:2021-05-06 17:32:50.626336 +0000 UTC
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> I&rsquo;ve removed the <code>IsZero</code> timestamps as these aren&rsquo;t recorded in Firestore</p></blockquote>
+<p><strong>NOTE</strong> I&rsquo;ve removed the <code>IsZero</code> timestamps as these aren&rsquo;t recorded in Firestore</p>
+</blockquote>
 <p>What are we observing from the above?</p>
 <ol>
 <li>Once <code>Created</code> has been assigned, we don&rsquo;t overwrite it and it holds the original datetime</li>

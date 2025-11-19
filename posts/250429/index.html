@@ -9,7 +9,7 @@
     <meta name="description" content="I&rsquo;m building an emulator for Cloud Run. As I considered the solution, I assumed (more later) that I could implement Google&rsquo;s gRPC interface for Cloud Run and use Envoy to proxy HTTP/REST requests to the gRPC service using Envoy&rsquo;s gRPC-JSON transcoder.
 Google calls this process Transcoding HTTP/JSON to gRPC which I think it a better description.
 Google&rsquo;s Cloud Run v2 (v1 is no longer published to the googleapis repo) service.proto includes the following Services definition for CreateService:">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -51,7 +51,7 @@ Google’s Cloud Run v2 (v1 is no longer published to the googleapis repo) servi
     <meta property="article:tag" content="Cloud-Run">
     <meta property="article:tag" content="FauxRPC">
     <meta property="article:tag" content="Google">
-    <meta property="article:tag" content="GRPC">
+    <meta property="article:tag" content="Grpc">
     <meta property="article:tag" content="Envoy">
     <meta property="article:tag" content="Jsonnet">
 
@@ -62,7 +62,7 @@ Google’s Cloud Run v2 (v1 is no longer published to the googleapis repo) servi
   <meta itemprop="datePublished" content="2025-04-29T00:00:00-07:00">
   <meta itemprop="dateModified" content="2025-04-29T00:00:00-07:00">
   <meta itemprop="wordCount" content="1125">
-  <meta itemprop="keywords" content="Cloud-Run,FauxRPC,Google,GRPC,Envoy,Jsonnet">
+  <meta itemprop="keywords" content="Cloud-Run,FauxRPC,Google,Grpc,Envoy,Jsonnet">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Configuring Envoy to proxy Google Cloud Run v2">
   <meta name="twitter:description" content="I’m building an emulator for Cloud Run. As I considered the solution, I assumed (more later) that I could implement Google’s gRPC interface for Cloud Run and use Envoy to proxy HTTP/REST requests to the gRPC service using Envoy’s gRPC-JSON transcoder.
@@ -199,12 +199,14 @@ POST https://run.googleapis.com/v2/{parent}/services
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--descriptor_set_out<span style="color:#f92672">=</span>cloud_run_v2_services.binpb <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>GOOGLEAPIS<span style="color:#e6db74">}</span>/google/cloud/run/v2/service.proto
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> In my emulator, the <code>google.longrunning.Operation</code> returned by <code>CreateService</code> (and <code>DeleteService</code>) encapsulates arbitrary messages types using Google&rsquo;s Well-known Type <a href="https://protobuf.dev/reference/protobuf/google.protobuf/#any"><code>Any</code></a> and specifically the type <a href="https://protobuf.dev/reference/protobuf/google.protobuf/#string-value"><code>google.protobuf.StringValue</code></a>. For this reason, in the emulator, the <code>protoc</code> command additional references <code>google/protobuf/wrappers.proto</code> (where <code>Any</code> and <code>StringValue</code> are defined).</p></blockquote>
+<p><strong>NOTE</strong> In my emulator, the <code>google.longrunning.Operation</code> returned by <code>CreateService</code> (and <code>DeleteService</code>) encapsulates arbitrary messages types using Google&rsquo;s Well-known Type <a href="https://protobuf.dev/reference/protobuf/google.protobuf/#any"><code>Any</code></a> and specifically the type <a href="https://protobuf.dev/reference/protobuf/google.protobuf/#string-value"><code>google.protobuf.StringValue</code></a>. For this reason, in the emulator, the <code>protoc</code> command additional references <code>google/protobuf/wrappers.proto</code> (where <code>Any</code> and <code>StringValue</code> are defined).</p>
+</blockquote>
 <p>Now that we have a descriptor, we can run <code>FauxRPC</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>fauxrpc run <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--schema<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/cloud_run_v2_services.binpb
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> <code>fauxrpc run --schema</code> requires filenames ending (<code>binpb</code>, <code>json</code>, <code>yaml</code>)</p></blockquote>
+<p><strong>NOTE</strong> <code>fauxrpc run --schema</code> requires filenames ending (<code>binpb</code>, <code>json</code>, <code>yaml</code>)</p>
+</blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>FauxRPC (dev (none) @ unknown; go1.23.6) - 3 services loaded, 0 stubs loaded
 </span></span><span style="display:flex;"><span>Listening on http://127.0.0.1:6660
 </span></span><span style="display:flex;"><span>OpenAPI documentation: http://127.0.0.1:6660/fauxrpc/openapi.html
@@ -214,13 +216,15 @@ POST https://run.googleapis.com/v2/{parent}/services
 </span></span><span style="display:flex;"><span>$ buf curl --http2-prior-knowledge http://127.0.0.1:6660/<span style="color:#f92672">[</span>METHOD_NAME<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>2025/04/29 11:20:36 INFO Server started.
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> <code>WARN unable to parse template pattern</code> are removed from the above.</p></blockquote>
+<p><strong>NOTE</strong> <code>WARN unable to parse template pattern</code> are removed from the above.</p>
+</blockquote>
 <p>FauxRPC generates documentation and you can browse e.g. <a href="http://127.0.0.1:6660/fauxrpc/openapi.html#/operations/google.cloud.run.v2.Services.CreateService"><code>CreateService</code></a></p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>[] 2025/04/29 - 11:00:00 | 200 |      69.788µs |       127.0.0.1 | GET      &#34;/fauxrpc/openapi.html&#34;
 </span></span><span style="display:flex;"><span>[] 2025/04/29 - 11:00:00 | 200 |     193.867µs |       127.0.0.1 | GET      &#34;/fauxrpc/openapi.yaml&#34;
 </span></span><span style="display:flex;"><span>[] 2025/04/29 - 11:00:00 | 200 |     239.702µs |       127.0.0.1 | GET      &#34;/fauxrpc/openapi.yaml&#34;
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The <code>curl</code> command generated by the documentation for <code>CreateService</code> does not work (see <a href="https://github.com/sudorandom/fauxrpc/issues/23">FauxRPC documentation incorrect conversion of google.protobuf.Duration #23</a>) replace <code>&quot;timeout&quot;: &quot;/regex/&quot;</code> with <code>&quot;timeout&quot;: &quot;15s&quot;</code>.</p></blockquote>
+<p><strong>NOTE</strong> The <code>curl</code> command generated by the documentation for <code>CreateService</code> does not work (see <a href="https://github.com/sudorandom/fauxrpc/issues/23">FauxRPC documentation incorrect conversion of google.protobuf.Duration #23</a>) replace <code>&quot;timeout&quot;: &quot;/regex/&quot;</code> with <code>&quot;timeout&quot;: &quot;15s&quot;</code>.</p>
+</blockquote>
 <p>FaxuRPC accepts gRPC:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;localhost:6660&#34;</span>
 </span></span><span style="display:flex;"><span>
@@ -266,7 +270,8 @@ POST https://run.googleapis.com/v2/{parent}/services
 </span></span><span style="display:flex;"><span>[] 2025/04/29 - 11:00:00 | 200 |    1.913159ms |       127.0.0.1 | POST     &#34;/google.cloud.run.v2.Services/CreateService&#34;
 </span></span><span style="display:flex;"><span>[] 2025/04/29 - 11:00:00 | 200 |    25.55226ms |       127.0.0.1 | POST     &#34;/grpc.reflection.v1.ServerReflection/ServerReflectionInfo&#34;
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> Using <code>google.cloud.run.v2.Services/CreateService</code> confirming gRPC</p></blockquote>
+<p><strong>NOTE</strong> Using <code>google.cloud.run.v2.Services/CreateService</code> confirming gRPC</p>
+</blockquote>
 <p>FauxRPC also accepts REST/JSON:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://localhost:6660&#34;</span>
 </span></span><span style="display:flex;"><span>
@@ -311,7 +316,8 @@ POST https://run.googleapis.com/v2/{parent}/services
 <pre tabindex="0"><code>[] 2025/04/29 - 11:00:00 | 200 |    4.230106ms |       127.0.0.1 | POST     &#34;/v2/projects/foo/locations/bar/services&#34;
 [] 2025/04/29 - 11:00:00 | 200 |    4.307768ms |       127.0.0.1 | POST     &#34;/v2/projects/foo/locations/bar/services&#34;
 </code></pre><blockquote>
-<p><strong>NOTE</strong> Using <code>/v2/projects/{project}/locations/{location}/services</code> confirming the REST/JSON transcoding</p></blockquote>
+<p><strong>NOTE</strong> Using <code>/v2/projects/{project}/locations/{location}/services</code> confirming the REST/JSON transcoding</p>
+</blockquote>
 <p>Now that we have a working gRPC implementation of the Cloud Run v2 service, we can configure and test Envoy with the gRPC-JSON transcoder to use it:</p>
 <p><code>envoy.yaml</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">admin</span>:
@@ -402,7 +408,8 @@ POST https://run.googleapis.com/v2/{parent}/services
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>[] 2025/04/29 - 14:03:25 | 200 |    4.710924ms |       127.0.0.1 | POST     &#34;/google.cloud.run.v2.Services/CreateService&#34;
 </span></span><span style="display:flex;"><span>[] 2025/04/29 - 14:03:25 | 200 |     4.80647ms |       127.0.0.1 | POST     &#34;/google.cloud.run.v2.Services/CreateService&#34;
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> Envoy is providing the HTTP/REST transcoding and invoking the gRPC <code>google.cloud.run.v2.Services/CreateService</code> on FauxRPC.</p></blockquote>
+<p><strong>NOTE</strong> Envoy is providing the HTTP/REST transcoding and invoking the gRPC <code>google.cloud.run.v2.Services/CreateService</code> on FauxRPC.</p>
+</blockquote>
 <p>If you use <a href="https://tailscale.com/">Tailscale</a>, you can use <a href="https://tailscale.com/kb/1312/serve"><code>tailscale serve</code></a> to expose the FauxRPC endpoint with TLS and then configure Envoy to proxy to the secure endpoint:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>tailscale serve <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--https<span style="color:#f92672">=</span><span style="color:#ae81ff">443</span> <span style="color:#ae81ff">\
@@ -483,7 +490,8 @@ POST https://run.googleapis.com/v2/{parent}/services
 </span></span><span style="display:flex;"><span>        <span style="color:#f92672">common_tls_context</span>: {}
 </span></span><span style="display:flex;"><span>        <span style="color:#f92672">sni</span>: <span style="color:#e6db74">&#34;{HOST}&#34;</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> Replace both occurrences of <code>{HOST}</code> with the hostname output by <code>tailscale serve</code> as &ldquo;Available within your tailnet&rdquo;</p></blockquote>
+<p><strong>NOTE</strong> Replace both occurrences of <code>{HOST}</code> with the hostname output by <code>tailscale serve</code> as &ldquo;Available within your tailnet&rdquo;</p>
+</blockquote>
 <p>And, of course, repeat the previous test.</p>
 <ul class="pa0">
   
@@ -500,7 +508,7 @@ POST https://run.googleapis.com/v2/{parent}/services
    </li>
   
    <li class="list di">
-     <a href="/tags/grpc/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">GRPC</a>
+     <a href="/tags/grpc/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Grpc</a>
    </li>
   
    <li class="list di">

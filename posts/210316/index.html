@@ -7,7 +7,7 @@
     <title>Programmatically deploying Cloud Run services (Golang|Python) | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Programmatically deploying Cloud Run services (Golang|Python)">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -130,7 +130,8 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>TRICK</strong> <a href="https://cloud.google.com/sdk/gcloud/reference#--log-http"><code>--log-http</code></a> is your friend</p></blockquote>
+<p><strong>TRICK</strong> <a href="https://cloud.google.com/sdk/gcloud/reference#--log-http"><code>--log-http</code></a> is your friend</p>
+</blockquote>
 <p>I&rsquo;ll document this here as it&rsquo;s generally applicable but, as I struggled to emulate the <code>gcloud run deploy</code> command in code, I used <code>--log-http</code> to see how Cloud SDK achieves this. Running the above command with <code>--log-http</code> yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>uri: https://${REGION}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/${PROJECT}/services/${NAME}
 </span></span><span style="display:flex;"><span>method: GET
@@ -156,7 +157,8 @@
 <li>The <code>POST</code>&rsquo;s body is a Kubernetes (Knative) Service manifest. It is documented by Google <a href="https://cloud.google.com/run/docs/reference/rest/v1/namespaces.services#Service">here</a> but I found some inconsistencies in this documentation.</li>
 </ol>
 <blockquote>
-<p><strong>TRICK</strong> Once deployed, you can view a service either in the Console or using e.g. gcloud to verify the YAML manifest</p></blockquote>
+<p><strong>TRICK</strong> Once deployed, you can view a service either in the Console or using e.g. gcloud to verify the YAML manifest</p>
+</blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud run services describe <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
@@ -174,9 +176,11 @@
 <p>So, then I had a look for gRPC (Protobuf) definitions. Confusingly, this repo is called <a href="https://github.com/googleapis/googleapis"><code>googleapis/googleapis</code></a> and you must navigate directories to find <a href="https://github.com/googleapis/googleapis/tree/master/google">libraries</a> and then those for <a href="https://github.com/googleapis/googleapis/tree/master/google/cloud">cloud</a>. No Cloud Run.</p>
 <p>So, back to the ever-reliable <a href="https://developers.google.com/api-client-library/">API Client Libraries</a>. This page&rsquo;s links tend to go directly to the GitHub repo but, for Golang, here&rsquo;s the documentation <a href="https://pkg.go.dev/google.golang.org/api#section-directories">list</a> and for Python <a href="https://github.com/googleapis/google-api-python-client/blob/master/docs/dyn/index.md">list</a>.</p>
 <blockquote>
-<p><strong>NOTE</strong> For Golang, the API Client Libraries are <code>google.golang.org</code> and the Cloud Client Libraries are <code>cloud.google.com</code></p></blockquote>
+<p><strong>NOTE</strong> For Golang, the API Client Libraries are <code>google.golang.org</code> and the Cloud Client Libraries are <code>cloud.google.com</code></p>
+</blockquote>
 <blockquote>
-<p><strong>INSIGHT</strong> Cloud Run Admin API|service <strong>only</strong> has API Client Libraries.</p></blockquote>
+<p><strong>INSIGHT</strong> Cloud Run Admin API|service <strong>only</strong> has API Client Libraries.</p>
+</blockquote>
 <p>The API Client Libraries <strong>all</strong> provide a mechanism (called <code>ClientOptions</code>) to override the default service endpoint. I was unfamiliar with this until a friend (thanks Sal!) told me about it:</p>
 <ul>
 <li>Golang&rsquo;s <a href="https://pkg.go.dev/google.golang.org/api/option">option</a></li>
@@ -267,7 +271,8 @@
 </span></span><span style="display:flex;"><span>  }
 </span></span></code></pre></div><p>The Region is important because, the Cloud Run Admin service&rsquo;s endpoint is dependent on the Region when we wish to deploy new services. The code above uses <code>ClientOption</code> to override the service&rsquo;s default (<code>https://run.googleapis.com</code>) endpoint with one prefixed with the Region. This is applied to the configuration using <code>WithEndpoint</code>.</p>
 <blockquote>
-<p><strong>NOTE</strong> The endpoint is also <code>${REGION}-run</code> (hyphenated).</p></blockquote>
+<p><strong>NOTE</strong> The endpoint is also <code>${REGION}-run</code> (hyphenated).</p>
+</blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Golang" data-lang="Golang"><span style="display:flex;"><span>  <span style="color:#a6e22e">name</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;golang&#34;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">containerName</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;%s-%s-%s&#34;</span>,
@@ -356,7 +361,8 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>Once the manifest is correct(!), you can make the request and, if there are no errors, return the response.</p>
 <blockquote>
-<p><strong>NOTE</strong> The <code>parent</code> value is different for Cloud Run and uses <code>namespace/${PROJECT}</code>.</p></blockquote>
+<p><strong>NOTE</strong> The <code>parent</code> value is different for Cloud Run and uses <code>namespace/${PROJECT}</code>.</p>
+</blockquote>
 <p>Then you should be able to: <code>go run .</code></p>
 <p>And then:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud run services describe <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\

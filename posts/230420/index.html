@@ -7,7 +7,7 @@
     <title>Prometheus Exporter for Azure (Container Apps) | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Prometheus Exporter for Azure (Container Apps)">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -133,7 +133,8 @@
 <li>inconsistent metric naming</li>
 <li>The GCP Exporter uses Google&rsquo;s <a href="https://cloud.google.com/apis/docs/client-libraries-explained#google-api-client-libraries">API Client Libraries</a> exclusively</li>
 </ol>
-<p>At some point, I&rsquo;ll spend the time to update the Exporters.</p></blockquote>
+<p>At some point, I&rsquo;ll spend the time to update the Exporters.</p>
+</blockquote>
 <p>In the case of this Azure Exporter, my singular goal is to have an Alerting rule:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">name</span>: <span style="color:#ae81ff">azure_container_apps_running</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">expr</span>: <span style="color:#ae81ff">min_over_time(azure_container_apps_total[15m]) &gt; 0</span>
@@ -147,7 +148,8 @@
 <p><code>main.go</code> registers the 2 Azure-specific collectors and an <code>ExporterCollector</code> that provides <code>start_time</code> and <code>build_info</code> metrics for the Exporter itself. <code>main.go</code> also constructs <code>account</code>, <code>subscription</code> and <code>creds</code> (credentials) values that are used to create new instances of the Azure collectors.</p>
 <p><code>account</code> uses the Exporter&rsquo;s <code>azure</code> package. This provides resources intended to be shared across collectors. In the case of Azure, <a href="https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/manage-resource-groups-portal#what-is-a-resource-group">resource groups</a> provide a container of Azure resources (including Container Apps). To save repeatedly enumerating this list of resource groups, the <code>azure</code> package, enumerates the resource groups once, caches the results in a map and shares this map across the collectors.</p>
 <blockquote>
-<p><strong>NOTE</strong> This cacheing of resource groups means that changes to the set of resource groups aren&rsquo;t automatically found by the Exporter and it must be restarted to reflect these. This functionality could be improved by expiring the cached value.</p></blockquote>
+<p><strong>NOTE</strong> This cacheing of resource groups means that changes to the set of resource groups aren&rsquo;t automatically found by the Exporter and it must be restarted to reflect these. This functionality could be improved by expiring the cached value.</p>
+</blockquote>
 <p><code>subscription</code> corresponds to the Azure Subscription ID which the Prometheus collectors will use to gather metrics. You can determine this using the Azure <a href="https://portal.azure.com/#view/Microsoft_Azure_Billing/SubscriptionsBlade">Portal: Subscriptions</a> or the Azure CLI: <code>az accounts list</code> perhaps even <code>az account list --output=json | jq -r .[0].id</code>.</p>
 <p>The <code>creds</code> are created using []<code>azidentity.NewDefaultAzureCredential</code>](<a href="https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity#NewDefaultAzureCredential">https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/azidentity#NewDefaultAzureCredential</a>) which is a developer-friendly mechanism. When running locally, this function grabs the <code>az</code> CLI&rsquo;s authenticated user credentials. When running in a container (as this Exporter will), it&rsquo;s possible to configure the client using environment variables (<code>AZURE_CLIENT_ID</code>, <code>AZURE_TENANT_ID</code> and <code>AZURE_CLIENT_CERTIFICATE_PATH</code>) to acquire credentials from an <a href="https://learn.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals#service-principal-object">Azure Service Principal</a> without having to change the code. I&rsquo;ll explain how this is done later.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// Environment variables</span>
@@ -199,7 +201,8 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>Each Collector includes a function to create a new Collector (e.g. <code>NewContainerAppsCollector</code>) which uses a service-specific client (e.g. <a href="https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appcontainers/armappcontainers/v2@v2.0.0-beta.2#ContainerAppsClient"><code>armappcontainers.ContainerAppsClient</code></a> created from a client factory (e.g. <a href="https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/appcontainers/armappcontainers/v2@v2.0.0-beta.2#NewClientFactory"><code>armappcontainers.NewClientFactory</code></a>) using the previously described <code>subscription</code> and <code>creds</code>.</p>
 <blockquote>
-<p><strong>NOTE</strong> Being new to Azure, I was confused by the recurring use of <code>arm</code> in Azure-related content until I realized that it&rsquo;s an acronym of <a href="https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/overview">Azure Resource Manager</a>.</p></blockquote>
+<p><strong>NOTE</strong> Being new to Azure, I was confused by the recurring use of <code>arm</code> in Azure-related content until I realized that it&rsquo;s an acronym of <a href="https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/overview">Azure Resource Manager</a>.</p>
+</blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#a6e22e">clientFactory</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">armappcontainers</span>.<span style="color:#a6e22e">NewClientFactory</span>(
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">subscription</span>,
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">creds</span>,
@@ -355,7 +358,8 @@
 <li>In the above, the same name is used for the host&rsquo;s and container&rsquo;s <code>key+crt</code> filename</li>
 <li>In the above, the same <code>HOST:CONTAINER</code> port value (<code>{PORT}</code>) is used</li>
 <li>The value of <code>--endpoint=0.0.0.0:${PORT}</code> refers to the container&rsquo;s (!) port.</li>
-</ol></blockquote>
+</ol>
+</blockquote>
 <ul class="pa0">
   
    <li class="list di">

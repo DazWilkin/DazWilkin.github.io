@@ -7,7 +7,7 @@
     <title>Google Trillian on Cloud Run | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Running Google Trillian on Google Cloud Run">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -47,7 +47,7 @@
     <meta property="article:tag" content="Google">
     <meta property="article:tag" content="Trillian">
     <meta property="article:tag" content="Cloud-Run">
-    <meta property="article:tag" content="GRPC">
+    <meta property="article:tag" content="Grpc">
     <meta property="article:tag" content="GRPCurl">
 
   <meta itemprop="name" content="Google Trillian on Cloud Run">
@@ -55,7 +55,7 @@
   <meta itemprop="datePublished" content="2020-03-26T00:00:00-08:00">
   <meta itemprop="dateModified" content="2020-03-26T00:00:00-08:00">
   <meta itemprop="wordCount" content="1101">
-  <meta itemprop="keywords" content="Google,Trillian,Cloud-Run,GRPC,GRPCurl">
+  <meta itemprop="keywords" content="Google,Trillian,Cloud-Run,Grpc,GRPCurl">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Google Trillian on Cloud Run">
   <meta name="twitter:description" content="Running Google Trillian on Google Cloud Run">
@@ -183,9 +183,11 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NB</strong> It is possible to pass flags (<code>--flag=value</code>) to Cloud Run but it&rsquo;s not clearly documented</p></blockquote>
+<p><strong>NB</strong> It is possible to pass flags (<code>--flag=value</code>) to Cloud Run but it&rsquo;s not clearly documented</p>
+</blockquote>
 <blockquote>
-<p><strong>NB</strong> We must <strong>triple</strong> reference the database (a) <code>--msql_url=</code>; (b) <code>--add-cloudsql-instance</code>; (c) <code>--set-env-vars=INSTANCE_CONNECTION</code></p></blockquote>
+<p><strong>NB</strong> We must <strong>triple</strong> reference the database (a) <code>--msql_url=</code>; (b) <code>--add-cloudsql-instance</code>; (c) <code>--set-env-vars=INSTANCE_CONNECTION</code></p>
+</blockquote>
 <p>Cloud Run injects a proxy (sidecar) into deployments and (among other things?) provides a TLS endpoint. In order to connect to the Trillian Log Server, we must (a) get the service&rsquo;s endpoint; (b) grab the server&rsquo;s TLS certificate; (c) create a Trillian Log using the Log Server (on the Cloud SQL database):</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Grab the Log Server&#39;s (Cloud Run) address</span>
 </span></span><span style="display:flex;"><span>TRILLIAN_LOG_SERVER<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
@@ -226,9 +228,11 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NB</strong> The personality connects to the Trillian Log Server on the Cloud Run service&rsquo;s host (<code>${TRILLIAN_LOG_SERVER}</code>) and port 443</p></blockquote>
+<p><strong>NB</strong> The personality connects to the Trillian Log Server on the Cloud Run service&rsquo;s host (<code>${TRILLIAN_LOG_SERVER}</code>) and port 443</p>
+</blockquote>
 <blockquote>
-<p><strong>NB</strong> The personality also uses a log created in the previous step (<code>${LOGID}</code>)</p></blockquote>
+<p><strong>NB</strong> The personality also uses a log created in the previous step (<code>${LOGID}</code>)</p>
+</blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Grab the PyPi Transparency Server&#39;s (Cloud Run) address</span>
 </span></span><span style="display:flex;"><span>PYPI_SERVER<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud run services describe pypi-transparency-server <span style="color:#ae81ff">\
@@ -340,9 +344,11 @@
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>./cloud_sql_proxy -instances<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>CONN<span style="color:#e6db74">}</span><span style="color:#f92672">=</span>tcp:3306
 </span></span></code></pre></div><blockquote>
-<p><strong>NB</strong> You&rsquo;ll need Google&rsquo;s <a href="https://cloud.google.com/sql/docs/mysql/sql-proxy#install">Cloud SQL Proxy</a></p></blockquote>
+<p><strong>NB</strong> You&rsquo;ll need Google&rsquo;s <a href="https://cloud.google.com/sql/docs/mysql/sql-proxy#install">Cloud SQL Proxy</a></p>
+</blockquote>
 <blockquote>
-<p><strong>NB</strong> Once the proxy is running, it proxies traffic sent to it (<code>localhost</code>) to the remote instance (<code>${DB}</code>)</p></blockquote>
+<p><strong>NB</strong> Once the proxy is running, it proxies traffic sent to it (<code>localhost</code>) to the remote instance (<code>${DB}</code>)</p>
+</blockquote>
 <p>Then, in another shell, get a client to the database:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>VERSION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;10.4.12&#34;</span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
@@ -366,7 +372,8 @@ grant all on test.* to test@&#39;%&#39;;
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>mariadb:<span style="color:#e6db74">${</span>VERSION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  sh -c <span style="color:#e6db74">&#34;exec mysql --host=127.0.0.1 --port=3306 --user=</span><span style="color:#e6db74">${</span>USER<span style="color:#e6db74">}</span><span style="color:#e6db74"> --password=</span><span style="color:#e6db74">${</span>PASS<span style="color:#e6db74">}</span><span style="color:#e6db74"> test &lt; /trillian.sql&#34;</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NB</strong> Here&rsquo;s the script <a href="https://gist.github.com/DazWilkin/5d4cb0974a5f4f4bf88bafdfe8141443"><code>trillian.sql</code></a></p></blockquote>
+<p><strong>NB</strong> Here&rsquo;s the script <a href="https://gist.github.com/DazWilkin/5d4cb0974a5f4f4bf88bafdfe8141443"><code>trillian.sql</code></a></p>
+</blockquote>
 <h3 id="tidy">Tidy</h3>
 <p>If you&rsquo;re <strong>absolutely</strong> certain you don&rsquo;t need the project, you can delete everything by deleting the project:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud projects delete <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
@@ -399,7 +406,7 @@ grant all on test.* to test@&#39;%&#39;;
    </li>
   
    <li class="list di">
-     <a href="/tags/grpc/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">GRPC</a>
+     <a href="/tags/grpc/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Grpc</a>
    </li>
   
    <li class="list di">

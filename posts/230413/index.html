@@ -7,7 +7,7 @@
     <title>Filtering metrics w/ Google Managed Prometheus | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Filtering metrics with Google Managed Services for Prometheus">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -132,7 +132,8 @@
 <li>Google surfaces <strong>all</strong> Cloud Monitoring metrics through PromQL and (seemingly) enables interacting with Cloud Monitoring using PromQL rather than Google&rsquo;s rocket-scientists&rsquo; <a href="https://cloud.google.com/monitoring/mql">Monitoring Query Language</a></li>
 </ul>
 <blockquote>
-<p><strong>NOTE</strong> For example Cloud Run&rsquo;s (<code>run.googleapis.com</code>) revision container instance count metric (<code>run.googleapis.com/container/instance_count</code>) is transparently mapped to the PromQL metric <code>run_googleapis_com:container_instance_count</code>. This is very useful!</p></blockquote>
+<p><strong>NOTE</strong> For example Cloud Run&rsquo;s (<code>run.googleapis.com</code>) revision container instance count metric (<code>run.googleapis.com/container/instance_count</code>) is transparently mapped to the PromQL metric <code>run_googleapis_com:container_instance_count</code>. This is very useful!</p>
+</blockquote>
 <p>I&rsquo;m left with the responsibility to ensure that I manage the costs of benefitting from this service and, Google&rsquo;s post <a href="https://cloud.google.com/blog/products/management-tools/learn-to-understand-and-reduce-cloud-monitoring-costs/">How to identify and reduce costs of your Google Cloud observability in Cloud Monitoring</a> (leads to content) that has helped me better understand this. The blog post links to <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/cost-controls">Cost controls and attribution</a> which provides extensive documentation on ways to reduce GMP costs.</p>
 <p><a href="https://ack.al" data-goatcounter-click="ack.al">Ackal</a> surfaces very few (two) application metrics through GMP but, as I began this journey, I noticed <a href="https://console.cloud.google.com">Cloud Console</a>&rsquo;s excellent (new?) <a href="https://console.cloud.google.com/monitoring/metrics-diagnostics">Metrics Diagnostics</a> showed that I had 62 metrics.</p>
 <p>The 62 metrics correspond to Google Cloud Monitoring metrics prefixed: <code>prometheus.googleapis.com</code>. Google&rsquo;s metrics are prefixed with a service-specific URL (e.g. <code>compute.googleapis.com</code>, <code>container.googleapis.com</code>).</p>
@@ -225,7 +226,8 @@
 </span></span></code></pre></div><p>None of the metrics in this list are (currently) relevant to me and yet, per the blog post, because they come under <code>prometheus.googleapis.com</code>, I&rsquo;m paying for them. How can I filter ingestion of the <code>prometheus.googleapis.com</code> prefixed metrics that I don&rsquo;t (currently) need? Here, Google&rsquo;s documentation is less good.</p>
 <p>I&rsquo;m using <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed">managed collection</a> and I&rsquo;m familiar with <a href="https://github.com/prometheus-operator/prometheus-operator">Prometheus Operator</a> CRD <a href="https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.PodMonitor"><code>PodMonitor</code></a> and GMP&rsquo;s variant <a href="https://github.com/GoogleCloudPlatform/prometheus-engine/blob/v0.2.3/doc/api.md#podmonitoring"><code>PodMonitoring</code></a></p>
 <blockquote>
-<p><strong>NOTE</strong> GMP doesn&rsquo;t have an equivalent of <a href="https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor"><code>ServiceMonitor</code></a></p></blockquote>
+<p><strong>NOTE</strong> GMP doesn&rsquo;t have an equivalent of <a href="https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor"><code>ServiceMonitor</code></a></p>
+</blockquote>
 <p>Google&rsquo;s <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/cost-controls">Cost controls and attribution page</a> includes <a href="https://cloud.google.com/stackdriver/docs/managed-prometheus/cost-controls#filter-timeseries">Reduce the number of time series</a></p>
 <p>But the <code>metricRelabeling</code> example cited <strong>only</strong> allows you to filter metrics that are being ingested by your e.g. <code>PodMonitoring</code> Custom Resources. The 60 (extraneous) metrics shown above aren&rsquo;t the result of <code>PodMonitoring</code> resources. I have a single <code>PodMonitoring</code> Resource and it ingests that 2 Ackal metrics that are of interest to me.</p>
 <p>This <a href="https://www.cloudskillsboost.google">Google Cloud Skills Boost</a> <a href="https://www.cloudskillsboost.google/focuses/33334">Reduce Costs for Managed Service for Prometheus</a> is really useful. The solution it describes is to add a filter to GMP&rsquo;s <a href="https://github.com/GoogleCloudPlatform/prometheus-engine/blob/v0.2.3/doc/api.md#operatorconfig">OperatorConfig</a>.</p>

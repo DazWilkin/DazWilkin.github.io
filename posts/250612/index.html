@@ -10,7 +10,7 @@
 I stumbled upon protoc-gen-go-mcp and think it&rsquo;s an elegant application of two technologies: programmatically generating an MCP server from a gRPC protobuf.
 I&rsquo;m considering building an MCP server for Ackal but, thought I&rsquo;d start with something simple: gRPC Health Checking protocol.
 I was surprised to learn as I was doing this that there&rsquo;s a new List (Add List method to gRPC Health service #143) added to grpc.health.v1.Health. My (Ackal) healthcheck server does not yet implement it (see later).">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -50,7 +50,7 @@ I was surprised to learn as I was doing this that there’s a new List (Add List
     <meta property="article:section" content="posts">
     <meta property="article:published_time" content="2025-06-12T00:00:00-07:00">
     <meta property="article:modified_time" content="2025-06-12T00:00:00-07:00">
-    <meta property="article:tag" content="GRPC">
+    <meta property="article:tag" content="Grpc">
     <meta property="article:tag" content="Healthcheck">
     <meta property="article:tag" content="MCP">
 
@@ -62,7 +62,7 @@ I was surprised to learn as I was doing this that there’s a new List (Add List
   <meta itemprop="datePublished" content="2025-06-12T00:00:00-07:00">
   <meta itemprop="dateModified" content="2025-06-12T00:00:00-07:00">
   <meta itemprop="wordCount" content="679">
-  <meta itemprop="keywords" content="GRPC,Healthcheck,MCP">
+  <meta itemprop="keywords" content="Grpc,Healthcheck,MCP">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="MCP for gRPC Health Checking protocol">
   <meta name="twitter:description" content="Model Context Protocol (MCP) is “all the rage” these days.
@@ -281,7 +281,8 @@ I was surprised to learn as I was doing this that there’s a new List (Add List
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>What&rsquo;s curious is that, while these <code>Server</code> methods must exist in order that <code>Server</code> implements the interface, they are never (!?) called.</p>
 <blockquote>
-<p><strong>NOTE</strong> all the methods return &ldquo;not implemented&rdquo;.</p></blockquote>
+<p><strong>NOTE</strong> all the methods return &ldquo;not implemented&rdquo;.</p>
+</blockquote>
 <h3 id="test">Test</h3>
 <p>Run the server and pipe <code>stdout</code> through <code>jq</code> to pretty print it:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go run . | jq -r .
@@ -293,9 +294,11 @@ I was surprised to learn as I was doing this that there’s a new List (Add List
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>And then to list the MCP server&rsquo;s methods, we use <code>&quot;method&quot;: &quot;tools/list&quot;</code></p>
 <blockquote>
-<p><strong>NOTE</strong> MCP uses <a href="https://www.jsonrpc.org/"><code>JSON-RPC</code></a> and <a href="https://modelcontextprotocol.io"><code>modelcontextprotocol.io</code></a> documents the JSON-RPC messages including <a href="https://modelcontextprotocol.io/specification/draft/server/tools#listing-tools"><code>tools/list</code></a> and <a href="https://modelcontextprotocol.io/specification/draft/server/tools#calling-tools"><code>tools/call</code></a> as used below.</p></blockquote>
+<p><strong>NOTE</strong> MCP uses <a href="https://www.jsonrpc.org/"><code>JSON-RPC</code></a> and <a href="https://modelcontextprotocol.io"><code>modelcontextprotocol.io</code></a> documents the JSON-RPC messages including <a href="https://modelcontextprotocol.io/specification/draft/server/tools#listing-tools"><code>tools/list</code></a> and <a href="https://modelcontextprotocol.io/specification/draft/server/tools#calling-tools"><code>tools/call</code></a> as used below.</p>
+</blockquote>
 <blockquote>
-<p><strong>NOTE</strong> The JSON-RPC requests should contain no newlines as these are used by this server&rsquo;s stdin parsing to delimit the commands.</p></blockquote>
+<p><strong>NOTE</strong> The JSON-RPC requests should contain no newlines as these are used by this server&rsquo;s stdin parsing to delimit the commands.</p>
+</blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;jsonrpc&#34;</span>:<span style="color:#e6db74">&#34;2.0&#34;</span>,
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;id&#34;</span>:<span style="color:#ae81ff">1</span>,
@@ -333,7 +336,8 @@ I was surprised to learn as I was doing this that there’s a new List (Add List
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The gRPC fully-qualified method names are mapped from e.g. <code>grpc.health.v1.Health/Check</code> to <code>grpc_health_v1_Health_Check</code> by this MCP implementation.</p></blockquote>
+<p><strong>NOTE</strong> The gRPC fully-qualified method names are mapped from e.g. <code>grpc.health.v1.Health/Check</code> to <code>grpc_health_v1_Health_Check</code> by this MCP implementation.</p>
+</blockquote>
 <p>And to invoke the <code>grpc.health.v1.Health/Check</code> method:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;jsonrpc&#34;</span>:<span style="color:#e6db74">&#34;2.0&#34;</span>,
@@ -363,7 +367,7 @@ I was surprised to learn as I was doing this that there’s a new List (Add List
 <ul class="pa0">
   
    <li class="list di">
-     <a href="/tags/grpc/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">GRPC</a>
+     <a href="/tags/grpc/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Grpc</a>
    </li>
   
    <li class="list di">

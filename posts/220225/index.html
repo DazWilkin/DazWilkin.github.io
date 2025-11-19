@@ -7,7 +7,7 @@
     <title>Prometheus HTTP Service Discovery of Cloud Run services | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="How to use Prometheus HTTP Service Discovery with Google Cloud Run">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -138,7 +138,8 @@
 <li>Cloud Run target services that authenticate and serve Prometheus metrics</li>
 </ol>
 <blockquote>
-<p><strong>IMPORTANT</strong> For simplicity, the proxy listens on an insecure (non-TLS) connection (uses <code>http</code>). The proxy bumps outgoing (proxied) requests to secure (TLS) connections (uses <code>https</code>). This is primarily for simplicity. The proxy will be run locally (on the same host in many cases) and there&rsquo;s confidence in its security. Using TLS with the proxy would require management of x509 certificates (possibly self-signed). But, because the proxy needs to add e.g. <code>Authorization</code> header to the proxied request, it would either need to terminate the TLS connection or it would need to operate <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">MITM</a> and neither are good choices.</p></blockquote>
+<p><strong>IMPORTANT</strong> For simplicity, the proxy listens on an insecure (non-TLS) connection (uses <code>http</code>). The proxy bumps outgoing (proxied) requests to secure (TLS) connections (uses <code>https</code>). This is primarily for simplicity. The proxy will be run locally (on the same host in many cases) and there&rsquo;s confidence in its security. Using TLS with the proxy would require management of x509 certificates (possibly self-signed). But, because the proxy needs to add e.g. <code>Authorization</code> header to the proxied request, it would either need to terminate the TLS connection or it would need to operate <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">MITM</a> and neither are good choices.</p>
+</blockquote>
 <p>Let&rsquo;s work from the end-user&rsquo;s perspective forwards:</p>
 <p><img src="/images/220225.prometheus.targets.png" alt="Prometheus: Targets"></p>
 <p>It doesn&rsquo;t look very interesting but the two endpoints <code>node-exporter-XX</code> are Cloud Run services (for testing, they&rsquo;re both <a href="https://github.com/prometheus/node_exporter">Node Exporter</a>s) that are published as <code>allow unauthenticated</code> but (in production) are services that authenticate requests for valid Firebase ID tokens.</p>
@@ -158,14 +159,17 @@
 </span></span><span style="display:flex;"><span>    - <span style="color:#f92672">url</span>: <span style="color:#ae81ff">http://test-listr-plsm3l32oa-uw.a.run.app</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">proxy_url</span>: <span style="color:#ae81ff">http://0.0.0.0:5555</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> The <code>proxy</code> is referenced twice. Prometheus&rsquo; scrape requests must go through it (to be authenticated) and the scrapes of the list of HTTP targets must go through it too (to be authenticated).</p></blockquote>
+<p><strong>NOTE</strong> The <code>proxy</code> is referenced twice. Prometheus&rsquo; scrape requests must go through it (to be authenticated) and the scrapes of the list of HTTP targets must go through it too (to be authenticated).</p>
+</blockquote>
 <blockquote>
-<p><strong>NOTE</strong> As explained above, the proxy listens on an insecure (non-TLS) connection and so URL references in <code>prometheus.yml</code> use <code>http</code> not <code>https</code>. Because the proxy upgrades the outgoing request to <code>https</code>, in this example, although <code>http://test-listr-plsm3l32oa-uw.a.run.app</code> is specified, the actual call will be made (correctly) against <code>https://test-listr-plsm3l32oa-uw.a.run.app</code>.</p></blockquote>
+<p><strong>NOTE</strong> As explained above, the proxy listens on an insecure (non-TLS) connection and so URL references in <code>prometheus.yml</code> use <code>http</code> not <code>https</code>. Because the proxy upgrades the outgoing request to <code>https</code>, in this example, although <code>http://test-listr-plsm3l32oa-uw.a.run.app</code> is specified, the actual call will be made (correctly) against <code>https://test-listr-plsm3l32oa-uw.a.run.app</code>.</p>
+</blockquote>
 <h2 id="proxy">Proxy</h2>
 <p>Because the proxy listens on an insecure (non-TLS) connection but, Cloud Run (only) provides secure (TLS) connections, the first tasks of the proxy is to bump the connection to <code>https</code>. The proxy then creates a <code>NewRequest</code> using the incoming (proxied) request&rsquo;s method, body and the upgraded (<code>http://</code>&ndash;&gt;<code>https://</code> URL).</p>
 <p>The motivation for the proxy is that it injects the <code>Authorization</code> header into Cloud Run requests to authenticate them. In my implementation, the proxy uses the ID token produced by Firebase Auth to authenticate users&rsquo; requests. One user can have zero or more (!) Cloud Run services and the implementation ensures that one user can only access its own Cloud Run services. This is achieved (described below) by having the <code>listr</code> (a Cloud Run service that lists the user&rsquo;s Cloud Run services) <strong>and</strong> the Cloud Run services returned by <code>listr</code>, verify the user&rsquo;s ID token. So, the proxy acquires the user&rsquo;s ID token and adds this as a <code>Bearer</code> as an <code>Authorization</code> header.</p>
 <blockquote>
-<p><strong>ASIDE</strong> The <a href="https://github.com/DazWilkin/gcp-oidc-token-proxy">OIDC Token Proxy</a> also authenticates Prometheus scrapes of Cloud Run services but it relies on locally stored credentials (from a Service Account) to generate the appropriate JWT to authenticate a single (!) Cloud Run service. Unfortunately, the JWT audience is service-specific with Cloud Run and this means that the OIDC Token Proxy can only authenticate a single Cloud Run service (target).</p></blockquote>
+<p><strong>ASIDE</strong> The <a href="https://github.com/DazWilkin/gcp-oidc-token-proxy">OIDC Token Proxy</a> also authenticates Prometheus scrapes of Cloud Run services but it relies on locally stored credentials (from a Service Account) to generate the appropriate JWT to authenticate a single (!) Cloud Run service. Unfortunately, the JWT audience is service-specific with Cloud Run and this means that the OIDC Token Proxy can only authenticate a single Cloud Run service (target).</p>
+</blockquote>
 <p>In my solution, there are additional headers added by the proxy that are used by the backend to validate users. The proxy adds these too.</p>
 <p>Now the proxy can make (<code>Do</code>) the request. If this errors, this is returned to the caller (Prometheus). Otherwise, the proxy copies the response into the caller&rsquo;s response.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
@@ -261,7 +265,8 @@
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">next</span>.<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">req</span>)
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> In my app, once a user has been authenticated (see above), there&rsquo;s another interceptor that determines whether the user is authorized.</p></blockquote>
+<p><strong>NOTE</strong> In my app, once a user has been authenticated (see above), there&rsquo;s another interceptor that determines whether the user is authorized.</p>
+</blockquote>
 <h3 id="prometheus-service-discovery-targets">Prometheus Service Discovery targets</h3>
 <p>The Prometheus documentation covers HTTP-based Service Discovery in two places:</p>
 <ul>
@@ -279,7 +284,8 @@
 </span></span><span style="display:flex;"><span>  <span style="color:#960050;background-color:#1e0010">...</span>
 </span></span><span style="display:flex;"><span>]
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> <code>targets</code> is a list (of hosts) while <code>labels</code> is a map (of key:value pairs). There&rsquo;s freedom to associate a set of targets with the same set of labels.</p></blockquote>
+<p><strong>NOTE</strong> <code>targets</code> is a list (of hosts) while <code>labels</code> is a map (of key:value pairs). There&rsquo;s freedom to associate a set of targets with the same set of labels.</p>
+</blockquote>
 <p>This can be modeled:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-golang" data-lang="golang"><span style="display:flex;"><span><span style="color:#75715e">// StaticConfigs is a type that represents file format of Prometheus File|HTTP Service Dicovery config</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">StaticConfigs</span> []<span style="color:#a6e22e">StaticConfig</span>
@@ -305,7 +311,8 @@
 </span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Labels</span>  <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;labels&#34; yaml:&#34;labels&#34;`</span>
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> These types (and methods) must be available as part of Prometheus too and it may be better to import them from Prometheus rather than recreate them here.</p></blockquote>
+<p><strong>NOTE</strong> These types (and methods) must be available as part of Prometheus too and it may be better to import them from Prometheus rather than recreate them here.</p>
+</blockquote>
 <p>One noteworthy fact is that the Cloud Run service has region-specific endpoints. Generally to interact with Cloud Run services through the SDKs, it&rsquo;s necessary to first determine which region the service is in. See <a href="https://cloud.google.com/run/docs/reference/rest#service-endpoint">Service endpoint</a>.</p>
 <p>However (!) there is an undocumented method <code>projects.locations.services.list</code> that can be used to enumerate all the services within a project. This <code>list</code> method is used by <code>gcloud</code> and it achieves the enumeration across all regions using <code>-</code> as a wildcard for the <code>locations</code>  components of the method&rsquo;s <code>parent</code> string value (<code>projects/{ProjectID}/locations/-</code>).</p>
 <p>This is the method that I&rsquo;m using to retrieve the list of <code>targets</code> that are then converted to <code>StaticConfig</code>&rsquo;s and <code>Add</code>&lsquo;ed to <code>StaticConfigs</code> per above before converting these to JSON to be returned by the HTTP handler:</p>
