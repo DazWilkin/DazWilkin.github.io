@@ -181,71 +181,74 @@
 </span></span><span style="display:flex;"><span>  },
 </span></span><span style="display:flex;"><span>};
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: name,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    defaultBackend: {
-</span></span><span style="display:flex;"><span>      service: {
-</span></span><span style="display:flex;"><span>        name: name,
-</span></span><span style="display:flex;"><span>        port: {
-</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> ingresses <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Tailscale Ingress TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      defaultBackend: {
+</span></span><span style="display:flex;"><span>        service: {
+</span></span><span style="display:flex;"><span>          name: name,
+</span></span><span style="display:flex;"><span>          port: {
+</span></span><span style="display:flex;"><span>            number: port,
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
 </span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      tls: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          hosts: [
+</span></span><span style="display:flex;"><span>            name,
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      ],
 </span></span><span style="display:flex;"><span>    },
-</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
-</span></span><span style="display:flex;"><span>    tls: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        hosts: [
-</span></span><span style="display:flex;"><span>          name,
-</span></span><span style="display:flex;"><span>        ],
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    rules: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        host: std.format(
-</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
-</span></span><span style="display:flex;"><span>              name: name,
-</span></span><span style="display:flex;"><span>              node_ip: node_ip,
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ),
-</span></span><span style="display:flex;"><span>        http: {
-</span></span><span style="display:flex;"><span>          paths: [
-</span></span><span style="display:flex;"><span>            {
-</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
-</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
-</span></span><span style="display:flex;"><span>              backend: {
-</span></span><span style="display:flex;"><span>                service: {
-</span></span><span style="display:flex;"><span>                  name: name,
-</span></span><span style="display:flex;"><span>                  port: {
-</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      rules: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          host: std.format(
+</span></span><span style="display:flex;"><span>              <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>                name: name,
+</span></span><span style="display:flex;"><span>                node_ip: node_ip,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ),
+</span></span><span style="display:flex;"><span>          http: {
+</span></span><span style="display:flex;"><span>            paths: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>                pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>                backend: {
+</span></span><span style="display:flex;"><span>                  service: {
+</span></span><span style="display:flex;"><span>                    name: name,
+</span></span><span style="display:flex;"><span>                    port: {
+</span></span><span style="display:flex;"><span>                      number: port,
+</span></span><span style="display:flex;"><span>                    },
 </span></span><span style="display:flex;"><span>                  },
 </span></span><span style="display:flex;"><span>                },
 </span></span><span style="display:flex;"><span>              },
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>      ],
+</span></span><span style="display:flex;"><span>    },
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>];
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
@@ -337,13 +340,11 @@
 </span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
 </span></span><span style="display:flex;"><span>  items: [
 </span></span><span style="display:flex;"><span>    deployment,
-</span></span><span style="display:flex;"><span>    ingress,
 </span></span><span style="display:flex;"><span>    prometheusrule,
 </span></span><span style="display:flex;"><span>    service,
 </span></span><span style="display:flex;"><span>    serviceaccount,
 </span></span><span style="display:flex;"><span>    servicemonitor,
-</span></span><span style="display:flex;"><span>    traefik
-</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>  ] <span style="color:#f92672">+</span> ingresses,
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
     </div>
@@ -521,71 +522,74 @@
 </span></span><span style="display:flex;"><span>  },
 </span></span><span style="display:flex;"><span>};
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: name,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    defaultBackend: {
-</span></span><span style="display:flex;"><span>      service: {
-</span></span><span style="display:flex;"><span>        name: name,
-</span></span><span style="display:flex;"><span>        port: {
-</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> ingresses <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Tailscale Ingress TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      defaultBackend: {
+</span></span><span style="display:flex;"><span>        service: {
+</span></span><span style="display:flex;"><span>          name: name,
+</span></span><span style="display:flex;"><span>          port: {
+</span></span><span style="display:flex;"><span>            number: port,
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
 </span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      tls: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          hosts: [
+</span></span><span style="display:flex;"><span>            name,
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      ],
 </span></span><span style="display:flex;"><span>    },
-</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
-</span></span><span style="display:flex;"><span>    tls: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        hosts: [
-</span></span><span style="display:flex;"><span>          name,
-</span></span><span style="display:flex;"><span>        ],
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    rules: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        host: std.format(
-</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
-</span></span><span style="display:flex;"><span>              name: name,
-</span></span><span style="display:flex;"><span>              node_ip: node_ip,
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ),
-</span></span><span style="display:flex;"><span>        http: {
-</span></span><span style="display:flex;"><span>          paths: [
-</span></span><span style="display:flex;"><span>            {
-</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
-</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
-</span></span><span style="display:flex;"><span>              backend: {
-</span></span><span style="display:flex;"><span>                service: {
-</span></span><span style="display:flex;"><span>                  name: name,
-</span></span><span style="display:flex;"><span>                  port: {
-</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      rules: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          host: std.format(
+</span></span><span style="display:flex;"><span>              <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>                name: name,
+</span></span><span style="display:flex;"><span>                node_ip: node_ip,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ),
+</span></span><span style="display:flex;"><span>          http: {
+</span></span><span style="display:flex;"><span>            paths: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>                pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>                backend: {
+</span></span><span style="display:flex;"><span>                  service: {
+</span></span><span style="display:flex;"><span>                    name: name,
+</span></span><span style="display:flex;"><span>                    port: {
+</span></span><span style="display:flex;"><span>                      number: port,
+</span></span><span style="display:flex;"><span>                    },
 </span></span><span style="display:flex;"><span>                  },
 </span></span><span style="display:flex;"><span>                },
 </span></span><span style="display:flex;"><span>              },
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>      ],
+</span></span><span style="display:flex;"><span>    },
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>];
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
@@ -677,13 +681,11 @@
 </span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
 </span></span><span style="display:flex;"><span>  items: [
 </span></span><span style="display:flex;"><span>    deployment,
-</span></span><span style="display:flex;"><span>    ingress,
 </span></span><span style="display:flex;"><span>    prometheusrule,
 </span></span><span style="display:flex;"><span>    service,
 </span></span><span style="display:flex;"><span>    serviceaccount,
 </span></span><span style="display:flex;"><span>    servicemonitor,
-</span></span><span style="display:flex;"><span>    traefik
-</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>  ] <span style="color:#f92672">+</span> ingresses,
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
     </div>
@@ -804,71 +806,74 @@
 </span></span><span style="display:flex;"><span>  },
 </span></span><span style="display:flex;"><span>};
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: name,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    defaultBackend: {
-</span></span><span style="display:flex;"><span>      service: {
-</span></span><span style="display:flex;"><span>        name: name,
-</span></span><span style="display:flex;"><span>        port: {
-</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> ingresses <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Tailscale Ingress TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      defaultBackend: {
+</span></span><span style="display:flex;"><span>        service: {
+</span></span><span style="display:flex;"><span>          name: name,
+</span></span><span style="display:flex;"><span>          port: {
+</span></span><span style="display:flex;"><span>            number: port,
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
 </span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      tls: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          hosts: [
+</span></span><span style="display:flex;"><span>            name,
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      ],
 </span></span><span style="display:flex;"><span>    },
-</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
-</span></span><span style="display:flex;"><span>    tls: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        hosts: [
-</span></span><span style="display:flex;"><span>          name,
-</span></span><span style="display:flex;"><span>        ],
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    rules: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        host: std.format(
-</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
-</span></span><span style="display:flex;"><span>              name: name,
-</span></span><span style="display:flex;"><span>              node_ip: node_ip,
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ),
-</span></span><span style="display:flex;"><span>        http: {
-</span></span><span style="display:flex;"><span>          paths: [
-</span></span><span style="display:flex;"><span>            {
-</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
-</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
-</span></span><span style="display:flex;"><span>              backend: {
-</span></span><span style="display:flex;"><span>                service: {
-</span></span><span style="display:flex;"><span>                  name: name,
-</span></span><span style="display:flex;"><span>                  port: {
-</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      rules: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          host: std.format(
+</span></span><span style="display:flex;"><span>              <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>                name: name,
+</span></span><span style="display:flex;"><span>                node_ip: node_ip,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ),
+</span></span><span style="display:flex;"><span>          http: {
+</span></span><span style="display:flex;"><span>            paths: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>                pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>                backend: {
+</span></span><span style="display:flex;"><span>                  service: {
+</span></span><span style="display:flex;"><span>                    name: name,
+</span></span><span style="display:flex;"><span>                    port: {
+</span></span><span style="display:flex;"><span>                      number: port,
+</span></span><span style="display:flex;"><span>                    },
 </span></span><span style="display:flex;"><span>                  },
 </span></span><span style="display:flex;"><span>                },
 </span></span><span style="display:flex;"><span>              },
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>      ],
+</span></span><span style="display:flex;"><span>    },
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>];
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
@@ -960,13 +965,11 @@
 </span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
 </span></span><span style="display:flex;"><span>  items: [
 </span></span><span style="display:flex;"><span>    deployment,
-</span></span><span style="display:flex;"><span>    ingress,
 </span></span><span style="display:flex;"><span>    prometheusrule,
 </span></span><span style="display:flex;"><span>    service,
 </span></span><span style="display:flex;"><span>    serviceaccount,
 </span></span><span style="display:flex;"><span>    servicemonitor,
-</span></span><span style="display:flex;"><span>    traefik
-</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>  ] <span style="color:#f92672">+</span> ingresses,
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
     </div>
@@ -1135,71 +1138,74 @@
 </span></span><span style="display:flex;"><span>  },
 </span></span><span style="display:flex;"><span>};
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: name,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    defaultBackend: {
-</span></span><span style="display:flex;"><span>      service: {
-</span></span><span style="display:flex;"><span>        name: name,
-</span></span><span style="display:flex;"><span>        port: {
-</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> ingresses <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Tailscale Ingress TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      defaultBackend: {
+</span></span><span style="display:flex;"><span>        service: {
+</span></span><span style="display:flex;"><span>          name: name,
+</span></span><span style="display:flex;"><span>          port: {
+</span></span><span style="display:flex;"><span>            number: port,
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
 </span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      tls: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          hosts: [
+</span></span><span style="display:flex;"><span>            name,
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      ],
 </span></span><span style="display:flex;"><span>    },
-</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
-</span></span><span style="display:flex;"><span>    tls: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        hosts: [
-</span></span><span style="display:flex;"><span>          name,
-</span></span><span style="display:flex;"><span>        ],
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    rules: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        host: std.format(
-</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
-</span></span><span style="display:flex;"><span>              name: name,
-</span></span><span style="display:flex;"><span>              node_ip: node_ip,
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ),
-</span></span><span style="display:flex;"><span>        http: {
-</span></span><span style="display:flex;"><span>          paths: [
-</span></span><span style="display:flex;"><span>            {
-</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
-</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
-</span></span><span style="display:flex;"><span>              backend: {
-</span></span><span style="display:flex;"><span>                service: {
-</span></span><span style="display:flex;"><span>                  name: name,
-</span></span><span style="display:flex;"><span>                  port: {
-</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      rules: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          host: std.format(
+</span></span><span style="display:flex;"><span>              <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>                name: name,
+</span></span><span style="display:flex;"><span>                node_ip: node_ip,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ),
+</span></span><span style="display:flex;"><span>          http: {
+</span></span><span style="display:flex;"><span>            paths: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>                pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>                backend: {
+</span></span><span style="display:flex;"><span>                  service: {
+</span></span><span style="display:flex;"><span>                    name: name,
+</span></span><span style="display:flex;"><span>                    port: {
+</span></span><span style="display:flex;"><span>                      number: port,
+</span></span><span style="display:flex;"><span>                    },
 </span></span><span style="display:flex;"><span>                  },
 </span></span><span style="display:flex;"><span>                },
 </span></span><span style="display:flex;"><span>              },
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>      ],
+</span></span><span style="display:flex;"><span>    },
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>];
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
@@ -1291,13 +1297,11 @@
 </span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
 </span></span><span style="display:flex;"><span>  items: [
 </span></span><span style="display:flex;"><span>    deployment,
-</span></span><span style="display:flex;"><span>    ingress,
 </span></span><span style="display:flex;"><span>    prometheusrule,
 </span></span><span style="display:flex;"><span>    service,
 </span></span><span style="display:flex;"><span>    serviceaccount,
 </span></span><span style="display:flex;"><span>    servicemonitor,
-</span></span><span style="display:flex;"><span>    traefik
-</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>  ] <span style="color:#f92672">+</span> ingresses,
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
     </div>
@@ -2035,7 +2039,7 @@ ID                                      DATE CREATED                    LABEL   
       
         <h2 class="f1">
           <a href="/tags/microk8s/" class="link blue hover-black">
-            Tag: Microk8s
+            Tag: MicroK8s
           </a>
         </h2>
         
@@ -2113,71 +2117,74 @@ ID                                      DATE CREATED                    LABEL   
 </span></span><span style="display:flex;"><span>  },
 </span></span><span style="display:flex;"><span>};
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: name,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    defaultBackend: {
-</span></span><span style="display:flex;"><span>      service: {
-</span></span><span style="display:flex;"><span>        name: name,
-</span></span><span style="display:flex;"><span>        port: {
-</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> ingresses <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Tailscale Ingress TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      defaultBackend: {
+</span></span><span style="display:flex;"><span>        service: {
+</span></span><span style="display:flex;"><span>          name: name,
+</span></span><span style="display:flex;"><span>          port: {
+</span></span><span style="display:flex;"><span>            number: port,
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
 </span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      tls: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          hosts: [
+</span></span><span style="display:flex;"><span>            name,
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      ],
 </span></span><span style="display:flex;"><span>    },
-</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
-</span></span><span style="display:flex;"><span>    tls: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        hosts: [
-</span></span><span style="display:flex;"><span>          name,
-</span></span><span style="display:flex;"><span>        ],
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    rules: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        host: std.format(
-</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
-</span></span><span style="display:flex;"><span>              name: name,
-</span></span><span style="display:flex;"><span>              node_ip: node_ip,
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ),
-</span></span><span style="display:flex;"><span>        http: {
-</span></span><span style="display:flex;"><span>          paths: [
-</span></span><span style="display:flex;"><span>            {
-</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
-</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
-</span></span><span style="display:flex;"><span>              backend: {
-</span></span><span style="display:flex;"><span>                service: {
-</span></span><span style="display:flex;"><span>                  name: name,
-</span></span><span style="display:flex;"><span>                  port: {
-</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      rules: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          host: std.format(
+</span></span><span style="display:flex;"><span>              <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>                name: name,
+</span></span><span style="display:flex;"><span>                node_ip: node_ip,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ),
+</span></span><span style="display:flex;"><span>          http: {
+</span></span><span style="display:flex;"><span>            paths: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>                pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>                backend: {
+</span></span><span style="display:flex;"><span>                  service: {
+</span></span><span style="display:flex;"><span>                    name: name,
+</span></span><span style="display:flex;"><span>                    port: {
+</span></span><span style="display:flex;"><span>                      number: port,
+</span></span><span style="display:flex;"><span>                    },
 </span></span><span style="display:flex;"><span>                  },
 </span></span><span style="display:flex;"><span>                },
 </span></span><span style="display:flex;"><span>              },
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>      ],
+</span></span><span style="display:flex;"><span>    },
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>];
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
@@ -2269,13 +2276,11 @@ ID                                      DATE CREATED                    LABEL   
 </span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
 </span></span><span style="display:flex;"><span>  items: [
 </span></span><span style="display:flex;"><span>    deployment,
-</span></span><span style="display:flex;"><span>    ingress,
 </span></span><span style="display:flex;"><span>    prometheusrule,
 </span></span><span style="display:flex;"><span>    service,
 </span></span><span style="display:flex;"><span>    serviceaccount,
 </span></span><span style="display:flex;"><span>    servicemonitor,
-</span></span><span style="display:flex;"><span>    traefik
-</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>  ] <span style="color:#f92672">+</span> ingresses,
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
     </div>
@@ -2571,71 +2576,74 @@ ID                                      DATE CREATED                    LABEL   
 </span></span><span style="display:flex;"><span>  },
 </span></span><span style="display:flex;"><span>};
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: name,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    defaultBackend: {
-</span></span><span style="display:flex;"><span>      service: {
-</span></span><span style="display:flex;"><span>        name: name,
-</span></span><span style="display:flex;"><span>        port: {
-</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> ingresses <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Tailscale Ingress TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      defaultBackend: {
+</span></span><span style="display:flex;"><span>        service: {
+</span></span><span style="display:flex;"><span>          name: name,
+</span></span><span style="display:flex;"><span>          port: {
+</span></span><span style="display:flex;"><span>            number: port,
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
 </span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      tls: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          hosts: [
+</span></span><span style="display:flex;"><span>            name,
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      ],
 </span></span><span style="display:flex;"><span>    },
-</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
-</span></span><span style="display:flex;"><span>    tls: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        hosts: [
-</span></span><span style="display:flex;"><span>          name,
-</span></span><span style="display:flex;"><span>        ],
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    rules: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        host: std.format(
-</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
-</span></span><span style="display:flex;"><span>              name: name,
-</span></span><span style="display:flex;"><span>              node_ip: node_ip,
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ),
-</span></span><span style="display:flex;"><span>        http: {
-</span></span><span style="display:flex;"><span>          paths: [
-</span></span><span style="display:flex;"><span>            {
-</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
-</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
-</span></span><span style="display:flex;"><span>              backend: {
-</span></span><span style="display:flex;"><span>                service: {
-</span></span><span style="display:flex;"><span>                  name: name,
-</span></span><span style="display:flex;"><span>                  port: {
-</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      rules: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          host: std.format(
+</span></span><span style="display:flex;"><span>              <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>                name: name,
+</span></span><span style="display:flex;"><span>                node_ip: node_ip,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ),
+</span></span><span style="display:flex;"><span>          http: {
+</span></span><span style="display:flex;"><span>            paths: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>                pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>                backend: {
+</span></span><span style="display:flex;"><span>                  service: {
+</span></span><span style="display:flex;"><span>                    name: name,
+</span></span><span style="display:flex;"><span>                    port: {
+</span></span><span style="display:flex;"><span>                      number: port,
+</span></span><span style="display:flex;"><span>                    },
 </span></span><span style="display:flex;"><span>                  },
 </span></span><span style="display:flex;"><span>                },
 </span></span><span style="display:flex;"><span>              },
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>      ],
+</span></span><span style="display:flex;"><span>    },
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>];
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
@@ -2727,13 +2735,11 @@ ID                                      DATE CREATED                    LABEL   
 </span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
 </span></span><span style="display:flex;"><span>  items: [
 </span></span><span style="display:flex;"><span>    deployment,
-</span></span><span style="display:flex;"><span>    ingress,
 </span></span><span style="display:flex;"><span>    prometheusrule,
 </span></span><span style="display:flex;"><span>    service,
 </span></span><span style="display:flex;"><span>    serviceaccount,
 </span></span><span style="display:flex;"><span>    servicemonitor,
-</span></span><span style="display:flex;"><span>    traefik
-</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>  ] <span style="color:#f92672">+</span> ingresses,
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
     </div>
@@ -2854,71 +2860,74 @@ ID                                      DATE CREATED                    LABEL   
 </span></span><span style="display:flex;"><span>  },
 </span></span><span style="display:flex;"><span>};
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: name,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    defaultBackend: {
-</span></span><span style="display:flex;"><span>      service: {
-</span></span><span style="display:flex;"><span>        name: name,
-</span></span><span style="display:flex;"><span>        port: {
-</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> ingresses <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Tailscale Ingress TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>      defaultBackend: {
+</span></span><span style="display:flex;"><span>        service: {
+</span></span><span style="display:flex;"><span>          name: name,
+</span></span><span style="display:flex;"><span>          port: {
+</span></span><span style="display:flex;"><span>            number: port,
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
 </span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      tls: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          hosts: [
+</span></span><span style="display:flex;"><span>            name,
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      ],
 </span></span><span style="display:flex;"><span>    },
-</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
-</span></span><span style="display:flex;"><span>    tls: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        hosts: [
-</span></span><span style="display:flex;"><span>          name,
-</span></span><span style="display:flex;"><span>        ],
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
-</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
-</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
-</span></span><span style="display:flex;"><span>  metadata: {
-</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
-</span></span><span style="display:flex;"><span>    labels: labels,
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  spec: {
-</span></span><span style="display:flex;"><span>    rules: [
-</span></span><span style="display:flex;"><span>      {
-</span></span><span style="display:flex;"><span>        host: std.format(
-</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
-</span></span><span style="display:flex;"><span>              name: name,
-</span></span><span style="display:flex;"><span>              node_ip: node_ip,
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ),
-</span></span><span style="display:flex;"><span>        http: {
-</span></span><span style="display:flex;"><span>          paths: [
-</span></span><span style="display:flex;"><span>            {
-</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
-</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
-</span></span><span style="display:flex;"><span>              backend: {
-</span></span><span style="display:flex;"><span>                service: {
-</span></span><span style="display:flex;"><span>                  name: name,
-</span></span><span style="display:flex;"><span>                  port: {
-</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>      name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>      ingressClassName: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>      rules: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          host: std.format(
+</span></span><span style="display:flex;"><span>              <span style="color:#e6db74">&#34;%(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>                name: name,
+</span></span><span style="display:flex;"><span>                node_ip: node_ip,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ),
+</span></span><span style="display:flex;"><span>          http: {
+</span></span><span style="display:flex;"><span>            paths: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>                pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>                backend: {
+</span></span><span style="display:flex;"><span>                  service: {
+</span></span><span style="display:flex;"><span>                    name: name,
+</span></span><span style="display:flex;"><span>                    port: {
+</span></span><span style="display:flex;"><span>                      number: port,
+</span></span><span style="display:flex;"><span>                    },
 </span></span><span style="display:flex;"><span>                  },
 </span></span><span style="display:flex;"><span>                },
 </span></span><span style="display:flex;"><span>              },
-</span></span><span style="display:flex;"><span>            },
-</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>          },
 </span></span><span style="display:flex;"><span>        },
-</span></span><span style="display:flex;"><span>      },
-</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>      ],
+</span></span><span style="display:flex;"><span>    },
 </span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>];
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
@@ -3010,13 +3019,11 @@ ID                                      DATE CREATED                    LABEL   
 </span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
 </span></span><span style="display:flex;"><span>  items: [
 </span></span><span style="display:flex;"><span>    deployment,
-</span></span><span style="display:flex;"><span>    ingress,
 </span></span><span style="display:flex;"><span>    prometheusrule,
 </span></span><span style="display:flex;"><span>    service,
 </span></span><span style="display:flex;"><span>    serviceaccount,
 </span></span><span style="display:flex;"><span>    servicemonitor,
-</span></span><span style="display:flex;"><span>    traefik
-</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>  ] <span style="color:#f92672">+</span> ingresses,
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
     </div>
@@ -12253,7 +12260,7 @@ ID                                      DATE CREATED                    LABEL   
       
         <h2 class="f1">
           <a href="/tags/kube-state-metrics/" class="link blue hover-black">
-            Tag: Kube-State-Metrics
+            Tag: Kube State Metrics
           </a>
         </h2>
         
@@ -12917,7 +12924,7 @@ replicaset.apps/prometheus-operator-admission-webhook-68bc9f885   1         1   
       
         <h2 class="f1">
           <a href="/tags/cloud-monitoring/" class="link blue hover-black">
-            Tag: Cloud Monitoring
+            Tag: Cloud-Monitoring
           </a>
         </h2>
         
@@ -15164,7 +15171,7 @@ ID                                      DATE CREATED                    LABEL   
       
         <h2 class="f1">
           <a href="/tags/compute-engine/" class="link blue hover-black">
-            Tag: Compute Engine
+            Tag: Compute-Engine
           </a>
         </h2>
         
