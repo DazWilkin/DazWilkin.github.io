@@ -47,8 +47,8 @@
   <meta property="og:type" content="website">
 
   <meta itemprop="name" content="Tags">
-  <meta itemprop="datePublished" content="2025-11-19T00:00:00-08:00">
-  <meta itemprop="dateModified" content="2025-11-19T00:00:00-08:00">
+  <meta itemprop="datePublished" content="2025-11-21T00:00:00-08:00">
+  <meta itemprop="dateModified" content="2025-11-21T00:00:00-08:00">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Tags">
 
@@ -102,10 +102,595 @@
     <section class="ph4">
       
         <h2 class="f1">
+          <a href="/tags/jsonnet/" class="link blue hover-black">
+            Tag: Jsonnet
+          </a>
+        </h2>
+        
+          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
+  <div class="mb3 pa4 gray overflow-hidden bg-white">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/251121/" class="link black dim">
+        Deploying to K3s
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>A simple deployment of <a href="https://github.com/google/cadvisor">cAdvisor</a> to K3s and to confirm the ability to expose Ingresses using Tailscale <a href="https://tailscale.com/kb/1236/kubernetes-operator">Kubernetes Operator</a> (TLS) and &ndash; since it&rsquo;s already installed with K3s &ndash; <a href="https://github.com/traefik/traefik">Traefik</a> (non-TLS).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> image <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;gcr.io/cadvisor/cadvisor:latest&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  app: <span style="color:#e6db74">&#34;cadvisor&#34;</span>,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> name <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NAME&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> node_ip <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NODE_IP&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> port <span style="color:#f92672">=</span> <span style="color:#ae81ff">8080</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> deployment <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;apps/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Deployment&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    replicas: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    template: {
+</span></span><span style="display:flex;"><span>      metadata: {
+</span></span><span style="display:flex;"><span>        labels: labels,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      spec: {
+</span></span><span style="display:flex;"><span>        containers: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            name: name,
+</span></span><span style="display:flex;"><span>            image: image,
+</span></span><span style="display:flex;"><span>            ports: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>                containerPort: <span style="color:#ae81ff">8080</span>,
+</span></span><span style="display:flex;"><span>                protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>            resources: {
+</span></span><span style="display:flex;"><span>              limits: {
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;500Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>              requests: {
+</span></span><span style="display:flex;"><span>                cpu: <span style="color:#e6db74">&#34;250m&#34;</span>,
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;250Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            securityContext: {
+</span></span><span style="display:flex;"><span>              allowPrivilegeEscalation: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              privileged: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              readOnlyRootFilesystem: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsGroup: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>              runAsNonRoot: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsUser: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    defaultBackend: {
+</span></span><span style="display:flex;"><span>      service: {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        port: {
+</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>    tls: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        hosts: [
+</span></span><span style="display:flex;"><span>          name,
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    rules: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        host: std.format(
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;$(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>              name: name,
+</span></span><span style="display:flex;"><span>              node_ip: node_ip,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ),
+</span></span><span style="display:flex;"><span>        http: {
+</span></span><span style="display:flex;"><span>          paths: [
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>              backend: {
+</span></span><span style="display:flex;"><span>                service: {
+</span></span><span style="display:flex;"><span>                  name: name,
+</span></span><span style="display:flex;"><span>                  port: {
+</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>                  },
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">local</span> duration <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;PrometheusRule&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    groups: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        rules: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            alert: <span style="color:#e6db74">&#34;TestcAdvsiorDown&#34;</span>,
+</span></span><span style="display:flex;"><span>            annotations: {
+</span></span><span style="display:flex;"><span>              summary: <span style="color:#e6db74">&#34;Test cAdvisor instance is down or not scraping metrics.&#34;</span>,
+</span></span><span style="display:flex;"><span>              description: std.format(<span style="color:#e6db74">&#34;The cAdvisor instance {{ $labels.instance }} has not been scraping metrics for more than %(duration)s minutes.&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            expr: <span style="color:#e6db74">&#34;absent(cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}) or (cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}!=1)&#34;</span>,
+</span></span><span style="display:flex;"><span>            &#34;for&#34;: std.format(<span style="color:#e6db74">&#34;%(duration)sm&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            labels: labels {
+</span></span><span style="display:flex;"><span>              severity: <span style="color:#e6db74">&#34;warning&#34;</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> service <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Service&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: labels,
+</span></span><span style="display:flex;"><span>    ports: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: port,
+</span></span><span style="display:flex;"><span>        targetPort: port,
+</span></span><span style="display:flex;"><span>        protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> serviceaccount <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceAccount&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> servicemonitor <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceMonitor&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    endpoints: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        interval: <span style="color:#e6db74">&#34;120s&#34;</span>,
+</span></span><span style="display:flex;"><span>        path: <span style="color:#e6db74">&#34;/metrics&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        scrapeTimeout: <span style="color:#e6db74">&#34;30s&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Output
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>{
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
+</span></span><span style="display:flex;"><span>  items: [
+</span></span><span style="display:flex;"><span>    deployment,
+</span></span><span style="display:flex;"><span>    ingress,
+</span></span><span style="display:flex;"><span>    prometheusrule,
+</span></span><span style="display:flex;"><span>    service,
+</span></span><span style="display:flex;"><span>    serviceaccount,
+</span></span><span style="display:flex;"><span>    servicemonitor,
+</span></span><span style="display:flex;"><span>    traefik
+</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
+    </div>
+    <a href="/posts/251121/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
+  <div class="mb3 pa4 gray overflow-hidden bg-white">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/250630/" class="link black dim">
+        Gemini CLI (3/3)
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <h3 id="update-2025-07-08">Update 2025-07-08</h3>
+<p>Gemini CLI supports <a href="https://github.com/google-gemini/gemini-cli/blob/0275ab0108e9a411d90d8ef8c8d70e21e498d81a/docs/tools/mcp-server.md#http-based-mcp-server">HTTP-based MCP server</a> integration</p>
+<p>So, it&rsquo;s possible to replace the <code>.gemini/settings.json</code> included in the original post with:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;theme&#34;</span>: <span style="color:#e6db74">&#34;Default&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;mcpServers&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;ackal-mcp-server&#34;</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;httpUrl&#34;</span>: <span style="color:#e6db74">&#34;http://localhost:7777/mcp&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;timeout&#34;</span>: <span style="color:#ae81ff">5000</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;prometheus-mcp-server&#34;</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;httpUrl&#34;</span>: <span style="color:#e6db74">&#34;https://prometheus.{tailnet}/mcp&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;timeout&#34;</span>: <span style="color:#ae81ff">5000</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;selectedAuthType&#34;</span>: <span style="color:#e6db74">&#34;gemini-api-key&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This solution permits the addition of <code>headers</code> too for e.g. including <code>Authorization</code></p>
+<h3 id="original">Original</h3>
+<p>Okay, so not &ldquo;Gemini Code Assist&rdquo; but sufficiently similar that I think it warrants the &ldquo;3/3&rdquo; appellation.</p>
+    </div>
+    <a href="/posts/250630/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
+  <div class="mb3 pa4 gray overflow-hidden bg-white">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/250429/" class="link black dim">
+        Configuring Envoy to proxy Google Cloud Run v2
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I&rsquo;m building an emulator for <a href="https://cloud.google.com/run">Cloud Run</a>. As I considered the solution, I assumed (more later) that I could implement Google&rsquo;s gRPC interface for <a href="https://github.com/googleapis/googleapis/tree/83df85b45a5d3e85b48f2571e1c8e57cdfd57e6c/google/cloud/run">Cloud Run</a> and use <a href="https://www.envoyproxy.io/">Envoy</a> to proxy HTTP/REST requests to the gRPC service using Envoy&rsquo;s <a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/grpc_json_transcoder_filter">gRPC-JSON transcoder</a>.</p>
+<p>Google calls this process <a href="https://cloud.google.com/endpoints/docs/grpc/transcoding">Transcoding HTTP/JSON to gRPC</a> which I think it a better description.</p>
+<p>Google&rsquo;s Cloud Run <code>v2</code> (<code>v1</code> is no longer published to the <a href="https://github.com/googleapis/googleapis"><code>googleapis</code></a> repo) <a href="https://github.com/googleapis/googleapis/blob/83df85b45a5d3e85b48f2571e1c8e57cdfd57e6c/google/cloud/run/v2/service.proto"><code>service.proto</code></a> includes the following <code>Services</code> definition for <code>CreateService</code>:</p>
+    </div>
+    <a href="/posts/250429/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
+  <div class="mb3 pa4 gray overflow-hidden bg-white">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/250325/" class="link black dim">
+        Migrating Prometheus Exporters to Kubernetes
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>I have built <a href="https://prometheus.io">Prometheus</a> <a href="https://prometheus.io/docs/instrumenting/exporters/">Exporters</a> for multiple cloud platforms to track resources deployed across clouds:</p>
+<ul>
+<li><a href="https://github.com/DazWilkin/azure-exporter">Prometheus Exporter for Azure</a></li>
+<li><a href="https://github.com/DazWilkin/crtsh-exporter">Prometheus Exporter for crt.sh</a></li>
+<li><a href="https://github.com/DazWilkin/fly-exporter">Prometheus Exporter for Fly.io</a></li>
+<li><a href="https://github.com/DazWilkin/goatcounter-exporter">Prometheus Exporter for GoatCounter</a></li>
+<li><a href="https://github.com/DazWilkin/ga-exporter">Prometheus Exporter for Google Analytics</a></li>
+<li><a href="https://github.com/DazWilkin/gcp-exporter">Prometheus Exporter for Google Cloud</a></li>
+<li><a href="https://github.com/DazWilkin/koyeb-exporter">Prometheus Exporter for Koyeb</a></li>
+<li><a href="https://github.com/DazWilkin/linode-exporter">Prometheus Exporter for Linode</a></li>
+<li><a href="https://github.com/DazWilkin/porkbun-exporter">Prometheus Exporter for PorkBun</a></li>
+<li><a href="https://github.com/DazWilkin/updown-exporter">Prometheus Exporter for updown.io</a></li>
+<li><a href="https://github.com/DazWilkin/vultr-exporter">Prometheus Exporter for Vultr</a></li>
+</ul>
+<p>Additionally, I&rsquo;ve written two status service exporters:</p>
+<ul>
+<li><a href="https://github.com/DazWilkin/gcp-status">Prometheus Exporter for GCP Status</a></li>
+<li><a href="https://github.com/DazWilkin/vultr-status-exporter">Prometheus Exporter for Vultr Status</a></li>
+</ul>
+<p>These exporters are all derived from an exemplar <a href="https://github.com/metalmatze/digitalocean_exporter"><code>DigitalOcean Exporter</code></a> written by <a href="https://github.com/metalmatze">metalmatze</a> for which I maintain a <a href="https://github.com/DazWilkin/digitalocean_exporter">fork</a>.</p>
+    </div>
+    <a href="/posts/250325/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+      
+        <h2 class="f1">
           <a href="/tags/k3s/" class="link blue hover-black">
             Tag: K3s
           </a>
         </h2>
+        
+          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
+  <div class="mb3 pa4 gray overflow-hidden bg-white">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/251121/" class="link black dim">
+        Deploying to K3s
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>A simple deployment of <a href="https://github.com/google/cadvisor">cAdvisor</a> to K3s and to confirm the ability to expose Ingresses using Tailscale <a href="https://tailscale.com/kb/1236/kubernetes-operator">Kubernetes Operator</a> (TLS) and &ndash; since it&rsquo;s already installed with K3s &ndash; <a href="https://github.com/traefik/traefik">Traefik</a> (non-TLS).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> image <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;gcr.io/cadvisor/cadvisor:latest&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  app: <span style="color:#e6db74">&#34;cadvisor&#34;</span>,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> name <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NAME&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> node_ip <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NODE_IP&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> port <span style="color:#f92672">=</span> <span style="color:#ae81ff">8080</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> deployment <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;apps/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Deployment&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    replicas: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    template: {
+</span></span><span style="display:flex;"><span>      metadata: {
+</span></span><span style="display:flex;"><span>        labels: labels,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      spec: {
+</span></span><span style="display:flex;"><span>        containers: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            name: name,
+</span></span><span style="display:flex;"><span>            image: image,
+</span></span><span style="display:flex;"><span>            ports: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>                containerPort: <span style="color:#ae81ff">8080</span>,
+</span></span><span style="display:flex;"><span>                protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>            resources: {
+</span></span><span style="display:flex;"><span>              limits: {
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;500Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>              requests: {
+</span></span><span style="display:flex;"><span>                cpu: <span style="color:#e6db74">&#34;250m&#34;</span>,
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;250Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            securityContext: {
+</span></span><span style="display:flex;"><span>              allowPrivilegeEscalation: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              privileged: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              readOnlyRootFilesystem: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsGroup: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>              runAsNonRoot: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsUser: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    defaultBackend: {
+</span></span><span style="display:flex;"><span>      service: {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        port: {
+</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>    tls: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        hosts: [
+</span></span><span style="display:flex;"><span>          name,
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    rules: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        host: std.format(
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;$(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>              name: name,
+</span></span><span style="display:flex;"><span>              node_ip: node_ip,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ),
+</span></span><span style="display:flex;"><span>        http: {
+</span></span><span style="display:flex;"><span>          paths: [
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>              backend: {
+</span></span><span style="display:flex;"><span>                service: {
+</span></span><span style="display:flex;"><span>                  name: name,
+</span></span><span style="display:flex;"><span>                  port: {
+</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>                  },
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">local</span> duration <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;PrometheusRule&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    groups: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        rules: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            alert: <span style="color:#e6db74">&#34;TestcAdvsiorDown&#34;</span>,
+</span></span><span style="display:flex;"><span>            annotations: {
+</span></span><span style="display:flex;"><span>              summary: <span style="color:#e6db74">&#34;Test cAdvisor instance is down or not scraping metrics.&#34;</span>,
+</span></span><span style="display:flex;"><span>              description: std.format(<span style="color:#e6db74">&#34;The cAdvisor instance {{ $labels.instance }} has not been scraping metrics for more than %(duration)s minutes.&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            expr: <span style="color:#e6db74">&#34;absent(cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}) or (cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}!=1)&#34;</span>,
+</span></span><span style="display:flex;"><span>            &#34;for&#34;: std.format(<span style="color:#e6db74">&#34;%(duration)sm&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            labels: labels {
+</span></span><span style="display:flex;"><span>              severity: <span style="color:#e6db74">&#34;warning&#34;</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> service <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Service&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: labels,
+</span></span><span style="display:flex;"><span>    ports: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: port,
+</span></span><span style="display:flex;"><span>        targetPort: port,
+</span></span><span style="display:flex;"><span>        protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> serviceaccount <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceAccount&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> servicemonitor <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceMonitor&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    endpoints: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        interval: <span style="color:#e6db74">&#34;120s&#34;</span>,
+</span></span><span style="display:flex;"><span>        path: <span style="color:#e6db74">&#34;/metrics&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        scrapeTimeout: <span style="color:#e6db74">&#34;30s&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Output
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>{
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
+</span></span><span style="display:flex;"><span>  items: [
+</span></span><span style="display:flex;"><span>    deployment,
+</span></span><span style="display:flex;"><span>    ingress,
+</span></span><span style="display:flex;"><span>    prometheusrule,
+</span></span><span style="display:flex;"><span>    service,
+</span></span><span style="display:flex;"><span>    serviceaccount,
+</span></span><span style="display:flex;"><span>    servicemonitor,
+</span></span><span style="display:flex;"><span>    traefik
+</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
+    </div>
+    <a href="/posts/251121/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
         
           <div class="w-100 mb4 nested-copy-line-height relative bg-white">
   <div class="mb3 pa4 gray overflow-hidden bg-white">
@@ -144,6 +729,251 @@
             Tag: Kube-Prometheus
           </a>
         </h2>
+        
+          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
+  <div class="mb3 pa4 gray overflow-hidden bg-white">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/251121/" class="link black dim">
+        Deploying to K3s
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>A simple deployment of <a href="https://github.com/google/cadvisor">cAdvisor</a> to K3s and to confirm the ability to expose Ingresses using Tailscale <a href="https://tailscale.com/kb/1236/kubernetes-operator">Kubernetes Operator</a> (TLS) and &ndash; since it&rsquo;s already installed with K3s &ndash; <a href="https://github.com/traefik/traefik">Traefik</a> (non-TLS).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> image <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;gcr.io/cadvisor/cadvisor:latest&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  app: <span style="color:#e6db74">&#34;cadvisor&#34;</span>,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> name <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NAME&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> node_ip <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NODE_IP&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> port <span style="color:#f92672">=</span> <span style="color:#ae81ff">8080</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> deployment <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;apps/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Deployment&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    replicas: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    template: {
+</span></span><span style="display:flex;"><span>      metadata: {
+</span></span><span style="display:flex;"><span>        labels: labels,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      spec: {
+</span></span><span style="display:flex;"><span>        containers: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            name: name,
+</span></span><span style="display:flex;"><span>            image: image,
+</span></span><span style="display:flex;"><span>            ports: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>                containerPort: <span style="color:#ae81ff">8080</span>,
+</span></span><span style="display:flex;"><span>                protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>            resources: {
+</span></span><span style="display:flex;"><span>              limits: {
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;500Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>              requests: {
+</span></span><span style="display:flex;"><span>                cpu: <span style="color:#e6db74">&#34;250m&#34;</span>,
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;250Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            securityContext: {
+</span></span><span style="display:flex;"><span>              allowPrivilegeEscalation: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              privileged: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              readOnlyRootFilesystem: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsGroup: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>              runAsNonRoot: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsUser: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    defaultBackend: {
+</span></span><span style="display:flex;"><span>      service: {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        port: {
+</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>    tls: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        hosts: [
+</span></span><span style="display:flex;"><span>          name,
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    rules: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        host: std.format(
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;$(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>              name: name,
+</span></span><span style="display:flex;"><span>              node_ip: node_ip,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ),
+</span></span><span style="display:flex;"><span>        http: {
+</span></span><span style="display:flex;"><span>          paths: [
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>              backend: {
+</span></span><span style="display:flex;"><span>                service: {
+</span></span><span style="display:flex;"><span>                  name: name,
+</span></span><span style="display:flex;"><span>                  port: {
+</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>                  },
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">local</span> duration <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;PrometheusRule&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    groups: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        rules: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            alert: <span style="color:#e6db74">&#34;TestcAdvsiorDown&#34;</span>,
+</span></span><span style="display:flex;"><span>            annotations: {
+</span></span><span style="display:flex;"><span>              summary: <span style="color:#e6db74">&#34;Test cAdvisor instance is down or not scraping metrics.&#34;</span>,
+</span></span><span style="display:flex;"><span>              description: std.format(<span style="color:#e6db74">&#34;The cAdvisor instance {{ $labels.instance }} has not been scraping metrics for more than %(duration)s minutes.&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            expr: <span style="color:#e6db74">&#34;absent(cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}) or (cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}!=1)&#34;</span>,
+</span></span><span style="display:flex;"><span>            &#34;for&#34;: std.format(<span style="color:#e6db74">&#34;%(duration)sm&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            labels: labels {
+</span></span><span style="display:flex;"><span>              severity: <span style="color:#e6db74">&#34;warning&#34;</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> service <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Service&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: labels,
+</span></span><span style="display:flex;"><span>    ports: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: port,
+</span></span><span style="display:flex;"><span>        targetPort: port,
+</span></span><span style="display:flex;"><span>        protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> serviceaccount <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceAccount&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> servicemonitor <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceMonitor&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    endpoints: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        interval: <span style="color:#e6db74">&#34;120s&#34;</span>,
+</span></span><span style="display:flex;"><span>        path: <span style="color:#e6db74">&#34;/metrics&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        scrapeTimeout: <span style="color:#e6db74">&#34;30s&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Output
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>{
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
+</span></span><span style="display:flex;"><span>  items: [
+</span></span><span style="display:flex;"><span>    deployment,
+</span></span><span style="display:flex;"><span>    ingress,
+</span></span><span style="display:flex;"><span>    prometheusrule,
+</span></span><span style="display:flex;"><span>    service,
+</span></span><span style="display:flex;"><span>    serviceaccount,
+</span></span><span style="display:flex;"><span>    servicemonitor,
+</span></span><span style="display:flex;"><span>    traefik
+</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
+    </div>
+    <a href="/posts/251121/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
         
           <div class="w-100 mb4 nested-copy-line-height relative bg-white">
   <div class="mb3 pa4 gray overflow-hidden bg-white">
@@ -230,6 +1060,251 @@
             Tag: Kubernetes
           </a>
         </h2>
+        
+          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
+  <div class="mb3 pa4 gray overflow-hidden bg-white">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/251121/" class="link black dim">
+        Deploying to K3s
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>A simple deployment of <a href="https://github.com/google/cadvisor">cAdvisor</a> to K3s and to confirm the ability to expose Ingresses using Tailscale <a href="https://tailscale.com/kb/1236/kubernetes-operator">Kubernetes Operator</a> (TLS) and &ndash; since it&rsquo;s already installed with K3s &ndash; <a href="https://github.com/traefik/traefik">Traefik</a> (non-TLS).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> image <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;gcr.io/cadvisor/cadvisor:latest&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  app: <span style="color:#e6db74">&#34;cadvisor&#34;</span>,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> name <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NAME&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> node_ip <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NODE_IP&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> port <span style="color:#f92672">=</span> <span style="color:#ae81ff">8080</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> deployment <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;apps/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Deployment&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    replicas: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    template: {
+</span></span><span style="display:flex;"><span>      metadata: {
+</span></span><span style="display:flex;"><span>        labels: labels,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      spec: {
+</span></span><span style="display:flex;"><span>        containers: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            name: name,
+</span></span><span style="display:flex;"><span>            image: image,
+</span></span><span style="display:flex;"><span>            ports: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>                containerPort: <span style="color:#ae81ff">8080</span>,
+</span></span><span style="display:flex;"><span>                protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>            resources: {
+</span></span><span style="display:flex;"><span>              limits: {
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;500Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>              requests: {
+</span></span><span style="display:flex;"><span>                cpu: <span style="color:#e6db74">&#34;250m&#34;</span>,
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;250Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            securityContext: {
+</span></span><span style="display:flex;"><span>              allowPrivilegeEscalation: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              privileged: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              readOnlyRootFilesystem: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsGroup: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>              runAsNonRoot: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsUser: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    defaultBackend: {
+</span></span><span style="display:flex;"><span>      service: {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        port: {
+</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>    tls: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        hosts: [
+</span></span><span style="display:flex;"><span>          name,
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    rules: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        host: std.format(
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;$(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>              name: name,
+</span></span><span style="display:flex;"><span>              node_ip: node_ip,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ),
+</span></span><span style="display:flex;"><span>        http: {
+</span></span><span style="display:flex;"><span>          paths: [
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>              backend: {
+</span></span><span style="display:flex;"><span>                service: {
+</span></span><span style="display:flex;"><span>                  name: name,
+</span></span><span style="display:flex;"><span>                  port: {
+</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>                  },
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">local</span> duration <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;PrometheusRule&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    groups: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        rules: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            alert: <span style="color:#e6db74">&#34;TestcAdvsiorDown&#34;</span>,
+</span></span><span style="display:flex;"><span>            annotations: {
+</span></span><span style="display:flex;"><span>              summary: <span style="color:#e6db74">&#34;Test cAdvisor instance is down or not scraping metrics.&#34;</span>,
+</span></span><span style="display:flex;"><span>              description: std.format(<span style="color:#e6db74">&#34;The cAdvisor instance {{ $labels.instance }} has not been scraping metrics for more than %(duration)s minutes.&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            expr: <span style="color:#e6db74">&#34;absent(cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}) or (cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}!=1)&#34;</span>,
+</span></span><span style="display:flex;"><span>            &#34;for&#34;: std.format(<span style="color:#e6db74">&#34;%(duration)sm&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            labels: labels {
+</span></span><span style="display:flex;"><span>              severity: <span style="color:#e6db74">&#34;warning&#34;</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> service <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Service&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: labels,
+</span></span><span style="display:flex;"><span>    ports: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: port,
+</span></span><span style="display:flex;"><span>        targetPort: port,
+</span></span><span style="display:flex;"><span>        protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> serviceaccount <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceAccount&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> servicemonitor <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceMonitor&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    endpoints: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        interval: <span style="color:#e6db74">&#34;120s&#34;</span>,
+</span></span><span style="display:flex;"><span>        path: <span style="color:#e6db74">&#34;/metrics&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        scrapeTimeout: <span style="color:#e6db74">&#34;30s&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Output
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>{
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
+</span></span><span style="display:flex;"><span>  items: [
+</span></span><span style="display:flex;"><span>    deployment,
+</span></span><span style="display:flex;"><span>    ingress,
+</span></span><span style="display:flex;"><span>    prometheusrule,
+</span></span><span style="display:flex;"><span>    service,
+</span></span><span style="display:flex;"><span>    serviceaccount,
+</span></span><span style="display:flex;"><span>    servicemonitor,
+</span></span><span style="display:flex;"><span>    traefik
+</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
+    </div>
+    <a href="/posts/251121/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
         
           <div class="w-100 mb4 nested-copy-line-height relative bg-white">
   <div class="mb3 pa4 gray overflow-hidden bg-white">
@@ -968,6 +2043,251 @@ ID                                      DATE CREATED                    LABEL   
   <div class="mb3 pa4 gray overflow-hidden bg-white">
     <span class="f6 db">Posts</span>
     <h1 class="f3 near-black">
+      <a href="/posts/251121/" class="link black dim">
+        Deploying to K3s
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>A simple deployment of <a href="https://github.com/google/cadvisor">cAdvisor</a> to K3s and to confirm the ability to expose Ingresses using Tailscale <a href="https://tailscale.com/kb/1236/kubernetes-operator">Kubernetes Operator</a> (TLS) and &ndash; since it&rsquo;s already installed with K3s &ndash; <a href="https://github.com/traefik/traefik">Traefik</a> (non-TLS).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> image <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;gcr.io/cadvisor/cadvisor:latest&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  app: <span style="color:#e6db74">&#34;cadvisor&#34;</span>,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> name <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NAME&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> node_ip <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NODE_IP&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> port <span style="color:#f92672">=</span> <span style="color:#ae81ff">8080</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> deployment <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;apps/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Deployment&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    replicas: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    template: {
+</span></span><span style="display:flex;"><span>      metadata: {
+</span></span><span style="display:flex;"><span>        labels: labels,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      spec: {
+</span></span><span style="display:flex;"><span>        containers: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            name: name,
+</span></span><span style="display:flex;"><span>            image: image,
+</span></span><span style="display:flex;"><span>            ports: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>                containerPort: <span style="color:#ae81ff">8080</span>,
+</span></span><span style="display:flex;"><span>                protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>            resources: {
+</span></span><span style="display:flex;"><span>              limits: {
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;500Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>              requests: {
+</span></span><span style="display:flex;"><span>                cpu: <span style="color:#e6db74">&#34;250m&#34;</span>,
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;250Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            securityContext: {
+</span></span><span style="display:flex;"><span>              allowPrivilegeEscalation: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              privileged: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              readOnlyRootFilesystem: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsGroup: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>              runAsNonRoot: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsUser: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    defaultBackend: {
+</span></span><span style="display:flex;"><span>      service: {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        port: {
+</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>    tls: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        hosts: [
+</span></span><span style="display:flex;"><span>          name,
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    rules: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        host: std.format(
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;$(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>              name: name,
+</span></span><span style="display:flex;"><span>              node_ip: node_ip,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ),
+</span></span><span style="display:flex;"><span>        http: {
+</span></span><span style="display:flex;"><span>          paths: [
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>              backend: {
+</span></span><span style="display:flex;"><span>                service: {
+</span></span><span style="display:flex;"><span>                  name: name,
+</span></span><span style="display:flex;"><span>                  port: {
+</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>                  },
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">local</span> duration <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;PrometheusRule&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    groups: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        rules: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            alert: <span style="color:#e6db74">&#34;TestcAdvsiorDown&#34;</span>,
+</span></span><span style="display:flex;"><span>            annotations: {
+</span></span><span style="display:flex;"><span>              summary: <span style="color:#e6db74">&#34;Test cAdvisor instance is down or not scraping metrics.&#34;</span>,
+</span></span><span style="display:flex;"><span>              description: std.format(<span style="color:#e6db74">&#34;The cAdvisor instance {{ $labels.instance }} has not been scraping metrics for more than %(duration)s minutes.&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            expr: <span style="color:#e6db74">&#34;absent(cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}) or (cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}!=1)&#34;</span>,
+</span></span><span style="display:flex;"><span>            &#34;for&#34;: std.format(<span style="color:#e6db74">&#34;%(duration)sm&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            labels: labels {
+</span></span><span style="display:flex;"><span>              severity: <span style="color:#e6db74">&#34;warning&#34;</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> service <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Service&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: labels,
+</span></span><span style="display:flex;"><span>    ports: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: port,
+</span></span><span style="display:flex;"><span>        targetPort: port,
+</span></span><span style="display:flex;"><span>        protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> serviceaccount <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceAccount&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> servicemonitor <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceMonitor&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    endpoints: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        interval: <span style="color:#e6db74">&#34;120s&#34;</span>,
+</span></span><span style="display:flex;"><span>        path: <span style="color:#e6db74">&#34;/metrics&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        scrapeTimeout: <span style="color:#e6db74">&#34;30s&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Output
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>{
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
+</span></span><span style="display:flex;"><span>  items: [
+</span></span><span style="display:flex;"><span>    deployment,
+</span></span><span style="display:flex;"><span>    ingress,
+</span></span><span style="display:flex;"><span>    prometheusrule,
+</span></span><span style="display:flex;"><span>    service,
+</span></span><span style="display:flex;"><span>    serviceaccount,
+</span></span><span style="display:flex;"><span>    servicemonitor,
+</span></span><span style="display:flex;"><span>    traefik
+</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
+    </div>
+    <a href="/posts/251121/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
+  <div class="mb3 pa4 gray overflow-hidden bg-white">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
       <a href="/posts/251119/" class="link black dim">
         Migrating to K3s
       </a>
@@ -1181,6 +2501,251 @@ ID                                      DATE CREATED                    LABEL   
   <div class="mb3 pa4 gray overflow-hidden bg-white">
     <span class="f6 db">Posts</span>
     <h1 class="f3 near-black">
+      <a href="/posts/251121/" class="link black dim">
+        Deploying to K3s
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>A simple deployment of <a href="https://github.com/google/cadvisor">cAdvisor</a> to K3s and to confirm the ability to expose Ingresses using Tailscale <a href="https://tailscale.com/kb/1236/kubernetes-operator">Kubernetes Operator</a> (TLS) and &ndash; since it&rsquo;s already installed with K3s &ndash; <a href="https://github.com/traefik/traefik">Traefik</a> (non-TLS).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> image <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;gcr.io/cadvisor/cadvisor:latest&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  app: <span style="color:#e6db74">&#34;cadvisor&#34;</span>,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> name <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NAME&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> node_ip <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NODE_IP&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> port <span style="color:#f92672">=</span> <span style="color:#ae81ff">8080</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> deployment <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;apps/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Deployment&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    replicas: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    template: {
+</span></span><span style="display:flex;"><span>      metadata: {
+</span></span><span style="display:flex;"><span>        labels: labels,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      spec: {
+</span></span><span style="display:flex;"><span>        containers: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            name: name,
+</span></span><span style="display:flex;"><span>            image: image,
+</span></span><span style="display:flex;"><span>            ports: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>                containerPort: <span style="color:#ae81ff">8080</span>,
+</span></span><span style="display:flex;"><span>                protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>            resources: {
+</span></span><span style="display:flex;"><span>              limits: {
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;500Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>              requests: {
+</span></span><span style="display:flex;"><span>                cpu: <span style="color:#e6db74">&#34;250m&#34;</span>,
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;250Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            securityContext: {
+</span></span><span style="display:flex;"><span>              allowPrivilegeEscalation: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              privileged: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              readOnlyRootFilesystem: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsGroup: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>              runAsNonRoot: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsUser: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    defaultBackend: {
+</span></span><span style="display:flex;"><span>      service: {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        port: {
+</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>    tls: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        hosts: [
+</span></span><span style="display:flex;"><span>          name,
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    rules: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        host: std.format(
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;$(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>              name: name,
+</span></span><span style="display:flex;"><span>              node_ip: node_ip,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ),
+</span></span><span style="display:flex;"><span>        http: {
+</span></span><span style="display:flex;"><span>          paths: [
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>              backend: {
+</span></span><span style="display:flex;"><span>                service: {
+</span></span><span style="display:flex;"><span>                  name: name,
+</span></span><span style="display:flex;"><span>                  port: {
+</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>                  },
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">local</span> duration <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;PrometheusRule&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    groups: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        rules: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            alert: <span style="color:#e6db74">&#34;TestcAdvsiorDown&#34;</span>,
+</span></span><span style="display:flex;"><span>            annotations: {
+</span></span><span style="display:flex;"><span>              summary: <span style="color:#e6db74">&#34;Test cAdvisor instance is down or not scraping metrics.&#34;</span>,
+</span></span><span style="display:flex;"><span>              description: std.format(<span style="color:#e6db74">&#34;The cAdvisor instance {{ $labels.instance }} has not been scraping metrics for more than %(duration)s minutes.&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            expr: <span style="color:#e6db74">&#34;absent(cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}) or (cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}!=1)&#34;</span>,
+</span></span><span style="display:flex;"><span>            &#34;for&#34;: std.format(<span style="color:#e6db74">&#34;%(duration)sm&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            labels: labels {
+</span></span><span style="display:flex;"><span>              severity: <span style="color:#e6db74">&#34;warning&#34;</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> service <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Service&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: labels,
+</span></span><span style="display:flex;"><span>    ports: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: port,
+</span></span><span style="display:flex;"><span>        targetPort: port,
+</span></span><span style="display:flex;"><span>        protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> serviceaccount <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceAccount&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> servicemonitor <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceMonitor&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    endpoints: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        interval: <span style="color:#e6db74">&#34;120s&#34;</span>,
+</span></span><span style="display:flex;"><span>        path: <span style="color:#e6db74">&#34;/metrics&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        scrapeTimeout: <span style="color:#e6db74">&#34;30s&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Output
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>{
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
+</span></span><span style="display:flex;"><span>  items: [
+</span></span><span style="display:flex;"><span>    deployment,
+</span></span><span style="display:flex;"><span>    ingress,
+</span></span><span style="display:flex;"><span>    prometheusrule,
+</span></span><span style="display:flex;"><span>    service,
+</span></span><span style="display:flex;"><span>    serviceaccount,
+</span></span><span style="display:flex;"><span>    servicemonitor,
+</span></span><span style="display:flex;"><span>    traefik
+</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
+    </div>
+    <a href="/posts/251121/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
+  <div class="mb3 pa4 gray overflow-hidden bg-white">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
       <a href="/posts/251119/" class="link black dim">
         Migrating to K3s
       </a>
@@ -1204,6 +2769,258 @@ ID                                      DATE CREATED                    LABEL   
 <p>Why abandon MicroK8s? I&rsquo;ve been using MicroK8s for several years without issue <strong>but</strong>, after upgrading to Ubuntu 25.10 which includes a Rust replacement for <code>sudo</code> (and doesn&rsquo;t support <code>sudo -E</code>), I created a problem for myself with MicroK8s and have been unable to restore a working Kubernetes cluster. I took the opportunity to reassess my distribution and have long thought to switch to K3s.</p>
     </div>
     <a href="/posts/251119/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+  </div>
+</div>
+
+        
+      
+        <h2 class="f1">
+          <a href="/tags/traefik/" class="link blue hover-black">
+            Tag: Traefik
+          </a>
+        </h2>
+        
+          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
+  <div class="mb3 pa4 gray overflow-hidden bg-white">
+    <span class="f6 db">Posts</span>
+    <h1 class="f3 near-black">
+      <a href="/posts/251121/" class="link black dim">
+        Deploying to K3s
+      </a>
+    </h1>
+    <div class="nested-links f5 lh-copy nested-copy-line-height">
+      <p>A simple deployment of <a href="https://github.com/google/cadvisor">cAdvisor</a> to K3s and to confirm the ability to expose Ingresses using Tailscale <a href="https://tailscale.com/kb/1236/kubernetes-operator">Kubernetes Operator</a> (TLS) and &ndash; since it&rsquo;s already installed with K3s &ndash; <a href="https://github.com/traefik/traefik">Traefik</a> (non-TLS).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Jsonnet" data-lang="Jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> image <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;gcr.io/cadvisor/cadvisor:latest&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  app: <span style="color:#e6db74">&#34;cadvisor&#34;</span>,
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> name <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NAME&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> node_ip <span style="color:#f92672">=</span> std.extVar(<span style="color:#e6db74">&#34;NODE_IP&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> port <span style="color:#f92672">=</span> <span style="color:#ae81ff">8080</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> deployment <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;apps/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Deployment&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    replicas: <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    template: {
+</span></span><span style="display:flex;"><span>      metadata: {
+</span></span><span style="display:flex;"><span>        labels: labels,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      spec: {
+</span></span><span style="display:flex;"><span>        containers: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            name: name,
+</span></span><span style="display:flex;"><span>            image: image,
+</span></span><span style="display:flex;"><span>            ports: [
+</span></span><span style="display:flex;"><span>              {
+</span></span><span style="display:flex;"><span>                name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>                containerPort: <span style="color:#ae81ff">8080</span>,
+</span></span><span style="display:flex;"><span>                protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            ],
+</span></span><span style="display:flex;"><span>            resources: {
+</span></span><span style="display:flex;"><span>              limits: {
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;500Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>              requests: {
+</span></span><span style="display:flex;"><span>                cpu: <span style="color:#e6db74">&#34;250m&#34;</span>,
+</span></span><span style="display:flex;"><span>                memory: <span style="color:#e6db74">&#34;250Mi&#34;</span>,
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            securityContext: {
+</span></span><span style="display:flex;"><span>              allowPrivilegeEscalation: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              privileged: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>              readOnlyRootFilesystem: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsGroup: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>              runAsNonRoot: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>              runAsUser: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Tailscale Ingress
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> ingress <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    defaultBackend: {
+</span></span><span style="display:flex;"><span>      service: {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        port: {
+</span></span><span style="display:flex;"><span>          number: port,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    ingressClassName: <span style="color:#e6db74">&#34;tailscale&#34;</span>,
+</span></span><span style="display:flex;"><span>    tls: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        hosts: [
+</span></span><span style="display:flex;"><span>          name,
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traefik Ingress non-TLS (non-public)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">local</span> traefik <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;networking.k8s.io/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Ingress&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: <span style="color:#e6db74">&#34;traefik&#34;</span>,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    rules: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        host: std.format(
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;$(name)s.%(node_ip)s.nip.io&#34;</span>, {
+</span></span><span style="display:flex;"><span>              name: name,
+</span></span><span style="display:flex;"><span>              node_ip: node_ip,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ),
+</span></span><span style="display:flex;"><span>        http: {
+</span></span><span style="display:flex;"><span>          paths: [
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>              path: <span style="color:#e6db74">&#34;/&#34;</span>,
+</span></span><span style="display:flex;"><span>              pathType: <span style="color:#e6db74">&#34;Prefix&#34;</span>,
+</span></span><span style="display:flex;"><span>              backend: {
+</span></span><span style="display:flex;"><span>                service: {
+</span></span><span style="display:flex;"><span>                  name: name,
+</span></span><span style="display:flex;"><span>                  port: {
+</span></span><span style="display:flex;"><span>                    number: port,
+</span></span><span style="display:flex;"><span>                  },
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>              },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> prometheusrule <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Alternatively parameterize the duration
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">local</span> duration <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;PrometheusRule&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    groups: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        rules: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            alert: <span style="color:#e6db74">&#34;TestcAdvsiorDown&#34;</span>,
+</span></span><span style="display:flex;"><span>            annotations: {
+</span></span><span style="display:flex;"><span>              summary: <span style="color:#e6db74">&#34;Test cAdvisor instance is down or not scraping metrics.&#34;</span>,
+</span></span><span style="display:flex;"><span>              description: std.format(<span style="color:#e6db74">&#34;The cAdvisor instance {{ $labels.instance }} has not been scraping metrics for more than %(duration)s minutes.&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            expr: <span style="color:#e6db74">&#34;absent(cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}) or (cadvisor_version_info{namespace=</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">k3s-test</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">}!=1)&#34;</span>,
+</span></span><span style="display:flex;"><span>            &#34;for&#34;: std.format(<span style="color:#e6db74">&#34;%(duration)sm&#34;</span>, { duration: duration }),
+</span></span><span style="display:flex;"><span>            labels: labels {
+</span></span><span style="display:flex;"><span>              severity: <span style="color:#e6db74">&#34;warning&#34;</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> service <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;Service&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: labels,
+</span></span><span style="display:flex;"><span>    ports: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        name: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: port,
+</span></span><span style="display:flex;"><span>        targetPort: port,
+</span></span><span style="display:flex;"><span>        protocol: <span style="color:#e6db74">&#34;TCP&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> serviceaccount <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceAccount&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> servicemonitor <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;ServiceMonitor&#34;</span>,
+</span></span><span style="display:flex;"><span>  metadata: {
+</span></span><span style="display:flex;"><span>    name: name,
+</span></span><span style="display:flex;"><span>    labels: labels,
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  spec: {
+</span></span><span style="display:flex;"><span>    selector: {
+</span></span><span style="display:flex;"><span>      matchLabels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    endpoints: [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        interval: <span style="color:#e6db74">&#34;120s&#34;</span>,
+</span></span><span style="display:flex;"><span>        path: <span style="color:#e6db74">&#34;/metrics&#34;</span>,
+</span></span><span style="display:flex;"><span>        port: <span style="color:#e6db74">&#34;http&#34;</span>,
+</span></span><span style="display:flex;"><span>        scrapeTimeout: <span style="color:#e6db74">&#34;30s&#34;</span>,
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Output
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>{
+</span></span><span style="display:flex;"><span>  apiVersion: <span style="color:#e6db74">&#34;v1&#34;</span>,
+</span></span><span style="display:flex;"><span>  kind: <span style="color:#e6db74">&#34;List&#34;</span>,
+</span></span><span style="display:flex;"><span>  items: [
+</span></span><span style="display:flex;"><span>    deployment,
+</span></span><span style="display:flex;"><span>    ingress,
+</span></span><span style="display:flex;"><span>    prometheusrule,
+</span></span><span style="display:flex;"><span>    service,
+</span></span><span style="display:flex;"><span>    serviceaccount,
+</span></span><span style="display:flex;"><span>    servicemonitor,
+</span></span><span style="display:flex;"><span>    traefik
+</span></span><span style="display:flex;"><span>  ],
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>I like to have a script that applies Jsonnet to the file:</p>
+    </div>
+    <a href="/posts/251121/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
 </div>
 
@@ -3881,101 +5698,6 @@ ID                                      DATE CREATED                    LABEL   
 <p>Okay, so not &ldquo;Gemini Code Assist&rdquo; but sufficiently similar that I think it warrants the &ldquo;3/3&rdquo; appellation.</p>
     </div>
     <a href="/posts/250630/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-      
-        <h2 class="f1">
-          <a href="/tags/jsonnet/" class="link blue hover-black">
-            Tag: Jsonnet
-          </a>
-        </h2>
-        
-          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
-  <div class="mb3 pa4 gray overflow-hidden bg-white">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/250630/" class="link black dim">
-        Gemini CLI (3/3)
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <h3 id="update-2025-07-08">Update 2025-07-08</h3>
-<p>Gemini CLI supports <a href="https://github.com/google-gemini/gemini-cli/blob/0275ab0108e9a411d90d8ef8c8d70e21e498d81a/docs/tools/mcp-server.md#http-based-mcp-server">HTTP-based MCP server</a> integration</p>
-<p>So, it&rsquo;s possible to replace the <code>.gemini/settings.json</code> included in the original post with:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;theme&#34;</span>: <span style="color:#e6db74">&#34;Default&#34;</span>,
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;mcpServers&#34;</span>: {
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;ackal-mcp-server&#34;</span>: {
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;httpUrl&#34;</span>: <span style="color:#e6db74">&#34;http://localhost:7777/mcp&#34;</span>,
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;timeout&#34;</span>: <span style="color:#ae81ff">5000</span>
-</span></span><span style="display:flex;"><span>    },
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;prometheus-mcp-server&#34;</span>: {
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;httpUrl&#34;</span>: <span style="color:#e6db74">&#34;https://prometheus.{tailnet}/mcp&#34;</span>,
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;timeout&#34;</span>: <span style="color:#ae81ff">5000</span>
-</span></span><span style="display:flex;"><span>    }
-</span></span><span style="display:flex;"><span>  },
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;selectedAuthType&#34;</span>: <span style="color:#e6db74">&#34;gemini-api-key&#34;</span>
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>This solution permits the addition of <code>headers</code> too for e.g. including <code>Authorization</code></p>
-<h3 id="original">Original</h3>
-<p>Okay, so not &ldquo;Gemini Code Assist&rdquo; but sufficiently similar that I think it warrants the &ldquo;3/3&rdquo; appellation.</p>
-    </div>
-    <a href="/posts/250630/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
-  <div class="mb3 pa4 gray overflow-hidden bg-white">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/250429/" class="link black dim">
-        Configuring Envoy to proxy Google Cloud Run v2
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I&rsquo;m building an emulator for <a href="https://cloud.google.com/run">Cloud Run</a>. As I considered the solution, I assumed (more later) that I could implement Google&rsquo;s gRPC interface for <a href="https://github.com/googleapis/googleapis/tree/83df85b45a5d3e85b48f2571e1c8e57cdfd57e6c/google/cloud/run">Cloud Run</a> and use <a href="https://www.envoyproxy.io/">Envoy</a> to proxy HTTP/REST requests to the gRPC service using Envoy&rsquo;s <a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/grpc_json_transcoder_filter">gRPC-JSON transcoder</a>.</p>
-<p>Google calls this process <a href="https://cloud.google.com/endpoints/docs/grpc/transcoding">Transcoding HTTP/JSON to gRPC</a> which I think it a better description.</p>
-<p>Google&rsquo;s Cloud Run <code>v2</code> (<code>v1</code> is no longer published to the <a href="https://github.com/googleapis/googleapis"><code>googleapis</code></a> repo) <a href="https://github.com/googleapis/googleapis/blob/83df85b45a5d3e85b48f2571e1c8e57cdfd57e6c/google/cloud/run/v2/service.proto"><code>service.proto</code></a> includes the following <code>Services</code> definition for <code>CreateService</code>:</p>
-    </div>
-    <a href="/posts/250429/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
-  </div>
-</div>
-
-        
-          <div class="w-100 mb4 nested-copy-line-height relative bg-white">
-  <div class="mb3 pa4 gray overflow-hidden bg-white">
-    <span class="f6 db">Posts</span>
-    <h1 class="f3 near-black">
-      <a href="/posts/250325/" class="link black dim">
-        Migrating Prometheus Exporters to Kubernetes
-      </a>
-    </h1>
-    <div class="nested-links f5 lh-copy nested-copy-line-height">
-      <p>I have built <a href="https://prometheus.io">Prometheus</a> <a href="https://prometheus.io/docs/instrumenting/exporters/">Exporters</a> for multiple cloud platforms to track resources deployed across clouds:</p>
-<ul>
-<li><a href="https://github.com/DazWilkin/azure-exporter">Prometheus Exporter for Azure</a></li>
-<li><a href="https://github.com/DazWilkin/crtsh-exporter">Prometheus Exporter for crt.sh</a></li>
-<li><a href="https://github.com/DazWilkin/fly-exporter">Prometheus Exporter for Fly.io</a></li>
-<li><a href="https://github.com/DazWilkin/goatcounter-exporter">Prometheus Exporter for GoatCounter</a></li>
-<li><a href="https://github.com/DazWilkin/ga-exporter">Prometheus Exporter for Google Analytics</a></li>
-<li><a href="https://github.com/DazWilkin/gcp-exporter">Prometheus Exporter for Google Cloud</a></li>
-<li><a href="https://github.com/DazWilkin/koyeb-exporter">Prometheus Exporter for Koyeb</a></li>
-<li><a href="https://github.com/DazWilkin/linode-exporter">Prometheus Exporter for Linode</a></li>
-<li><a href="https://github.com/DazWilkin/porkbun-exporter">Prometheus Exporter for PorkBun</a></li>
-<li><a href="https://github.com/DazWilkin/updown-exporter">Prometheus Exporter for updown.io</a></li>
-<li><a href="https://github.com/DazWilkin/vultr-exporter">Prometheus Exporter for Vultr</a></li>
-</ul>
-<p>Additionally, I&rsquo;ve written two status service exporters:</p>
-<ul>
-<li><a href="https://github.com/DazWilkin/gcp-status">Prometheus Exporter for GCP Status</a></li>
-<li><a href="https://github.com/DazWilkin/vultr-status-exporter">Prometheus Exporter for Vultr Status</a></li>
-</ul>
-<p>These exporters are all derived from an exemplar <a href="https://github.com/metalmatze/digitalocean_exporter"><code>DigitalOcean Exporter</code></a> written by <a href="https://github.com/metalmatze">metalmatze</a> for which I maintain a <a href="https://github.com/DazWilkin/digitalocean_exporter">fork</a>.</p>
-    </div>
-    <a href="/posts/250325/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
   </div>
 </div>
 
@@ -10531,7 +12253,7 @@ ID                                      DATE CREATED                    LABEL   
       
         <h2 class="f1">
           <a href="/tags/kube-state-metrics/" class="link blue hover-black">
-            Tag: Kube-State-Metrics
+            Tag: Kube State Metrics
           </a>
         </h2>
         
@@ -10605,7 +12327,7 @@ ID                                      DATE CREATED                    LABEL   
       
         <h2 class="f1">
           <a href="/tags/prometheus-operator/" class="link blue hover-black">
-            Tag: Prometheus Operator
+            Tag: Prometheus-Operator
           </a>
         </h2>
         
@@ -11195,7 +12917,7 @@ replicaset.apps/prometheus-operator-admission-webhook-68bc9f885   1         1   
       
         <h2 class="f1">
           <a href="/tags/cloud-monitoring/" class="link blue hover-black">
-            Tag: Cloud Monitoring
+            Tag: Cloud-Monitoring
           </a>
         </h2>
         
@@ -11863,7 +13585,7 @@ replicaset.apps/prometheus-operator-admission-webhook-68bc9f885   1         1   
       
         <h2 class="f1">
           <a href="/tags/gcp/" class="link blue hover-black">
-            Tag: GCP
+            Tag: Gcp
           </a>
         </h2>
         
