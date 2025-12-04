@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>Prometheus Exporter documentation | (p)retired</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="I have a new router that runs OpenWRT and it provides a Prometheus (Node) Exporter (written in Lua)
+
+NOTE The prometheus-node-exporter-lua Exporter package is a 4KB (!) script
+
+As I&rsquo;m sure is a common experience for others, it&rsquo;s great that there&rsquo;s an Exporter and a wealth of metrics exposed by it. One problem is that there&rsquo;s no guidance on how to use these metrics to construct useful PromQL queries and Alertmanager alerts.
+I think it would be useful for Exporters to publish a Documentation endpoints (perhaps /docs to go along with /metrics) that would include such guidance.">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
+    
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.cf4aecb341f2e16e80e407465df095cee730d71e19c4574f8e9b28d163dc4225.css" >
+
+
+
+  
+
+
+    
+
+    
+    
+      
+
+    
+
+    
+
+    <script data-goatcounter="https://pretired.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+ 
+    <meta property="og:url" content="https://pretired.dazwilkin.com/posts/251204/">
+  <meta property="og:site_name" content="(p)retired">
+  <meta property="og:title" content="Prometheus Exporter documentation">
+  <meta property="og:description" content="I have a new router that runs OpenWRT and it provides a Prometheus (Node) Exporter (written in Lua)
+NOTE The prometheus-node-exporter-lua Exporter package is a 4KB (!) script
+As I’m sure is a common experience for others, it’s great that there’s an Exporter and a wealth of metrics exposed by it. One problem is that there’s no guidance on how to use these metrics to construct useful PromQL queries and Alertmanager alerts.
+I think it would be useful for Exporters to publish a Documentation endpoints (perhaps /docs to go along with /metrics) that would include such guidance.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-12-04T00:00:00-08:00">
+    <meta property="article:modified_time" content="2025-12-04T00:00:00-08:00">
+    <meta property="article:tag" content="Prometheus">
+    <meta property="article:tag" content="Exporter">
+    <meta property="article:tag" content="OpenWRT">
+
+  <meta itemprop="name" content="Prometheus Exporter documentation">
+  <meta itemprop="description" content="I have a new router that runs OpenWRT and it provides a Prometheus (Node) Exporter (written in Lua)
+NOTE The prometheus-node-exporter-lua Exporter package is a 4KB (!) script
+As I’m sure is a common experience for others, it’s great that there’s an Exporter and a wealth of metrics exposed by it. One problem is that there’s no guidance on how to use these metrics to construct useful PromQL queries and Alertmanager alerts.
+I think it would be useful for Exporters to publish a Documentation endpoints (perhaps /docs to go along with /metrics) that would include such guidance.">
+  <meta itemprop="datePublished" content="2025-12-04T00:00:00-08:00">
+  <meta itemprop="dateModified" content="2025-12-04T00:00:00-08:00">
+  <meta itemprop="wordCount" content="1253">
+  <meta itemprop="keywords" content="Prometheus,Exporter,OpenWRT">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Prometheus Exporter documentation">
+  <meta name="twitter:description" content="I have a new router that runs OpenWRT and it provides a Prometheus (Node) Exporter (written in Lua)
+NOTE The prometheus-node-exporter-lua Exporter package is a 4KB (!) script
+As I’m sure is a common experience for others, it’s great that there’s an Exporter and a wealth of metrics exposed by it. One problem is that there’s no guidance on how to use these metrics to construct useful PromQL queries and Alertmanager alerts.
+I think it would be useful for Exporters to publish a Documentation endpoints (perhaps /docs to go along with /metrics) that would include such guidance.">
+
+      
+    
+	
+  </head>
+
+  <body class="ma0 avenir bg-near-white production">
+
+    
+   
+  
+
+  <header>
+    <div class="bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l center items-center justify-between">
+    <a href="/" class="f3 fw2 hover-white white-90 dib no-underline">
+      
+        (p)retired
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      <div class="ananke-socials"></div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+
+    <main class="pb7" role="main">
+      
+  
+  
+  <article class="flex-l mw8 center ph3 flex-wrap justify-between">
+    <header class="mt4 w-100">
+      <aside class="instapaper_ignoref b helvetica tracked ttu">
+          
+        Posts
+      </aside><div id="sharing" class="mt3 ananke-socials"></div>
+<h1 class="f1 athelas mt3 mb1">Prometheus Exporter documentation</h1>
+      
+      
+      
+      <time class="f6 mv4 dib tracked" datetime="2025-12-04T00:00:00-08:00">December 4, 2025</time>
+      
+
+      
+      
+        <span class="f6 mv4 dib tracked"> - 6 minutes read </span>
+        <span class="f6 mv4 dib tracked"> - 1253 words </span>
+      
+    </header>
+    <div class="nested-copy-line-height lh-copy serif f4 nested-links mid-gray pr4-l w-two-thirds-l"><p>I have a new router that runs <a href="https://openwrt.org/">OpenWRT</a> and it provides a Prometheus (Node) Exporter (written in <a href="https://en.wikipedia.org/wiki/Lua">Lua</a>)</p>
+<blockquote>
+<p><strong>NOTE</strong> The <a href="https://openwrt.org/packages/pkgdata/prometheus-node-exporter-lua-openwrt"><code>prometheus-node-exporter-lua</code></a> Exporter package is a 4KB (!) <a href="https://github.com/openwrt/packages/blob/master/utils/prometheus-node-exporter-lua/files/usr/bin/prometheus-node-exporter-lua">script</a></p>
+</blockquote>
+<p>As I&rsquo;m sure is a common experience for others, it&rsquo;s great that there&rsquo;s an Exporter and a wealth of metrics exposed by it. One problem is that there&rsquo;s no guidance on how to use these metrics to construct useful PromQL queries and Alertmanager alerts.</p>
+<p>I think it would be useful for Exporters to publish a Documentation endpoints (perhaps <code>/docs</code> to go along with <code>/metrics</code>) that would include such guidance.</p>
+<p>Let&rsquo;s create an example.</p>
+<p>Since I&rsquo;m unfamiliar with the <code>prometheus-node-exporter-lua</code> these examples are going to be hypothetical uses of the metrics because I really don&rsquo;t (yet) know how best to use them!</p>
+<h2 id="naive-assessment">Naive Assessment</h2>
+<p>Here is the output from scraping my router&rsquo;s <code>/metrics</code> endpoint:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--url localhost:9100/metrics <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>|  awk <span style="color:#e6db74">&#39;/^# TYPE/ { sub(&#34;^# TYPE &#34;, &#34;&#34;); print }&#39;</span>
+</span></span></code></pre></div><pre tabindex="0"><code>node_scrape_collector_duration_seconds gauge
+node_scrape_collector_success gauge
+node_nf_conntrack_entries gauge
+node_nf_conntrack_entries_limit gauge
+node_boot_time_seconds gauge
+node_context_switches_total counter
+node_cpu_seconds_total counter
+node_intr_total counter
+node_forks_total counter
+node_procs_running_total gauge
+node_procs_blocked_total gauge
+node_filefd_allocated gauge
+node_filefd_maximum gauge
+node_load1 gauge
+node_load5 gauge
+node_load15 gauge
+node_memory_MemTotal_bytes gauge
+node_memory_MemFree_bytes gauge
+node_memory_MemAvailable_bytes gauge
+node_memory_Buffers_bytes gauge
+node_memory_Cached_bytes gauge
+node_memory_SwapCached_bytes gauge
+node_memory_Active_bytes gauge
+node_memory_Inactive_bytes gauge
+node_memory_Active_anon_bytes gauge
+node_memory_Inactive_anon_bytes gauge
+node_memory_Active_file_bytes gauge
+node_memory_Inactive_file_bytes gauge
+node_memory_Unevictable_bytes gauge
+node_memory_Mlocked_bytes gauge
+node_memory_SwapTotal_bytes gauge
+node_memory_SwapFree_bytes gauge
+node_memory_Dirty_bytes gauge
+node_memory_Writeback_bytes gauge
+node_memory_AnonPages_bytes gauge
+node_memory_Mapped_bytes gauge
+node_memory_Shmem_bytes gauge
+node_memory_KReclaimable_bytes gauge
+node_memory_Slab_bytes gauge
+node_memory_SReclaimable_bytes gauge
+node_memory_SUnreclaim_bytes gauge
+node_memory_KernelStack_bytes gauge
+node_memory_PageTables_bytes gauge
+node_memory_NFS_Unstable_bytes gauge
+node_memory_Bounce_bytes gauge
+node_memory_WritebackTmp_bytes gauge
+node_memory_CommitLimit_bytes gauge
+node_memory_Committed_AS_bytes gauge
+node_memory_VmallocTotal_bytes gauge
+node_memory_VmallocUsed_bytes gauge
+node_memory_VmallocChunk_bytes gauge
+node_memory_Percpu_bytes gauge
+node_network_receive_bytes_total counter
+node_network_receive_packets_total counter
+node_network_receive_errs_total counter
+node_network_receive_drop_total counter
+node_network_receive_fifo_total counter
+node_network_receive_frame_total counter
+node_network_receive_compressed_total counter
+node_network_receive_multicast_total counter
+node_network_transmit_bytes_total counter
+node_network_transmit_packets_total counter
+node_network_transmit_errs_total counter
+node_network_transmit_drop_total counter
+node_network_transmit_fifo_total counter
+node_network_transmit_colls_total counter
+node_network_transmit_carrier_total counter
+node_network_transmit_compressed_total counter
+node_openwrt_info gauge
+node_time_seconds counter
+node_uname_info gauge
+</code></pre><p>Around half of these metrics emit constant values (for my router) and so are uninteresting. Of those that don&rsquo;t, there are several that emit interesting (fluctuating) values:</p>
+<pre tabindex="0"><code>node_memory_Active_anon_bytes
+node_memory_Active_file_bytes
+node_load1
+node_load15
+node_load5
+scrape_duration_seconds
+</code></pre><blockquote>
+<p><strong>NOTE</strong> The above are all constrained by <code>{job=&quot;foo&quot;}</code> where <code>foo</code> is the name of my router.</p>
+</blockquote>
+<p>Presumably for space-saving reasons, the emitted metrics include <code># TYPE</code> descriptors by necessity as this includes the metrics <code>__name__</code>&rsquo;s as shown above but does <strong>NOT</strong> include <code># HELP</code> helpers.</p>
+<p>These metrics can be generalized using PromQL RegEx functionality as:</p>
+<ul>
+<li><code>{__name__=&quot;scrape_duration_seconds&quot;}</code></li>
+<li><code>{__name__=~&quot;node_memory_Active_(anon|file)_bytes}</code></li>
+<li><code>{__name__=~&quot;node_load[0-9]{1,2}}</code></li>
+</ul>
+<blockquote>
+<p><strong>NOTE</strong> I&rsquo;ve omitted <code>,job=&quot;foo&quot;</code> on each of the above for clarity.</p>
+</blockquote>
+<p>Prometheus metric names are &ndash; quite logically &ndash; a special case of the use of labels. The metric name is stored internally as the label name <code>__name__</code>. This can be confusing but is powerful. One end-user reason that this power is available is to apply RegExes to metric names. While <code>node_load*</code> isn&rsquo;t permitted as a metric name in PromQL, it is permitted as a label value Regex <code>{__name__=~&quot;node_load*&quot;}</code></p>
+<blockquote>
+<p><strong>NOTE</strong> To specify that the value is a RegEx, <code>=~</code> must be used between the label name and value.</p>
+</blockquote>
+<p>These metrics yield the following graphs:</p>
+<p><img src="/images/251204.scrape_duration_seconds.png" alt="scrape_duration_seconds"></p>
+<p><img src="/images/251204.node_memory_Active_bytes.png" alt="node_memory_Active_(anon|file)_bytes"></p>
+<p><img src="/images/251204.node_load.png" alt="node_load[0-9]{1,2}"></p>
+<p>And, it may be interesting to alert if:</p>
+<ol>
+<li>Scrape duration exceeds its 95% percentile (over the past 24 hours) for 5 minutes</li>
+<li>Node Load exceeds 1.25</li>
+<li>Active memory bytes exceeds 90MiB</li>
+</ol>
+<p>Let&rsquo;s define PromQL and alerts for the above:</p>
+<p>The could be specified (using YAML) as Alertmanager alerts of the form:</p>
+<p><code>rules.yml</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">groups</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwrt_alerts</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">alert</span>: <span style="color:#ae81ff">HighScrapeDurationP95Anomaly</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">alert</span>: <span style="color:#ae81ff">HighNodeLoad</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">alert</span>: <span style="color:#ae81ff">HighNodeActiveMemory</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">...</span>
+</span></span></code></pre></div><h3 id="scrape-duration">Scrape Duration</h3>
+<p><code>scrape_duration_seconds{job=&quot;foo&quot;}&gt;quantile_over_time(0.95,scrape_duration_seconds{job=&quot;foo&quot;}[1d])</code></p>
+<p>This condition will always be true 5% of the time. It becomes more interesting if it remains true for extended periods of time. To achieve this we can use the Alert&rsquo;s <code>for</code> property</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">alert</span>: <span style="color:#ae81ff">HighScrapeDurationP95Anomaly</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">expr</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  scrape_duration_seconds{job=foo&#34;}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  &gt;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  quantile_over_time(0.95, scrape_duration_seconds{job=&#34;foo&#34;}[1h])</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">for</span>: <span style="color:#ae81ff">5m</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">severity</span>: <span style="color:#ae81ff">warning</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">summary</span>: <span style="color:#e6db74">&#34;Scrape duration is above its 1-hour 95th percentile for {{ $labels.instance }}&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">description</span>: <span style="color:#e6db74">&#34;The scrape duration ({{ $value }}) for instance {{ $labels.instance }} is anomalously high&#34;</span>
+</span></span></code></pre></div><h3 id="node-load">Node Load</h3>
+<p><code>{__name__=~&quot;node_load[0-9]{1,2}&quot;,job=&quot;foo&quot;} &gt; 1.25</code></p>
+<p>It&rsquo;s unclear what the units are for this metric<sup>1</sup>. Naively, I&rsquo;d assumed it should not exceed 1.0 but the measurements by my router do exceed 1.0, so&hellip;</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">alert</span>: <span style="color:#ae81ff">HighNodeLoad</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">expr</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  {__name__=~&#34;node_load[0-9]{1,2}&#34;,job=&#34;foo&#34;} &gt; 1.25</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">for</span>: <span style="color:#ae81ff">5m</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">severity</span>: <span style="color:#ae81ff">warning</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">summary</span>: <span style="color:#e6db74">&#34;Node load is above 1.25 for {{ $labels.instance }}&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">description</span>:  <span style="color:#e6db74">&#34;The node load ({{ $value }}) for instance {{ $labels.instance }} is anomalously high&#34;</span>
+</span></span></code></pre></div><p><sup>1</sup> - Subsequently chatting with Gen AI, I learned that the value corresponds to number of cores in the router. As a result I realized 1.25 corresponds to 62.5%</p>
+<h3 id="node-active-memory">Node Active Memory</h3>
+<p><code>{__name__=~&quot;node_memory_Active_(anon|file)_bytes&quot;,job=&quot;foo&quot;} &gt; 90*1024*1024</code></p>
+<p>The 90MiB value is arbitrary but observed from experience with my router. PromQL doesn&rsquo;t provide units for e.g. Mebibytes and so this value is shown explicitly here for clarity.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">alert</span>: <span style="color:#ae81ff">HighNodeActiveMemory</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">expr</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    {__name__=~&#34;node_memory_Active_(anon|file)_bytes&#34;,job=&#34;foo&#34;} &gt; 90*1024*1024</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">for</span>: <span style="color:#ae81ff">5m</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">severity</span>: <span style="color:#ae81ff">warning</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">summary</span>: <span style="color:#e6db74">&#34;Node active memory is above 90MiB for {{ $labels.instance }}&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">description</span>: <span style="color:#e6db74">&#34;The node active memory ({{ $value }}) for instance {{ $labels.instance }} is anomalously high&#34;</span>
+</span></span></code></pre></div><h2 id="prometheus-operator-crds">Prometheus Operator CRDs</h2>
+<p>I use <a href="https://prometheus-operator.dev/">Prometheus Operator</a>) as part of <a href="https://github.com/prometheus-operator/kube-prometheus"><code>kube-prometheus</code></a> and it provices <a href="https://doc.crds.dev/github.com/prometheus-operator/prometheus-operator/monitoring.coreos.com/ScrapeConfig/v1alpha1@v0.87.0"><code>ScrapeConfig</code></a> and <a href="https://doc.crds.dev/github.com/prometheus-operator/prometheus-operator/monitoring.coreos.com/PrometheusRule/v1@v0.87.0"><code>PrometheusRule</code></a> CRDs (among others) to define the router as a scrape target and to define the alerts.</p>
+<p>Here are <a href="https://jsonnet.org/">Jsonnet</a> examples for both:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-jsonnet" data-lang="jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> host <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;192.168.1.1&#34;</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> port <span style="color:#f92672">=</span> <span style="color:#ae81ff">9100</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;foo&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> labels <span style="color:#f92672">=</span> {};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Output
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>{
+</span></span><span style="display:flex;"><span>    apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1alpha1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;ScrapeConfig&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// metricsPath: &#34;/metrics&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        scheme: <span style="color:#e6db74">&#34;HTTP&#34;</span>,
+</span></span><span style="display:flex;"><span>        staticConfigs: [
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                targets: [
+</span></span><span style="display:flex;"><span>                    std.format(<span style="color:#e6db74">&#34;%(host)s:%(port)d&#34;</span>, {
+</span></span><span style="display:flex;"><span>                        host: host,
+</span></span><span style="display:flex;"><span>                        port: port,
+</span></span><span style="display:flex;"><span>                    }),
+</span></span><span style="display:flex;"><span>                ],
+</span></span><span style="display:flex;"><span>                labels: labels,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Using Jsonnet requires JSON but we have <code>alerts.yml</code> as this is the preferred format for Prometheus. Conveniently the structure of <code>PrometheusRule</code> matches the format of Prometheus alerts and so we can use <a href="https://github.com/mikefarah/yq"><code>yq</code></a> to generate an equivalent JSON file:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>more rules.yml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| yq --output-format<span style="color:#f92672">=</span>json . <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>&gt; rules.json
+</span></span></code></pre></div><p>And then reference this file when generating the JSON using Jsonnet:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-jsonnet" data-lang="jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;foo&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> labels <span style="color:#f92672">=</span> {};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> rules <span style="color:#f92672">=</span> <span style="color:#66d9ef">import</span> <span style="color:#e6db74">&#34;rules.json&#34;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Output
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>{
+</span></span><span style="display:flex;"><span>    apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
+</span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;PrometheusRule&#34;</span>,
+</span></span><span style="display:flex;"><span>    metadata: {
+</span></span><span style="display:flex;"><span>        name: name,
+</span></span><span style="display:flex;"><span>        labels: labels,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    spec: {
+</span></span><span style="display:flex;"><span>        groups: rules.groups,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Yielding:</p>
+<p><img src="/images/251204.alerts.png" alt="Alerts: foo"></p>
+<h2 id="docs"><code>/docs</code></h2>
+<p>So, what would be documented by the <code>/docs</code> endpoint? I suggest keeping the content DRY and so not repeating the <code>HELP</code> (!) and <code>TYPE</code> content from <code>/metrics</code> (and in this case, submitting a PR to add <code>HELP</code> to the Exporter).</p>
+<p>I think the docs could include a summary of the Exporter describings its intent, explanations of non-obvious metric (patterns) and then example queries and alerts</p>
+<blockquote>
+<h1 id="prometheus-node-exporter-for-openwrt"><a href="">Prometheus Node Exporter for OpenWRT</a></h1>
+<h2 id="overview">Overview</h2>
+<h2 id="examples">Examples</h2>
+<h3 id="promql">PromQL</h3>
+<h4 id="excessive-scrape-duration">Excessive Scrape Duration</h4>
+<p>Defining excessive to be the 5% of the longest scrape durations in the last 24 hours&rsquo; measurements.</p>
+<p><code>{scrape_duration_seconds{job=&quot;foo&quot;}&gt;quantile_over_time(0.95,scrape_duration_seconds{job=&quot;foo&quot;}[1d])</code></p>
+<h3 id="alerts">Alerts</h3>
+<h4 id="excessive-scrape-duration-1">Excessive Scrape Duration</h4>
+<p>Alerting when excessive scrape durations continue (subsequent measurements) for 5 minutes.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">alert</span>: <span style="color:#ae81ff">HighScrapeDurationP95Anomaly</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">expr</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  scrape_duration_seconds{job=foo&#34;}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  &gt;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  quantile_over_time(0.95, scrape_duration_seconds{job=&#34;foo&#34;}[1h])</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">for</span>: <span style="color:#ae81ff">5m</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">severity</span>: <span style="color:#ae81ff">warning</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">summary</span>: <span style="color:#e6db74">&#34;Scrape duration is above its 1-hour 95th percentile for {{ $labels.instance }}&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">description</span>: <span style="color:#e6db74">&#34;The scrape duration ({{ $value }}) for instance {{ $labels.instance }} is anomalously high&#34;</span>
+</span></span></code></pre></div></blockquote>
+<h2 id="generate-ai-insights">Generate AI insights</h2>
+<p>Thinking about generating human-readable documentation, I wondered how insightful it would be to ask Generative AIs. I used Gemini and Claude and both provided very interesting insights that I&rsquo;ll summarize here but won&rsquo;t steal their thunder.</p>
+<ul>
+<li><code>node_loadX</code> metric values represents the utilization across multiple cores so my 1.25 represents 62.5% utilization of the router&rsquo;s 2 cores.</li>
+<li><code>node_scrape_collector_success{}==0</code>to identify when the collector fails</li>
+<li><code>node_boot_time_seconds</code> to identify reboots</li>
+<li><code>rate(node_cpu_seconds_total{mode=&quot;system&quot;}[5m]) &gt; 0.3</code>and <code>rate(node_cpu_seconds_total{mode=&quot;softirq&quot;}[5m]) &gt; 0.1</code> for kernel busyness.</li>
+<li><code>node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes &lt; 0.1</code> low available memory</li>
+<li><code>rate(node_network_transmit_errs_total[5m]) &gt; 5</code> and <code>rate(node_network_receive_errs_total[5m]) &gt; 5</code></li>
+</ul>
+<p>That&rsquo;s all!</p>
+<ul class="pa0">
+  
+   <li class="list di">
+     <a href="/tags/prometheus/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Prometheus</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/exporter/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Exporter</a>
+   </li>
+  
+   <li class="list di">
+     <a href="/tags/openwrt/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">OpenWRT</a>
+   </li>
+  
+</ul>
+<div class="mt6 instapaper_ignoref">
+      
+      
+      </div>
+    </div>
+
+    <aside class="w-30-l mt6-l">
+
+
+
+
+  <div class="bg-light-gray pa3 nested-list-reset nested-copy-line-height nested-links">
+    <p class="f5 b mb3">Related</p>
+    <ul class="pa0 list">
+	   
+	     <li  class="mb2">
+          <a href="/posts/250616/">Prometheus MCP Server</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/250325/">Migrating Prometheus Exporters to Kubernetes</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/250227/">Prometheus Exporter for USGS Water Data service</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240307/">Prometheus Protobufs and Native Histograms</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/240104/">Capturing e.g. CronJob metrics with GMP</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230709/">Prometheus Exporter for Koyeb</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230427/">Robusta KRR w/ GMP</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230425/">Google Metric Diagnostics and Metric Data Ingested</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230420/">Prometheus Exporter for Azure (Container Apps)</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230419/">Kubernetes metrics, metrics everywhere</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230413/">Filtering metrics w/ Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230310/">Kubernetes Operators</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/230104/">Authenticate PromLens to Google Managed Prometheus</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/200107/">Google Home Exporter</a>
+        </li>
+	    
+	     <li  class="mb2">
+          <a href="/posts/191220/">Google Cloud Platform (GCP) Exporter</a>
+        </li>
+	    
+    </ul>
+</div>
+
+</aside>
+
+  </article>
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white white-70 dn dib-ns pv2 ph3 no-underline" href="https://pretired.dazwilkin.com/" >
+    &copy;  (p)retired 2025 
+  </a>
+    <div><div class="ananke-socials"></div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>

@@ -7,7 +7,7 @@
     <title>Google for Rust Developers | (p)retired</title>
     <meta name="viewport" content="width=device-width,minimum-scale=1">
     <meta name="description" content="Google for Rust Developers">
-    <meta name="generator" content="Hugo 0.152.0-DEV">
+    <meta name="generator" content="Hugo 0.153.0-DEV">
     
     
     
@@ -121,15 +121,18 @@
 <h2 id="apis-explorer"><a href="https://developers.google.com/apis-explorer">APIs Explorer</a></h2>
 <p>Google provides a single view into the entirety of its APIs through <a href="https://developers.google.com/apis-explorer">APIs Explorer</a>. If an API is not listed on APIs Explorer, then it&rsquo;s probably (not definitively) not available. APIs Explorer not only lists the APIs but, as you&rsquo;d expect, it documents the APIs&rsquo; methods and their request and response types. This content is machine-generated and so it&rsquo;s very unlikely that it&rsquo;s incorrect. APIs Explorer method pages often include a &ldquo;Try this API&rdquo; which is a browser pane comprising a form generated from the API method&rsquo;s request type that allows you to plug in your values and <code>EXECUTE</code> the method.</p>
 <blockquote>
-<p><strong>SUGGESTION</strong> Try API method using &ldquo;Try this API&rdquo; to ensure that you understand what request message is required by a method to invoke it and to understand the response message that is returned.</p></blockquote>
+<p><strong>SUGGESTION</strong> Try API method using &ldquo;Try this API&rdquo; to ensure that you understand what request message is required by a method to invoke it and to understand the response message that is returned.</p>
+</blockquote>
 <h2 id="client-libraries-explained"><a href="https://cloud.google.com/apis/docs/client-libraries-explained">Client Libraries Explained</a></h2>
 <p>Because it&rsquo;s confusing, Google needs to document why there are multiple SDKs for each language for each API. What&rsquo;s not explained is that this is a result of history and that Google is not Google.</p>
 <h3 id="rest-api-client-libraries">(REST) API Client Libraries</h3>
 <p>Historically, every public Google service was exposed through a REST API. Because Google has been publishing APIs for a considerable time, Google&rsquo;s mechanisms predate OpenAPI (formerly Swagger). Google publishes metadata (schemas) for its REST APIs using so-called Discovery Documents. Because it&rsquo;s consistent, Google publishes Discovery Documents for all its REST APIs services using another service called the <a href="https://developers.google.com/discovery">Google API Discovery Service</a>. <a href="https://developers.google.com/apis-explorer">APIs Explorer</a> is effectively an enumeration of the Discovery Service and all its documents.</p>
 <blockquote>
-<p><strong>NOTE</strong> Google <a href="https://cloud.google.com/endpoints/docs/openapi">Cloud Endpoints</a> and I assume Google <a href="https://cloud.google.com/api-gateway">API Gateway</a> (formerly Apigee), both generate OpenAPI schemas for user-published services.</p></blockquote>
+<p><strong>NOTE</strong> Google <a href="https://cloud.google.com/endpoints/docs/openapi">Cloud Endpoints</a> and I assume Google <a href="https://cloud.google.com/api-gateway">API Gateway</a> (formerly Apigee), both generate OpenAPI schemas for user-published services.</p>
+</blockquote>
 <blockquote>
-<p><strong>Turtles</strong> You can use <a href="https://developers.google.com/apis-explorer">APIs Explorer</a> to list the <a href="https://developers.google.com/discovery/v1/reference/">Discovery Service</a> and then &ldquo;Try the API&rdquo; for the Discovery Service&rsquo;s <code>list</code> <a href="https://developers.google.com/discovery/v1/reference/apis/list">method</a> to <a href="https://developers.google.com/discovery/v1/reference/apis/list?apix_params=%7B%22name%22%3A%22discovery%22%7D&amp;apix=true">list the Discovery Service&rsquo;s Discovery Document</a>&hellip;</p></blockquote>
+<p><strong>Turtles</strong> You can use <a href="https://developers.google.com/apis-explorer">APIs Explorer</a> to list the <a href="https://developers.google.com/discovery/v1/reference/">Discovery Service</a> and then &ldquo;Try the API&rdquo; for the Discovery Service&rsquo;s <code>list</code> <a href="https://developers.google.com/discovery/v1/reference/apis/list">method</a> to <a href="https://developers.google.com/discovery/v1/reference/apis/list?apix_params=%7B%22name%22%3A%22discovery%22%7D&amp;apix=true">list the Discovery Service&rsquo;s Discovery Document</a>&hellip;</p>
+</blockquote>
 <p>With a Discovery Document for a service (as you would using e.g. OpenAPI), it&rsquo;s possible to generate a language-specific SDK to interact with the service. Google documents <a href="https://developers.google.com/discovery/v1/building-a-client-library">Building a Client Library</a> and, as you&rsquo;d expect has tools that automate this. There&rsquo;s an open source equivalent called [Google APIs Client Generator(https://github.com/google/apis-client-generator). This generator does <strong>not</strong> generate Rust see this <a href="https://github.com/google/apis-client-generator/issues/9">issue</a> and see below.</p>
 <p>For its supported languages, Google automatically generates and publishes SDKs (called &ldquo;API Client Libraries&rdquo;) and documentation for every service represented by a Discovery Document in the Discovery Service. Here&rsquo;s the <a href="https://developers.google.com/api-client-library/">list</a> by language.</p>
 <p>Enterprising Rust developers realized that this is a gateway to automatically provide Rust SDKs for all of Google&rsquo;s public REST APIs:</p>
@@ -141,13 +144,16 @@
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git clone git@github.com:google-apis-rs/generator.git
 </span></span><span style="display:flex;"><span>cd generator
 </span></span></code></pre></div><blockquote>
-<p><strong>SUGGESTION</strong> In order to determine which APIs <code>gcloud</code> is using, you can append <code>--log-http</code> to any <code>gcloud</code> command and the output will include details of underlying REST calls. In this case, I incorrectly thought the API being used was <a href="https://cloud.google.com/service-infrastructure/docs/service-management/reference/rest/"><code>servicemanagement</code></a> but, after running <code>gcloud services list --enabled --project=${PROJECT} --log-http</code>, I realized the underlying API is actually <a href="https://cloud.google.com/service-usage/docs/reference/rest"><code>serviceusage</code></a>.</p></blockquote>
+<p><strong>SUGGESTION</strong> In order to determine which APIs <code>gcloud</code> is using, you can append <code>--log-http</code> to any <code>gcloud</code> command and the output will include details of underlying REST calls. In this case, I incorrectly thought the API being used was <a href="https://cloud.google.com/service-infrastructure/docs/service-management/reference/rest/"><code>servicemanagement</code></a> but, after running <code>gcloud services list --enabled --project=${PROJECT} --log-http</code>, I realized the underlying API is actually <a href="https://cloud.google.com/service-usage/docs/reference/rest"><code>serviceusage</code></a>.</p>
+</blockquote>
 <blockquote>
-<p><strong>NOTE</strong> Google&rsquo;s REST reference documentation lists all available API versions. To clarify the order of API versions: <code>vXalpha</code> before <code>vXbeta</code> before <code>vX</code></p></blockquote>
+<p><strong>NOTE</strong> Google&rsquo;s REST reference documentation lists all available API versions. To clarify the order of API versions: <code>vXalpha</code> before <code>vXbeta</code> before <code>vX</code></p>
+</blockquote>
 <p>To use the <code>generator</code>, we&rsquo;ll want a copy of our service&rsquo;s Discovery Document. Using APIs Explorer, we can find it using the Discovery Service list method <a href="https://developers.google.com/discovery/v1/reference/apis/list?apix=true&amp;apix_params=%7B%22name%22%3A%22serviceusage%22%2C%22preferred%22%3Atrue%7D">here</a></p>
 <p><code>https://serviceusage.googleapis.com/$discovery/rest?version=v1</code></p>
 <blockquote>
-<p><strong>NOTE</strong> If you can determine the service&rsquo;s host name (i.e. <code>serviceusage</code>), then you can determine the URL to its Disovery Document</p></blockquote>
+<p><strong>NOTE</strong> If you can determine the service&rsquo;s host name (i.e. <code>serviceusage</code>), then you can determine the URL to its Disovery Document</p>
+</blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>SERVICE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;serviceusage&#34;</span>
 </span></span><span style="display:flex;"><span>VERSION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;v1&#34;</span>
 </span></span><span style="display:flex;"><span>
@@ -161,7 +167,8 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output <span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/specs/<span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>VERSION<span style="color:#e6db74">}</span>/spec.json <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://<span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.googleapis.com/<span style="color:#ae81ff">\$</span>discovery/rest?version<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>VERSION<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
-<p><strong>NOTE</strong> Ensure you escape the <code>$</code> prepended to <code>$discovery</code> (<code>\$discovery</code>)</p></blockquote>
+<p><strong>NOTE</strong> Ensure you escape the <code>$</code> prepended to <code>$discovery</code> (<code>\$discovery</code>)</p>
+</blockquote>
 <p>Then:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cargo run <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-- <span style="color:#ae81ff">\
