@@ -84,7 +84,7 @@ package main import ( &#34;flag&#34; &#34;log/slog&#34; &#34;net/http&#34; &#34;
     <meta property="article:tag" content="Dlv">
     <meta property="article:tag" content="Golang">
     <meta property="article:tag" content="Kubernetes">
-    <meta property="article:tag" content="Microk8s">
+    <meta property="article:tag" content="MicroK8s">
     <meta property="article:tag" content="Gin">
 
   <meta itemprop="name" content="Using Delve to debug Go containers on Kubernetes">
@@ -95,7 +95,7 @@ package main import ( &#34;flag&#34; &#34;log/slog&#34; &#34;net/http&#34; &#34;
   <meta itemprop="datePublished" content="2024-05-28T00:00:00-07:00">
   <meta itemprop="dateModified" content="2024-05-28T00:00:00-07:00">
   <meta itemprop="wordCount" content="978">
-  <meta itemprop="keywords" content="Delve,Dlv,Golang,Kubernetes,Microk8s,Gin,JSON-RPC">
+  <meta itemprop="keywords" content="Delve,Dlv,Golang,Kubernetes,MicroK8s,Gin,JSON-RPC">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Using Delve to debug Go containers on Kubernetes">
   <meta name="twitter:description" content="An interesting question on Stack overflow prompted me to understand how to use Visual Studio Code and Delve to remotely debug a Golang app running on Kubernetes (MicroK8s).
@@ -197,32 +197,32 @@ package main import ( &#34;flag&#34; &#34;log/slog&#34; &#34;net/http&#34; &#34;
 </span></span></code></pre></div><p><code>Containerfile</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Dockerfile" data-lang="Dockerfile"><span style="display:flex;"><span><span style="color:#66d9ef">ARG</span> GOLANG_VERSION<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;1.22.3&#34;</span><span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">FROM</span> <span style="color:#e6db74">docker.io/golang:${GOLANG_VERSION</span><span style="color:#f92672">}</span> AS builder<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> <span style="color:#e6db74">docker.io/golang:${GOLANG_VERSION</span><span style="color:#f92672">}</span> AS builder<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">WORKDIR</span> <span style="color:#e6db74">/app</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">WORKDIR</span> <span style="color:#e6db74">/app</span><span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> go.mod go.mod<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> go.sum go.sum<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">COPY</span> go.mod go.mod<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">COPY</span> go.sum go.sum<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> go mod download<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">RUN</span> go mod download<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> main.go main.go<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">COPY</span> main.go main.go<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> go build -gcflags <span style="color:#e6db74">&#34;all=-N -l&#34;</span> -a -o server .<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">RUN</span> go build -gcflags <span style="color:#e6db74">&#34;all=-N -l&#34;</span> -a -o server .<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">RUN</span> go install github.com/go-delve/delve/cmd/dlv@latest<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">RUN</span> go install github.com/go-delve/delve/cmd/dlv@latest<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">FROM</span> <span style="color:#e6db74">gcr.io/distroless/base-debian12</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> <span style="color:#e6db74">gcr.io/distroless/base-debian12</span><span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>WORKDIR /<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>WORKDIR /<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> --from<span style="color:#f92672">=</span>builder /app/server /<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> --from<span style="color:#f92672">=</span>builder /go/bin/dlv /<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">COPY</span> --from<span style="color:#f92672">=</span>builder /app/server /<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">COPY</span> --from<span style="color:#f92672">=</span>builder /go/bin/dlv /<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">EXPOSE</span> <span style="color:#e6db74">8080</span> <span style="color:#ae81ff">40000</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">EXPOSE</span> <span style="color:#e6db74">8080</span> <span style="color:#ae81ff">40000</span><span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ENTRYPOINT</span> [<span style="color:#e6db74">&#34;./dlv&#34;</span>,<span style="color:#e6db74">&#34;exec&#34;</span>,<span style="color:#e6db74">&#34;./server&#34;</span>,<span style="color:#e6db74">&#34;--listen=:40000&#34;</span>,<span style="color:#e6db74">&#34;--headless=true&#34;</span>,<span style="color:#e6db74">&#34;--api-version=2&#34;</span>,<span style="color:#e6db74">&#34;--log&#34;</span>,<span style="color:#e6db74">&#34;--log-output=debugger,rpc,dap,fncall&#34;</span>]<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">ENTRYPOINT</span> [<span style="color:#e6db74">&#34;./dlv&#34;</span>,<span style="color:#e6db74">&#34;exec&#34;</span>,<span style="color:#e6db74">&#34;./server&#34;</span>,<span style="color:#e6db74">&#34;--listen=:40000&#34;</span>,<span style="color:#e6db74">&#34;--headless=true&#34;</span>,<span style="color:#e6db74">&#34;--api-version=2&#34;</span>,<span style="color:#e6db74">&#34;--log&#34;</span>,<span style="color:#e6db74">&#34;--log-output=debugger,rpc,dap,fncall&#34;</span>]<span style="color:#960050;background-color:#1e0010">
 </span></span></span></code></pre></div><p><code>launch.json</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;0.2.0&#34;</span>,
@@ -238,13 +238,13 @@ package main import ( &#34;flag&#34; &#34;log/slog&#34; &#34;net/http&#34; &#34;
 </span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;showLog&#34;</span>:<span style="color:#66d9ef">true</span>,
 </span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;trace&#34;</span>:<span style="color:#e6db74">&#34;verbose&#34;</span>,
 </span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Intentionally excluded
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#75715e">// &#34;substitutePath&#34;: [
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#75715e">//     {
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#75715e">//         &#34;from&#34;:&#34;${workspaceFolder}&#34;,
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#75715e">//         &#34;to&#34;:&#34;/app&#34;,
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#75715e">//     },
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#75715e">// ]
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            
+</span></span></span><span style="display:flex;"><span>            <span style="color:#75715e">// &#34;substitutePath&#34;: [
+</span></span></span><span style="display:flex;"><span>            <span style="color:#75715e">//     {
+</span></span></span><span style="display:flex;"><span>            <span style="color:#75715e">//         &#34;from&#34;:&#34;${workspaceFolder}&#34;,
+</span></span></span><span style="display:flex;"><span>            <span style="color:#75715e">//         &#34;to&#34;:&#34;/app&#34;,
+</span></span></span><span style="display:flex;"><span>            <span style="color:#75715e">//     },
+</span></span></span><span style="display:flex;"><span>            <span style="color:#75715e">// ]
+</span></span></span><span style="display:flex;"><span>            
 </span></span><span style="display:flex;"><span>        }
 </span></span><span style="display:flex;"><span>    ]
 </span></span><span style="display:flex;"><span>}
@@ -253,16 +253,16 @@ package main import ( &#34;flag&#34; &#34;log/slog&#34; &#34;net/http&#34; &#34;
 </blockquote>
 <h2 id="local-binary">Local binary</h2>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go build <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-gcflags <span style="color:#e6db74">&#34;all=-N -l&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-a <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-o server <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>. <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>dlv exec ./server <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--listen<span style="color:#f92672">=</span>:40000 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--headless<span style="color:#f92672">=</span>true <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--api-version<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--log <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--log-output<span style="color:#f92672">=</span>debugger,rpc,dap,fncall
+</span></span></span><span style="display:flex;"><span>-gcflags <span style="color:#e6db74">&#34;all=-N -l&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>-a <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>-o server <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>. <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>dlv exec ./server <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--listen<span style="color:#f92672">=</span>:40000 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--headless<span style="color:#f92672">=</span>true <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--api-version<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--log <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--log-output<span style="color:#f92672">=</span>debugger,rpc,dap,fncall
 </span></span></code></pre></div><p>Should yield:</p>
 <pre tabindex="0"><code>API server listening at: [::]:40000
 2024-05-28T14:37:30-07:00 warning layer=rpc Listening for remote connections (connections are not authenticated nor encrypted)
@@ -279,15 +279,15 @@ package main import ( &#34;flag&#34; &#34;log/slog&#34; &#34;net/http&#34; &#34;
 </code></pre><h2 id="local-container">Local container</h2>
 <p>You can then build and run a container image:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>podman build <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--tag<span style="color:#f92672">=</span>localhost/server:v0.0.1 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--file<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/Containerfile <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>podman run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--privileged <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span>8080:8080/tcp <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span>40000:40000/tcp <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>localhost/server:v0.0.1
+</span></span></span><span style="display:flex;"><span>--tag<span style="color:#f92672">=</span>localhost/server:v0.0.1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--file<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/Containerfile <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>podman run <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--privileged <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--publish<span style="color:#f92672">=</span>8080:8080/tcp <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--publish<span style="color:#f92672">=</span>40000:40000/tcp <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>localhost/server:v0.0.1
 </span></span></code></pre></div><p>You should see something similar to:</p>
 <pre tabindex="0"><code>API server listening at: [::]:40000
 2024-05-28T21:52:28Z warning layer=rpc Listening for remote connections (connections are not authenticated nor encrypted)
@@ -395,11 +395,11 @@ package main import ( &#34;flag&#34; &#34;log/slog&#34; &#34;net/http&#34; &#34;
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>kubectl create namespace <span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>kubectl apply --filename<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/server.yaml <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><p>You can then follow the <code>Deployment's</code> logs from one shell:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl logs deployment/server <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--follow
+</span></span></span><span style="display:flex;"><span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--follow
 </span></span></code></pre></div><p>To see:</p>
 <pre tabindex="0"><code>2024-05-28T22:08:25Z error layer=debugger could not create config directory: mkdir .config: read-only file system
 API server listening at: [::]:40000
@@ -409,9 +409,9 @@ API server listening at: [::]:40000
 2024-05-28T22:08:25Z debug layer=debugger Adding target 12 &#34;/server&#34;
 </code></pre><p>And then in another shell:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl port-forward deployment/server <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>---namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>8080:localhost:8080 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>40000:localhost:40000
+</span></span></span><span style="display:flex;"><span>---namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>8080:localhost:8080 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>40000:localhost:40000
 </span></span></code></pre></div><p>And then (!) start debugging <code>remote</code> and, once it&rsquo;s running, curl the endpoint:</p>
 <pre tabindex="0"><code>2024-05-28T22:09:35Z debug layer=debugger continuing
 2024-05-28T22:09:35Z debug layer=debugger ContinueOnce
@@ -524,7 +524,7 @@ Escape character is &#39;^]&#39;.
    </li>
   
    <li class="list di">
-     <a href="/tags/microk8s/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Microk8s</a>
+     <a href="/tags/microk8s/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">MicroK8s</a>
    </li>
   
    <li class="list di">

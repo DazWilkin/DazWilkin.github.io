@@ -141,9 +141,9 @@ I think it would be useful for Exporters to publish a Documentation endpoints (p
 <h2 id="naive-assessment">Naive Assessment</h2>
 <p>Here is the output from scraping my router&rsquo;s <code>/metrics</code> endpoint:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--url localhost:9100/metrics <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>|  awk <span style="color:#e6db74">&#39;/^# TYPE/ { sub(&#34;^# TYPE &#34;, &#34;&#34;); print }&#39;</span>
+</span></span></span><span style="display:flex;"><span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--url localhost:9100/metrics <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>|  awk <span style="color:#e6db74">&#39;/^# TYPE/ { sub(&#34;^# TYPE &#34;, &#34;&#34;); print }&#39;</span>
 </span></span></code></pre></div><pre tabindex="0"><code>node_scrape_collector_duration_seconds gauge
 node_scrape_collector_success gauge
 node_nf_conntrack_entries gauge
@@ -311,7 +311,7 @@ scrape_duration_seconds
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> labels <span style="color:#f92672">=</span> {};
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e">// Output
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>{
+</span></span></span><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>    apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1alpha1&#34;</span>,
 </span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;ScrapeConfig&#34;</span>,
 </span></span><span style="display:flex;"><span>    metadata: {
@@ -320,7 +320,7 @@ scrape_duration_seconds
 </span></span><span style="display:flex;"><span>    },
 </span></span><span style="display:flex;"><span>    spec: {
 </span></span><span style="display:flex;"><span>        <span style="color:#75715e">// metricsPath: &#34;/metrics&#34;,
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        scheme: <span style="color:#e6db74">&#34;HTTP&#34;</span>,
+</span></span></span><span style="display:flex;"><span>        scheme: <span style="color:#e6db74">&#34;HTTP&#34;</span>,
 </span></span><span style="display:flex;"><span>        staticConfigs: [
 </span></span><span style="display:flex;"><span>            {
 </span></span><span style="display:flex;"><span>                targets: [
@@ -336,8 +336,8 @@ scrape_duration_seconds
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>Using Jsonnet requires JSON but we have <code>alerts.yml</code> as this is the preferred format for Prometheus. Conveniently the structure of <code>PrometheusRule</code> matches the format of Prometheus alerts and so we can use <a href="https://github.com/mikefarah/yq"><code>yq</code></a> to generate an equivalent JSON file:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>more rules.yml <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| yq --output-format<span style="color:#f92672">=</span>json . <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>&gt; rules.json
+</span></span></span><span style="display:flex;"><span>| yq --output-format<span style="color:#f92672">=</span>json . <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>&gt; rules.json
 </span></span></code></pre></div><p>And then reference this file when generating the JSON using Jsonnet:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-jsonnet" data-lang="jsonnet"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;foo&#34;</span>;
 </span></span><span style="display:flex;"><span>
@@ -346,7 +346,7 @@ scrape_duration_seconds
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> rules <span style="color:#f92672">=</span> <span style="color:#66d9ef">import</span> <span style="color:#e6db74">&#34;rules.json&#34;</span>;
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e">// Output
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>{
+</span></span></span><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>    apiVersion: <span style="color:#e6db74">&#34;monitoring.coreos.com/v1&#34;</span>,
 </span></span><span style="display:flex;"><span>    kind: <span style="color:#e6db74">&#34;PrometheusRule&#34;</span>,
 </span></span><span style="display:flex;"><span>    metadata: {

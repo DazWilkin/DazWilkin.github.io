@@ -143,7 +143,7 @@
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">v1alpha1</span>
 </span></span></code></pre></div><p>The first activity to extend <code>Shell-operator</code> is to write a hook. Here&rsquo;s <code>check.sh</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/env bash
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[[</span> $1 <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;--config&#34;</span> <span style="color:#f92672">]]</span> ; <span style="color:#66d9ef">then</span>
 </span></span><span style="display:flex;"><span>  cat <span style="color:#e6db74">&lt;&lt;EOF
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">configVersion: v1
@@ -179,12 +179,12 @@
 <p>This hook outputs the type of event (<code>watchEvent</code>) and the <code>Check</code>&rsquo;s <code>name</code>.</p>
 <p>Once the hook script is written, it must be <code>chmod +x {script}</code> and can then be added to the <code>Shell-operator</code> container:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Dockerfile" data-lang="Dockerfile"><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> <span style="color:#e6db74">docker.io/flant/shell-operator:v1.2.0</span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">ADD</span> checks.sh /hooks<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">ADD</span> checks.sh /hooks<span style="color:#960050;background-color:#1e0010">
 </span></span></span></code></pre></div><p>Then <code>build</code>&lsquo;ed and <code>push</code>&lsquo;ed:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>podman build <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--tag<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGISTRY<span style="color:#e6db74">}</span>/shell-operator:check <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--file<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/Dockerfile <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--tag<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGISTRY<span style="color:#e6db74">}</span>/shell-operator:check <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--file<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/Dockerfile <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>podman push <span style="color:#e6db74">${</span>REGISTRY<span style="color:#e6db74">}</span>/shell-operator:check
 </span></span></code></pre></div><p>Then the operator can be deployed to a cluster. This involves the creation of several resources:</p>
@@ -243,8 +243,8 @@
 </span></span></code></pre></div><p>The <code>ServiceAccount</code> (<code>checks</code>) requires cluster-wide permissions to <code>get</code>, <code>list</code> and <code>update</code> Custom Resources (<code>checks.ack.al</code>).</p>
 <p>Once these Resources are deployed, any of the mutations to <code>Checks</code>, will trigger the hook (and a log entry):</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl logs pod/checks <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>shell-operator <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--follow
+</span></span></span><span style="display:flex;"><span>--namespace<span style="color:#f92672">=</span>shell-operator <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--follow
 </span></span></code></pre></div><p>Yields (edited):</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;binding&#34;</span>:<span style="color:#e6db74">&#34;Monitor Ackal Checks&#34;</span>,
@@ -259,14 +259,14 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p><code>Shell-operator</code> also publishes Prometheus metrics. The <code>shell-operator</code> container exposes port <code>9115</code> and this can be queried for <code>Shell-operator</code> metrics:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl port-forward pod/check <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span>shell-operator <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>9115:9115
+</span></span></span><span style="display:flex;"><span>--namespace<span style="color:#f92672">=</span>shell-operator <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>9115:9115
 </span></span></code></pre></div><p>And, from another shell:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--get <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>localhost:9115/metrics <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| awk <span style="color:#e6db74">&#39;/^shell_operator_/ {print}&#39;</span>
+</span></span></span><span style="display:flex;"><span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--get <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>localhost:9115/metrics <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>| awk <span style="color:#e6db74">&#39;/^shell_operator_/ {print}&#39;</span>
 </span></span></code></pre></div><p>I forgot to capture example metrics but the log fields <code>binding</code>,<code>hook</code> were included a metric labels.</p>
 <p>There&rsquo;s some snobbishness towards shell scripting but, while I&rsquo;m also happy to write Go code (and Rust and Python 😀), bash is powerful and I particularly value it to script CLIs (<code>gcloud</code>, <code>kubectl</code> etc.) where the equivalent Go|Python code would be considerably more complex.</p>
 <p><code>Shell-operator</code> extends the power of bash scripts to Kubernetes Operators which are challenging to write in Go|Python. I look forward to finding further uses for <code>Shell-operator</code>.</p>

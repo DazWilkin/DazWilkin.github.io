@@ -132,7 +132,7 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>gsutil iam get gs://<span style="color:#e6db74">${</span>BUCKET<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span></span><span style="display:flex;"><span>| jq -r <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILTER<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 </span></span></code></pre></div><p>This was yielding something of the form:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>deleted:serviceAccount:service-{number-01}@gcp-sa-firestore.iam.gserviceaccount.com?uid={uid-01}
 </span></span><span style="display:flex;"><span>deleted:serviceAccount:service-{number-02}@gcp-sa-firestore.iam.gserviceaccount.com?uid={uid-02}
@@ -144,14 +144,14 @@
 <p>I knew that the Policy should only accurately include today&rsquo;s Project:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NUMBER<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>
 </span></span><span style="display:flex;"><span>    gcloud projects describe <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(projectNumber)&#34;</span><span style="color:#66d9ef">)</span>
+</span></span></span><span style="display:flex;"><span>    --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(projectNumber)&#34;</span><span style="color:#66d9ef">)</span>
 </span></span></code></pre></div><p>Let&rsquo;s say that today&rsquo;s Project Number (<code>NUMBER</code>) is <code>{number-04}</code>.</p>
 <p>Given that <code>deleted:</code> denotes deleted Service Accounts, why were Service Accounts for <code>{number-05}</code> and <code>{number-06}</code> etc. present?</p>
 <p>I realized that are owned by Projects that are (pending) deletion, <code>gcloud projects delete</code> that have not yet expunged. Per <a href="https://cloud.google.com/resource-manager/docs/creating-managing-projects#shutting_down_projects">Shutting down (deleting) projects</a>, there is a 30-day window during which you can <code>gcloud projects undelete</code>. During this period, Service Accounts aren&rsquo;t entirely deleted (not <code>deleted:</code>) either (in case they are recovered).</p>
 <p>Could I corroborate this? Yes</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud projects list <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;lifecycleState:DELETE_REQUESTED&#39;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(projectNumber)&#34;</span>
+</span></span></span><span style="display:flex;"><span>--filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;lifecycleState:DELETE_REQUESTED&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(projectNumber)&#34;</span>
 </span></span></code></pre></div><p>Yielded:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>{number-05}
 </span></span><span style="display:flex;"><span>{number-06}
@@ -159,8 +159,8 @@
 <p>I was left with one issue, how to tidy up the Bucket&rsquo;s Policy to remove the <code>deleted:serviceAccount</code> entries. For the Service Accounts in Project&rsquo;s pending deletion, the command is as usual <code>gsutil iam ch -d ${EMAIL} gs://${BUCKET}</code></p>
 <p><strong>But</strong> for the Service Accounts that are expunged, you actually need to use the fully-qualified (and undocumented!?) <code>member</code> value, i.e.:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gsutil iam ch <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d deleted:serviceAccount:<span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span>?uid<span style="color:#f92672">={</span>UID<span style="color:#f92672">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>gs://<span style="color:#e6db74">${</span>BUCKET<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>-d deleted:serviceAccount:<span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span>?uid<span style="color:#f92672">={</span>UID<span style="color:#f92672">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>gs://<span style="color:#e6db74">${</span>BUCKET<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> I continue to be unclear on the meaning of the value of <code>uid</code> that appears in these <code>deleted:</code> member entries.</p>
 </blockquote>

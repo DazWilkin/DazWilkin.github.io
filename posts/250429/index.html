@@ -51,7 +51,7 @@ Google’s Cloud Run v2 (v1 is no longer published to the googleapis repo) servi
     <meta property="article:tag" content="Cloud Run">
     <meta property="article:tag" content="FauxRPC">
     <meta property="article:tag" content="Google">
-    <meta property="article:tag" content="GRPC">
+    <meta property="article:tag" content="Grpc">
     <meta property="article:tag" content="Envoy">
     <meta property="article:tag" content="Jsonnet">
 
@@ -62,7 +62,7 @@ Google’s Cloud Run v2 (v1 is no longer published to the googleapis repo) servi
   <meta itemprop="datePublished" content="2025-04-29T00:00:00-07:00">
   <meta itemprop="dateModified" content="2025-04-29T00:00:00-07:00">
   <meta itemprop="wordCount" content="1125">
-  <meta itemprop="keywords" content="Cloud Run,FauxRPC,Google,GRPC,Envoy,Jsonnet">
+  <meta itemprop="keywords" content="Cloud Run,FauxRPC,Google,Grpc,Envoy,Jsonnet">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Configuring Envoy to proxy Google Cloud Run v2">
   <meta name="twitter:description" content="I’m building an emulator for Cloud Run. As I considered the solution, I assumed (more later) that I could implement Google’s gRPC interface for Cloud Run and use Envoy to proxy HTTP/REST requests to the gRPC service using Envoy’s gRPC-JSON transcoder.
@@ -132,31 +132,31 @@ Google’s Cloud Run v2 (v1 is no longer published to the googleapis repo) servi
 <p>Google&rsquo;s Cloud Run <code>v2</code> (<code>v1</code> is no longer published to the <a href="https://github.com/googleapis/googleapis"><code>googleapis</code></a> repo) <a href="https://github.com/googleapis/googleapis/blob/83df85b45a5d3e85b48f2571e1c8e57cdfd57e6c/google/cloud/run/v2/service.proto"><code>service.proto</code></a> includes the following <code>Services</code> definition for <code>CreateService</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Protobuf" data-lang="Protobuf"><span style="display:flex;"><span><span style="color:#f92672">package</span> google<span style="color:#f92672">.</span>cloud.run.v2;<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">service</span> Services {<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">option</span> (google.api.default_host) <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;run.googleapis.com&#34;</span>;<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">option</span> (google.api.oauth_scopes) <span style="color:#f92672">=</span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>      <span style="color:#e6db74">&#34;https://www.googleapis.com/auth/cloud-platform&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">service</span> Services {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">option</span> (google.api.default_host) <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;run.googleapis.com&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">option</span> (google.api.oauth_scopes) <span style="color:#f92672">=</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;https://www.googleapis.com/auth/cloud-platform&#34;</span>;<span style="color:#960050;background-color:#1e0010">
 </span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#75715e">// Creates a new Service in a given project and location.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">rpc</span> CreateService(CreateServiceRequest)<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>      <span style="color:#66d9ef">returns</span> (google.longrunning.Operation) {<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">option</span> (google.api.http) <span style="color:#f92672">=</span> {<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>      post<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;/v2/{parent=projects/*/locations/*}/services&#34;</span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>      body<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;service&#34;</span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    };<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">option</span> (google.api.routing) <span style="color:#f92672">=</span> {<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>      routing_parameters {<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>        field<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;parent&#34;</span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>        path_template<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;projects/*/locations/{location=*}&#34;</span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>      }<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    };<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">option</span> (google.api.method_signature) <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;parent,service,service_id&#34;</span>;<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#66d9ef">option</span> (google.longrunning.operation_info) <span style="color:#f92672">=</span> {<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>      response_type<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Service&#34;</span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>      metadata_type<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Service&#34;</span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>    };<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>  }<span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>}<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Creates a new Service in a given project and location.
+</span></span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">rpc</span> CreateService(CreateServiceRequest)<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">returns</span> (google.longrunning.Operation) {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">option</span> (google.api.http) <span style="color:#f92672">=</span> {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>      post<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;/v2/{parent=projects/*/locations/*}/services&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>      body<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;service&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>    };<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">option</span> (google.api.routing) <span style="color:#f92672">=</span> {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>      routing_parameters {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>        field<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;parent&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>        path_template<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;projects/*/locations/{location=*}&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>      }<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>    };<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">option</span> (google.api.method_signature) <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;parent,service,service_id&#34;</span>;<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">option</span> (google.longrunning.operation_info) <span style="color:#f92672">=</span> {<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>      response_type<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Service&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>      metadata_type<span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Service&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>    };<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>  }<span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span>}<span style="color:#960050;background-color:#1e0010">
 </span></span></span></code></pre></div><p>Notes:</p>
 <ol>
 <li>The package is <code>google.cloud.run.v2</code></li>
@@ -194,16 +194,16 @@ POST https://run.googleapis.com/v2/{parent}/services
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>GOOGLEAPIS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span><span style="color:#e6db74">/Projects/googleapis&#34;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>protoc <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proto_path<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>GOOGLEAPIS<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--include_imports <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--descriptor_set_out<span style="color:#f92672">=</span>cloud_run_v2_services.binpb <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>GOOGLEAPIS<span style="color:#e6db74">}</span>/google/cloud/run/v2/service.proto
+</span></span></span><span style="display:flex;"><span>--proto_path<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>GOOGLEAPIS<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--include_imports <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--descriptor_set_out<span style="color:#f92672">=</span>cloud_run_v2_services.binpb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">${</span>GOOGLEAPIS<span style="color:#e6db74">}</span>/google/cloud/run/v2/service.proto
 </span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> In my emulator, the <code>google.longrunning.Operation</code> returned by <code>CreateService</code> (and <code>DeleteService</code>) encapsulates arbitrary messages types using Google&rsquo;s Well-known Type <a href="https://protobuf.dev/reference/protobuf/google.protobuf/#any"><code>Any</code></a> and specifically the type <a href="https://protobuf.dev/reference/protobuf/google.protobuf/#string-value"><code>google.protobuf.StringValue</code></a>. For this reason, in the emulator, the <code>protoc</code> command additional references <code>google/protobuf/wrappers.proto</code> (where <code>Any</code> and <code>StringValue</code> are defined).</p>
 </blockquote>
 <p>Now that we have a descriptor, we can run <code>FauxRPC</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>fauxrpc run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--schema<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/cloud_run_v2_services.binpb
+</span></span></span><span style="display:flex;"><span>--schema<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/cloud_run_v2_services.binpb
 </span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> <code>fauxrpc run --schema</code> requires filenames ending (<code>binpb</code>, <code>json</code>, <code>yaml</code>)</p>
 </blockquote>
@@ -211,7 +211,7 @@ POST https://run.googleapis.com/v2/{parent}/services
 </span></span><span style="display:flex;"><span>Listening on http://127.0.0.1:6660
 </span></span><span style="display:flex;"><span>OpenAPI documentation: http://127.0.0.1:6660/fauxrpc/openapi.html
 </span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>Example Commands:
+</span></span></span><span style="display:flex;"><span>Example Commands:
 </span></span><span style="display:flex;"><span>$ buf curl --http2-prior-knowledge http://127.0.0.1:6660 --list-methods
 </span></span><span style="display:flex;"><span>$ buf curl --http2-prior-knowledge http://127.0.0.1:6660/<span style="color:#f92672">[</span>METHOD_NAME<span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span>2025/04/29 11:20:36 INFO Server started.
@@ -262,9 +262,9 @@ POST https://run.googleapis.com/v2/{parent}/services
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}&#34;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-plaintext <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>DATA<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span> google.cloud.run.v2.Services/CreateService
+</span></span></span><span style="display:flex;"><span>-plaintext <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>-d <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>DATA<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span> google.cloud.run.v2.Services/CreateService
 </span></span></code></pre></div><p>Yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>[] 2025/04/29 - 11:00:00 | 200 |    1.878438ms |       127.0.0.1 | POST     &#34;/google.cloud.run.v2.Services/CreateService&#34;
 </span></span><span style="display:flex;"><span>[] 2025/04/29 - 11:00:00 | 200 |    1.913159ms |       127.0.0.1 | POST     &#34;/google.cloud.run.v2.Services/CreateService&#34;
@@ -307,11 +307,11 @@ POST https://run.googleapis.com/v2/{parent}/services
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}&#34;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--ipv4 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--request POST <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;accept: application/json&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/v2/<span style="color:#e6db74">${</span>PARENT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>DATA<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span></span><span style="display:flex;"><span>--ipv4 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--request POST <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--header <span style="color:#e6db74">&#34;accept: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">${</span>ENDPOINT<span style="color:#e6db74">}</span>/v2/<span style="color:#e6db74">${</span>PARENT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>-d <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>DATA<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 </span></span></code></pre></div><p>Yields:</p>
 <pre tabindex="0"><code>[] 2025/04/29 - 11:00:00 | 200 |    4.230106ms |       127.0.0.1 | POST     &#34;/v2/projects/foo/locations/bar/services&#34;
 [] 2025/04/29 - 11:00:00 | 200 |    4.307768ms |       127.0.0.1 | POST     &#34;/v2/projects/foo/locations/bar/services&#34;
@@ -390,12 +390,12 @@ POST https://run.googleapis.com/v2/{parent}/services
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>IMAGE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;docker.io/envoyproxy/envoy:distroless-dev-d34ad17441b515757dcd449d1590f960a6c62b3a&#34;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>podman run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--name<span style="color:#f92672">=</span>envoy <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--net<span style="color:#f92672">=</span>host <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/envoy.yaml:/etc/envoy/envoy.yaml <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/cloud_run_v2_services.pb:/cloud_run_v2_services.pb <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>IMAGE<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--name<span style="color:#f92672">=</span>envoy <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--net<span style="color:#f92672">=</span>host <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/envoy.yaml:/etc/envoy/envoy.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/cloud_run_v2_services.pb:/cloud_run_v2_services.pb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">${</span>IMAGE<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><p>Notes:</p>
 <ol>
 <li><code>--net=host</code> so that it can access the host&rsquo;s FauxRPC service</li>
@@ -412,8 +412,8 @@ POST https://run.googleapis.com/v2/{parent}/services
 </blockquote>
 <p>If you use <a href="https://tailscale.com/">Tailscale</a>, you can use <a href="https://tailscale.com/kb/1312/serve"><code>tailscale serve</code></a> to expose the FauxRPC endpoint with TLS and then configure Envoy to proxy to the secure endpoint:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>tailscale serve <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--https<span style="color:#f92672">=</span><span style="color:#ae81ff">443</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>localhost:6660
+</span></span></span><span style="display:flex;"><span>--https<span style="color:#f92672">=</span><span style="color:#ae81ff">443</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>localhost:6660
 </span></span></code></pre></div><p>And Envoy:</p>
 <p><code>envoy.yaml</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span><span style="color:#f92672">admin</span>:
@@ -508,7 +508,7 @@ POST https://run.googleapis.com/v2/{parent}/services
    </li>
   
    <li class="list di">
-     <a href="/tags/grpc/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">GRPC</a>
+     <a href="/tags/grpc/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Grpc</a>
    </li>
   
    <li class="list di">

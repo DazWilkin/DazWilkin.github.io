@@ -47,7 +47,7 @@
     <meta property="article:tag" content="Google">
     <meta property="article:tag" content="Golang">
     <meta property="article:tag" content="Cloud Run">
-    <meta property="article:tag" content="GRPC">
+    <meta property="article:tag" content="Grpc">
     <meta property="article:tag" content="GRPCurl">
     <meta property="article:tag" content="Protobufs">
 
@@ -56,7 +56,7 @@
   <meta itemprop="datePublished" content="2020-03-25T00:00:00-08:00">
   <meta itemprop="dateModified" content="2020-03-25T00:00:00-08:00">
   <meta itemprop="wordCount" content="918">
-  <meta itemprop="keywords" content="Google,Golang,Cloud Run,GRPC,GRPCurl,Protobufs,Rust,ESP,Cloud-Endpoints">
+  <meta itemprop="keywords" content="Google,Golang,Cloud Run,Grpc,GRPCurl,Protobufs,Rust,ESP,Cloud-Endpoints">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="gRPC, Cloud Run & Endpoints">
   <meta name="twitter:description" content="Combining gRPC, Google Cloud Run and Google Cloud Endpoints">
@@ -130,7 +130,7 @@
 <p>I&rsquo;m always one for bash scripting <em>the shit out of</em> tutorials ;-)</p>
 <p>Assume you&rsquo;re able to <code>./deploy.sh ${PROJECT} [node|pythongolang|rust]</code> from Google&rsquo;s <a href="https://github.com/DazWilkin/grpc-cloud-run-example">gRPC in Google Cloud Run</a> repo, the following should rebuild and deploy the ESPv2 proxy under Cloud Run, configure Cloud Endpoints and route a test <code>grpcurl</code> through the proxy for you:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Assumes the grpc-calculator service has been deployed to the project</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># See ${HOME}/Projects/grpc-cloud-run-examples/</span>
 </span></span><span style="display:flex;"><span>
@@ -149,8 +149,8 @@
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> ! -d ./protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span> <span style="color:#f92672">]</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
 </span></span><span style="display:flex;"><span>  wget <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  https://github.com/protocolbuffers/protobuf/releases/download/v<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>/protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>.zip <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output-document<span style="color:#f92672">=</span>./protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>.zip
+</span></span></span><span style="display:flex;"><span>  https://github.com/protocolbuffers/protobuf/releases/download/v<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>/protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>.zip <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --output-document<span style="color:#f92672">=</span>./protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>.zip
 </span></span><span style="display:flex;"><span>  unzip -o protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>.zip -d ./protoc-<span style="color:#e6db74">${</span>VERS<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>ARCH<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
 </span></span><span style="display:flex;"><span>
@@ -158,47 +158,47 @@
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Generate the Protobuf Descriptor file</span>
 </span></span><span style="display:flex;"><span>protoc <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--include_imports <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--include_source_info <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--proto_path<span style="color:#f92672">=</span>. <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--descriptor_set_out<span style="color:#f92672">=</span>api_descriptor.pb <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>calculator.proto
+</span></span></span><span style="display:flex;"><span>--include_imports <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--include_source_info <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--proto_path<span style="color:#f92672">=</span>. <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--descriptor_set_out<span style="color:#f92672">=</span>api_descriptor.pb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>calculator.proto
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Cloud Build is here to rebuild the ESPv2 image</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> SERVICE in <span style="color:#e6db74">&#34;cloudbuild&#34;</span> <span style="color:#e6db74">&#34;endpoints&#34;</span> <span style="color:#e6db74">&#34;servicecontrol&#34;</span> <span style="color:#e6db74">&#34;servicemanagement&#34;</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
 </span></span><span style="display:flex;"><span>  gcloud services enable <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span>.googleapis.com <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Need to deploy ESP proxy in order to be able to query it for configuration in api_config.yaml</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># However, this ESP version must be redeployed before the project will work</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># See `Rebuild ESP Image` below</span>
 </span></span><span style="display:flex;"><span>gcloud run deploy <span style="color:#e6db74">${</span>ESP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--image<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;gcr.io/endpoints-release/endpoints-runtime-serverless:2&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--allow-unauthenticated <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--platform managed <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--image<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;gcr.io/endpoints-release/endpoints-runtime-serverless:2&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--allow-unauthenticated <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--platform managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Query Cloud Run for service endpoints (Proxy, Calculator)</span>
 </span></span><span style="display:flex;"><span>ESP_HOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud run services list <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metadata.name=</span><span style="color:#e6db74">${</span>ESP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span> 
+</span></span></span><span style="display:flex;"><span>  gcloud run services list <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metadata.name=</span><span style="color:#e6db74">${</span>ESP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span> 
 </span></span><span style="display:flex;"><span>ESP_HOST<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ESP_HOST#https://<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># This should have been deployed</span>
 </span></span><span style="display:flex;"><span>SRV_HOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud run services list <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metadata.name=</span><span style="color:#e6db74">${</span>SRV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span> 
+</span></span></span><span style="display:flex;"><span>  gcloud run services list <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metadata.name=</span><span style="color:#e6db74">${</span>SRV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span> 
 </span></span><span style="display:flex;"><span>SRV_HOST<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>SRV_HOST#https://<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>SRV_HOST<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Construct api_config.yaml using the Endpoints</span>
@@ -218,56 +218,56 @@
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    - selector: &#34;*&#34;
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      address: grpcs://SRV_HOST
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#39;</span> |<span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>sed <span style="color:#e6db74">&#34;s|name: ESP_HOST|name: </span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> |<span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>sed <span style="color:#e6db74">&#34;s|address: grpcs://SRV_HOST|address: grpcs://</span><span style="color:#e6db74">${</span>SRV_HOST<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>&gt; api_config.yaml
+</span></span></span><span style="display:flex;"><span>sed <span style="color:#e6db74">&#34;s|name: ESP_HOST|name: </span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> |<span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>sed <span style="color:#e6db74">&#34;s|address: grpcs://SRV_HOST|address: grpcs://</span><span style="color:#e6db74">${</span>SRV_HOST<span style="color:#e6db74">}</span><span style="color:#e6db74">|g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>&gt; api_config.yaml
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Deploy the Endpoints service</span>
 </span></span><span style="display:flex;"><span>gcloud endpoints services deploy api_descriptor.pb api_config.yaml <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Tidy</span>
 </span></span><span style="display:flex;"><span>rm api_config.yaml
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Rebuild ESP image</span>
 </span></span><span style="display:flex;"><span>CONFIG<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud endpoints configs list <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --service<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;json&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  | jq -r .<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.id<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
+</span></span></span><span style="display:flex;"><span>  gcloud endpoints configs list <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --service<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  | jq -r .<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.id<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
 </span></span><span style="display:flex;"><span>./gcloud_build_image <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-s <span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-c <span style="color:#e6db74">${</span>CONFIG<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-p <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>-s <span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>-c <span style="color:#e6db74">${</span>CONFIG<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>-p <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Redeploy the Cloud Run ESP proxy</span>
 </span></span><span style="display:flex;"><span>gcloud run deploy <span style="color:#e6db74">${</span>ESP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--image<span style="color:#f92672">=</span>gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/endpoints-runtime-serverless:<span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>CONFIG<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--allow-unauthenticated <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--image<span style="color:#f92672">=</span>gcr.io/<span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>/endpoints-runtime-serverless:<span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>CONFIG<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--allow-unauthenticated <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Permit Cloud Run services (i.e. Proxy)</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># running as ${PROJECT_NUM}-compute@</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># to invoke Cloud Run services (i.e. Calculator)</span>
 </span></span><span style="display:flex;"><span>PROJECT_NUM<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud projects describe <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(projectNumber)&#34;</span><span style="color:#66d9ef">)</span>
+</span></span></span><span style="display:flex;"><span>  gcloud projects describe <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(projectNumber)&#34;</span><span style="color:#66d9ef">)</span>
 </span></span><span style="display:flex;"><span>EMAIL<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT_NUM<span style="color:#e6db74">}</span>-compute@developer.gserviceaccount.com
 </span></span><span style="display:flex;"><span>gcloud run services add-iam-policy-binding <span style="color:#e6db74">${</span>SRV<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--member<span style="color:#f92672">=</span>serviceAccount:<span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--role<span style="color:#f92672">=</span>roles/run.invoker <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--member<span style="color:#f92672">=</span>serviceAccount:<span style="color:#e6db74">${</span>EMAIL<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--role<span style="color:#f92672">=</span>roles/run.invoker <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Test</span>
 </span></span><span style="display:flex;"><span>grpcurl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-d <span style="color:#e6db74">&#39;{&#34;first_operand&#34;: 2.0, &#34;second_operand&#34;: 3.0, &#34;operation&#34;: &#34;ADD&#34;}&#39;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>-proto calculator.proto <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>:443 Calculator.Calculate
+</span></span></span><span style="display:flex;"><span>-d <span style="color:#e6db74">&#39;{&#34;first_operand&#34;: 2.0, &#34;second_operand&#34;: 3.0, &#34;operation&#34;: &#34;ADD&#34;}&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>-proto calculator.proto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>:443 Calculator.Calculate
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Tidy</span>
 </span></span><span style="display:flex;"><span>rm api_descriptor.pb
@@ -280,27 +280,27 @@
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ESP<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;proxy&#34;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>ESP_HOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  gcloud run services list <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metadata.name=</span><span style="color:#e6db74">${</span>ESP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span> 
+</span></span></span><span style="display:flex;"><span>  gcloud run services list <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --format<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;value(status.address.url)&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;metadata.name=</span><span style="color:#e6db74">${</span>ESP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span> 
 </span></span><span style="display:flex;"><span>ESP_HOST<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>ESP_HOST#https://<span style="color:#e6db74">}</span> <span style="color:#f92672">&amp;&amp;</span> echo <span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>gcloud endpoints services delete <span style="color:#e6db74">${</span>ESP_HOST<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--quiet
+</span></span></span><span style="display:flex;"><span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--quiet
 </span></span></code></pre></div><p>And then you can optionally delete the Cloud Run services:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>SRV<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;grpc-calculator&#34;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> SERVICE in <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ESP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>SRV<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
 </span></span><span style="display:flex;"><span>  gcloud run services delete <span style="color:#e6db74">${</span>SERVICE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --quiet
+</span></span></span><span style="display:flex;"><span>  --platform<span style="color:#f92672">=</span>managed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --region<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>REGION<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --quiet
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
 </span></span></code></pre></div><p>And then &ndash; if you&rsquo;re absolutely certain you don&rsquo;t need any of its resource &ndash; sure? Whack the entire project:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud projects delete <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> --quiet
@@ -320,7 +320,7 @@
    </li>
   
    <li class="list di">
-     <a href="/tags/grpc/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">GRPC</a>
+     <a href="/tags/grpc/" class="link f5 grow br-pill ba ph3 pv2 mb2 dib black sans-serif no-underline">Grpc</a>
    </li>
   
    <li class="list di">

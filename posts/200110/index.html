@@ -135,36 +135,36 @@
 <h3 id="oauth2l"><a href="https://github.com/google/oauth2l">oauth2l</a></h3>
 <p>Google provides a command-line tool to authenticate and retrieve OAuth2 access tokens (essentially implementing the flow noted for Gmail above). This tool can be used to generate an access token using the OAuth client that was generated above to authenticate us to the Google Fit API. I go Docker but you do you:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm --interactive --tty <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>SECRET<span style="color:#e6db74">}</span>:/secret/client_secret.json <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>gcr.io/oauth2l/oauth2l@sha256:166a23963f8e58c51039876e5471a6a471c6dfb6895c5e4085987c3a4e822e87 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>fetch <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --credentials<span style="color:#f92672">=</span>/secret/client_secret.json <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --scope<span style="color:#f92672">=</span>fitness.activity.read,fitness.body.read,fitness.location.read
+</span></span></span><span style="display:flex;"><span>--rm --interactive --tty <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>SECRET<span style="color:#e6db74">}</span>:/secret/client_secret.json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>gcr.io/oauth2l/oauth2l@sha256:166a23963f8e58c51039876e5471a6a471c6dfb6895c5e4085987c3a4e822e87 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>fetch <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --credentials<span style="color:#f92672">=</span>/secret/client_secret.json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --scope<span style="color:#f92672">=</span>fitness.activity.read,fitness.body.read,fitness.location.read
 </span></span></code></pre></div><p><strong>NB</strong> <code>${SECRET}</code> is the path to the <code>client_secret.json</code> that we created previously.</p>
 <p>This command fetches the token using the OAuth client and scopes it to read-only requests. Exactly what we&rsquo;ll need below. It will prompt you to open a URL, accept permission to use the API and then provide you with a code that you must copy-paste back to the oauth2l command. All being well, you&rsquo;ll get an access token.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>TOKEN<span style="color:#f92672">=[[</span>THE-ACCESS-TOKEN-PRODUCED<span style="color:#f92672">]]</span>
 </span></span></code></pre></div><h3 id="curl">Curl</h3>
 <p>Let&rsquo;s ensure <em>alles ist in Ordnung</em>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources&#34;</span>
+</span></span></span><span style="display:flex;"><span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources&#34;</span>
 </span></span></code></pre></div><p>Should return your list of Google Fit data sources. There may be many. If you&rsquo;ve not already, I recommend installing <a href="https://stedolan.github.io/jq/"><code>jq</code></a></p>
 <p><strong>NB</strong> I learned this week that&rsquo;s there a YAML-based sibling called <a href="https://github.com/mikefarah/yq"><code>yq</code></a> that I must explore!</p>
 <p>Let&rsquo;s refine those results:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl
 </span></span><span style="display:flex;"><span>--silent
 </span></span><span style="display:flex;"><span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources&#34;</span> |<span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>jq <span style="color:#e6db74">&#39;.dataSource | length&#39;</span>
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources&#34;</span> |<span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>jq <span style="color:#e6db74">&#39;.dataSource | length&#39;</span>
 </span></span></code></pre></div><p><strong>NB</strong> I&rsquo;ve added <code>--silent</code> to curl to minimize its output</p>
 <p>The above should count your data sources. I have 220!!</p>
 <p>What data types do we have?</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl
 </span></span><span style="display:flex;"><span>--silent
 </span></span><span style="display:flex;"><span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources&#34;</span> |<span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> jq <span style="color:#e6db74">&#39;.dataSource | map(.dataType.name) | unique&#39;</span>
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources&#34;</span> |<span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> jq <span style="color:#e6db74">&#39;.dataSource | map(.dataType.name) | unique&#39;</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;com.google.active_minutes&#34;</span>,
 </span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;com.google.activity.segment&#34;</span>,
@@ -185,8 +185,8 @@
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl
 </span></span><span style="display:flex;"><span>--silent
 </span></span><span style="display:flex;"><span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources&#34;</span> |<span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> jq -r <span style="color:#e6db74">&#39;.dataSource|map(select(.dataType.name==&#34;com.google.step_count.delta&#34;))|.[].dataStreamId&#39;</span>
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources&#34;</span> |<span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> jq -r <span style="color:#e6db74">&#39;.dataSource|map(select(.dataType.name==&#34;com.google.step_count.delta&#34;))|.[].dataStreamId&#39;</span>
 </span></span><span style="display:flex;"><span>...
 </span></span><span style="display:flex;"><span>derived:com.google.step_count.delta:com.google.android.gms:merge_step_deltas
 </span></span><span style="display:flex;"><span>...
@@ -198,9 +198,9 @@
 </span></span><span style="display:flex;"><span>END<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>date --date<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;TZ=&#34;America/Los_Angeles&#34; 10 January 2020&#39;</span> +<span style="color:#e6db74">&#34;%s%N&#34;</span><span style="color:#66d9ef">)</span>
 </span></span><span style="display:flex;"><span>DATASET<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>START<span style="color:#e6db74">}</span><span style="color:#e6db74">-</span><span style="color:#e6db74">${</span>END<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 </span></span><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources/</span><span style="color:#e6db74">${</span>DATASOURCE<span style="color:#e6db74">}</span><span style="color:#e6db74">/datasets/</span><span style="color:#e6db74">${</span>DATASET<span style="color:#e6db74">}</span><span style="color:#e6db74">?limit=</span><span style="color:#e6db74">${</span>LIMIT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span></span><span style="display:flex;"><span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources/</span><span style="color:#e6db74">${</span>DATASOURCE<span style="color:#e6db74">}</span><span style="color:#e6db74">/datasets/</span><span style="color:#e6db74">${</span>DATASET<span style="color:#e6db74">}</span><span style="color:#e6db74">?limit=</span><span style="color:#e6db74">${</span>LIMIT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 </span></span></code></pre></div><p>Let&rsquo;s unpack that:</p>
 <ul>
 <li>We&rsquo;ll limit the number of results to the first 500</li>
@@ -210,10 +210,10 @@
 </ul>
 <p>And, to pull the values out for all the returned points:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources/</span><span style="color:#e6db74">${</span>DATASOURCE<span style="color:#e6db74">}</span><span style="color:#e6db74">/datasets/</span><span style="color:#e6db74">${</span>DATASET<span style="color:#e6db74">}</span><span style="color:#e6db74">?limit=</span><span style="color:#e6db74">${</span>LIMIT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> |<span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>jq .point<span style="color:#f92672">[]</span>.value<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.fpVal
+</span></span></span><span style="display:flex;"><span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;https://www.googleapis.com/fitness/v1/users/me/dataSources/</span><span style="color:#e6db74">${</span>DATASOURCE<span style="color:#e6db74">}</span><span style="color:#e6db74">/datasets/</span><span style="color:#e6db74">${</span>DATASET<span style="color:#e6db74">}</span><span style="color:#e6db74">?limit=</span><span style="color:#e6db74">${</span>LIMIT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> |<span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>jq .point<span style="color:#f92672">[]</span>.value<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.fpVal
 </span></span></code></pre></div><h3 id="apis-explorer">APIs Explorer</h3>
 <p>All of the above are available using Google&rsquo;s excellent <a href="https://developers.google.com/apis-explorer">APIs Explorer</a>.</p>
 <p>Specifically, for the <a href="https://developers.google.com/fit/rest/v1/reference/">Google Fit APIs</a></p>
@@ -273,11 +273,11 @@
 </span></span></code></pre></div><p>I recommend saving the JavaScript in a file called <code>index.html</code> in a directory called <code>html</code>. Then, you can use Nginx to host this content easily:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PORT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;80&#34;</span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--name nginx <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm --interactive --tty <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--publish<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span>:80 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/html:/usr/share/nginx/html:ro <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>nginx
+</span></span></span><span style="display:flex;"><span>--name nginx <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--rm --interactive --tty <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--publish<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PORT<span style="color:#e6db74">}</span>:80 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/html:/usr/share/nginx/html:ro <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>nginx
 </span></span></code></pre></div><p>Then browse to <code>http://localhost:${PORT}</code> and you should be able to click the button to <code>authorize and load</code> and then <code>execute</code> to run the command.</p>
 <p>Because output is to the console, you&rsquo;ll need to open your browser&rsquo;s developer tools to observe the results.</p>
 <p>That&rsquo;s all!</p>

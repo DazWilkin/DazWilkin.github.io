@@ -169,15 +169,15 @@
 <p>To corroborate my expectations, the following <code>kubectl</code> commands represent mostly (!) what I want to monitor:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Number of Pods</span>
 </span></span><span style="display:flex;"><span>kubectl get pods <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--all-namespaces <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;.items|length&#39;</span>
+</span></span></span><span style="display:flex;"><span>--all-namespaces <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>| jq -r <span style="color:#e6db74">&#39;.items|length&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Number of Containers</span>
 </span></span><span style="display:flex;"><span>kubectl get pods <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--all-namespaces <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r <span style="color:#e6db74">&#39;[.items[].spec.containers|length]|add&#39;</span>
+</span></span></span><span style="display:flex;"><span>--all-namespaces <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--output<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>| jq -r <span style="color:#e6db74">&#39;[.items[].spec.containers|length]|add&#39;</span>
 </span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> The number of container is the desired (spec&rsquo;d) number of containers whereas the policy (below) filters on containers that are <code>running</code></p>
 </blockquote>
@@ -186,35 +186,35 @@
 </span></span><span style="display:flex;"><span>EXPECTED<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Number of Pods</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>gcloud alpha monitoring policies create <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--display-name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--documentation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Unexpected number of Pods running on GKE cluster&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--notification-channels<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>CHANNELS<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--condition-display-name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--condition-filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;resource.type=\&#34;prometheus_target\&#34; metric.type=\&#34;prometheus.googleapis.com/kubelet_running_pods/gauge\&#34;&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--duration<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0s&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--aggregation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{\&#34;alignmentPeriod\&#34;:\&#34;600s\&#34;, \&#34;crossSeriesReducer\&#34;:\&#34;REDUCE_NONE\&#34;, \&#34;perSeriesAligner\&#34;: \&#34;ALIGN_MIN\&#34;}&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--if<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&gt;</span><span style="color:#e6db74">${</span>EXPECTED<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--trigger-count<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--combiner<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;OR&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--enabled <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--display-name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--documentation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Unexpected number of Pods running on GKE cluster&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--notification-channels<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>CHANNELS<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--condition-display-name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--condition-filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;resource.type=\&#34;prometheus_target\&#34; metric.type=\&#34;prometheus.googleapis.com/kubelet_running_pods/gauge\&#34;&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--duration<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0s&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--aggregation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{\&#34;alignmentPeriod\&#34;:\&#34;600s\&#34;, \&#34;crossSeriesReducer\&#34;:\&#34;REDUCE_NONE\&#34;, \&#34;perSeriesAligner\&#34;: \&#34;ALIGN_MIN\&#34;}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--if<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&gt;</span><span style="color:#e6db74">${</span>EXPECTED<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--trigger-count<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--combiner<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;OR&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--enabled <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><p>And:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;gke-containers&#34;</span>
 </span></span><span style="display:flex;"><span>EXPECTED<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;...&#34;</span> <span style="color:#75715e"># Number of containers</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>gcloud alpha monitoring policies create <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--display-name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--documentation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Unexpected number of Containers running on GKE cluster&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--notification-channels<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>CHANNELS<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--condition-display-name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--condition-filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;resource.type=\&#34;prometheus_target\&#34; metric.type=\&#34;prometheus.googleapis.com/kubelet_running_containers/gauge\&#34; metric.labels.container_state=\&#34;running\&#34;&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--duration<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0s&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--aggregation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{\&#34;alignmentPeriod\&#34;:\&#34;600s\&#34;, \&#34;crossSeriesReducer\&#34;:\&#34;REDUCE_NONE\&#34;, \&#34;perSeriesAligner\&#34;: \&#34;ALIGN_MIN\&#34;}&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--if<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&gt;</span><span style="color:#e6db74">${</span>EXPECTED<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--trigger-count<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--combiner<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;OR&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--enabled <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--display-name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--documentation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Unexpected number of Containers running on GKE cluster&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--notification-channels<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>CHANNELS<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--condition-display-name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--condition-filter<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;resource.type=\&#34;prometheus_target\&#34; metric.type=\&#34;prometheus.googleapis.com/kubelet_running_containers/gauge\&#34; metric.labels.container_state=\&#34;running\&#34;&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--duration<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0s&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--aggregation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;{\&#34;alignmentPeriod\&#34;:\&#34;600s\&#34;, \&#34;crossSeriesReducer\&#34;:\&#34;REDUCE_NONE\&#34;, \&#34;perSeriesAligner\&#34;: \&#34;ALIGN_MIN\&#34;}&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--if<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&gt;</span><span style="color:#e6db74">${</span>EXPECTED<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--trigger-count<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--combiner<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;OR&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--enabled <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> I should probably revise my deployment script&rsquo;s <code>gcloud alpha monitoring policies create</code> commands to use <a href="https://cloud.google.com/sdk/gcloud/reference/alpha/monitoring/policies/create#--policy-from-file"><code>--from-file</code></a> to specify the Policy as YAML completely.</p>
 </blockquote>

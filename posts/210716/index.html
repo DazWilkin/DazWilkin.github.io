@@ -370,9 +370,9 @@
 <p>I really enjoy debugging JavaScript and (Chrome&rsquo;s) DevTools are excellent. My only gripe is that, with my frequent code changes and page refreshes, breakpoints stick to line numbers rather than code and so I was forever moving breakpoints to stick to e.g. the first statement after <code>then</code> and <code>catch</code> blocks:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JavaScript" data-lang="JavaScript"><span style="display:flex;"><span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">DoesSomething</span>().<span style="color:#a6e22e">then</span>((<span style="color:#a6e22e">data</span>)=&gt;{
 </span></span><span style="display:flex;"><span>    ... <span style="color:#75715e">// &lt;== I want a sticky breakpoint here
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}).<span style="color:#66d9ef">catch</span>((<span style="color:#a6e22e">error</span>)=&gt;{
+</span></span></span><span style="display:flex;"><span>}).<span style="color:#66d9ef">catch</span>((<span style="color:#a6e22e">error</span>)=&gt;{
 </span></span><span style="display:flex;"><span>    ... <span style="color:#75715e">// &lt;== I want a sticky breakpoint here
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>});
+</span></span></span><span style="display:flex;"><span>});
 </span></span></code></pre></div><h2 id="testing">Testing</h2>
 <p>Unlike with Golang, the JavaScript testing is mostly non-existent and this gives me pause. Because it depends on the Golang backend handlers, the Golang server will need to be available for the JavaScript tests.</p>
 <p>Interestingly, considering how to unit test, was what helped me identify how better to structure the code. As described above, I renamed scripts to reflect the hosting HTML page (i.e. <code>root.js</code> in <code>root.html</code>) and then I realized that <code>root.js</code> should not contain <code>CreateCheckoutSession</code> since this functionality was app (not page) functionality. This got me to the point where I could only test the JavaScript <code>CreateCheckoutSession</code> function. Assuming I had a server though, I&rsquo;d still want to establish Stripe Price, Customer resources.</p>
@@ -383,18 +383,18 @@
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>DIGEST<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;sha256:2c89715f325b1ec80b5742c50f0bb6f6844e49da73aa7d87effe4a992f09927f&#34;</span> <span style="color:#75715e"># v1.6.4</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--interactive --tty --rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span>/.config/stripe/config.toml:/root/.config/stripe/config.toml <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>stripe/stripe-cli@<span style="color:#e6db74">${</span>DIGEST<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--interactive --tty --rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>HOME<span style="color:#e6db74">}</span>/.config/stripe/config.toml:/root/.config/stripe/config.toml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>stripe/stripe-cli@<span style="color:#e6db74">${</span>DIGEST<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><p>One small trick is to use the flag <code>--color=off</code> in order to get it to generate valid JSON output that can be filtered through e.g. <code>jq</code></p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># By default stripe&#39;s CLI does not output valid JSON</span>
 </span></span><span style="display:flex;"><span>stripe products list  <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq .data<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.id
+</span></span></span><span style="display:flex;"><span>| jq .data<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.id
 </span></span><span style="display:flex;"><span>parse error: Invalid numeric literal at line 2, column <span style="color:#ae81ff">4</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Using the flag `--color=off` results in valid JSON</span>
 </span></span><span style="display:flex;"><span>stripe products list --color<span style="color:#f92672">=</span>off <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq .data<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.id
+</span></span></span><span style="display:flex;"><span>| jq .data<span style="color:#f92672">[</span>0<span style="color:#f92672">]</span>.id
 </span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;prod_...&#34;</span>
 </span></span></code></pre></div><h2 id="stripe-dashboard-and-test-data-excellent">Stripe Dashboard and Test data (Excellent)</h2>
 <p>Stripe&rsquo;s developer <a href="https://dashboard.stripe.com/test/">test</a><a href="https://dashboard.stripe.com/">dashboard</a> is really excellent, fully functional and mostly intuitive.</p>

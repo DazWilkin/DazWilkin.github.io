@@ -131,7 +131,7 @@
 </span></span><span style="display:flex;"><span>OUTPUT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>BUCKET<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>PREFIX<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>gcloud storage ls gs://<span style="color:#e6db74">${</span>OUTPUT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--recursive
+</span></span></span><span style="display:flex;"><span>--recursive
 </span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> Google is (finally!) adding Cloud Storage functionality to <code>gcloud</code> and there&rsquo;s now a <a href="https://cloud.google.com/sdk/gcloud/reference/storage"><code>storage</code> command group</a> which is functionally equivalent to a subset of <code>gsutil</code> and saves some of the impedance mismatch in having to use <code>gcloud</code> for everything other than storage. I wanted to be able to use <a href="https://cloud.google.com/sdk/gcloud/reference/storage/objects/list"><code>gcloud storage objects list</code></a> instead of the quirky <a href="https://cloud.google.com/sdk/gcloud/reference/storage/ls"><code>gcloud storage ls</code></a> in the above but <code>gcloud storage objects list</code> doesn&rsquo;t work (correctly).</p>
 </blockquote>
@@ -154,7 +154,7 @@
 </blockquote>
 <p>Here&rsquo;s an example exporting (all) collections using the flag:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud firestore export gs://<span style="color:#e6db74">${</span>OUTPUT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--collection-ids<span style="color:#f92672">={</span>FOO<span style="color:#f92672">}</span>,<span style="color:#f92672">{</span>BAR<span style="color:#f92672">}</span>,...<span style="color:#f92672">{</span>BAZ<span style="color:#f92672">}</span>
+</span></span></span><span style="display:flex;"><span>--collection-ids<span style="color:#f92672">={</span>FOO<span style="color:#f92672">}</span>,<span style="color:#f92672">{</span>BAR<span style="color:#f92672">}</span>,...<span style="color:#f92672">{</span>BAZ<span style="color:#f92672">}</span>
 </span></span></code></pre></div><p>Repeating the previous <code>gcloud storage</code> command against this export yields differently structured output:</p>
 <pre tabindex="0"><code class="language-command" data-lang="command">{OUTPUT}/{PREFIX}.overall_export_metadata
 {OUTPUT}/all_namespaces/kind_{FOO}/all_namespaces_kind_{FOO}.export_metadata
@@ -170,7 +170,7 @@
 <p><span style="color:red">IMPORTANT CAVEAT</span> Google&rsquo;s documentation for <a href="https://firebase.google.com/docs/firestore/manage-data/export-import#export_specific_collections">exporting specific collections</a> is ambiguous. It refers to &ldquo;collection groups&rdquo; and says that &ldquo;The collection group includes all collections and subcollections (at any path) with the specified collection ID&rdquo;.</p>
 <p>If you <code>gcloud firestore export --collection-ids={FOO}</code> and <code>{FOO}</code> contains subcollections, the subscollections are <span style="color:red">not</span> exported. The documentation references <code>[SUBCOLLECTION_ID_1]</code> in its example command but does not explain how a subcollection is referenced. Through trial and error, it appears that you must specify the subcollections (I&rsquo;ve only tried subcollections of collections not anything deeper) as if there were root collections, i.e. if <code>{FOO}</code> contains a subcollection <code>{BAR}</code>, then you can:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud firestore exporter gs://<span style="color:#e6db74">${</span>OUTPUT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--collection-ids<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>FOO<span style="color:#e6db74">}</span>,<span style="color:#e6db74">${</span>BAR<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--collection-ids<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>FOO<span style="color:#e6db74">}</span>,<span style="color:#e6db74">${</span>BAR<span style="color:#e6db74">}</span>
 </span></span></code></pre></div></blockquote>
 <p>In my &ldquo;thing&rdquo; Firestore database, document IDs are all computed (from other fields in the document). I don&rsquo;t use autogenerated fields. It&rsquo;s unclear whether this would impact the effectiveness of imports.</p>
 <p>In a similar vein, I&rsquo;ve decided to be more deterministic with the output path prefixes of <code>gcloud firestore export</code>. In the above scenarios, where I&rsquo;ve provided a bucket (<code>${BUCKET}</code>) to the export i.e.
@@ -180,7 +180,7 @@
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>PREFIX<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>date +%y%m%d<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>gcloud firestore export gs://<span style="color:#e6db74">${</span>BUCKET<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>PREFIX<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--collection-ids<span style="color:#f92672">={</span>FOO<span style="color:#f92672">}</span>,<span style="color:#f92672">{</span>BAR<span style="color:#f92672">}</span>...<span style="color:#f92672">{</span>BAZ<span style="color:#f92672">}</span>
+</span></span></span><span style="display:flex;"><span>--collection-ids<span style="color:#f92672">={</span>FOO<span style="color:#f92672">}</span>,<span style="color:#f92672">{</span>BAR<span style="color:#f92672">}</span>...<span style="color:#f92672">{</span>BAZ<span style="color:#f92672">}</span>
 </span></span></code></pre></div><p>That&rsquo;s all!</p>
 <ul class="pa0">
   

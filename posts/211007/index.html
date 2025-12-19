@@ -126,15 +126,15 @@
 </span></span></code></pre></div><p>Initially, I followed the <a href="https://github.com/sigstore/cosign#quick-start">Quick Start</a> but, after chatting on the team&rsquo;s Slack <a href="https://sigstore.slack.com">channel</a>, I was referred to Luke Hinds&rsquo; <a href="https://github.com/lukehinds/sigstore-the-hard-way">Sigstore The Hard Way</a> and specifically <a href="https://github.com/lukehinds/sigstore-the-hard-way/blob/main/docs/10-sign-container.md">Sign Container</a> which importantly uses <code>COSIGN_EXPERIMENTAL=1</code> and GitHub&rsquo;s secret squirrel OIDC federation functionality.</p>
 <p>All I needed was:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>COSIGN_EXPERIMENTAL<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>cosign sign <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
+</span></span></span><span style="display:flex;"><span>cosign sign <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
 </span></span></code></pre></div><p>This command uses some flag default values and is equivalent to:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>COSIGN_EXPERIMENTAL<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>cosign sign <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -oidc-issuer https://oauth2.sigstore.dev/auth <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -fulcio-url https://fulcio.sigstore.dev <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -rekor-url https://rekor.sigstore.dev <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
+</span></span></span><span style="display:flex;"><span>cosign sign <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  -oidc-issuer https://oauth2.sigstore.dev/auth <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  -fulcio-url https://fulcio.sigstore.dev <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  -rekor-url https://rekor.sigstore.dev <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
 </span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> <code>3e44...</code> is the image&rsquo;s tag and represents the <code>git rev-parse HEAD</code> of the repo when the image was built from it. As it occur below, the image&rsquo;s SHA-256 is <code>c26f799823766c54155653cb709df811b7ae73a68ba504a4da2e57153bcf4c40</code></p>
 </blockquote>
@@ -164,9 +164,9 @@
 <p>We can query the GitHub REST API for Container Registry resources.</p>
 <p>I&rsquo;ve skipped a step below and, after listing all the versions in the repository <code>ghcr.io/dazwilkin/gcp-oidc-token-proxy</code>, I&rsquo;m <code>GET</code>&lsquo;ting the version (<code>864123</code>) that happens to correspond to the signature uploaded by <code>cosign sign</code> in the previous step:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Accept: application/vnd.github.v3+json&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://api.github.com/users/dazwilkin/packages/container/gcp-oidc-token-proxy/versions/8641325
+</span></span></span><span style="display:flex;"><span>--header <span style="color:#e6db74">&#34;Authorization: Bearer </span><span style="color:#e6db74">${</span>TOKEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--header <span style="color:#e6db74">&#34;Accept: application/vnd.github.v3+json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>https://api.github.com/users/dazwilkin/packages/container/gcp-oidc-token-proxy/versions/8641325
 </span></span></code></pre></div><p>Yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;id&#34;: </span><span style="color:#ae81ff">8641325</span>,
@@ -215,14 +215,14 @@
 <p><strong>NOTE</strong> I give <code>cosign verify</code> the original container image. Presumably it looks for an articate with a specific tag (<code>sha256-${HASH}.sig</code>) and uses this for the verification. I guess if I delete that artifact, <code>cosign verify</code> should then fail?</p>
 </blockquote>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>COSIGN_EXPERIMENTAL<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>cosign verify  <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
+</span></span></span><span style="display:flex;"><span>cosign verify  <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c
 </span></span></code></pre></div><p>Yielding:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>No TUF root installed, using embedded CA certificate.
 </span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>No TUF root installed, using embedded rekor key
+</span></span></span><span style="display:flex;"><span>No TUF root installed, using embedded rekor key
 </span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
-</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span>Verification for ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c --
+</span></span></span><span style="display:flex;"><span>Verification for ghcr.io/dazwilkin/gcp-oidc-token-proxy:3e448c5ffe4c28093ea7cae8d6693abeec1ce87c --
 </span></span><span style="display:flex;"><span>The following checks were performed on each of these signatures:
 </span></span><span style="display:flex;"><span>  - The cosign claims were validated
 </span></span><span style="display:flex;"><span>  - Existence of the claims in the transparency log was verified offline
@@ -279,9 +279,9 @@
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go install github.com/sigstore/rekor/cmd/rekor-cli@latest
 </span></span></code></pre></div><p>We can:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>rekor-cli get <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--log-index<span style="color:#f92672">=</span><span style="color:#ae81ff">756105</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r .
+</span></span></span><span style="display:flex;"><span>--format<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--log-index<span style="color:#f92672">=</span><span style="color:#ae81ff">756105</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>| jq -r .
 </span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> There&rsquo;s that <code>logIndex</code> value</p>
 </blockquote>
@@ -319,9 +319,9 @@
 </blockquote>
 <p>And:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>rekor-cli get <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--format<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--uuid<span style="color:#f92672">=</span>f9bfb33439ed512126658a1354999b5be662da3e3d69c732fc72e09de492ce60 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq -r .
+</span></span></span><span style="display:flex;"><span>--format<span style="color:#f92672">=</span>json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--uuid<span style="color:#f92672">=</span>f9bfb33439ed512126658a1354999b5be662da3e3d69c732fc72e09de492ce60 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>| jq -r .
 </span></span></code></pre></div><p>Yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;RekordObj&#34;: </span>{
@@ -342,10 +342,10 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>Rekor exposes a REST API, we can perform the above command using it:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--header <span style="color:#e6db74">&#34;Accept: application/json&#34;</span>  <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--silent <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>https://rekor.sigstore.dev/api/v1/log/entries/f9bfb33439ed512126658a1354999b5be662da3e3d69c732fc72e09de492ce60 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| jq .
+</span></span></span><span style="display:flex;"><span>--header <span style="color:#e6db74">&#34;Accept: application/json&#34;</span>  <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--silent <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>https://rekor.sigstore.dev/api/v1/log/entries/f9bfb33439ed512126658a1354999b5be662da3e3d69c732fc72e09de492ce60 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>| jq .
 </span></span></code></pre></div><p>Yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-YAML" data-lang="YAML"><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;f9bfb33439ed512126658a1354999b5be662da3e3d69c732fc72e09de492ce60&#34;: </span>{

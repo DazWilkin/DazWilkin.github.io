@@ -141,7 +141,7 @@
 <p>There are other ways to achieve this result in bash that may be more elegant or efficient but, for simplicity and consistency, we&rsquo;ll use <code>echo</code> throughout</p>
 <p>Then, rather than calculate the roots in a single step, we&rsquo;ll perform each constituent calculation in its own step, outputting these, intermediate results to a file:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/env bash
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Quadratic: </span><span style="color:#66d9ef">$(</span>cat a<span style="color:#66d9ef">)</span><span style="color:#e6db74">x²+</span><span style="color:#66d9ef">$(</span>cat b<span style="color:#66d9ef">)</span><span style="color:#e6db74">x+</span><span style="color:#66d9ef">$(</span>cat c<span style="color:#66d9ef">)</span><span style="color:#e6db74">s=0&#34;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>cat b<span style="color:#66d9ef">)</span><span style="color:#e6db74"> * </span><span style="color:#66d9ef">$(</span>cat b<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span> | bc -l &gt; b2
@@ -178,112 +178,112 @@
 <p>But, there&rsquo;s a unique location for data in Cloud Build that corresponds to the VM&rsquo;s filing system and a unique location in that filing system called <code>/workspace</code>. The <code>/workspace</code> directory receives source files that you designate when you trigger a build with <code>gcloud builds submit ..</code> (or equivalent) <strong>and</strong> by default, each step mounts <code>/workspace</code> as the container&rsquo;s working directory.</p>
 <p>The latter is similar to assuming that every step does something of the form:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span>/workspace:/workspace some-image <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>...
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span>/workspace:/workspace some-image <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>...
 </span></span></code></pre></div><p>This is important because the filing system is the only location within the build process where you can persist data.</p>
 <p>You may read data from environment variables but environment variable updates will <strong>not</strong> persist across Cloud Build steps.</p>
 <p>You may read and write data to arbitrary out-of-process locations e.g. via an API, SQL database etc.</p>
 <p>What does this mean for our Rube Goldberg calculator? It means that we will recreate our inputs (<code>a</code>,<code>b</code> and <code>c</code>) automatically in Cloud Build when we perform the <code>gcloud builds submit ...</code> by including <code>${PWD}</code> or (more succinctly) <code>.</code>, i.e. <code>gcloud builds submit ${PWD} ...</code> and it means we can create files corresponding to the intermediate steps as a way to persist these values through the steps of the calculation.</p>
 <p>Let&rsquo;s create a local (not Cloud Build) bash script that uses Docker images for each of our steps:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/env bash
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;Quadratic: $(cat a)x²+$(cat b)x+$(cat c)s=0&#34;&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;Quadratic: $(cat a)x²+$(cat b)x+$(cat c)s=0&#34;&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;$(cat b) * $(cat b)&#34; | bc -l &gt; b2&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;$(cat b) * $(cat b)&#34; | bc -l &gt; b2&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;4 * $(cat a) * $(cat c)&#34; | bc -l &gt; 4ac&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;4 * $(cat a) * $(cat c)&#34; | bc -l &gt; 4ac&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;$(cat b2) - $(cat 4ac)&#34; | bc -l &gt; b2-4ac&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;$(cat b2) - $(cat 4ac)&#34; | bc -l &gt; b2-4ac&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;rm b2 4ac&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;rm b2 4ac&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;sqrt($(cat b2-4ac))&#34; | bc -l &gt; sqrt&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;sqrt($(cat b2-4ac))&#34; | bc -l &gt; sqrt&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;rm b2-4ac&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;rm b2-4ac&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;-($(cat b))+$(cat sqrt)&#34; | bc -l &gt; add&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;-($(cat b))+$(cat sqrt)&#34; | bc -l &gt; add&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;-($(cat b))-$(cat sqrt)&#34; | bc -l &gt; sub&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;-($(cat b))-$(cat sqrt)&#34; | bc -l &gt; sub&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;rm sqrt&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;rm sqrt&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;2 * $(cat a)&#34; | bc -l &gt; 2a&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;2 * $(cat a)&#34; | bc -l &gt; 2a&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;$(cat add)/$(cat 2a)&#34; | bc -l &gt; root1&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;$(cat add)/$(cat 2a)&#34; | bc -l &gt; root1&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;$(cat sub)/$(cat 2a)&#34; | bc -l &gt; root2&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;$(cat sub)/$(cat 2a)&#34; | bc -l &gt; root2&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;rm 2a add sub&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;rm 2a add sub&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Complete</span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;Roots are: $(cat root1); $(cat root2)&#34;&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;echo &#34;Roots are: $(cat root1); $(cat root2)&#34;&#39;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>docker run <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--rm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>busybox ash -c <span style="color:#e6db74">&#39;rm root1 root2&#39;</span>
+</span></span></span><span style="display:flex;"><span>--rm <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--volume<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>:/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--workdir<span style="color:#f92672">=</span>/workspace <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>busybox ash -c <span style="color:#e6db74">&#39;rm root1 root2&#39;</span>
 </span></span></code></pre></div><p>As before, you should be able to paste these commands into your shell to calculate the roots.</p>
 <p>We&rsquo;re using <code>busybox</code> here as a small container image that includes many useful Linux utilities including <code>bc</code>.</p>
 <p>You should see the same <code>bc</code> commands as before.</p>
@@ -296,10 +296,10 @@
 </span></span><span style="display:flex;"><span>gcloud projects create <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>gcloud beta billing projects link <span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--billing-account<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>BILLING<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>gcloud services enable cloudbuild.googleapis.com <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> To get your billing account, you can <code>BILLING=$(gcloud alpha billing accounts list --format=&quot;value(name)&quot;)</code></p>
 </blockquote>
@@ -388,8 +388,8 @@
 </span></span></code></pre></div><p>And then we can submit the calculation.</p>
 <p>Don&rsquo;t forget to create <code>a</code>, <code>b</code> and <code>c</code> in your hosts current working directory:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud builds submit <span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--config<span style="color:#f92672">=</span>./cloudbuild.yaml <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--config<span style="color:#f92672">=</span>./cloudbuild.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--project<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PROJECT<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><p>For me, this yields:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>BUILD
 </span></span><span style="display:flex;"><span>Starting Step #0
@@ -508,10 +508,10 @@
 </blockquote>
 <p>And:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gsutil cat gs://<span style="color:#f92672">[[</span>YOUR-BUCKET<span style="color:#f92672">]]</span>/root1 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| md5sum <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| head --bytes<span style="color:#f92672">=</span><span style="color:#ae81ff">32</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| xxd -revert -plain <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>| base64
+</span></span></span><span style="display:flex;"><span>| md5sum <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>| head --bytes<span style="color:#f92672">=</span><span style="color:#ae81ff">32</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>| xxd -revert -plain <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>| base64
 </span></span><span style="display:flex;"><span>uUm4DK1+rjVWdjkIQxj8qQ<span style="color:#f92672">==</span>
 </span></span></code></pre></div><blockquote>
 <p><strong>NOTE</strong> importantly, when using bash&rsquo;s <code>md5sum</code> utility we get a hexdump value that must be (using <code>xxd</code>) reverted to binary</p>

@@ -324,7 +324,7 @@ apiVersion: apiextensions.k8s.io/v1 kind: CustomResourceDefinition metadata: nam
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CRD as YAML
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> document_spec <span style="color:#f92672">=</span> DeploymentConfig::crd();
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> document_spec <span style="color:#f92672">=</span> DeploymentConfig::crd();
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">println!</span>(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>,serde_yaml::to_string(<span style="color:#f92672">&amp;</span>document_spec).unwrap());
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>Yields:</p>
@@ -393,21 +393,21 @@ apiVersion: apiextensions.k8s.io/v1 kind: CustomResourceDefinition metadata: nam
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">subresources</span>: {}
 </span></span></code></pre></div><p>You can then apply this to a (sacrificial) cluster and try to create some Custom Resources (CRs) against it. The examples above will suffice:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--filename<span style="color:#f92672">=</span>deploymentconfig.tests.yaml <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--filename<span style="color:#f92672">=</span>deploymentconfig.tests.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>error: error validating &#34;/path/to/deploymentconfig.tests.yaml&#34;: error validating data: [ValidationError(DeploymentConfig.spec.deployment_strategy): unknown field &#34;rolling_update&#34; in com.example.v1alpha1.DeploymentConfig.spec.deployment_strategy, ValidationError(DeploymentConfig.spec.deployment_strategy): unknown field &#34;recreate&#34; in com.example.v1alpha1.DeploymentConfig.spec.deployment_strategy]; if you choose to ignore these errors, turn validation off with --validate=false
 </span></span></code></pre></div><p>Uh-oh! The <code>enum</code> branches <code>RollingUpdate</code> and <code>Recreate</code> aren&rsquo;t being correctly renamed when serialized to JSON.</p>
 <p>This is straightforward to fix:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">#[derive(Serialize,Deserialize,Clone,Debug,JsonSchema)]</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">enum</span> <span style="color:#a6e22e">DeploymentStrategy</span> {
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Add Serde rename
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">#[serde(rename=</span><span style="color:#e6db74">&#34;rolling_update&#34;</span><span style="color:#75715e">)]</span>
+</span></span></span><span style="display:flex;"><span>    <span style="color:#75715e">#[serde(rename=</span><span style="color:#e6db74">&#34;rolling_update&#34;</span><span style="color:#75715e">)]</span>
 </span></span><span style="display:flex;"><span>    RollingUpdate{
 </span></span><span style="display:flex;"><span>        max_surge: <span style="color:#66d9ef">u16</span>,
 </span></span><span style="display:flex;"><span>        max_unavailable: <span style="color:#66d9ef">u16</span>,
 </span></span><span style="display:flex;"><span>    },
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Add Serde rename
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">#[serde(rename=</span><span style="color:#e6db74">&#34;recreate&#34;</span><span style="color:#75715e">)]</span>
+</span></span></span><span style="display:flex;"><span>    <span style="color:#75715e">#[serde(rename=</span><span style="color:#e6db74">&#34;recreate&#34;</span><span style="color:#75715e">)]</span>
 </span></span><span style="display:flex;"><span>    Recreate{
 </span></span><span style="display:flex;"><span>        something: <span style="color:#66d9ef">u16</span>
 </span></span><span style="display:flex;"><span>    },
@@ -485,8 +485,8 @@ apiVersion: apiextensions.k8s.io/v1 kind: CustomResourceDefinition metadata: nam
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">subresources</span>: {}
 </span></span></code></pre></div><p>Reapply the CRD to the cluster and then reapply the tests:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--filename<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/deploymentconfig.tests.yaml <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>--filename<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>PWD<span style="color:#e6db74">}</span>/deploymentconfig.tests.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>deploymentconfig.example.com/rolling-update created
 </span></span><span style="display:flex;"><span>deploymentconfig.example.com/recreate created
 </span></span><span style="display:flex;"><span>The DeploymentConfig &#34;bothof&#34; is invalid: &lt;nil&gt;: Invalid value: &#34;&#34;: &#34;spec.deployment_strategy&#34; must validate one and only one schema (oneOf). Found 2 valid alternatives
@@ -509,11 +509,11 @@ apiVersion: apiextensions.k8s.io/v1 kind: CustomResourceDefinition metadata: nam
 <p>It&rsquo;s possible to create the Custom Resources in Rust too:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CRD as YAML
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> document_spec <span style="color:#f92672">=</span> DeploymentConfig::crd();
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> document_spec <span style="color:#f92672">=</span> DeploymentConfig::crd();
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">println!</span>(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>,serde_yaml::to_string(<span style="color:#f92672">&amp;</span>document_spec).unwrap());
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CR with RollingUpdate as YAML
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> d1 <span style="color:#f92672">=</span> DeploymentConfigsSpec{
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> d1 <span style="color:#f92672">=</span> DeploymentConfigsSpec{
 </span></span><span style="display:flex;"><span>        deployment_strategy: <span style="color:#a6e22e">DeploymentStrategy</span>::RollingUpdate{
 </span></span><span style="display:flex;"><span>            max_surge:<span style="color:#ae81ff">1</span>,
 </span></span><span style="display:flex;"><span>            max_unavailable:<span style="color:#ae81ff">1</span>,
@@ -522,7 +522,7 @@ apiVersion: apiextensions.k8s.io/v1 kind: CustomResourceDefinition metadata: nam
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">println!</span>(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>,serde_yaml::to_string(<span style="color:#f92672">&amp;</span>d1).unwrap());
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e">// CR with Recreate as YAML
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> d2 <span style="color:#f92672">=</span> DeploymentConfigsSpec{
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> d2 <span style="color:#f92672">=</span> DeploymentConfigsSpec{
 </span></span><span style="display:flex;"><span>        deployment_strategy:<span style="color:#a6e22e">DeploymentStrategy</span>::Recreate{
 </span></span><span style="display:flex;"><span>            something: <span style="color:#ae81ff">1</span>,
 </span></span><span style="display:flex;"><span>        }
@@ -608,14 +608,14 @@ apiVersion: apiextensions.k8s.io/v1 kind: CustomResourceDefinition metadata: nam
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">something</span>: <span style="color:#ae81ff">1</span>
 </span></span></code></pre></div><p>Don&rsquo;t forget to delete the CRD, Namespace and any CRs before you finish:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NAMES<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span><span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  kubectl get deploymentconfigs <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output<span style="color:#f92672">=</span>name<span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span><span style="color:#66d9ef">)</span>
+</span></span></span><span style="display:flex;"><span>  kubectl get deploymentconfigs <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --output<span style="color:#f92672">=</span>name<span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">)</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> NAME in <span style="color:#e6db74">${</span>NAMES<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
 </span></span><span style="display:flex;"><span>  kubectl delete <span style="color:#e6db74">${</span>NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
+</span></span></span><span style="display:flex;"><span>  --namespace<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>NAMESPACE<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>kubectl delete crd/deploymentconfigs.example.com
